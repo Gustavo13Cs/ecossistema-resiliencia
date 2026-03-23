@@ -1,14 +1,56 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// api/prisma/schema.prisma
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  // Lembre-se que aqui no código não vai a URL, ela fica no prisma.config.ts / .env
+}
+
+// Tabela 1: Usuários
+model User {
+  id         String   @id @default(uuid())
+  name       String
+  email      String   @unique
+  password   String   
+  role       Role     @default(EMPLOYEE)
+  department String? 
+  
+  // Relacionamento: Um usuário pode ter vários registros de resiliência
+  workouts   WorkoutLog[] 
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("users")
+}
+
+// Tabela 2: O Core da Resiliência Física e Mental
+model WorkoutLog {
+  id              String   @id @default(uuid())
+  
+  // Saúde Física
+  activityType    String   // Ex: Musculação, Corrida, Yoga, Meditação
+  durationMinutes Int      // Duração em minutos
+  intensity       String   // Ex: LEVE, MODERADO, INTENSO
+  
+  // Saúde Mental e Recuperação
+  sleepHours      Float?   // Horas de sono na noite anterior
+  moodLevel       Int?     // Nível de humor de 1 a 5
+  
+  // A Chave Estrangeira (De quem é esse treino?)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+
+  @@map("workout_logs")
+}
+
+enum Role {
+  ADMIN
+  HR_MANAGER
+  EMPLOYEE
 }
