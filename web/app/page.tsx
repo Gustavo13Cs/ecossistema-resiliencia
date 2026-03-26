@@ -1,6 +1,8 @@
+// web/app/page.tsx
+
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Shield, Users, MapPin, Award } from "lucide-react"
+import { Shield, Brain, Activity, LineChart } from "lucide-react"
 
 export default function LandingPage() {
   return (
@@ -9,29 +11,21 @@ export default function LandingPage() {
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col items-center text-center space-y-8 max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-pink-500 via-purple-600 to-teal-500 bg-clip-text text-transparent leading-tight">
-            SafeMove
+            Ecossistema de Resiliência
           </h1>
           <p className="text-xl md:text-2xl text-gray-700 max-w-2xl leading-relaxed">
-            Connect with verified women athletes for safe group sports activities
+            Plataforma corporativa para gestão holística de saúde física, sono e bem-estar.
           </p>
           <p className="text-lg text-gray-600 max-w-xl">
-            Join cycling, running, trekking, and trail adventures with a trusted community
+            Transforme dados de saúde em inteligência para o RH e melhore a qualidade de vida da sua equipe.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Button
               asChild
               size="lg"
-              className="h-12 px-8 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-lg"
+              className="h-12 px-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-lg text-white"
             >
-              <Link href="/auth/sign-up">Get Started</Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="h-12 px-8 text-lg border-2 border-purple-300 hover:bg-purple-50 bg-transparent"
-            >
-              <Link href="/auth/login">Sign In</Link>
+              <Link href="/auth/login">Acesso Corporativo</Link>
             </Button>
           </div>
         </div>
@@ -42,32 +36,32 @@ export default function LandingPage() {
             <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl flex items-center justify-center mb-4">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Verified Members</h3>
-            <p className="text-sm text-gray-600">All members are identity-verified for your safety and peace of mind</p>
+            <h3 className="text-lg font-semibold mb-2">Segurança LGPD</h3>
+            <p className="text-sm text-gray-600">Dados criptografados e controle de acesso rigoroso para proteção da equipe.</p>
           </div>
 
           <div className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
-              <Users className="w-6 h-6 text-white" />
+              <Brain className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Community Groups</h3>
-            <p className="text-sm text-gray-600">Join groups led by experienced athletes and influencers</p>
+            <h3 className="text-lg font-semibold mb-2">Saúde Mental</h3>
+            <p className="text-sm text-gray-600">Acompanhamento diário de humor e qualidade do sono dos colaboradores.</p>
           </div>
 
           <div className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div className="w-12 h-12 bg-gradient-to-r from-teal-500 to-pink-500 rounded-xl flex items-center justify-center mb-4">
-              <MapPin className="w-6 h-6 text-white" />
+              <Activity className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Local Events</h3>
-            <p className="text-sm text-gray-600">Discover and join sports events in your area with detailed routes</p>
+            <h3 className="text-lg font-semibold mb-2">Atividade Física</h3>
+            <p className="text-sm text-gray-600">Registro de treinos e intensidades para incentivar uma rotina ativa.</p>
           </div>
 
           <div className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
-              <Award className="w-6 h-6 text-white" />
+              <LineChart className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Build Reputation</h3>
-            <p className="text-sm text-gray-600">Earn reputation points by participating and creating events</p>
+            <h3 className="text-lg font-semibold mb-2">Métricas de RH</h3>
+            <p className="text-sm text-gray-600">Dashboards agregados para tomadas de decisão estratégicas pela gestão.</p>
           </div>
         </div>
       </div>

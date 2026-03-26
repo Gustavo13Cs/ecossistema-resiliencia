@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import axios from "axios" // <-- O nosso entregador de dados!
+import { api } from "@/lib/api"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -24,7 +24,7 @@ export default function LoginPage() {
 
     try {
       // 🔒 AQUI ESTÁ A NOSSA SEGURANÇA: Batendo na nossa API NestJS!
-      const response = await axios.post("http://localhost:3000/auth/login", {
+      const response = await api.post("/auth/login", {
         email,
         password,
       })
