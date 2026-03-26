@@ -71,6 +71,10 @@ export default function HomePage() {
               SafeMove B2B
             </h1>
             <div className="flex items-center gap-3">
+              <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50" asChild>
+                <a href="/membros">Gestão de Membros</a>
+              </Button>
+              
               <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sair">
                 <LogOut className="w-5 h-5 text-slate-600" />
               </Button>

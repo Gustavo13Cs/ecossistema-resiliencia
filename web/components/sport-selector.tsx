@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
+import { toast } from "sonner"
 
 // Cores corporativas voltadas para saúde
 const sports = [
@@ -40,8 +41,6 @@ export function SportSelector() {
     setLoading(true)
 
     try {
-      const token = localStorage.getItem("token")
-      
       await api.post("/workouts", {
         activityType: selectedSport,
         durationMinutes: Number(formData.durationMinutes),
@@ -52,10 +51,15 @@ export function SportSelector() {
 
       setIsOpen(false)
       setFormData({ durationMinutes: "", intensity: "MODERADO", sleepHours: "", moodLevel: "3" })
-      window.location.reload()
+      
+      toast.success("Treino guardado com sucesso! 🎉")
+      
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
       
     } catch (error) {
-      alert("Erro ao salvar o registro. Verifique sua conexão.")
+      toast.error("Erro ao guardar o registo. Tente novamente.")
     } finally {
       setLoading(false)
     }

@@ -1,3 +1,5 @@
+// api/src/modules/metrics/metrics.service.ts
+
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
 
@@ -5,16 +7,21 @@ import { PrismaService } from '../../infra/database/prisma.service';
 export class MetricsService {
   constructor(private prisma: PrismaService) {}
 
-  async getCompanyDashboard() {
-    const totalWorkouts = await this.prisma.workoutLog.count();
+  async getDashboard(userId: string, role: string) {
+    const filter = (role === 'HR_MANAGER' || role === 'ADMIN') ? {} : { userId: userId };
+
+    const totalWorkouts = await this.prisma.workoutLog.count({
+      where: filter
+    });
 
     const averages = await this.prisma.workoutLog.aggregate({
+      where: filter,
       _avg: {
         sleepHours: true,
         moodLevel: true,
       },
     });
-    
+
     return {
       totalWorkouts,
       averageSleep: averages._avg.sleepHours ? Number(averages._avg.sleepHours.toFixed(1)) : 0,
