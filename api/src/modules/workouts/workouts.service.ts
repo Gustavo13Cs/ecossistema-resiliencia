@@ -13,7 +13,17 @@ export class WorkoutsService {
         userId: userId, 
       },
     });
-
     return workout;
+  }
+
+  async findAll(userId: string) {
+    return this.prisma.workoutLog.findMany({
+      where: { 
+        userId: userId 
+      },
+      orderBy: { 
+        createdAt: 'desc' 
+      },
+    });
   }
 }
