@@ -16,8 +16,7 @@ export class WorkoutsController {
 
   @Get()
   findAll(@Request() req) {
-    const userId = req.user.sub;
-    
-    return this.workoutsService.findAll(userId);
+    return this.workoutsService.findAll(req.user.sub, req.user.role);
   }
+
 }

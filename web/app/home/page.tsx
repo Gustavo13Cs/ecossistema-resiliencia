@@ -1,66 +1,35 @@
-// web/app/home/page.tsx
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { SportSelector } from "@/components/sport-selector"
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { api } from "@/lib/api"
+import { ResilienceChart } from "@/components/resilience-chart"
+import { useAuth } from "@/contexts/auth-context" 
 
 export default function HomePage() {
-  const router = useRouter()
+  const { user, logout } = useAuth()
   
-  // Guardamos as métricas globais da empresa
-  const [metrics, setMetrics] = useState({
-    totalWorkouts: 0,
-    averageSleep: 0,
-    averageMood: 0
-  })
-
-  // Guardamos o histórico PESSOAL do utilizador
+  const [metrics, setMetrics] = useState({ totalWorkouts: 0, averageSleep: 0, averageMood: 0 })
   const [workouts, setWorkouts] = useState<any[]>([])
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    if (!token) {
-      router.push("/auth/login")
-      return
-    }
-
     const fetchDashboardData = async () => {
       try {
-        const headers = { Authorization: `Bearer ${token}` }
-        
-        // 1. Vai buscar as métricas gerais do RH
         const metricsRes = await api.get("/metrics/dashboard")
         setMetrics(metricsRes.data)
 
-        // 2. Vai buscar o histórico PESSOAL do Carlos
         const historyRes = await api.get("/workouts")
         setWorkouts(historyRes.data)
-        setWorkouts(historyRes.data)
-        
       } catch (error) {
-        handleSignOut()
+        console.error("Erro ao carregar dados", error)
       }
     }
 
     fetchDashboardData()
-  }, [router])
-
-  const handleSignOut = () => {
-    localStorage.removeItem("token")
-    router.push("/auth/login")
-  }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 pb-12">
@@ -70,12 +39,13 @@ export default function HomePage() {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">
               SafeMove B2B
             </h1>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50" asChild>
-                <a href="/membros">Gestão de Membros</a>
-              </Button>
-              
-              <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sair">
+            <div className="flex items-center gap-3">  
+              {(user?.role === 'HR_MANAGER' || user?.role === 'ADMIN') && (
+                <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50" asChild>
+                  <a href="/membros">Gestão de Membros</a>
+                </Button>
+              )}
+              <Button variant="ghost" size="icon" onClick={logout} title="Sair">
                 <LogOut className="w-5 h-5 text-slate-600" />
               </Button>
             </div>
@@ -88,9 +58,9 @@ export default function HomePage() {
           
           <div className="text-center space-y-3">
             <h2 className="text-3xl font-bold text-slate-800">
-              Painel de Resiliência da Equipe
+              Painel de Resiliência da Equipa
             </h2>
-            <p className="text-lg text-slate-600">Confirme a saúde física e mental dos seus colaboradores hoje.</p>
+            <p className="text-lg text-slate-600">Acompanhe a saúde física e mental dos seus colaboradores hoje.</p>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
@@ -110,18 +80,28 @@ export default function HomePage() {
 
           <SportSelector />
 
-          {/* NOVO: Secção do Histórico do Colaborador */}
+          <div className="mt-8">
+            <ResilienceChart workouts={workouts} />
+          </div>
+
           <div className="mt-12 bg-white/90 backdrop-blur rounded-xl p-6 shadow-sm border border-blue-100">
-            <h3 className="text-xl font-bold text-slate-800 mb-6 border-b pb-4">O Meu Histórico de Atividades</h3>
+            <h3 className="text-xl font-bold text-slate-800 mb-6 border-b pb-4">
+              {user?.role === 'EMPLOYEE' 
+                ? "O Meu Histórico de Atividades" 
+                : "Atividades Recentes da Equipa"}
+            </h3>
             
             {workouts.length === 0 ? (
-              <p className="text-slate-600 text-center py-6">Ainda não há registos. Pique o seu ponto de saúde acima!</p>
+              <p className="text-slate-600 text-center py-6">Ainda não há registos para mostrar.</p>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Data</TableHead>
+                      {(user?.role === 'HR_MANAGER' || user?.role === 'ADMIN') && (
+                        <TableHead className="font-semibold text-blue-700">Colaborador</TableHead>
+                      )}
                       <TableHead>Atividade</TableHead>
                       <TableHead>Duração</TableHead>
                       <TableHead>Intensidade</TableHead>
@@ -134,8 +114,15 @@ export default function HomePage() {
                         <TableCell className="font-medium text-slate-700">
                           {new Date(workout.createdAt).toLocaleDateString('pt-PT')}
                         </TableCell>
-                        <TableCell className="font-semibold text-blue-700">{workout.activityType}</TableCell>
-                        <TableCell>{workout.durationMinutes} min</TableCell>
+                        
+                        {(user?.role === 'HR_MANAGER' || user?.role === 'ADMIN') && (
+                          <TableCell className="font-semibold text-slate-800">
+                            {workout.user?.name || "Desconhecido"}
+                          </TableCell>
+                        )}
+                        
+                        <TableCell className="font-medium text-blue-600">{workout.activityType}</TableCell>
+                        <TableCell className="text-slate-600">{workout.durationMinutes} min</TableCell>
                         <TableCell>
                           <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border
                             ${workout.intensity === 'LEVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 

@@ -1,29 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
-import { CreateWorkoutDto } from './dto/create-workout.dto';
 
 @Injectable()
 export class WorkoutsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(userId: string, createWorkoutDto: CreateWorkoutDto) {
-    const workout = await this.prisma.workoutLog.create({
+  async create(userId: string, createWorkoutDto: any) {
+    return this.prisma.workoutLog.create({
       data: {
         ...createWorkoutDto,
-        userId: userId, 
+        userId: userId,
       },
     });
-    return workout;
   }
 
-  async findAll(userId: string) {
+  async findAll(userId: string, role: string) {
+    const filter = (role === 'HR_MANAGER' || role === 'ADMIN') ? {} : { userId: userId };
+
     return this.prisma.workoutLog.findMany({
-      where: { 
-        userId: userId 
-      },
-      orderBy: { 
-        createdAt: 'desc' 
-      },
+      where: filter,
+      orderBy: { createdAt: 'desc' },
+      take: 20, 
+      include: {
+        user: {
+          select: { name: true }
+        }
+      }
     });
   }
 }

@@ -11,20 +11,20 @@ datasource db {
 
 // Tabela 1: Usuários
 model User {
-  id         String   @id @default(uuid())
-  name       String
-  email      String   @unique
-  password   String   
-  role       Role     @default(EMPLOYEE)
-  department String? 
+  id          String       @id @default(uuid())
+  name        String
+  email       String       @unique
+  password    String
+  role        Role         @default(EMPLOYEE)
   
-  // Relacionamento: Um usuário pode ter vários registros de resiliência
-  workouts   WorkoutLog[] 
+  phone       String?      // Telefone/WhatsApp
+  birthDate   DateTime?    // Data de Nascimento
+  department  String?      // Departamento (Para RH)
+  goal        String?      // Objetivo (Para Personal/Nutri)
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@map("users")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  workoutLogs WorkoutLog[]
 }
 
 // Tabela 2: O Core da Resiliência Física e Mental

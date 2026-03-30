@@ -20,4 +20,16 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   department?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString() 
+  birthDate?: string;
+
+  @IsOptional()
+  @IsString()
+  goal?: string;
 }
