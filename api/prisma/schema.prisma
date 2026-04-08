@@ -44,6 +44,9 @@ model WorkoutLog {
   // Saúde Mental e Recuperação
   sleepHours      Float?   // Horas de sono na noite anterior
   moodLevel       Int?     // Nível de humor de 1 a 5
+
+  notes           String?  // Campo de texto para as observações do aluno
+  weight          Float?   // Peso em kg
   
   // A Chave Estrangeira (De quem é esse treino?)
   userId          String

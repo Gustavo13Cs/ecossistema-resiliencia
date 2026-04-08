@@ -1,25 +1,31 @@
-import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, Min, Max, IsInt } from 'class-validator';
 
 export class CreateWorkoutDto {
   @IsString()
-  @IsNotEmpty({ message: 'O tipo de atividade é obrigatório (ex: Musculação)' })
-  activityType: string;
+  activityType!: string; 
 
   @IsInt()
   @Min(1, { message: 'A duração deve ser de pelo menos 1 minuto' })
-  durationMinutes: number;
+  durationMinutes!: number; 
 
   @IsString()
   @IsNotEmpty({ message: 'A intensidade é obrigatória (ex: INTENSO)' })
-  intensity: string;
+  intensity!: string; 
 
-  @IsNumber()
   @IsOptional()
+  @IsNumber()
   sleepHours?: number;
-
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(5, { message: 'O humor deve ser uma nota de 1 a 5' })
+  moodLevel?: number;
+
   @IsOptional()
-  moodLevel?: number; 
+  @IsNumber()
+  weight?: number;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }
