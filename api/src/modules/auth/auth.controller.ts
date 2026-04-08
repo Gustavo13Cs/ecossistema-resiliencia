@@ -11,4 +11,9 @@ export class AuthController {
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
+
+  @Post('register')
+  register(@Body() signUpDto: any) {
+    return this.authService.register(signUpDto);
+  }
 }

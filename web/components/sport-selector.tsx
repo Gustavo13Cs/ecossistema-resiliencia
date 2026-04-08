@@ -1,146 +1,229 @@
-// web/components/sport-selector.tsx
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Bike, Mountain, Footprints, PersonStanding } from "lucide-react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Activity, Droplet, BrainCircuit, HeartPulse, CheckCircle2 } from "lucide-react" // Adicionamos o CheckCircle2
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Card, CardContent } from "@/components/ui/card"
+import { Slider } from "@/components/ui/slider"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
-
-// Cores corporativas voltadas para saúde
-const sports = [
-  { id: "Musculação", name: "Musculação", icon: PersonStanding, color: "from-blue-500 to-blue-700", bgColor: "bg-blue-50 hover:bg-blue-100", description: "Treino de força e resistência" },
-  { id: "Ciclismo", name: "Ciclismo", icon: Bike, color: "from-sky-500 to-sky-700", bgColor: "bg-sky-50 hover:bg-sky-100", description: "Bike indoor ou rua" },
-  { id: "Corrida", name: "Corrida", icon: Mountain, color: "from-teal-500 to-teal-700", bgColor: "bg-teal-50 hover:bg-teal-100", description: "Esteira ou parque" },
-  { id: "Yoga", name: "Yoga", icon: Footprints, color: "from-emerald-500 to-emerald-700", bgColor: "bg-emerald-50 hover:bg-emerald-100", description: "Recuperação ativa" },
-]
+import { useAuth } from "@/contexts/auth-context"
 
 export function SportSelector() {
-  const [selectedSport, setSelectedSport] = useState<string | null>(null)
-  const [isOpen, setIsOpen] = useState(false)
+  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
 
-  const [formData, setFormData] = useState({
-    durationMinutes: "",
-    intensity: "MODERADO",
-    sleepHours: "",
-    moodLevel: "3",
-  })
-
-  const openModal = (sportName: string) => {
-    setSelectedSport(sportName)
-    setIsOpen(true)
+  // O "Cérebro" do Camaleão
+  const contextConfig: Record<string, any> = {
+    PERSONAL_TRAINER: {
+      title: "Registar Atividade Física",
+      icon: <Activity className="w-6 h-6 text-blue-600" />,
+      themeColor: "blue",
+      activities: ["Musculação", "Corrida", "Yoga", "Crossfit", "Ciclismo"],
+      durationLabel: "Duração do Treino (minutos)",
+      intensityLabel: "Intensidade do Treino",
+      intensities: [
+        { value: "LEVE", label: "Leve", color: "border-emerald-200 bg-emerald-50 text-emerald-700" },
+        { value: "MODERADO", label: "Moderado", color: "border-amber-200 bg-amber-50 text-amber-700" },
+        { value: "INTENSO", label: "Intenso", color: "border-rose-200 bg-rose-50 text-rose-700" }
+      ]
+    },
+    NUTRITIONIST: {
+      title: "Diário Alimentar e Hidratação",
+      icon: <Droplet className="w-6 h-6 text-teal-600" />,
+      themeColor: "teal",
+      activities: ["Plano Alimentar", "Refeição Livre", "Jejum Intermitente", "Suplementação", "Outros"],
+      durationLabel: "Copos de Água Bebidos (unidades)",
+      intensityLabel: "Adesão à Dieta Hoje",
+      intensities: [
+        { value: "INTENSO", label: "100% no Foco", color: "border-emerald-200 bg-emerald-50 text-emerald-700" },
+        { value: "MODERADO", label: "Pequenos Deslizes", color: "border-amber-200 bg-amber-50 text-amber-700" },
+        { value: "LEVE", label: "Saí do Plano", color: "border-rose-200 bg-rose-50 text-rose-700" }
+      ]
+    },
+    HR_CORPORATE: {
+      title: "Check-in de Saúde Mental",
+      icon: <BrainCircuit className="w-6 h-6 text-indigo-600" />,
+      themeColor: "indigo",
+      activities: ["Trabalho Focado", "Reuniões", "Trabalho Criativo", "Burocracia", "Gestão"],
+      durationLabel: "Tempo de Pausas (minutos)",
+      intensityLabel: "Nível de Estresse no Trabalho",
+      intensities: [
+        { value: "LEVE", label: "Tranquilo", color: "border-emerald-200 bg-emerald-50 text-emerald-700" },
+        { value: "MODERADO", label: "Gerenciável", color: "border-amber-200 bg-amber-50 text-amber-700" },
+        { value: "INTENSO", label: "Alto Estresse", color: "border-rose-200 bg-rose-50 text-rose-700" }
+      ]
+    }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+  const currentContext = user?.businessContext && contextConfig[user.businessContext] 
+    ? contextConfig[user.businessContext] 
+    : contextConfig["PERSONAL_TRAINER"]
 
+  // O "Dicionário de Cores" para enganar o Bug do Tailwind! 
+  // Agora as cores estão escritas explicitamente e nunca mais vão sumir.
+  const colorMap: Record<string, any> = {
+    blue: {
+      activeCard: "border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500",
+      activeButton: "bg-blue-600 hover:bg-blue-700",
+      topBar: "bg-blue-500"
+    },
+    teal: {
+      activeCard: "border-teal-500 bg-teal-50 text-teal-700 ring-1 ring-teal-500",
+      activeButton: "bg-teal-600 hover:bg-teal-700",
+      topBar: "bg-teal-500"
+    },
+    indigo: {
+      activeCard: "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-500",
+      activeButton: "bg-indigo-600 hover:bg-indigo-700",
+      topBar: "bg-indigo-500"
+    }
+  }
+
+  const theme = colorMap[currentContext.themeColor];
+
+  const [selectedActivity, setSelectedActivity] = useState(currentContext.activities[0])
+  const [duration, setDuration] = useState([45])
+  const [intensity, setIntensity] = useState("MODERADO")
+  const [sleep, setSleep] = useState([7])
+  const [mood, setMood] = useState(4)
+
+  const handleSubmit = async () => {
+    setLoading(true)
     try {
       await api.post("/workouts", {
-        activityType: selectedSport,
-        durationMinutes: Number(formData.durationMinutes),
-        intensity: formData.intensity,
-        sleepHours: formData.sleepHours ? Number(formData.sleepHours) : undefined,
-        moodLevel: formData.moodLevel ? Number(formData.moodLevel) : undefined,
+        activityType: selectedActivity,
+        durationMinutes: duration[0],
+        intensity,
+        sleepHours: sleep[0],
+        moodLevel: mood,
       })
-
-      setIsOpen(false)
-      setFormData({ durationMinutes: "", intensity: "MODERADO", sleepHours: "", moodLevel: "3" })
-      
-      toast.success("Treino guardado com sucesso! 🎉")
-      
-      setTimeout(() => {
-        window.location.reload()
-      }, 1500)
-      
+      toast.success("Registo guardado com sucesso!")
+      setTimeout(() => window.location.reload(), 1000)
     } catch (error) {
-      toast.error("Erro ao guardar o registo. Tente novamente.")
+      toast.error("Erro ao guardar o registo.")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {sports.map((sport) => {
-          const Icon = sport.icon
-          return (
-            <Card
-              key={sport.id}
-              className={`cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 border-0 ${sport.bgColor}`}
-              onClick={() => openModal(sport.name)}
-            >
-              <CardContent className="p-6 flex flex-col items-center text-center space-y-3">
-                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${sport.color} shadow-sm flex items-center justify-center`}>
-                  <Icon className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-slate-800">{sport.name}</h3>
-                  <p className="text-sm text-slate-600">{sport.description}</p>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+    <Card className="border-0 bg-white/90 backdrop-blur shadow-lg overflow-hidden">
+      <div className={`h-2 w-full ${theme.topBar}`}></div>
+      <CardContent className="p-8">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 shadow-sm">
+            {currentContext.icon}
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-800">{currentContext.title}</h2>
+            <p className="text-slate-500">Como foi o seu dia hoje?</p>
+          </div>
+        </div>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-2xl text-slate-800">Registrar: {selectedSport}</DialogTitle>
-            <DialogDescription>
-              Preencha os dados da sua atividade e sua percepção de bem-estar hoje.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="duration">Duração (min) *</Label>
-                <Input id="duration" type="number" min="1" required value={formData.durationMinutes} onChange={e => setFormData({...formData, durationMinutes: e.target.value})} placeholder="Ex: 45" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="intensity">Intensidade *</Label>
-                <select
-                  id="intensity"
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  value={formData.intensity}
-                  onChange={e => setFormData({...formData, intensity: e.target.value})}
-                >
-                  <option value="LEVE">Leve</option>
-                  <option value="MODERADO">Moderado</option>
-                  <option value="INTENSO">Intenso</option>
-                </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="space-y-8">
+            
+            {/* NOVO: Categorias dinâmicas e lindíssimas! */}
+            <div className="space-y-4">
+              <label className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
+                Categoria principal
+              </label>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                {currentContext.activities.map((act: string) => {
+                  const isSelected = selectedActivity === act;
+                  return (
+                    <button
+                      key={act}
+                      type="button"
+                      onClick={() => setSelectedActivity(act)}
+                      className={`relative flex items-center justify-between px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 text-left
+                        ${isSelected 
+                          ? theme.activeCard 
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                        }`}
+                    >
+                      <span className="truncate pr-2">{act}</span>
+                      {/* Ícone de Check aparece suavemente se estiver selecionado */}
+                      {isSelected && (
+                        <CheckCircle2 className="w-4 h-4 shrink-0 animate-in zoom-in duration-200" />
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
-            <div className="space-y-4 pt-4 border-t">
-              <h4 className="font-medium text-sm text-teal-700">Resiliência e Recuperação</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="sleep">Horas de Sono</Label>
-                  <Input id="sleep" type="number" step="0.5" min="0" max="24" value={formData.sleepHours} onChange={e => setFormData({...formData, sleepHours: e.target.value})} placeholder="Ex: 7.5" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="mood">Humor (1 a 5)</Label>
-                  <Input id="mood" type="number" min="1" max="5" value={formData.moodLevel} onChange={e => setFormData({...formData, moodLevel: e.target.value})} placeholder="Ex: 4" />
-                </div>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
+                  {currentContext.durationLabel}
+                </label>
+                <span className="text-2xl font-bold text-slate-700">{duration[0]}</span>
               </div>
+              <Slider value={duration} onValueChange={setDuration} max={120} step={1} className="py-4" />
             </div>
 
-            {/* Botão de salvar agora com a identidade corporativa */}
-            <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-blue-600 to-teal-500 text-white hover:from-blue-700 hover:to-teal-600 shadow-md">
-              {loading ? "Salvando..." : "Salvar Registro"}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </>
+            <div className="space-y-4">
+              <label className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
+                {currentContext.intensityLabel}
+              </label>
+              <div className="flex gap-3">
+                {currentContext.intensities.map((int: any) => (
+                  <button
+                    key={int.value}
+                    type="button"
+                    onClick={() => setIntensity(int.value)}
+                    className={`flex-1 py-3 px-2 md:px-4 rounded-xl font-medium border-2 transition-all text-xs md:text-sm
+                      ${intensity === int.value 
+                        ? int.color + ` ring-2 ring-offset-2 scale-[1.02] shadow-md` 
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                      }`}
+                  >
+                    {int.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-8 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                  <HeartPulse className="w-4 h-4 text-rose-500"/>
+                  Horas de Sono
+                </label>
+                <span className="text-2xl font-bold text-slate-700">{sleep[0]}h</span>
+              </div>
+              <Slider value={sleep} onValueChange={setSleep} max={12} step={0.5} className="py-4" />
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
+                  Humor Geral
+                </label>
+                <div className="text-3xl filter drop-shadow-sm">
+                  {mood === 1 && "😫"} {mood === 2 && "😕"} {mood === 3 && "😐"}
+                  {mood === 4 && "🙂"} {mood === 5 && "🤩"}
+                </div>
+              </div>
+              <Slider value={[mood]} onValueChange={(val) => setMood(val[0])} min={1} max={5} step={1} className="py-4" />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-slate-100">
+          <Button 
+            onClick={handleSubmit} 
+            disabled={loading}
+            className={`w-full h-14 text-lg text-white shadow-xl ${theme.activeButton}`}
+          >
+            {loading ? "A processar..." : "Registar Avaliação Diária"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

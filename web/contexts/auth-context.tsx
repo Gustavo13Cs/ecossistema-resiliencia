@@ -8,6 +8,7 @@ type User = {
   sub: string;
   role: string;
   email?: string;
+  businessContext?: string;
 }
 
 type AuthContextType = {
@@ -25,7 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
 
-  const publicRoutes = ["/", "/auth/login"]
+  const publicRoutes = ["/", "/auth/login", "/auth/register"]
 
   useEffect(() => {
     const token = localStorage.getItem("token")

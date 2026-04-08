@@ -21,6 +21,11 @@ model User {
   birthDate   DateTime?    // Data de Nascimento
   department  String?      // Departamento (Para RH)
   goal        String?      // Objetivo (Para Personal/Nutri)
+  companyName String?      // Nome da Empresa / Consultório
+  profession  String?      // Área de Atuação (RH, Personal, etc)
+  managerId   String?      // O ID do gestor que criou esta conta
+  manager     User?        @relation("UserToManager", fields: [managerId], references: [id])
+  employees   User[]       @relation("UserToManager")
 
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import { api } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
+import Link from "next/link"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -84,6 +85,13 @@ export default function LoginPage() {
                 </Button>
               </div>
             </form>
+
+            <div className="mt-6 text-center text-sm text-slate-600">
+              Ainda não tem o sistema?{" "}
+              <Link href="/auth/register" className="font-semibold text-teal-600 hover:underline">
+                Cadastre-se gratuitamente
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>

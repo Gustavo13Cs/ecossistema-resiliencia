@@ -1,19 +1,21 @@
-import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+// api/src/modules/users/users.controller.ts
+import { Controller, Post, Body, Get, UseGuards, Request, Param } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
+import { AuthGuard } from '../../common/guards/auth.guard';
 
-@Controller('users') 
+@UseGuards(AuthGuard)
+@Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post() 
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @Post()
+  create(@Request() req, @Body() createUserDto: any) {
+    return this.usersService.create(createUserDto, req.user.sub);
   }
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Request() req) {
+    return this.usersService.findAll(req.user.sub);
   }
 
   @Get(':id/workouts')

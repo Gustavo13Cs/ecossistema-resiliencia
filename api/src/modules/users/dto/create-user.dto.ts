@@ -32,4 +32,12 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   goal?: string;
+
+  @IsOptional()
+  @IsString()
+  companyName?: string;
+
+  @IsOptional()
+  @IsString()
+  profession?: string;
 }
