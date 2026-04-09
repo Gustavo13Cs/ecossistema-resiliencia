@@ -1,4 +1,3 @@
-// api/src/modules/users/users.controller.ts
 import { Controller, Post, Body, Get, UseGuards, Request, Param } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
@@ -16,6 +15,11 @@ export class UsersController {
   @Get()
   findAll(@Request() req) {
     return this.usersService.findAll(req.user.sub);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
   }
 
   @Get(':id/workouts')

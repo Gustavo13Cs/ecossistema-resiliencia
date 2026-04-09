@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { SportSelector } from "@/components/sport-selector"
 import { Button } from "@/components/ui/button"
-import { LogOut, Filter } from "lucide-react"
+import { LogOut, Filter, Search, ChevronDown } from "lucide-react" 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { api } from "@/lib/api"
 import { ResilienceChart } from "@/components/resilience-chart"
@@ -16,21 +16,25 @@ export default function HomePage() {
   const [workouts, setWorkouts] = useState<any[]>([])
   
   const [teamMembers, setTeamMembers] = useState<any[]>([])
-  const [selectedMember, setSelectedMember] = useState("ALL")
+  const [selectedMember, setSelectedMember] = useState("")
+
+  // NOVOS ESTADOS PARA O DROPDOWN DE PESQUISA
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
 
   const dashboardConfig: Record<string, any> = {
     PERSONAL_TRAINER: {
-      theme: "blue", metric1: "Treinos Registados", tableTitleSelf: "O Meu Histórico", tableTitleTeam: "Treinos da Equipa",
+      theme: "blue", metric1: "Treinos Registados", tableTitleSelf: "O Meu Histórico", tableTitleTeam: "Histórico do Aluno",
       colMember: "Aluno", colActivity: "Atividade", colDuration: "Duração", colIntensity: "Intensidade",
       intensityLabels: { LEVE: "Leve", MODERADO: "Moderado", INTENSO: "Intenso" }
     },
     NUTRITIONIST: {
-      theme: "teal", metric1: "Diários Registados", tableTitleSelf: "Meu Diário", tableTitleTeam: "Acompanhamento de Pacientes",
+      theme: "teal", metric1: "Diários Registados", tableTitleSelf: "Meu Diário", tableTitleTeam: "Histórico do Paciente",
       colMember: "Paciente", colActivity: "Categoria", colDuration: "Copos de Água", colIntensity: "Adesão à Dieta",
       intensityLabels: { LEVE: "Saiu do Plano", MODERADO: "Deslizes", INTENSO: "100% no Foco" }
     },
     HR_CORPORATE: {
-      theme: "indigo", metric1: "Check-ins de Saúde", tableTitleSelf: "Meu Histórico", tableTitleTeam: "Termômetro da Equipa",
+      theme: "indigo", metric1: "Check-ins de Saúde", tableTitleSelf: "Meu Histórico", tableTitleTeam: "Histórico do Colaborador",
       colMember: "Colaborador", colActivity: "Foco do Dia", colDuration: "Pausas (min)", colIntensity: "Nível de Estresse",
       intensityLabels: { LEVE: "Tranquilo", MODERADO: "Gerenciável", INTENSO: "Alto Estresse" }
     }
@@ -38,28 +42,33 @@ export default function HomePage() {
 
   const config = dashboardConfig[user?.businessContext || "PERSONAL_TRAINER"] || dashboardConfig["PERSONAL_TRAINER"]
 
-  const fetchDashboardData = async (memberId: string) => {
+  // Função atualizada: Sem o "ALL". Busca dados exatos.
+  const fetchDashboardData = async (memberId?: string) => {
     try {
-      if (memberId === "ALL") {
-        const metricsRes = await api.get("/metrics/dashboard")
-        setMetrics(metricsRes.data)
-        const historyRes = await api.get("/workouts")
-        setWorkouts(historyRes.data)
+      let historyRes;
+
+      if (user?.role === 'EMPLOYEE') {
+        // Se for aluno, busca o próprio diário
+        historyRes = await api.get("/workouts")
+      } else if (memberId) {
+        // Se for Gestor, busca o diário do aluno selecionado
+        historyRes = await api.get(`/users/${memberId}/workouts`)
       } else {
-        const historyRes = await api.get(`/users/${memberId}/workouts`)
-        const userWorkouts = historyRes.data
-        setWorkouts(userWorkouts)
-
-        const total = userWorkouts.length
-        const avgSleep = total > 0 ? (userWorkouts.reduce((acc: number, curr: any) => acc + (curr.sleepHours || 0), 0) / total).toFixed(1) : 0
-        const avgMood = total > 0 ? (userWorkouts.reduce((acc: number, curr: any) => acc + (curr.moodLevel || 0), 0) / total).toFixed(1) : 0
-
-        setMetrics({
-          totalWorkouts: total,
-          averageSleep: Number(avgSleep),
-          averageMood: Number(avgMood)
-        })
+        return; // Gestor sem aluno selecionado não faz nada
       }
+
+      const userWorkouts = historyRes.data
+      setWorkouts(userWorkouts)
+
+      const total = userWorkouts.length
+      const avgSleep = total > 0 ? (userWorkouts.reduce((acc: number, curr: any) => acc + (curr.sleepHours || 0), 0) / total).toFixed(1) : 0
+      const avgMood = total > 0 ? (userWorkouts.reduce((acc: number, curr: any) => acc + (curr.moodLevel || 0), 0) / total).toFixed(1) : 0
+
+      setMetrics({
+        totalWorkouts: total,
+        averageSleep: Number(avgSleep),
+        averageMood: Number(avgMood)
+      })
     } catch (error) {
       console.error("Erro ao carregar dados", error)
     }
@@ -72,21 +81,29 @@ export default function HomePage() {
       if (user.role === 'HR_MANAGER' || user.role === 'ADMIN') {
         try {
           const usersRes = await api.get("/users")
-          setTeamMembers(usersRes.data)
+          if (usersRes.data && usersRes.data.length > 0) {
+            setTeamMembers(usersRes.data)
+            // MAGIA: Auto-seleciona o PRIMEIRO paciente da lista logo ao entrar!
+            const firstMemberId = usersRes.data[0].id
+            setSelectedMember(firstMemberId)
+            fetchDashboardData(firstMemberId)
+          }
         } catch (error) {
           console.error("Erro ao buscar membros", error)
         }
+      } else {
+        // Aluno carrega direto os seus dados
+        fetchDashboardData()
       }
-      fetchDashboardData("ALL")
     }
 
     loadInitialSetup()
   }, [user])
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value
-    setSelectedMember(val)
-    fetchDashboardData(val)
-  }
+
+  // Filtra a lista de membros baseada no que foi digitado
+  const filteredMembers = teamMembers.filter(m => 
+    m.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 pb-12">
@@ -117,27 +134,72 @@ export default function HomePage() {
             <div className="space-y-1">
               <h2 className="text-3xl font-bold text-slate-800">Painel de Acompanhamento</h2>
               <p className="text-slate-600">
-                {selectedMember === "ALL" 
-                  ? "Visão geral de todos os registos." 
-                  : "Análise individual detalhada."}
+                {user?.role === 'EMPLOYEE' ? "Visão geral do seu registo." : "Análise individual detalhada do paciente."}
               </p>
             </div>
 
-            {(user?.role === 'HR_MANAGER' || user?.role === 'ADMIN') && (
-              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border shadow-sm">
-                <Filter className={`w-4 h-4 text-${config.theme}-500`} />
-                <select 
-                  className="bg-transparent border-none text-sm font-medium focus:ring-0 cursor-pointer outline-none text-slate-700"
-                  value={selectedMember}
-                  onChange={handleFilterChange}
+            {/* O NOVO DROPDOWN PESQUISÁVEL PREMIUM */}
+            {(user?.role === 'HR_MANAGER' || user?.role === 'ADMIN') && teamMembers.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center justify-between w-64 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors text-sm font-medium text-slate-700"
                 >
-                  <option value="ALL">Todos os {config.colMember}s</option>
-                  {teamMembers.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.name}
-                    </option>
-                  ))}
-                </select>
+                  <div className="flex items-center gap-2 truncate">
+                    <Filter className={`w-4 h-4 text-${config.theme}-500 shrink-0`} />
+                    <span className="truncate">
+                      {teamMembers.find(m => m.id === selectedMember)?.name || "Selecione um Paciente"}
+                    </span>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
+                </button>
+
+                {isDropdownOpen && (
+                  <>
+                    {/* Overlay invisível para fechar ao clicar fora */}
+                    <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)}></div>
+
+                    {/* O Menu em si */}
+                    <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                      <div className="p-2 border-b border-slate-100 bg-slate-50/50">
+                        <div className="relative">
+                          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            placeholder="Pesquisar por nome..."
+                            className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-slate-300 outline-none transition-all"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            autoFocus
+                          />
+                        </div>
+                      </div>
+                      <div className="max-h-60 overflow-y-auto p-1 custom-scrollbar">
+                        {filteredMembers.map((member) => (
+                          <button
+                            key={member.id}
+                            onClick={() => {
+                              setSelectedMember(member.id);
+                              fetchDashboardData(member.id);
+                              setIsDropdownOpen(false);
+                              setSearchTerm("");
+                            }}
+                            className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center justify-between
+                              ${selectedMember === member.id ? `bg-${config.theme}-50 text-${config.theme}-700 font-semibold` : 'text-slate-600 hover:bg-slate-50'}
+                            `}
+                          >
+                            <span className="truncate">{member.name}</span>
+                          </button>
+                        ))}
+                        {filteredMembers.length === 0 && (
+                          <div className="px-3 py-4 text-center text-sm text-slate-500">
+                            Nenhum paciente encontrado.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -169,24 +231,19 @@ export default function HomePage() {
 
           <div className={`mt-12 bg-white/90 backdrop-blur rounded-xl p-6 shadow-sm border border-${config.theme}-100`}>
             <h3 className="text-xl font-bold text-slate-800 mb-6 border-b pb-4">
-              {selectedMember === "ALL" 
-                ? (user?.role === 'EMPLOYEE' ? config.tableTitleSelf : config.tableTitleTeam)
-                : `Histórico Específico`}
+              {user?.role === 'EMPLOYEE' ? config.tableTitleSelf : config.tableTitleTeam}
             </h3>
             
             {workouts.length === 0 ? (
-              <p className="text-slate-600 text-center py-6">Ainda não há registos para mostrar neste filtro.</p>
+              <p className="text-slate-600 text-center py-6">Ainda não há registos para mostrar neste paciente.</p>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Data</TableHead>
-                      {(user?.role === 'HR_MANAGER' || user?.role === 'ADMIN') && selectedMember === "ALL" && (
-                        <TableHead className={`font-semibold text-${config.theme}-700`}>{config.colMember}</TableHead>
-                      )}
                       <TableHead>{config.colActivity}</TableHead>
-                      <TableHead>{config.colDuration}</TableHead> 
+                      <TableHead>{config.colDuration}</TableHead>
                       <TableHead>{config.colIntensity}</TableHead>
                       <TableHead>Peso</TableHead>
                       <TableHead>Observações</TableHead>
@@ -199,12 +256,6 @@ export default function HomePage() {
                         <TableCell className="font-medium text-slate-700">
                           {new Date(workout.createdAt).toLocaleDateString('pt-PT')}
                         </TableCell>
-                        
-                        {(user?.role === 'HR_MANAGER' || user?.role === 'ADMIN') && selectedMember === "ALL" && (
-                          <TableCell className="font-semibold text-slate-800">
-                            {workout.user?.name || "Desconhecido"}
-                          </TableCell>
-                        )}
                         
                         <TableCell className={`font-medium text-${config.theme}-600`}>{workout.activityType}</TableCell>
                         <TableCell className="text-slate-600">

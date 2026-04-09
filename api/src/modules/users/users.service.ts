@@ -40,4 +40,10 @@ export class UsersService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async findOne(id: string) {
+    return this.prisma.user.findUnique({
+      where: { id: id },
+    });
+  }
 }

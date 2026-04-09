@@ -6,7 +6,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // Lembre-se que aqui no código não vai a URL, ela fica no prisma.config.ts / .env
 }
 
 // Tabela 1: Usuários
@@ -23,6 +22,28 @@ model User {
   goal        String?      // Objetivo (Para Personal/Nutri)
   companyName String?      // Nome da Empresa / Consultório
   profession  String?      // Área de Atuação (RH, Personal, etc)
+  gender        String?    // Sexo Biológico (M/F)
+  height        Float?     // Altura em cm
+  initialWeight Float?     // Peso inicial na primeira consulta
+  allergies     String?    // Alergias / Intolerâncias
+  pathologies   String?    // Patologias (Diabetes, HAS, etc)
+
+  // ESTILO DE VIDA
+  typicalSleep         String?    // Horas de sono por noite
+  stressLevel          Int?       // Nível de estresse (1-5)
+  foodRelationship     String?    // Relação com a comida / Compulsão
+  psychologyHistory    String?    // Acompanhamento psicológico
+
+  // ATIVIDADE FÍSICA
+  exerciseType         String?    // Pratica exercício? Qual?
+  exerciseFrequency    String?    // Frequência semanal
+  exerciseDuration     String?    // Duração média
+  hasPersonal          String?    // Tem personal/assessoria?
+  workActivityLevel    String?    // Nível de atividade no trabalho
+
+  // OBSERVAÇÕES DO PROFISSIONAL (Privado)
+  nutritionistNotes    String?    @db.Text
+
   managerId   String?      // O ID do gestor que criou esta conta
   manager     User?        @relation("UserToManager", fields: [managerId], references: [id])
   employees   User[]       @relation("UserToManager")
