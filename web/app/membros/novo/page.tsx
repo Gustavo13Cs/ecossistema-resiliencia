@@ -47,9 +47,9 @@ export default function NovoMembroPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      {/* MUDANÇA 1: De max-w-4xl para max-w-6xl para alargar muito mais a tela */}
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-50 py-8">
+      {/* Container Fluido */}
+      <div className="w-full px-6 md:px-12 lg:px-20 mx-auto space-y-6">
         <div className="flex items-center gap-4 mb-8">
           <Link href="/membros">
             <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-200">
@@ -70,30 +70,29 @@ export default function NovoMembroPage() {
             <CardDescription>Preencha os dados iniciais detalhadamente.</CardDescription>
           </CardHeader>
           
-          <CardContent className="pt-8 px-8 md:px-12">
+          <CardContent className="pt-8 px-8 md:px-16 lg:px-24">
             <form onSubmit={handleSubmit} className="space-y-10">
               
               <div className="space-y-5">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider border-b pb-2">Identificação e Acesso</h3>
-                {/* MUDANÇA 2: Grelha de 4 colunas para a primeira secção */}
-                <div className="grid grid-cols-4 gap-6">
-                  <div className="space-y-2 col-span-4 lg:col-span-2">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                  <div className="space-y-2 md:col-span-2">
                     <Label>Nome Completo</Label>
                     <Input required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })}/>
                   </div>
-                  <div className="space-y-2 col-span-2 lg:col-span-1">
+                  <div className="space-y-2 md:col-span-1">
                     <Label>E-mail (Login)</Label>
                     <Input type="email" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })}/>
                   </div>
-                  <div className="space-y-2 col-span-2 lg:col-span-1">
+                  <div className="space-y-2 md:col-span-1">
                     <Label>Senha Inicial</Label>
                     <Input type="password" required value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })}/>
                   </div>
-                  <div className="space-y-2 col-span-2">
+                  <div className="space-y-2 md:col-span-2">
                     <Label>WhatsApp</Label>
                     <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })}/>
                   </div>
-                  <div className="space-y-2 col-span-2">
+                  <div className="space-y-2 md:col-span-2">
                     <Label>Nascimento</Label>
                     <Input type="date" value={formData.birthDate} onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}/>
                   </div>
@@ -104,27 +103,26 @@ export default function NovoMembroPage() {
                 <>
                   <div className="space-y-5 bg-teal-50/50 p-8 rounded-2xl border border-teal-100">
                     <h3 className="text-sm font-bold text-teal-700 uppercase tracking-wider border-b border-teal-200 pb-2">Saúde Física</h3>
-                    {/* Grelha de 6 colunas para alinhar perfeitamente */}
-                    <div className="grid grid-cols-6 gap-6">
-                      <div className="space-y-2 col-span-2">
+                    <div className="grid grid-cols-1 xl:grid-cols-6 gap-8">
+                      <div className="space-y-2 xl:col-span-2">
                         <Label>Sexo</Label>
                         <select className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm" value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })}>
                           <option value="">Selecione</option><option value="M">Masc</option><option value="F">Fem</option>
                         </select>
                       </div>
-                      <div className="space-y-2 col-span-2">
+                      <div className="space-y-2 xl:col-span-2">
                         <Label>Altura (cm)</Label>
                         <Input type="number" value={formData.height} onChange={(e) => setFormData({ ...formData, height: e.target.value })}/>
                       </div>
-                      <div className="space-y-2 col-span-2">
+                      <div className="space-y-2 xl:col-span-2">
                         <Label>Peso Inicial (kg)</Label>
                         <Input type="number" step="0.1" value={formData.initialWeight} onChange={(e) => setFormData({ ...formData, initialWeight: e.target.value })}/>
                       </div>
-                      <div className="space-y-2 col-span-3">
+                      <div className="space-y-2 xl:col-span-3">
                         <Label>Alergias / Intolerâncias</Label>
                         <Input placeholder="Ex: Lactose, Glúten..." value={formData.allergies} onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}/>
                       </div>
-                      <div className="space-y-2 col-span-3">
+                      <div className="space-y-2 xl:col-span-3">
                         <Label>Patologias Diagnósticadas</Label>
                         <Input placeholder="Ex: Diabetes, Hipertensão..." value={formData.pathologies} onChange={(e) => setFormData({ ...formData, pathologies: e.target.value })}/>
                       </div>
@@ -133,20 +131,20 @@ export default function NovoMembroPage() {
 
                   <div className="space-y-5 bg-amber-50/50 p-8 rounded-2xl border border-amber-100">
                     <h3 className="text-sm font-bold text-amber-700 uppercase tracking-wider border-b border-amber-200 pb-2">Estilo de Vida e Comportamento</h3>
-                    <div className="grid grid-cols-4 gap-6">
-                      <div className="space-y-2 col-span-2">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                      <div className="space-y-2 md:col-span-2">
                         <Label>Profissão / Rotina</Label>
                         <Input value={formData.typicalSleep} onChange={(e) => setFormData({ ...formData, typicalSleep: e.target.value })}/>
                       </div>
-                      <div className="space-y-2 col-span-2">
+                      <div className="space-y-2 md:col-span-2">
                         <Label>Nível de Estresse (1-5)</Label>
                         <Input type="number" min="1" max="5" value={formData.stressLevel} onChange={(e) => setFormData({ ...formData, stressLevel: e.target.value })}/>
                       </div>
-                      <div className="space-y-2 col-span-2">
+                      <div className="space-y-2 md:col-span-2">
                         <Label>Relação com Comida / Compulsão</Label>
                         <Input value={formData.foodRelationship} onChange={(e) => setFormData({ ...formData, foodRelationship: e.target.value })}/>
                       </div>
-                      <div className="space-y-2 col-span-2">
+                      <div className="space-y-2 md:col-span-2">
                         <Label>Acompanhamento Psicológico?</Label>
                         <Input value={formData.psychologyHistory} onChange={(e) => setFormData({ ...formData, psychologyHistory: e.target.value })}/>
                       </div>
@@ -155,21 +153,20 @@ export default function NovoMembroPage() {
 
                   <div className="space-y-5 bg-indigo-50/50 p-8 rounded-2xl border border-indigo-100">
                     <h3 className="text-sm font-bold text-indigo-700 uppercase tracking-wider border-b border-indigo-200 pb-2">Atividade Física</h3>
-                    {/* Tudo lado a lado (4 colunas) */}
-                    <div className="grid grid-cols-4 gap-6">
-                      <div className="space-y-2 col-span-1">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                      <div className="space-y-2">
                         <Label>Pratica Exercício?</Label>
                         <Input placeholder="Ex: Musculação" value={formData.exerciseType} onChange={(e) => setFormData({ ...formData, exerciseType: e.target.value })}/>
                       </div>
-                      <div className="space-y-2 col-span-1">
+                      <div className="space-y-2">
                         <Label>Frequência Semanal</Label>
                         <Input placeholder="Ex: 3x na semana" value={formData.exerciseFrequency} onChange={(e) => setFormData({ ...formData, exerciseFrequency: e.target.value })}/>
                       </div>
-                      <div className="space-y-2 col-span-1">
+                      <div className="space-y-2">
                         <Label>Duração</Label>
                         <Input placeholder="Ex: 60 min" value={formData.exerciseDuration} onChange={(e) => setFormData({ ...formData, exerciseDuration: e.target.value })}/>
                       </div>
-                      <div className="space-y-2 col-span-1">
+                      <div className="space-y-2">
                         <Label>Tem Personal?</Label>
                         <Input placeholder="Sim/Não" value={formData.hasPersonal} onChange={(e) => setFormData({ ...formData, hasPersonal: e.target.value })}/>
                       </div>

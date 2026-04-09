@@ -17,14 +17,11 @@ export default function FichaPacientePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (params.id) {
-      fetchPatient()
-    }
+    if (params.id) fetchPatient()
   }, [params.id])
 
   const fetchPatient = async () => {
     try {
-      // Busca os dados específicos deste paciente
       const response = await api.get(`/users/${params.id}`)
       setPatient(response.data)
     } catch (error) {
@@ -34,9 +31,8 @@ export default function FichaPacientePage() {
     }
   }
 
-  // Componente auxiliar para deixar o código limpo e os dados bonitos!
   const DataBlock = ({ label, value }: { label: string, value: any }) => (
-    <div className="space-y-1 bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+    <div className="space-y-1 bg-white p-4 rounded-lg border border-slate-100 shadow-sm w-full">
       <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{label}</span>
       <p className="text-sm font-medium text-slate-800">{value || <span className="text-slate-300">-</span>}</p>
     </div>
@@ -48,10 +44,10 @@ export default function FichaPacientePage() {
   const isNutri = loggedInUser?.businessContext === 'NUTRITIONIST'
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-50 py-8">
+      {/* Container Fluido */}
+      <div className="w-full px-6 md:px-12 lg:px-20 mx-auto space-y-8">
         
-        {/* CABEÇALHO DA FICHA */}
         <div className="flex items-center justify-between mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <div className="flex items-center gap-6">
             <Link href="/membros">
@@ -59,8 +55,8 @@ export default function FichaPacientePage() {
                 <ArrowLeft className="w-5 h-5 text-slate-600" />
               </Button>
             </Link>
-            <div className="flex items-center gap-4">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold
+            <div className="flex items-center gap-5">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold shadow-sm
                 ${isNutri ? 'bg-teal-100 text-teal-600' : 'bg-blue-100 text-blue-600'}`}>
                 {patient.name.charAt(0).toUpperCase()}
               </div>
@@ -71,31 +67,30 @@ export default function FichaPacientePage() {
             </div>
           </div>
           
-          <Button variant="outline" className="hidden md:flex">
+          <Button variant="outline" className="hidden md:flex shadow-sm">
             Editar Cadastro
           </Button>
         </div>
 
-        {/* CORPO DO PRONTUÁRIO */}
-        <div className="grid lg:grid-cols-3 gap-6">
+        {/* Divisão inteligente do espaço com grid-cols-12 */}
+        <div className="grid lg:grid-cols-12 gap-8">
           
-          {/* COLUNA ESQUERDA: Dados Básicos */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* LADO ESQUERDO: Coluna mais estreita para dados rápidos (3/12 da tela) */}
+          <div className="lg:col-span-3 space-y-6">
             <Card className="shadow-sm border-0">
               <CardHeader className="bg-slate-50 border-b border-slate-100 py-4">
                 <CardTitle className="text-base flex items-center gap-2 text-slate-700">
-                  <User className="w-4 h-4" /> Identificação e Contato
+                  <User className="w-4 h-4" /> Identificação
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-5 space-y-4 bg-slate-50/30">
                 <DataBlock label="E-mail" value={patient.email} />
                 <DataBlock label="WhatsApp" value={patient.phone} />
-                <DataBlock label="Data de Nascimento" value={patient.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-PT') : null} />
+                <DataBlock label="Nascimento" value={patient.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-PT') : null} />
                 <DataBlock label="Sexo" value={patient.gender === 'M' ? 'Masculino' : patient.gender === 'F' ? 'Feminino' : null} />
               </CardContent>
             </Card>
 
-            {/* Apenas mostra observações se for Nutri */}
             {isNutri && patient.nutritionistNotes && (
               <Card className="shadow-sm border-0 border-l-4 border-l-slate-600">
                 <CardHeader className="bg-slate-100 border-b border-slate-200 py-4">
@@ -112,11 +107,10 @@ export default function FichaPacientePage() {
             )}
           </div>
 
-          {/* COLUNA DIREITA: Anamnese Larga */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* LADO DIREITO: Coluna ampla para Anamnese (9/12 da tela) */}
+          <div className="lg:col-span-9 space-y-6">
             {isNutri ? (
               <>
-                {/* SAÚDE FÍSICA E ANTROPOMETRIA */}
                 <Card className="shadow-sm border-0 border-t-4 border-t-teal-500">
                   <CardHeader className="bg-white border-b border-slate-100 py-4">
                     <CardTitle className="text-base flex items-center gap-2 text-teal-700">
@@ -124,7 +118,7 @@ export default function FichaPacientePage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-6 bg-slate-50/50">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
                       <DataBlock label="Altura" value={patient.height ? `${patient.height} cm` : null} />
                       <DataBlock label="Peso Inicial" value={patient.initialWeight ? `${patient.initialWeight} kg` : null} />
                       <div className="col-span-2">
@@ -135,7 +129,6 @@ export default function FichaPacientePage() {
                   </CardContent>
                 </Card>
 
-                {/* ESTILO DE VIDA */}
                 <Card className="shadow-sm border-0 border-t-4 border-t-amber-500">
                   <CardHeader className="bg-white border-b border-slate-100 py-4">
                     <CardTitle className="text-base flex items-center gap-2 text-amber-700">
@@ -143,16 +136,19 @@ export default function FichaPacientePage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-6 bg-slate-50/50">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <DataBlock label="Profissão / Rotina" value={patient.typicalSleep} />
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+                      <div className="col-span-2">
+                        <DataBlock label="Profissão / Rotina" value={patient.typicalSleep} />
+                      </div>
                       <DataBlock label="Nível de Estresse (1-5)" value={patient.stressLevel ? `${patient.stressLevel}/5` : null} />
                       <DataBlock label="Relação com Comida" value={patient.foodRelationship} />
-                      <DataBlock label="Acompanhamento Psicológico" value={patient.psychologyHistory} />
+                      <div className="col-span-full">
+                        <DataBlock label="Acompanhamento Psicológico" value={patient.psychologyHistory} />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* ATIVIDADE FÍSICA */}
                 <Card className="shadow-sm border-0 border-t-4 border-t-indigo-500">
                   <CardHeader className="bg-white border-b border-slate-100 py-4">
                     <CardTitle className="text-base flex items-center gap-2 text-indigo-700">
@@ -160,7 +156,7 @@ export default function FichaPacientePage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-6 bg-slate-50/50">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
                       <DataBlock label="Pratica Exercício?" value={patient.exerciseType} />
                       <DataBlock label="Frequência" value={patient.exerciseFrequency} />
                       <DataBlock label="Duração" value={patient.exerciseDuration} />
@@ -170,7 +166,7 @@ export default function FichaPacientePage() {
                 </Card>
               </>
             ) : (
-              <div className="flex items-center justify-center h-full bg-white rounded-xl border border-slate-200 text-slate-400">
+              <div className="flex items-center justify-center h-full bg-white rounded-xl border border-slate-200 text-slate-400 p-12">
                 Este perfil não possui dados clínicos avançados.
               </div>
             )}

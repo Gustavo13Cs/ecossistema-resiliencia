@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { SportSelector } from "@/components/sport-selector"
 import { Button } from "@/components/ui/button"
-import { LogOut, Filter, Search, ChevronDown } from "lucide-react" 
+import { LogOut, Filter, Search, ChevronDown } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { api } from "@/lib/api"
 import { ResilienceChart } from "@/components/resilience-chart"
@@ -18,7 +18,6 @@ export default function HomePage() {
   const [teamMembers, setTeamMembers] = useState<any[]>([])
   const [selectedMember, setSelectedMember] = useState("")
 
-  // NOVOS ESTADOS PARA O DROPDOWN DE PESQUISA
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
 
@@ -42,19 +41,16 @@ export default function HomePage() {
 
   const config = dashboardConfig[user?.businessContext || "PERSONAL_TRAINER"] || dashboardConfig["PERSONAL_TRAINER"]
 
-  // Função atualizada: Sem o "ALL". Busca dados exatos.
   const fetchDashboardData = async (memberId?: string) => {
     try {
       let historyRes;
 
       if (user?.role === 'EMPLOYEE') {
-        // Se for aluno, busca o próprio diário
         historyRes = await api.get("/workouts")
       } else if (memberId) {
-        // Se for Gestor, busca o diário do aluno selecionado
         historyRes = await api.get(`/users/${memberId}/workouts`)
       } else {
-        return; // Gestor sem aluno selecionado não faz nada
+        return; 
       }
 
       const userWorkouts = historyRes.data
@@ -83,7 +79,6 @@ export default function HomePage() {
           const usersRes = await api.get("/users")
           if (usersRes.data && usersRes.data.length > 0) {
             setTeamMembers(usersRes.data)
-            // MAGIA: Auto-seleciona o PRIMEIRO paciente da lista logo ao entrar!
             const firstMemberId = usersRes.data[0].id
             setSelectedMember(firstMemberId)
             fetchDashboardData(firstMemberId)
@@ -92,7 +87,6 @@ export default function HomePage() {
           console.error("Erro ao buscar membros", error)
         }
       } else {
-        // Aluno carrega direto os seus dados
         fetchDashboardData()
       }
     }
@@ -100,15 +94,15 @@ export default function HomePage() {
     loadInitialSetup()
   }, [user])
 
-  // Filtra a lista de membros baseada no que foi digitado
   const filteredMembers = teamMembers.filter(m => 
     m.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 pb-12">
+      {/* HEADER FLUIDO - Ocupa 100% da tela com margens laterais dinâmicas */}
       <header className={`bg-white/80 backdrop-blur border-b border-${config.theme}-100 sticky top-0 z-50`}>
-        <div className="container mx-auto px-4 py-4">
+        <div className="w-full px-6 md:px-12 lg:px-20 py-4">
           <div className="flex items-center justify-between">
             <h1 className={`text-2xl font-bold bg-gradient-to-r from-${config.theme}-600 to-${config.theme}-400 bg-clip-text text-transparent`}>
               SafeMove B2B
@@ -127,8 +121,9 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-8">
+      {/* CORPO FLUIDO - Acompanha as margens do cabeçalho */}
+      <main className="w-full px-6 md:px-12 lg:px-20 py-8">
+        <div className="space-y-8">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div className="space-y-1">
@@ -138,7 +133,6 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* O NOVO DROPDOWN PESQUISÁVEL PREMIUM */}
             {(user?.role === 'HR_MANAGER' || user?.role === 'ADMIN') && teamMembers.length > 0 && (
               <div className="relative">
                 <button
@@ -156,10 +150,7 @@ export default function HomePage() {
 
                 {isDropdownOpen && (
                   <>
-                    {/* Overlay invisível para fechar ao clicar fora */}
                     <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)}></div>
-
-                    {/* O Menu em si */}
                     <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
                       <div className="p-2 border-b border-slate-100 bg-slate-50/50">
                         <div className="relative">
@@ -204,18 +195,18 @@ export default function HomePage() {
             )}
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className={`bg-white/90 backdrop-blur rounded-xl p-4 text-center shadow-sm border border-${config.theme}-100 transition-all`}>
-              <div className={`text-3xl font-bold text-${config.theme}-600`}>{metrics.totalWorkouts}</div>
-              <div className="text-sm font-medium text-slate-600 mt-1">{config.metric1}</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className={`bg-white/90 backdrop-blur rounded-xl p-6 text-center shadow-sm border border-${config.theme}-100 transition-all`}>
+              <div className={`text-4xl font-bold text-${config.theme}-600`}>{metrics.totalWorkouts}</div>
+              <div className="text-sm font-medium text-slate-600 mt-2 uppercase tracking-wider">{config.metric1}</div>
             </div>
-            <div className="bg-white/90 backdrop-blur rounded-xl p-4 text-center shadow-sm border border-slate-200 transition-all">
-              <div className="text-3xl font-bold text-slate-700">{metrics.averageSleep}h</div>
-              <div className="text-sm font-medium text-slate-600 mt-1">Média de Sono</div>
+            <div className="bg-white/90 backdrop-blur rounded-xl p-6 text-center shadow-sm border border-slate-200 transition-all">
+              <div className="text-4xl font-bold text-slate-700">{metrics.averageSleep}h</div>
+              <div className="text-sm font-medium text-slate-600 mt-2 uppercase tracking-wider">Média de Sono</div>
             </div>
-            <div className="bg-white/90 backdrop-blur rounded-xl p-4 text-center shadow-sm border border-slate-200 transition-all">
-              <div className="text-3xl font-bold text-slate-700">{metrics.averageMood} <span className="text-lg text-slate-400">/ 5</span></div>
-              <div className="text-sm font-medium text-slate-600 mt-1">Humor Geral</div>
+            <div className="bg-white/90 backdrop-blur rounded-xl p-6 text-center shadow-sm border border-slate-200 transition-all">
+              <div className="text-4xl font-bold text-slate-700">{metrics.averageMood} <span className="text-xl text-slate-400">/ 5</span></div>
+              <div className="text-sm font-medium text-slate-600 mt-2 uppercase tracking-wider">Humor Geral</div>
             </div>
           </div>
 
@@ -229,8 +220,8 @@ export default function HomePage() {
             <ResilienceChart workouts={workouts} />
           </div>
 
-          <div className={`mt-12 bg-white/90 backdrop-blur rounded-xl p-6 shadow-sm border border-${config.theme}-100`}>
-            <h3 className="text-xl font-bold text-slate-800 mb-6 border-b pb-4">
+          <div className={`mt-12 bg-white/90 backdrop-blur rounded-xl p-8 shadow-sm border border-${config.theme}-100`}>
+            <h3 className="text-2xl font-bold text-slate-800 mb-6 border-b pb-4">
               {user?.role === 'EMPLOYEE' ? config.tableTitleSelf : config.tableTitleTeam}
             </h3>
             
@@ -240,50 +231,45 @@ export default function HomePage() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Data</TableHead>
-                      <TableHead>{config.colActivity}</TableHead>
-                      <TableHead>{config.colDuration}</TableHead>
-                      <TableHead>{config.colIntensity}</TableHead>
-                      <TableHead>Peso</TableHead>
-                      <TableHead>Observações</TableHead>
-                      <TableHead className="text-right">Sono / Humor</TableHead>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="py-4 font-semibold text-slate-700">Data</TableHead>
+                      <TableHead className="font-semibold text-slate-700">{config.colActivity}</TableHead>
+                      <TableHead className="font-semibold text-slate-700">{config.colDuration}</TableHead>
+                      <TableHead className="font-semibold text-slate-700">{config.colIntensity}</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Peso</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Observações</TableHead>
+                      <TableHead className="text-right font-semibold text-slate-700">Sono / Humor</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {workouts.map((workout) => (
-                      <TableRow key={workout.id}>
-                        <TableCell className="font-medium text-slate-700">
+                      <TableRow key={workout.id} className="hover:bg-slate-50 transition-colors">
+                        <TableCell className="font-medium text-slate-800 py-4">
                           {new Date(workout.createdAt).toLocaleDateString('pt-PT')}
                         </TableCell>
-                        
                         <TableCell className={`font-medium text-${config.theme}-600`}>{workout.activityType}</TableCell>
                         <TableCell className="text-slate-600">
                           {workout.durationMinutes} {config.theme === 'teal' ? '' : 'min'}
                         </TableCell>
-
                         <TableCell>
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border
+                          <span className={`px-3 py-1.5 rounded-full text-xs font-semibold border
                             ${workout.intensity === 'LEVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
                               workout.intensity === 'MODERADO' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
                               'bg-rose-50 text-rose-700 border-rose-200'}`}>
                             {config.intensityLabels[workout.intensity] || workout.intensity}
                           </span>
                         </TableCell>
-
                         <TableCell className="font-medium text-slate-600">
                           {workout.weight ? `${workout.weight} kg` : '-'}
                         </TableCell>
-
                         <TableCell 
-                          className="max-w-[200px] truncate text-slate-500 text-sm cursor-help" 
+                          className="max-w-[300px] truncate text-slate-500 text-sm cursor-help" 
                           title={workout.notes || "Sem observações"}
                         >
                           {workout.notes || '-'}
                         </TableCell>
-
-                        <TableCell className="text-right text-slate-600">
-                          {workout.sleepHours ? `${workout.sleepHours}h` : '-'} / {workout.moodLevel ? `Nível ${workout.moodLevel}` : '-'}
+                        <TableCell className="text-right text-slate-600 font-medium">
+                          {workout.sleepHours ? `${workout.sleepHours}h` : '-'} <span className="mx-2 text-slate-300">|</span> {workout.moodLevel ? `Nível ${workout.moodLevel}` : '-'}
                         </TableCell>
                       </TableRow>
                     ))}

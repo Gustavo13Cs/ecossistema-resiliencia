@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { api } from "@/lib/api"
-import { Eye, ArrowLeft, UserPlus, Apple } from "lucide-react" 
+import { Eye, ArrowLeft, UserPlus, Apple } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 
@@ -29,8 +29,9 @@ export default function MembrosPage() {
   const isNutri = user?.businessContext === 'NUTRITIONIST'
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-50 py-8">
+      {/* Container Fluido */}
+      <div className="w-full px-6 md:px-12 lg:px-20 mx-auto space-y-8">
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -48,6 +49,7 @@ export default function MembrosPage() {
               </p>
             </div>
           </div>
+
           <Link href="/membros/novo">
             <Button className={`h-12 px-6 shadow-md text-base ${isNutri ? 'bg-teal-600 hover:bg-teal-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
               <UserPlus className="w-5 h-5 mr-2" />
@@ -67,25 +69,25 @@ export default function MembrosPage() {
               <Table>
                 <TableHeader className="bg-white">
                   <TableRow>
-                    <TableHead className="py-4">Nome do Paciente</TableHead>
-                    <TableHead>E-mail / Contato</TableHead>
-                    <TableHead>Ingresso</TableHead>
-                    <TableHead className="text-right">Ações Rápidas</TableHead>
+                    <TableHead className="py-4 px-6">Nome do Paciente</TableHead>
+                    <TableHead className="px-6">E-mail / Contato</TableHead>
+                    <TableHead className="px-6">Ingresso</TableHead>
+                    <TableHead className="text-right px-6">Ações Rápidas</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.map((u) => (
                     <TableRow key={u.id} className="hover:bg-slate-50 transition-colors">
-                      <TableCell className="font-semibold text-slate-700 py-4">{u.name}</TableCell>
-                      <TableCell className="text-slate-500">
+                      <TableCell className="font-semibold text-slate-700 py-4 px-6">{u.name}</TableCell>
+                      <TableCell className="text-slate-500 px-6">
                         {u.email}
                         {u.phone && <span className="block text-xs text-slate-400 mt-1">{u.phone}</span>}
                       </TableCell>
-                      <TableCell className="text-slate-500 font-medium">
+                      <TableCell className="text-slate-500 font-medium px-6">
                         {new Date(u.createdAt).toLocaleDateString('pt-PT')}
                       </TableCell>
                       
-                      <TableCell className="text-right space-x-2">
+                      <TableCell className="text-right space-x-2 px-6">
                         {isNutri && (
                           <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" title="Criar Dieta (Em breve)">
                             <Apple className="w-4 h-4 mr-1" /> Dieta
