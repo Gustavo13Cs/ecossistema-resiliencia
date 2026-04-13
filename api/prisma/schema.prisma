@@ -1,5 +1,3 @@
-// api/prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -22,6 +20,7 @@ model User {
   goal        String?      // Objetivo (Para Personal/Nutri)
   companyName String?      // Nome da Empresa / Consultório
   profession  String?      // Área de Atuação (RH, Personal, etc)
+  
   gender        String?    // Sexo Biológico (M/F)
   height        Float?     // Altura em cm
   initialWeight Float?     // Peso inicial na primeira consulta
@@ -50,26 +49,25 @@ model User {
 
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  
   workoutLogs WorkoutLog[]
+  diets       DietPlan[]   @relation("UserDiets") // Relação com as dietas
 }
 
 // Tabela 2: O Core da Resiliência Física e Mental
 model WorkoutLog {
   id              String   @id @default(uuid())
   
-  // Saúde Física
   activityType    String   // Ex: Musculação, Corrida, Yoga, Meditação
   durationMinutes Int      // Duração em minutos
   intensity       String   // Ex: LEVE, MODERADO, INTENSO
   
-  // Saúde Mental e Recuperação
   sleepHours      Float?   // Horas de sono na noite anterior
   moodLevel       Int?     // Nível de humor de 1 a 5
 
   notes           String?  // Campo de texto para as observações do aluno
   weight          Float?   // Peso em kg
   
-  // A Chave Estrangeira (De quem é esse treino?)
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -82,4 +80,87 @@ enum Role {
   ADMIN
   HR_MANAGER
   EMPLOYEE
+}
+
+
+// Tabela 3: O Planeamento Nutricional
+model DietPlan {
+  id          String   @id @default(uuid())
+  title       String   // Ex: "Fase 1 - Emagrecimento Agressivo"
+  goal        String   // Emagrecimento, Manutenção, Hipertrofia
+  
+  tmb         Float?   // Taxa Metabólica Basal calculada
+  get         Float?   // Gasto Energético Total
+  targetKcal  Float    // A meta final de calorias após o déficit/superávit
+  
+  proteinG    Float    
+  fatG        Float    
+  carbsG      Float    
+  
+  notes       String?  @db.Text 
+
+  userId      String   
+  user        User     @relation("UserDiets", fields: [userId], references: [id], onDelete: Cascade)
+  creatorId   String   // ID do Nutricionista que montou
+
+  isActive    Boolean  @default(true) // Para sabermos qual é a dieta atual do aluno
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  meals       Meal[]   @relation("DietMeals")
+
+  @@map("diet_plans")
+}
+
+// 4. Tabela de Alimentos (Base de Dados TACO/IBGE)
+model Food {
+  id          String     @id @default(uuid())
+  name        String     // Ex: "Arroz branco cozido"
+  baseUnit    String     @default("100g") // Padrão de cálculo
+  baseAmount  Float      @default(100)
+  kcal        Float
+  protein     Float
+  carbs       Float
+  fat         Float
+  
+  mealItems   MealItem[] // Histórico de onde este alimento foi usado
+
+  createdAt   DateTime   @default(now())
+
+  @@map("foods")
+}
+
+// 5. Refeições do Plano (Ex: Café da Manhã)
+model Meal {
+  id          String     @id @default(uuid())
+  name        String     // Ex: "Café da Manhã", "Pré-Treino"
+  time        String?    // Ex: "08:30"
+  notes       String?    // Ex: "Consumir 30 min antes do treino"
+  
+  // Ligação com a Dieta do Aluno
+  dietPlanId  String
+  dietPlan    DietPlan   @relation("DietMeals", fields: [dietPlanId], references: [id], onDelete: Cascade)
+  
+  // Os alimentos que estão dentro desta refeição
+  items       MealItem[] @relation("MealToItems")
+  
+  @@map("meals")
+}
+
+// 6. O Alimento exato na quantidade exata para o Aluno
+model MealItem {
+  id          String     @id @default(uuid())
+  quantity    Float      // Ex: 150 (Quantidade receitada)
+  measure     String     // Ex: "g", "colheres de sopa", "unidade"
+  notes       String?    // Ex: "Substitutos: Batata doce ou Mandioca"
+  
+  // Em qual refeição isto está?
+  mealId      String
+  meal        Meal       @relation("MealToItems", fields: [mealId], references: [id], onDelete: Cascade)
+  
+  // Qual é o alimento da tabela TACO?
+  foodId      String
+  food        Food       @relation(fields: [foodId], references: [id])
+  
+  @@map("meal_items")
 }

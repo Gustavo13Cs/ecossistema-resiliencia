@@ -88,10 +88,12 @@ export default function MembrosPage() {
                       </TableCell>
                       
                       <TableCell className="text-right space-x-2 px-6">
-                        {isNutri && (
-                          <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" title="Criar Dieta (Em breve)">
-                            <Apple className="w-4 h-4 mr-1" /> Dieta
-                          </Button>
+                       {isNutri && (
+                          <Link href={`/membros/${u.id}/nova-dieta`}>
+                            <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" title="Montar Cardápio">
+                              <Apple className="w-4 h-4 mr-1" /> Dieta
+                            </Button>
+                          </Link>
                         )}
                         <Link href={`/membros/${u.id}`}>
                           <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
