@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Plus, Search, Trash2, Utensils, CheckCircle2, FilePlus } from "lucide-react"
+import { ArrowLeft, Plus, Search, Trash2, Utensils, CheckCircle2, FilePlus, Target } from "lucide-react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/api"
@@ -16,13 +16,17 @@ export default function NovaDietaPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
-  const [dietInfo, setDietInfo] = useState({ title: "Fase 1 - Adaptação", goal: "Emagrecimento" })
-  const [targets] = useState({ kcal: 1800, pro: 140, carb: 180, fat: 55 })
+  const [dietInfo, setDietInfo] = useState({ 
+    title: "Fase 1 - Adaptação", 
+    goal: "Emagrecimento",
+    notes: "" 
+  })
+
+  const [targets, setTargets] = useState({ kcal: 2000, pro: 150, carb: 200, fat: 60 })
 
   const [meals, setMeals] = useState([
-    { id: `m${Date.now()}`, name: "Café da Manhã", time: "08:00", items: [] as any[] }
+    { id: `m${Date.now()}`, name: "Café da Manhã", time: "08:00", notes: "", items: [] as any[] }
   ])
-
 
   const [activeMealId, setActiveMealId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -35,14 +39,41 @@ export default function NovaDietaPage() {
 
   useEffect(() => {
     fetchFoods()
+    fetchActiveDiet() 
   }, [])
-
   const fetchFoods = async () => {
     try {
       const response = await api.get('/foods')
       setAvailableFoods(response.data)
     } catch (error) {
-      console.error("Erro ao buscar alimentos da base TACO", error)
+      console.error("Erro ao buscar alimentos", error)
+    }
+  }
+
+  const fetchActiveDiet = async () => {
+    try {
+      const response = await api.get(`/diet-plans/user/${params.id}/active`)
+      const diet = response.data
+
+      if (diet) {
+        setDietInfo({ title: diet.title, goal: diet.goal, notes: diet.notes || "" })
+        setTargets({ kcal: diet.targetKcal, pro: diet.proteinG, carb: diet.carbsG, fat: diet.fatG })
+        
+        const formattedMeals = diet.meals.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          time: m.time,
+          items: m.items.map((i: any) => ({
+            id: i.id,
+            quantity: i.quantity,
+            food: i.food 
+          }))
+        }))
+        
+        setMeals(formattedMeals)
+      }
+    } catch (error) {
+      console.error("Erro ao buscar dieta ativa", error)
     }
   }
 
@@ -52,8 +83,8 @@ export default function NovaDietaPage() {
       meal.items.forEach(item => {
         const ratio = item.quantity / 100
         kcal += item.food.kcal * ratio
-        pro += item.food.protein * ratio 
-        carb += item.food.carbs * ratio  
+        pro += item.food.protein * ratio
+        carb += item.food.carbs * ratio
         fat += item.food.fat * ratio
       })
     })
@@ -61,7 +92,7 @@ export default function NovaDietaPage() {
   }, [meals])
 
   const addMeal = () => {
-    const newMeal = { id: `m${Date.now()}`, name: "Nova Refeição", time: "12:00", items: [] }
+    const newMeal = { id: `m${Date.now()}`, name: "Nova Refeição", time: "12:00", notes: "", items: [] }
     setMeals([...meals, newMeal])
   }
 
@@ -79,7 +110,6 @@ export default function NovaDietaPage() {
     }))
     closeModal()
   }
-
 
   const handleCreateManualFood = async () => {
     if (!newFood.name.trim()) return
@@ -138,7 +168,7 @@ export default function NovaDietaPage() {
           items: m.items.map(item => ({
             quantity: item.quantity,
             measure: "g",
-            foodId: item.food.id 
+            foodId: item.food.id
           }))
         }))
       }
@@ -174,53 +204,89 @@ export default function NovaDietaPage() {
           </Button>
         </div>
 
-        {/* ... LADO ESQUERDO: TOTALIZADOR (Sem alterações visuais, apenas usando a lógica real) */}
         <div className="grid lg:grid-cols-12 gap-8 items-start">
+          
+          {/* LADO ESQUERDO: PAINEL DE METAS DINÂMICO */}
           <div className="lg:col-span-3 space-y-6 sticky top-8">
             <Card className="border-0 shadow-lg overflow-hidden">
+              
+              {/* STATUS E METAS CALÓRICAS */}
               <div className="bg-slate-800 p-6 text-white">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-1">Status da Dieta</h3>
-                <Input value={dietInfo.title} onChange={e => setDietInfo({...dietInfo, title: e.target.value})} className="bg-slate-700 border-none text-white font-bold text-lg mb-3" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nome do Plano</h3>
+                <Input value={dietInfo.title} onChange={e => setDietInfo({...dietInfo, title: e.target.value})} className="bg-slate-700 border-slate-600 text-white font-bold text-sm mb-4 focus:ring-teal-500" placeholder="Ex: Fase 1 - Emagrecimento" />
                 
-                <div className="mt-6">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-slate-400">Calorias (Kcal)</span>
-                    <span className="font-bold">{currentTotals.kcal} / {targets.kcal}</span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Objetivo Principal</h3>
+                <select value={dietInfo.goal} onChange={e => setDietInfo({...dietInfo, goal: e.target.value})} className="flex h-10 w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-white mb-6 focus:ring-teal-500 outline-none">
+                  <option value="Emagrecimento">Emagrecimento</option>
+                  <option value="Hipertrofia">Hipertrofia</option>
+                  <option value="Manutenção">Manutenção</option>
+                  <option value="Performance">Performance Clínica</option>
+                </select>
+                
+                <div className="pt-4 border-t border-slate-700">
+                  <div className="flex justify-between items-center text-sm mb-3">
+                    <span className="text-slate-300 font-semibold flex items-center gap-1"><Target className="w-4 h-4 text-teal-400"/> Meta (Kcal)</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-lg text-white">{currentTotals.kcal}</span>
+                      <span className="text-slate-500">/</span>
+                      {/* O NUTRI PODE DIGITAR A META CALÓRICA AQUI 👇 */}
+                      <Input type="number" value={targets.kcal} onChange={e => setTargets({...targets, kcal: Number(e.target.value)})} className="w-20 h-8 text-center bg-slate-900 border-slate-600 text-teal-400 font-bold" />
+                    </div>
                   </div>
                   <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
-                    <div className="h-full bg-teal-400" style={{ width: `${Math.min((currentTotals.kcal / targets.kcal) * 100, 100)}%` }}></div>
+                    <div className="h-full bg-teal-400 transition-all duration-500" style={{ width: `${Math.min((currentTotals.kcal / (targets.kcal || 1)) * 100, 100)}%` }}></div>
                   </div>
-                  {currentTotals.kcal > targets.kcal && <span className="text-xs text-rose-400 font-bold mt-1 block">Aviso: Ultrapassou a meta!</span>}
+                  {currentTotals.kcal > targets.kcal && <span className="text-xs text-rose-400 font-bold mt-2 block">⚠️ Meta calórica ultrapassada!</span>}
                 </div>
               </div>
 
-              <CardContent className="p-6 space-y-5 bg-white">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b pb-2">Distribuição de Macros</h4>
+              {/* METAS DE MACROS DINÂMICAS */}
+              <CardContent className="p-6 space-y-6 bg-white">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b pb-2">Metas de Macros (g)</h4>
+                
+                {/* Proteína */}
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
+                  <div className="flex justify-between items-center mb-2 text-sm">
                     <span className="font-semibold text-rose-600">Proteína</span>
-                    <span className="font-bold text-slate-700">{currentTotals.pro}g <span className="text-slate-400 text-xs">/ {targets.pro}g</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-700">{currentTotals.pro}g</span>
+                      <span className="text-slate-400 text-xs">de</span>
+                      {/* O NUTRI PODE DIGITAR A META DE PROTEÍNA AQUI 👇 */}
+                      <Input type="number" value={targets.pro} onChange={e => setTargets({...targets, pro: Number(e.target.value)})} className="w-16 h-7 text-xs text-center border-slate-300 p-1" />
+                    </div>
                   </div>
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-rose-500" style={{ width: `${Math.min((currentTotals.pro / targets.pro) * 100, 100)}%` }}></div>
+                    <div className="h-full bg-rose-500 transition-all duration-500" style={{ width: `${Math.min((currentTotals.pro / (targets.pro || 1)) * 100, 100)}%` }}></div>
                   </div>
                 </div>
+
+                {/* Carboidrato */}
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
+                  <div className="flex justify-between items-center mb-2 text-sm">
                     <span className="font-semibold text-emerald-600">Carboidrato</span>
-                    <span className="font-bold text-slate-700">{currentTotals.carb}g <span className="text-slate-400 text-xs">/ {targets.carb}g</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-700">{currentTotals.carb}g</span>
+                      <span className="text-slate-400 text-xs">de</span>
+                      <Input type="number" value={targets.carb} onChange={e => setTargets({...targets, carb: Number(e.target.value)})} className="w-16 h-7 text-xs text-center border-slate-300 p-1" />
+                    </div>
                   </div>
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500" style={{ width: `${Math.min((currentTotals.carb / targets.carb) * 100, 100)}%` }}></div>
+                    <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${Math.min((currentTotals.carb / (targets.carb || 1)) * 100, 100)}%` }}></div>
                   </div>
                 </div>
+
+                {/* Gordura */}
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
+                  <div className="flex justify-between items-center mb-2 text-sm">
                     <span className="font-semibold text-amber-600">Gordura</span>
-                    <span className="font-bold text-slate-700">{currentTotals.fat}g <span className="text-slate-400 text-xs">/ {targets.fat}g</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-700">{currentTotals.fat}g</span>
+                      <span className="text-slate-400 text-xs">de</span>
+                      <Input type="number" value={targets.fat} onChange={e => setTargets({...targets, fat: Number(e.target.value)})} className="w-16 h-7 text-xs text-center border-slate-300 p-1" />
+                    </div>
                   </div>
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-500" style={{ width: `${Math.min((currentTotals.fat / targets.fat) * 100, 100)}%` }}></div>
+                    <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${Math.min((currentTotals.fat / (targets.fat || 1)) * 100, 100)}%` }}></div>
                   </div>
                 </div>
               </CardContent>
@@ -278,6 +344,22 @@ export default function NovaDietaPage() {
                     <Button variant="outline" className="w-full border-dashed text-teal-600 hover:bg-teal-50" onClick={() => setActiveMealId(meal.id)}>
                       <Search className="w-4 h-4 mr-2" /> Buscar e Adicionar Alimento
                     </Button>
+
+                    <div className="mt-2">
+                      <Label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2 mb-2">
+                        <Plus className="w-3 h-3 text-teal-500"/> Substituições e Observações desta Refeição
+                      </Label>
+                      <textarea 
+                        value={meal.notes || ""} 
+                        onChange={(e) => {
+                          const newMeals = [...meals];
+                          newMeals[index].notes = e.target.value;
+                          setMeals(newMeals);
+                        }}
+                        placeholder='Ex: "Substituir Frango por 4 Ovos cozidos ou 120g de Tilápia. Evitar sucos nesta refeição."'
+                        className="w-full min-h-[80px] p-3 text-sm bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-teal-500 outline-none text-slate-700 placeholder:text-slate-300 transition-all"
+                      />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -286,6 +368,25 @@ export default function NovaDietaPage() {
             <Button onClick={addMeal} className="w-full h-14 border-2 border-dashed border-slate-300 bg-transparent hover:bg-slate-50 text-slate-600 font-semibold text-lg">
               <Plus className="w-5 h-5 mr-2" /> Adicionar Novo Horário / Refeição
             </Button>
+
+            <Card className="border-0 shadow-lg bg-teal-900 text-white mt-12 overflow-hidden">
+              <CardHeader className="border-b border-teal-800 bg-teal-950/30">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FilePlus className="w-5 h-5 text-teal-400" /> Orientações Gerais e Conduta do Plano
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <textarea 
+                  value={dietInfo.notes}
+                  onChange={(e) => setDietInfo({...dietInfo, notes: e.target.value})}
+                  placeholder="Escreva as diretrizes do plano: hidratação, sono, suplementação geral, o que evitar, como preparar os alimentos..."
+                  className="w-full min-h-[150px] p-4 bg-teal-950/40 border border-teal-700/50 rounded-xl text-teal-50 placeholder:text-teal-600 focus:ring-1 focus:ring-teal-400 outline-none transition-all"
+                />
+                <p className="mt-4 text-xs text-teal-400 italic">
+                  * Estas orientações aparecerão no topo do aplicativo para o seu paciente.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

@@ -143,6 +143,7 @@ model Meal {
   
   // Os alimentos que estão dentro desta refeição
   items       MealItem[] @relation("MealToItems")
+  isConsumed Boolean    @default(false)
   
   @@map("meals")
 }
