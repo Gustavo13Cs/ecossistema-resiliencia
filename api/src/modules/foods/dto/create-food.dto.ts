@@ -23,4 +23,24 @@ export class CreateFoodDto {
 
   @IsNumber()
   fat!: number;
+
+
+  @IsOptional()
+  @IsString()
+  source?: string; 
+
+  @IsOptional()
+  @IsNumber()
+  fiber?: number;  
+
+  @IsOptional()
+  @IsNumber()
+  sodium?: number; 
+
+  @IsOptional()
+  @IsNumber()
+  calcium?: number;
+  @IsOptional()
+  @IsNumber()
+  iron?: number; 
 }

@@ -112,23 +112,34 @@ model DietPlan {
   @@map("diet_plans")
 }
 
-// 4. Tabela de Alimentos (Base de Dados TACO/IBGE)
+// 4. Tabela de Alimentos
 model Food {
-  id          String     @id @default(uuid())
-  name        String     // Ex: "Arroz branco cozido"
-  baseUnit    String     @default("100g") // Padrão de cálculo
-  baseAmount  Float      @default(100)
+  id          String   @id @default(uuid())
+  name        String
+  baseUnit    String   @default("100g")
+  baseAmount  Float    @default(100)
+  
+  // 📊 Macronutrientes Principais
   kcal        Float
   protein     Float
   carbs       Float
   fat         Float
+
+  source      String   @default("MANUAL") 
+  fiber       Float    @default(0)        
+  sodium      Float    @default(0)        
+  calcium     Float    @default(0)        
+  iron        Float    @default(0)        
+
+  // 🔗 Relação
+  mealItems   MealItem[] 
   
-  mealItems   MealItem[] // Histórico de onde este alimento foi usado
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  createdAt   DateTime   @default(now())
-
-  @@map("foods")
+  @@map("foods") 
 }
+
 
 // 5. Refeições do Plano (Ex: Café da Manhã)
 model Meal {

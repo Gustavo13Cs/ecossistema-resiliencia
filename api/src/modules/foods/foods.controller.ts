@@ -9,19 +9,17 @@ export class FoodsController {
   constructor(private readonly foodsService: FoodsService) {}
 
   @Get('search')
-  search(@Query('q') query: string) {
-    return this.foodsService.searchFoods(query);
+  search(@Query('q') query: string, @Query('source') source?: string) {
+    return this.foodsService.searchFoods(query, source);
   }
 
-  // 📝 ROTA ORIGINAL: Mantém o cadastro manual a funcionar perfeitamente
   @Post()
   create(@Body() createFoodDto: CreateFoodDto) {
     return this.foodsService.create(createFoodDto);
   }
 
-  // 📋 ROTA ORIGINAL: Mantém a listagem inicial
   @Get()
-  findAll() {
-    return this.foodsService.findAll();
+  findAll(@Query('source') source?: string) {
+    return this.foodsService.findAll(source);
   }
 }

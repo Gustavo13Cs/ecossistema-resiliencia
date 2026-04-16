@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Plus, Search, Trash2, Utensils, CheckCircle2, FilePlus, Target, Printer, Save, Loader2 } from "lucide-react"
+import { ArrowLeft, Plus, Search, Trash2, Utensils, CheckCircle2, FilePlus, Target, Printer, Save, Loader2, Database } from "lucide-react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/api"
@@ -31,16 +31,25 @@ export default function NovaDietaPage() {
 
   const [activeMealId, setActiveMealId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [isSearching, setIsSearching] = useState(false) // Novo estado para o loading da pesquisa
+  const [isSearching, setIsSearching] = useState(false)
   const [amountToAdd, setAmountToAdd] = useState(100)
   
-  const [availableFoods, setAvailableFoods] = useState<any[]>([])
+  const [selectedSource, setSelectedSource] = useState("TODAS")
   
+  const [availableFoods, setAvailableFoods] = useState<any[]>([])
   const [isCreatingManual, setIsCreatingManual] = useState(false)
-  const [newFood, setNewFood] = useState({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0 })
+  
+  const [newFood, setNewFood] = useState({ 
+    name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 
+  })
 
   useEffect(() => {
-    fetchFoods()
+    if (searchTerm.length === 0) {
+      fetchFoods(selectedSource)
+    }
+  }, [selectedSource])
+
+  useEffect(() => {
     loadInitialData() 
   }, [])
 
@@ -73,14 +82,12 @@ export default function NovaDietaPage() {
     localStorage.setItem(draftKey, JSON.stringify(draftData))
   }, [dietInfo, targets, meals, isRestored, params.id])
 
-  // 🚀 O DEBOUNCE: Escuta a digitação e pesquisa na API híbrida
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (searchTerm.length >= 2) {
         setIsSearching(true)
         try {
-          // Bate na nossa nova rota que busca no Local + FatSecret
-          const response = await api.get(`/foods/search?q=${searchTerm}`)
+          const response = await api.get(`/foods/search?q=${searchTerm}&source=${selectedSource}`)
           setAvailableFoods(response.data)
         } catch (error) {
           console.error("Erro na busca de alimentos", error)
@@ -88,16 +95,16 @@ export default function NovaDietaPage() {
           setIsSearching(false)
         }
       } else if (searchTerm.length === 0) {
-        fetchFoods() // Volta para a lista padrão se apagar tudo
+        fetchFoods(selectedSource) 
       }
-    }, 500) // Espera meio segundo após parar de digitar
+    }, 500)
 
     return () => clearTimeout(delayDebounceFn)
-  }, [searchTerm])
+  }, [searchTerm, selectedSource])
 
-  const fetchFoods = async () => {
+  const fetchFoods = async (source = "TODAS") => {
     try {
-      const response = await api.get('/foods')
+      const response = await api.get(`/foods?source=${source}`)
       setAvailableFoods(response.data)
     } catch (error) {
       console.error("Erro ao buscar alimentos", error)
@@ -155,36 +162,9 @@ export default function NovaDietaPage() {
     setMeals(meals.filter(m => m.id !== mealId))
   }
 
-  // 🪄 O ASSIMILADOR: Adiciona à refeição, salvando no banco local se for do FatSecret
   const addFoodToMeal = async (food: any, quantity: number = amountToAdd) => {
     if (!activeMealId) return
-
-    let finalFood = food
-
-    // Se veio do FatSecret, salvamos silenciosamente no nosso banco primeiro
-    if (food.isExternal) {
-      toast.loading("A importar dados do alimento...", { id: "import-food" })
-      try {
-        const payload = {
-          name: food.name,
-          baseUnit: food.baseUnit,
-          baseAmount: food.baseAmount,
-          kcal: food.kcal,
-          protein: food.protein,
-          carbs: food.carbs,
-          fat: food.fat
-        }
-        const res = await api.post('/foods', payload)
-        finalFood = res.data // Pega a ID oficial gerada pelo nosso PostgreSQL
-        toast.success("Alimento importado com sucesso!", { id: "import-food" })
-      } catch (error) {
-        toast.error("Erro ao importar alimento global.", { id: "import-food" })
-        return // Aborta se falhar
-      }
-    }
-
-    const newItem = { id: `i${Date.now()}`, quantity: quantity, food: finalFood }
-    
+    const newItem = { id: `i${Date.now()}`, quantity: quantity, food: food }
     setMeals(meals.map(m => {
       if (m.id === activeMealId) return { ...m, items: [...m.items, newItem] }
       return m
@@ -203,7 +183,12 @@ export default function NovaDietaPage() {
         kcal: Number(newFood.kcal),
         protein: Number(newFood.pro),
         carbs: Number(newFood.carb),
-        fat: Number(newFood.fat)
+        fat: Number(newFood.fat),
+        fiber: Number(newFood.fiber),
+        sodium: Number(newFood.sodium),
+        calcium: Number(newFood.calcium),
+        iron: Number(newFood.iron),
+        source: "MANUAL" // 🌟 Garante que este alimento vai para a aba "MANUAL"
       }
 
       const response = await api.post('/foods', customFoodPayload)
@@ -211,7 +196,7 @@ export default function NovaDietaPage() {
 
       setAvailableFoods([createdFood, ...availableFoods])
       addFoodToMeal(createdFood, amountToAdd)
-      toast.success("Alimento manual cadastrado com sucesso!")
+      toast.success("Alimento cadastrado e adicionado com sucesso!")
     } catch (error) {
       toast.error("Erro ao cadastrar alimento manual.")
     }
@@ -229,7 +214,7 @@ export default function NovaDietaPage() {
     setSearchTerm("")
     setAmountToAdd(100)
     setIsCreatingManual(false)
-    setNewFood({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0 })
+    setNewFood({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 })
   }
 
   const handleSaveDiet = async () => {
@@ -251,7 +236,7 @@ export default function NovaDietaPage() {
           items: m.items.map(item => ({
             quantity: item.quantity,
             measure: "g",
-            foodId: item.food.id // Aqui usamos a ID oficial com segurança
+            foodId: item.food.id 
           }))
         }))
       }
@@ -271,6 +256,15 @@ export default function NovaDietaPage() {
   const discardDraft = () => {
     localStorage.removeItem(`diet_draft_${params.id}`)
     window.location.reload() 
+  }
+
+  // 🌟 NOVO: Cores bonitinhas para as Badges das Tabelas
+  const getSourceBadgeColor = (source: string) => {
+    if (source === 'TACO') return 'bg-emerald-100 text-emerald-700'
+    if (source === 'IBGE') return 'bg-blue-100 text-blue-700'
+    if (source === 'TBCA') return 'bg-amber-100 text-amber-700'
+    if (source === 'MANUAL') return 'bg-purple-100 text-purple-700'
+    return 'bg-slate-100 text-slate-700'
   }
 
   return (
@@ -314,7 +308,7 @@ export default function NovaDietaPage() {
 
         <div className="grid lg:grid-cols-12 gap-8 items-start print:block print:gap-0">
           
-          {/* LADO ESQUERDO: METAS E MACROS */}
+          {/* LADO ESQUERDO: METAS E MACROS (MANTIDO INTACTO) */}
           <div className="lg:col-span-3 space-y-6 sticky top-8 print:hidden">
              
              <Card className="border-0 shadow-lg bg-white overflow-hidden">
@@ -340,12 +334,10 @@ export default function NovaDietaPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-5 space-y-5">
-                
                 <div className="space-y-2">
                    <Label className="text-xs font-bold text-slate-500 uppercase">Meta de Kcal</Label>
                    <Input type="number" value={targets.kcal} onChange={(e) => setTargets({...targets, kcal: Number(e.target.value)})} className="font-bold text-slate-800" />
                 </div>
-
                 <div className="space-y-2">
                   <div className={`flex justify-between items-center p-3 rounded-lg border transition-all duration-500 ${currentTotals.kcal > targets.kcal ? 'bg-rose-50 border-rose-200' : currentTotals.kcal >= targets.kcal * 0.9 ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
                     <span className="font-bold text-slate-600 text-sm">Calculado</span>
@@ -406,7 +398,6 @@ export default function NovaDietaPage() {
                       <div className={`h-full transition-all duration-500 ${currentTotals.fat > targets.fat ? 'bg-rose-500' : currentTotals.fat >= targets.fat * 0.9 ? 'bg-amber-400' : 'bg-slate-400'}`} style={{ width: `${Math.min((currentTotals.fat / (targets.fat || 1)) * 100, 100)}%` }}></div>
                     </div>
                   </div>
-
                 </div>
               </CardContent>
             </Card>
@@ -476,12 +467,6 @@ export default function NovaDietaPage() {
                       </Label>
                       <textarea value={meal.notes || ""} onChange={(e) => { const newMeals = [...meals]; newMeals[index].notes = e.target.value; setMeals(newMeals); }} placeholder='Ex: "Substituir Frango por 4 Ovos cozidos ou 120g de Tilápia. Evitar sucos nesta refeição."' className="w-full min-h-[80px] p-3 text-sm bg-white border border-slate-200 rounded-lg outline-none" />
                     </div>
-
-                    {meal.notes && (
-                      <div className="hidden print:block mt-1 p-3 bg-slate-50 rounded-lg text-sm text-slate-700 italic border-l-4 border-teal-500">
-                        <strong className="text-teal-700 not-italic mr-1">Substituições:</strong> {meal.notes}
-                      </div>
-                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -499,31 +484,21 @@ export default function NovaDietaPage() {
                 <textarea value={dietInfo.notes} onChange={(e) => setDietInfo({...dietInfo, notes: e.target.value})} placeholder="Escreva as diretrizes do plano: hidratação, sono, suplementação geral..." className="w-full min-h-[150px] p-4 bg-teal-950/40 border border-teal-700/50 rounded-xl text-teal-50 outline-none" />
               </CardContent>
             </Card>
-
-            {dietInfo.notes && (
-              <div className="hidden print:block mt-8 p-6 border-2 border-teal-600 bg-teal-50/50 rounded-xl break-inside-avoid">
-                <h3 className="text-lg font-bold text-teal-800 mb-3 flex items-center gap-2">
-                  <FilePlus className="w-5 h-5" /> Orientações Gerais e Conduta
-                </h3>
-                <p className="whitespace-pre-wrap text-slate-700 text-sm leading-relaxed">{dietInfo.notes}</p>
-              </div>
-            )}
-            
           </div>
         </div>
       </div>
 
-      {/* MODAL DE PESQUISA / CADASTRO */}
+      {/* MODAL DE PESQUISA / CADASTRO COM FILTROS */}
       {activeMealId && (
         <>
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40" onClick={closeModal}></div>
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[85vh]">
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]">
             
             <div className="p-5 border-b border-slate-100 bg-slate-50 shrink-0">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                  <Utensils className="w-5 h-5 text-teal-600" /> 
-                  {isCreatingManual ? "Cadastrar Alimento Manual" : "Adicionar Alimento (Global)"}
+                  <Database className="w-5 h-5 text-teal-600" /> 
+                  {isCreatingManual ? "Criar Alimento Personalizado" : "Banco de Alimentos"}
                 </h3>
                 <Button variant="outline" size="sm" onClick={() => setIsCreatingManual(!isCreatingManual)} className="text-teal-600 border-teal-200 hover:bg-teal-50">
                   {isCreatingManual ? <><Search className="w-4 h-4 mr-2"/> Voltar para Busca</> : <><FilePlus className="w-4 h-4 mr-2"/> Cadastrar Manualmente</>}
@@ -531,87 +506,110 @@ export default function NovaDietaPage() {
               </div>
 
               {!isCreatingManual && (
-                <div className="flex gap-3 relative">
-                  <Input 
-                    placeholder="Pesquise no FatSecret ou banco local..." 
-                    value={searchTerm} 
-                    onChange={e => setSearchTerm(e.target.value)} 
-                    autoFocus 
-                    className="bg-white pr-10" 
-                  />
-                  {isSearching && (
-                    <Loader2 className="w-4 h-4 text-teal-500 animate-spin absolute right-40 top-3" />
-                  )}
-                  <div className="flex items-center gap-2 bg-white px-3 rounded-md border border-slate-200 w-32 shrink-0">
-                    <Input type="number" value={amountToAdd} onChange={e => setAmountToAdd(Number(e.target.value))} className="border-0 p-0 h-8 text-center font-bold" />
-                    <span className="text-sm font-semibold text-slate-400">g</span>
+                <>
+                  <div className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide">
+                    {["TODAS", "TACO", "IBGE", "TBCA", "MANUAL"].map(source => (
+                      <Button
+                        key={source}
+                        variant={selectedSource === source ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedSource(source)}
+                        className={`rounded-full px-4 font-semibold ${selectedSource === source ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-md' : 'bg-white text-slate-500 hover:text-slate-700 border-slate-200'}`}
+                      >
+                        {source}
+                      </Button>
+                    ))}
                   </div>
-                </div>
+
+                  <div className="flex gap-3 relative">
+                    <Input 
+                      placeholder={`Pesquise em ${selectedSource}...`}
+                      value={searchTerm} 
+                      onChange={e => setSearchTerm(e.target.value)} 
+                      autoFocus 
+                      className="bg-white pr-10" 
+                    />
+                    {isSearching && (
+                      <Loader2 className="w-4 h-4 text-teal-500 animate-spin absolute right-40 top-3" />
+                    )}
+                    <div className="flex items-center gap-2 bg-white px-3 rounded-md border border-slate-200 w-32 shrink-0">
+                      <Input type="number" value={amountToAdd} onChange={e => setAmountToAdd(Number(e.target.value))} className="border-0 p-0 h-8 text-center font-bold" />
+                      <span className="text-sm font-semibold text-slate-400">g</span>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
             
-            <div className="overflow-y-auto p-2 flex-1">
+            <div className="overflow-y-auto flex-1">
               {isCreatingManual ? (
                 <div className="p-6 space-y-6">
                   <div className="space-y-2">
-                    <Label>Nome do Alimento / Receita</Label>
-                    <Input placeholder="Ex: Bolo da Avó, Mistura X..." value={newFood.name} onChange={e => setNewFood({...newFood, name: e.target.value})} />
+                    <Label className="text-slate-700 font-bold">Nome do Alimento / Receita</Label>
+                    <Input placeholder="Ex: Crepioca da Nutri, Mistura X..." value={newFood.name} onChange={e => setNewFood({...newFood, name: e.target.value})} className="h-12 text-lg" />
                   </div>
                   
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <p className="text-xs text-slate-500 font-bold uppercase mb-4 text-center">Referência Nutricional (Por 100g do alimento)</p>
+                  <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                    <p className="text-xs text-slate-500 font-bold uppercase mb-4">Macros Principais (Por 100g)</p>
                     <div className="grid grid-cols-4 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-slate-600">Kcal</Label>
-                        <Input type="number" value={newFood.kcal} onChange={e => setNewFood({...newFood, kcal: Number(e.target.value)})} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-rose-600">Proteína (g)</Label>
-                        <Input type="number" value={newFood.pro} onChange={e => setNewFood({...newFood, pro: Number(e.target.value)})} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-emerald-600">Carbo (g)</Label>
-                        <Input type="number" value={newFood.carb} onChange={e => setNewFood({...newFood, carb: Number(e.target.value)})} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-amber-600">Gordura (g)</Label>
-                        <Input type="number" value={newFood.fat} onChange={e => setNewFood({...newFood, fat: Number(e.target.value)})} />
-                      </div>
+                      <div className="space-y-2"><Label className="text-slate-600">Kcal</Label><Input type="number" value={newFood.kcal} onChange={e => setNewFood({...newFood, kcal: Number(e.target.value)})} /></div>
+                      <div className="space-y-2"><Label className="text-rose-600">Proteína (g)</Label><Input type="number" value={newFood.pro} onChange={e => setNewFood({...newFood, pro: Number(e.target.value)})} /></div>
+                      <div className="space-y-2"><Label className="text-emerald-600">Carbo (g)</Label><Input type="number" value={newFood.carb} onChange={e => setNewFood({...newFood, carb: Number(e.target.value)})} /></div>
+                      <div className="space-y-2"><Label className="text-amber-600">Gordura (g)</Label><Input type="number" value={newFood.fat} onChange={e => setNewFood({...newFood, fat: Number(e.target.value)})} /></div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                    <p className="text-xs text-slate-500 font-bold uppercase mb-4 flex items-center gap-2">
+                      <Database className="w-3 h-3" /> Micronutrientes & Extras (Opcional)
+                    </p>
+                    <div className="grid grid-cols-4 gap-4">
+                      <div className="space-y-2"><Label className="text-indigo-600 text-xs">Fibras (g)</Label><Input type="number" value={newFood.fiber} onChange={e => setNewFood({...newFood, fiber: Number(e.target.value)})} /></div>
+                      <div className="space-y-2"><Label className="text-slate-600 text-xs">Sódio (mg)</Label><Input type="number" value={newFood.sodium} onChange={e => setNewFood({...newFood, sodium: Number(e.target.value)})} /></div>
+                      <div className="space-y-2"><Label className="text-slate-600 text-xs">Cálcio (mg)</Label><Input type="number" value={newFood.calcium} onChange={e => setNewFood({...newFood, calcium: Number(e.target.value)})} /></div>
+                      <div className="space-y-2"><Label className="text-slate-600 text-xs">Ferro (mg)</Label><Input type="number" value={newFood.iron} onChange={e => setNewFood({...newFood, iron: Number(e.target.value)})} /></div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 pt-4 border-t border-slate-100">
+                  <div className="flex items-center gap-4 pt-4 border-t border-slate-100 pb-4">
                     <div className="flex items-center gap-2 bg-slate-50 px-3 rounded-md border border-slate-200 w-48">
                       <Label className="text-xs whitespace-nowrap text-slate-500">Adicionar à dieta:</Label>
                       <Input type="number" value={amountToAdd} onChange={e => setAmountToAdd(Number(e.target.value))} className="border-0 p-0 h-10 text-center font-bold bg-transparent" />
                       <span className="text-sm font-semibold text-slate-400">g</span>
                     </div>
-                    <Button onClick={handleCreateManualFood} className="flex-1 h-10 bg-teal-600 hover:bg-teal-700">
-                      Salvar Alimento e Adicionar
+                    <Button onClick={handleCreateManualFood} className="flex-1 h-10 bg-teal-600 hover:bg-teal-700 font-bold">
+                      Salvar na Base e Adicionar
                     </Button>
                   </div>
                 </div>
               ) : (
-                <div>
+                <div className="p-2">
                   {availableFoods.map(food => (
-                    <div key={food.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg cursor-pointer border-b border-slate-50" onClick={() => addFoodToMeal(food)}>
+                    <div key={food.id} className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-xl cursor-pointer border border-transparent hover:border-slate-100 transition-all mb-1" onClick={() => addFoodToMeal(food)}>
                       <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-slate-800">{food.name}</p>
-                          {food.isExternal && <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Global</span>}
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-bold text-slate-800">{food.name}</p>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-sm uppercase tracking-wider ${getSourceBadgeColor(food.source)}`}>
+                            {food.source || 'MANUAL'}
+                          </span>
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">Por 100g: {food.kcal} kcal | PTN {food.protein}g</p>
+                        <p className="text-xs font-medium text-slate-500">
+                          {food.kcal} kcal | <span className="text-rose-500">P: {food.protein}g</span> | <span className="text-emerald-500">C: {food.carbs}g</span> | <span className="text-amber-500">G: {food.fat}g</span>
+                        </p>
                       </div>
-                      <Button size="sm" variant="secondary" className="bg-teal-100 text-teal-700 hover:bg-teal-200">
-                        Adicionar
+                      <Button size="sm" variant="secondary" className="bg-teal-50 text-teal-700 hover:bg-teal-100 hover:text-teal-800 font-bold border border-teal-200">
+                        <Plus className="w-4 h-4 mr-1" /> Add
                       </Button>
                     </div>
                   ))}
-                  {availableFoods.length === 0 && !isSearching && searchTerm.length > 0 && (
-                    <div className="p-8 text-center">
-                      <p className="text-slate-500 mb-4">Nenhum alimento encontrado na base global.</p>
-                      <Button variant="outline" onClick={() => setIsCreatingManual(true)}>
-                        <FilePlus className="w-4 h-4 mr-2" /> Cadastrar Manualmente
+                  {availableFoods.length === 0 && !isSearching && (
+                    <div className="p-12 flex flex-col items-center justify-center text-center">
+                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                        <Search className="w-8 h-8 text-slate-300" />
+                      </div>
+                      <p className="text-slate-600 font-semibold mb-2">Nenhum alimento encontrado na tabela {selectedSource}.</p>
+                      <p className="text-slate-400 text-sm mb-6 max-w-sm">Tente mudar o filtro de tabelas no topo ou adicione o alimento manualmente à sua base de dados.</p>
+                      <Button onClick={() => setIsCreatingManual(true)} className="bg-slate-800 hover:bg-slate-900 text-white">
+                        <FilePlus className="w-4 h-4 mr-2" /> Cadastrar Novo Alimento
                       </Button>
                     </div>
                   )}
