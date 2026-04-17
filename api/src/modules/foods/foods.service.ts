@@ -26,7 +26,7 @@ export class FoodsService implements OnModuleInit {
       if (!exists) {
         await this.prisma.food.create({ data: food });
       } else {
-        //await this.prisma.food.update({ where: { id: exists.id }, data: { source: 'TACO' } });
+        await this.prisma.food.update({ where: { id: exists.id }, data: { source: 'TACO' } });
       }
     }
   }
@@ -64,5 +64,17 @@ export class FoodsService implements OnModuleInit {
       orderBy: { name: 'asc' },
       take: 50
     });
+  }
+
+  async update(id: string, data: Partial<CreateFoodDto>) {
+    return this.prisma.food.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async remove(id: string) {
+    await this.prisma.mealItem.deleteMany({ where: { foodId: id } });
+    return this.prisma.food.delete({ where: { id } });
   }
 }

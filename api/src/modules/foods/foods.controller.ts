@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Query, Param, Delete, Put } from '@nestjs/common';
 import { FoodsService } from './foods.service';
 import { CreateFoodDto } from './dto/create-food.dto';
 import { AuthGuard } from '../../common/guards/auth.guard';
@@ -21,5 +21,15 @@ export class FoodsController {
   @Get()
   findAll(@Query('source') source?: string) {
     return this.foodsService.findAll(source);
+  }
+
+  @Put(':id')
+  update(@Param('id') id: string, @Body() updateFoodDto: Partial<CreateFoodDto>) {
+    return this.foodsService.update(id, updateFoodDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.foodsService.remove(id);
   }
 }
