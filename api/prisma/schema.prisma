@@ -52,6 +52,8 @@ model User {
   
   workoutLogs WorkoutLog[]
   diets       DietPlan[]   @relation("UserDiets") // Relação com as dietas
+
+  assessments PhysicalAssessment[] @relation("UserAssessments")
 }
 
 // Tabela 2: O Core da Resiliência Física e Mental
@@ -88,6 +90,8 @@ model DietPlan {
   id          String   @id @default(uuid())
   title       String   // Ex: "Fase 1 - Emagrecimento Agressivo"
   goal        String   // Emagrecimento, Manutenção, Hipertrofia
+
+  durationDays Int     @default(30)
   
   tmb         Float?   // Taxa Metabólica Basal calculada
   get         Float?   // Gasto Energético Total
@@ -175,4 +179,31 @@ model MealItem {
   food        Food       @relation(fields: [foodId], references: [id])
   
   @@map("meal_items")
+}
+
+// Tabela 7: Avaliações Físicas / Antropometria
+model PhysicalAssessment {
+  id          String   @id @default(uuid())
+  date        DateTime @default(now()) // Data da consulta/avaliação
+  
+  // ⚖️ Medidas Globais
+  weight      Float?   // Peso (kg)
+  bodyFat     Float?   // Percentual de Gordura (%)
+  muscleMass  Float?   // Massa Muscular (kg ou %)
+  
+  // 📏 Circunferências Principais (cm)
+  waist       Float?   // Cintura
+  abdomen     Float?   // Abdômen
+  hips        Float?   // Quadril
+  
+  notes       String?  @db.Text
+
+  // 🔗 Relação com o Paciente
+  userId      String
+  user        User     @relation("UserAssessments", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("physical_assessments")
 }

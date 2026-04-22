@@ -55,6 +55,10 @@ export class CreateDietPlanDto {
   @IsString()
   userId!: string; 
 
+  @IsOptional()
+  @IsNumber()
+  durationDays?: number;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateMealDto)

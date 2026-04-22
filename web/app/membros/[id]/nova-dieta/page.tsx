@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Plus, Search, Trash2, Edit2, CheckCircle2, FilePlus, Target, Printer, Save, Loader2, Database } from "lucide-react"
+import { ArrowLeft, Plus, Search, Trash2, Edit2, CheckCircle2, FilePlus, Target, Printer, Save, Loader2, Database, Share2, ShoppingCart, Smartphone } from "lucide-react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/api"
@@ -17,7 +17,7 @@ export default function NovaDietaPage() {
   const [loading, setLoading] = useState(false)
   const [isRestored, setIsRestored] = useState(false)
 
-  const [dietInfo, setDietInfo] = useState({ title: "Fase 1 - Adaptação", goal: "Emagrecimento", notes: "" })
+  const [dietInfo, setDietInfo] = useState({ title: "Fase 1 - Adaptação", goal: "Emagrecimento", notes: "", durationDays: 30 })
   const [targets, setTargets] = useState({ kcal: 2000, pro: 150, carb: 200, fat: 60 })
 
   const [meals, setMeals] = useState([
@@ -32,12 +32,13 @@ export default function NovaDietaPage() {
   const [selectedSource, setSelectedSource] = useState("TODAS")
   const [availableFoods, setAvailableFoods] = useState<any[]>([])
   const [isCreatingManual, setIsCreatingManual] = useState(false)
-  
   const [editingFoodId, setEditingFoodId] = useState<string | null>(null)
 
-  const [newFood, setNewFood] = useState({ 
-    name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 
-  })
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shoppingDays, setShoppingDays] = useState(30)
+  const [printMode, setPrintMode] = useState<'diet' | 'list'>('diet')
+
+  const [newFood, setNewFood] = useState({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 })
 
   useEffect(() => { if (searchTerm.length === 0) fetchFoods(selectedSource) }, [selectedSource])
   useEffect(() => { loadInitialData() }, [])
@@ -49,7 +50,6 @@ export default function NovaDietaPage() {
       try {
         const parsed = JSON.parse(savedDraft)
         setDietInfo(parsed.dietInfo); setTargets(parsed.targets); setMeals(parsed.meals); setIsRestored(true)
-        toast.info("Rascunho recuperado. Continue de onde parou! 📝")
         return
       } catch (error) { console.error("Erro ao ler rascunho", error) }
     }
@@ -69,7 +69,7 @@ export default function NovaDietaPage() {
         try {
           const res = await api.get(`/foods/search?q=${searchTerm}&source=${selectedSource}`)
           setAvailableFoods(res.data)
-        } catch (error) { console.error("Erro", error) } finally { setIsSearching(false) }
+        } catch (error) {} finally { setIsSearching(false) }
       } else if (searchTerm.length === 0) { fetchFoods(selectedSource) }
     }, 500)
     return () => clearTimeout(delayDebounceFn)
@@ -79,39 +79,45 @@ export default function NovaDietaPage() {
     try {
       const res = await api.get(`/foods?source=${source}`)
       setAvailableFoods(res.data)
-    } catch (error) { console.error("Erro", error) }
+    } catch (error) { }
   }
 
   const fetchActiveDiet = async () => {
     try {
       const res = await api.get(`/diet-plans/user/${params.id}/active`)
       if (res.data) {
-        setDietInfo({ title: res.data.title, goal: res.data.goal, notes: res.data.notes || "" })
+        setDietInfo({ title: res.data.title, goal: res.data.goal, notes: res.data.notes || "", durationDays: res.data.durationDays || 30 })
         setTargets({ kcal: res.data.targetKcal, pro: res.data.proteinG, carb: res.data.carbsG, fat: res.data.fatG })
         setMeals(res.data.meals.map((m: any) => ({
           id: m.id, name: m.name, time: m.time, notes: m.notes || "",
           items: m.items.map((i: any) => ({ id: i.id, quantity: i.quantity, food: i.food }))
         })))
       }
-    } catch (error) { console.error("Erro", error) }
+    } catch (error) { }
   }
 
-  const calcMacro = (value: number, baseAmount: number = 100, targetAmount: number) => {
-    return Number(((value / baseAmount) * targetAmount).toFixed(1))
-  }
+  const calcMacro = (value: number, baseAmount: number = 100, targetAmount: number) => Number(((value / baseAmount) * targetAmount).toFixed(1))
 
   const currentTotals = useMemo(() => {
     let kcal = 0, pro = 0, carb = 0, fat = 0
-    meals.forEach(meal => {
-      meal.items.forEach(item => {
-        kcal += calcMacro(item.food.kcal, item.food.baseAmount, item.quantity)
-        pro += calcMacro(item.food.protein, item.food.baseAmount, item.quantity)
-        carb += calcMacro(item.food.carbs, item.food.baseAmount, item.quantity)
-        fat += calcMacro(item.food.fat, item.food.baseAmount, item.quantity)
-      })
-    })
+    meals.forEach(meal => meal.items.forEach(item => {
+      kcal += calcMacro(item.food.kcal, item.food.baseAmount, item.quantity)
+      pro += calcMacro(item.food.protein, item.food.baseAmount, item.quantity)
+      carb += calcMacro(item.food.carbs, item.food.baseAmount, item.quantity)
+      fat += calcMacro(item.food.fat, item.food.baseAmount, item.quantity)
+    }))
     return { kcal: Math.round(kcal), pro: Math.round(pro), carb: Math.round(carb), fat: Math.round(fat) }
   }, [meals])
+
+  const shoppingList = useMemo(() => {
+    const list: Record<string, number> = {}
+    meals.forEach(meal => meal.items.forEach(item => {
+      const name = item.food.name
+      if(!list[name]) list[name] = 0
+      list[name] += (item.quantity * shoppingDays) 
+    }))
+    return Object.entries(list).map(([name, qty]) => ({ name, qty })).sort((a,b) => b.qty - a.qty)
+  }, [meals, shoppingDays])
 
   const addMeal = () => setMeals([...meals, { id: `m${Date.now()}`, name: "Nova Refeição", time: "12:00", notes: "", items: [] }])
   const removeMeal = (id: string) => setMeals(meals.filter(m => m.id !== id))
@@ -122,68 +128,86 @@ export default function NovaDietaPage() {
     setMeals(meals.map(m => m.id === activeMealId ? { ...m, items: [...m.items, newItem] } : m))
     closeModal()
   }
-
-  const removeFoodFromMeal = (mealId: string, itemId: string) => {
-    setMeals(meals.map(m => m.id === mealId ? { ...m, items: m.items.filter(i => i.id !== itemId) } : m))
-  }
+  const removeFoodFromMeal = (mealId: string, itemId: string) => setMeals(meals.map(m => m.id === mealId ? { ...m, items: m.items.filter(i => i.id !== itemId) } : m))
 
   const handleDeleteFood = async (e: React.MouseEvent, foodId: string) => {
-    e.stopPropagation() 
-    if (!confirm("Tem a certeza que deseja apagar este alimento do seu banco de dados?")) return
-    try {
-      await api.delete(`/foods/${foodId}`)
-      setAvailableFoods(availableFoods.filter(f => f.id !== foodId))
-      toast.success("Alimento apagado!")
-    } catch (error) { toast.error("Erro ao apagar alimento") }
+    e.stopPropagation()
+    if (!confirm("Apagar este alimento da base de dados?")) return
+    try { await api.delete(`/foods/${foodId}`); setAvailableFoods(availableFoods.filter(f => f.id !== foodId)); toast.success("Apagado!") } catch (error) {}
   }
 
   const handleEditFood = (e: React.MouseEvent, food: any) => {
     e.stopPropagation()
     setEditingFoodId(food.id)
-    setNewFood({
-      name: food.name, kcal: food.kcal, pro: food.protein, carb: food.carbs, fat: food.fat,
-      fiber: food.fiber || 0, sodium: food.sodium || 0, calcium: food.calcium || 0, iron: food.iron || 0
-    })
+    setNewFood({ name: food.name, kcal: food.kcal, pro: food.protein, carb: food.carbs, fat: food.fat, fiber: food.fiber || 0, sodium: food.sodium || 0, calcium: food.calcium || 0, iron: food.iron || 0 })
     setIsCreatingManual(true)
   }
 
   const handleSaveManualFood = async () => {
     if (!newFood.name.trim()) return
-    const payload = {
-      name: newFood.name, baseUnit: "100g", baseAmount: 100,
-      kcal: Number(newFood.kcal), protein: Number(newFood.pro), carbs: Number(newFood.carb), fat: Number(newFood.fat),
-      fiber: Number(newFood.fiber), sodium: Number(newFood.sodium), calcium: Number(newFood.calcium), iron: Number(newFood.iron),
-      source: "MANUAL" 
-    }
-
+    const payload = { ...newFood, baseUnit: "100g", baseAmount: 100, source: "MANUAL" }
     try {
       if (editingFoodId) {
-        // Atualiza
         const res = await api.put(`/foods/${editingFoodId}`, payload)
-        setAvailableFoods(availableFoods.map(f => f.id === editingFoodId ? res.data : f))
-        toast.success("Alimento atualizado!")
+        setAvailableFoods(availableFoods.map(f => f.id === editingFoodId ? res.data : f)); toast.success("Atualizado!")
       } else {
-        // Cria novo
         const res = await api.post('/foods', payload)
-        setAvailableFoods([res.data, ...availableFoods])
-        addFoodToMeal(res.data, amountToAdd)
-        toast.success("Alimento cadastrado e adicionado!")
+        setAvailableFoods([res.data, ...availableFoods]); addFoodToMeal(res.data, amountToAdd); toast.success("Cadastrado!")
       }
-      setIsCreatingManual(false)
-      setEditingFoodId(null)
-    } catch (error) { toast.error("Erro ao guardar alimento.") }
+      setIsCreatingManual(false); setEditingFoodId(null)
+    } catch (error) {}
   }
 
-  const closeModal = () => {
-    setActiveMealId(null); setSearchTerm(""); setAmountToAdd(100); setIsCreatingManual(false); setEditingFoodId(null)
-    setNewFood({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 })
+  const closeModal = () => { setActiveMealId(null); setSearchTerm(""); setAmountToAdd(100); setIsCreatingManual(false); setEditingFoodId(null) }
+  const formatQty = (qty: number) => qty >= 1000 ? `${(qty/1000).toFixed(1)} kg` : `${qty} g`
+
+  const handleOpenShareModal = () => {
+    setShoppingDays(dietInfo.durationDays)
+    setShowShareModal(true)
+  }
+
+  const handleWhatsAppShare = () => {
+    let text = "Olá! A sua nova prescrição dietética está pronta. 🍎\n\n";
+    text += `*📋 Fase:* ${dietInfo.title}\n`;
+    text += `*🎯 Objetivo:* ${dietInfo.goal}\n\n`;
+    text += `🛒 *Lista de Compras (${shoppingDays} dias):*\n`;
+    
+    shoppingList.forEach(item => {
+      text += `• ${item.name}: ${formatQty(item.qty)}\n`;
+    });
+    
+    text += "\nLembre-se de verificar o PDF da dieta que enviarei logo abaixo! 💪";
+    
+    const encodedText = encodeURIComponent(text);
+    
+    window.open(`https://api.whatsapp.com/send?text=${encodedText}`, '_blank');
+  }
+
+  const handlePrintDiet = () => { 
+    setPrintMode('diet'); 
+    setShowShareModal(false);
+    setTimeout(() => window.print(), 300) 
+  }
+  
+  const handlePrintList = () => { 
+    setPrintMode('list'); 
+    setShowShareModal(false); 
+    setTimeout(() => window.print(), 300) 
   }
 
   const handleSaveDiet = async () => {
     setLoading(true)
     try {
       const payload = {
-        title: dietInfo.title, goal: dietInfo.goal, targetKcal: targets.kcal, proteinG: targets.pro, carbsG: targets.carb, fatG: targets.fat, userId: params.id, notes: dietInfo.notes,
+        title: dietInfo.title, 
+        goal: dietInfo.goal, 
+        durationDays: dietInfo.durationDays, 
+        targetKcal: targets.kcal, 
+        proteinG: targets.pro, 
+        carbsG: targets.carb, 
+        fatG: targets.fat, 
+        userId: params.id, 
+        notes: dietInfo.notes,
         meals: meals.map(m => ({ name: m.name, time: m.time, notes: m.notes, items: m.items.map(item => ({ quantity: item.quantity, measure: "g", foodId: item.food.id }))}))
       }
       await api.post('/diet-plans', payload)
@@ -204,22 +228,25 @@ export default function NovaDietaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 print:bg-white print:py-4">
-      <div className="w-full px-6 md:px-12 lg:px-20 mx-auto space-y-6 print:px-0 print:max-w-4xl print:space-y-0">
+    <div className="min-h-screen bg-slate-50 py-8 print:bg-white print:py-0">
+      
+      {/* TELA PRINCIPAL E PDF DA DIETA */}
+      <div className={`w-full px-6 md:px-12 lg:px-20 mx-auto space-y-6 print:px-0 print:max-w-4xl print:space-y-0 ${printMode === 'list' ? 'print:hidden' : 'print:block'}`}>
         
         {/* CABEÇALHO */}
         <div className="flex items-center justify-between mb-4 print:hidden">
           <div className="flex items-center gap-4">
             <Link href={`/membros/${params.id}`}><Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-200"><ArrowLeft className="w-5 h-5 text-slate-600" /></Button></Link>
             <div>
-              <div className="flex items-center gap-3"><h1 className="text-3xl font-bold text-slate-800">Prescrição Dietética</h1>{localStorage.getItem(`diet_draft_${params.id}`) && (<span className="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-1 rounded flex items-center gap-1"><Save className="w-3 h-3" /> Rascunho</span>)}</div>
-              <p className="text-slate-500">Ajustes finais e orientações clínicas.</p>
+              <div className="flex items-center gap-3"><h1 className="text-3xl font-bold text-slate-800">Prescrição Dietética</h1></div>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {localStorage.getItem(`diet_draft_${params.id}`) && (<Button onClick={discardDraft} variant="ghost" className="text-rose-500">Descartar</Button>)}
-            <Button onClick={() => window.print()} variant="outline" className="h-12 border-slate-300 text-slate-700"><Printer className="w-5 h-5 mr-2" /> Gerar PDF</Button>
-            <Button onClick={handleSaveDiet} disabled={loading} className="h-12 px-8 bg-teal-600 hover:bg-teal-700 text-lg shadow-md"><CheckCircle2 className="w-5 h-5 mr-2" /> {loading ? "Salvando..." : "Finalizar Plano"}</Button>
+            <Button onClick={handleOpenShareModal} variant="outline" className="h-12 border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100">
+              <Share2 className="w-5 h-5 mr-2" /> Compartilhar & Lista
+            </Button>
+            <Button onClick={handlePrintDiet} variant="outline" className="h-12 border-slate-300 text-slate-700"><Printer className="w-5 h-5 mr-2" /> PDF Dieta</Button>
+            <Button onClick={handleSaveDiet} disabled={loading} className="h-12 px-8 bg-teal-600 hover:bg-teal-700 text-lg shadow-md"><CheckCircle2 className="w-5 h-5 mr-2" /> {loading ? "A Salvar..." : "Finalizar"}</Button>
           </div>
         </div>
 
@@ -230,16 +257,16 @@ export default function NovaDietaPage() {
              <Card className="border-0 shadow-lg bg-white overflow-hidden">
                 <CardHeader className="bg-slate-800 text-white border-b-4 border-teal-500 py-4"><CardTitle className="text-lg">Metas</CardTitle></CardHeader>
                 <CardContent className="p-5 space-y-6">
-                  <div className="space-y-2"><Label className="text-xs font-bold text-slate-500">Fase</Label><Input value={dietInfo.title} onChange={(e) => setDietInfo({...dietInfo, title: e.target.value})} className="font-semibold" /></div>
-                  <div className="space-y-2"><Label className="text-xs font-bold text-slate-500">Objetivo</Label><Input value={dietInfo.goal} onChange={(e) => setDietInfo({...dietInfo, goal: e.target.value})} className="font-semibold" /></div>
+                  <div className="space-y-2"><Label>Fase</Label><Input value={dietInfo.title} onChange={(e) => setDietInfo({...dietInfo, title: e.target.value})} className="font-semibold" /></div>
+                  <div className="space-y-2"><Label>Objetivo</Label><Input value={dietInfo.goal} onChange={(e) => setDietInfo({...dietInfo, goal: e.target.value})} className="font-semibold" /></div>
+                  {/* 🌟 NOVO: Input de Duração */}
+                  <div className="space-y-2"><Label>Duração (Dias)</Label><Input type="number" value={dietInfo.durationDays} onChange={(e) => setDietInfo({...dietInfo, durationDays: Number(e.target.value)})} className="font-semibold text-teal-700 bg-teal-50" /></div>
                 </CardContent>
              </Card>
 
              <Card className="border border-slate-200 shadow-sm">
               <CardHeader className="bg-slate-50 border-b border-slate-100 py-4">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Target className="w-5 h-5 text-teal-600" /> Controle de Macros
-                </CardTitle>
+                <CardTitle className="text-base flex items-center gap-2"><Target className="w-5 h-5 text-teal-600" /> Controle de Macros</CardTitle>
               </CardHeader>
               <CardContent className="p-5 space-y-5">
                 <div className="space-y-2">
@@ -250,17 +277,12 @@ export default function NovaDietaPage() {
                   <div className={`flex justify-between items-center p-3 rounded-lg border transition-all duration-500 ${currentTotals.kcal > targets.kcal ? 'bg-rose-50 border-rose-200' : currentTotals.kcal >= targets.kcal * 0.9 ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
                     <span className="font-bold text-slate-600 text-sm">Calculado</span>
                     <div className="flex items-center gap-1">
-                      <span className={`font-black text-xl transition-colors ${currentTotals.kcal > targets.kcal ? 'text-rose-600 animate-pulse' : currentTotals.kcal >= targets.kcal * 0.9 ? 'text-amber-600' : 'text-teal-600'}`}>
-                        {currentTotals.kcal}
-                      </span>
+                      <span className={`font-black text-xl transition-colors ${currentTotals.kcal > targets.kcal ? 'text-rose-600 animate-pulse' : currentTotals.kcal >= targets.kcal * 0.9 ? 'text-amber-600' : 'text-teal-600'}`}>{currentTotals.kcal}</span>
                       <span className="text-slate-400 text-sm">kcal</span>
                     </div>
                   </div>
                   <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full transition-all duration-700 ease-out ${currentTotals.kcal > targets.kcal ? 'bg-rose-500' : currentTotals.kcal >= targets.kcal * 0.9 ? 'bg-amber-500' : 'bg-teal-500'}`}
-                      style={{ width: `${Math.min((currentTotals.kcal / (targets.kcal || 1)) * 100, 100)}%` }}
-                    ></div>
+                    <div className={`h-full transition-all duration-700 ease-out ${currentTotals.kcal > targets.kcal ? 'bg-rose-500' : currentTotals.kcal >= targets.kcal * 0.9 ? 'bg-amber-500' : 'bg-teal-500'}`} style={{ width: `${Math.min((currentTotals.kcal / (targets.kcal || 1)) * 100, 100)}%` }}></div>
                   </div>
                 </div>
 
@@ -291,26 +313,31 @@ export default function NovaDietaPage() {
 
           {/* DIREITA: REFEIÇÕES */}
           <div className="lg:col-span-9 space-y-6 print:w-full">
+            <div className="hidden print:block mb-8 border-b-2 border-teal-600 pb-6">
+              <h1 className="text-3xl font-bold text-slate-800 uppercase tracking-tight">Plano Alimentar Prescrito</h1>
+              <h2 className="text-xl text-slate-600 mt-2 font-medium">{dietInfo.title} • Foco: {dietInfo.goal} ({dietInfo.durationDays} dias)</h2>
+            </div>
+
             {meals.map((meal, index) => (
-              <Card key={meal.id} className="border border-slate-200 overflow-hidden print:border-slate-300">
-                <CardHeader className="bg-slate-50 py-3 flex flex-row items-center justify-between">
-                  <div className="flex gap-3 w-1/2">
-                    <Input value={meal.time} onChange={(e) => { const n = [...meals]; n[index].time = e.target.value; setMeals(n) }} className="w-24 font-bold text-center" />
-                    <Input value={meal.name} onChange={(e) => { const n = [...meals]; n[index].name = e.target.value; setMeals(n) }} className="font-bold border-none shadow-none text-lg" />
+              <Card key={meal.id} className="border border-slate-200 print:border-slate-300 print:break-inside-avoid">
+                <CardHeader className="bg-slate-50 py-3 flex flex-row items-center justify-between print:bg-slate-100">
+                  <div className="flex gap-3 w-1/2 print:w-full">
+                    <Input value={meal.time} onChange={(e) => { const n = [...meals]; n[index].time = e.target.value; setMeals(n) }} className="w-24 font-bold text-center print:hidden" />
+                    <Input value={meal.name} onChange={(e) => { const n = [...meals]; n[index].name = e.target.value; setMeals(n) }} className="font-bold border-none shadow-none text-lg print:hidden" />
+                    <span className="hidden print:inline font-black text-teal-700 px-2">{meal.time}</span>
+                    <span className="hidden print:inline font-bold text-slate-800 text-lg uppercase">{meal.name}</span>
                   </div>
-                  <Button variant="ghost" className="text-rose-500" onClick={() => removeMeal(meal.id)}><Trash2 className="w-4 h-4" /></Button>
+                  <Button variant="ghost" className="text-rose-500 print:hidden" onClick={() => removeMeal(meal.id)}><Trash2 className="w-4 h-4" /></Button>
                 </CardHeader>
-                
                 <CardContent className="p-0">
                   <div className="divide-y divide-slate-100">
                     {meal.items.map((item) => (
-                      <div key={item.id} className="flex justify-between p-3 px-4 hover:bg-slate-50">
+                      <div key={item.id} className="flex justify-between p-3 px-4 hover:bg-slate-50 print:py-2">
                         <div className="flex items-center gap-4">
-                           <div className="w-16 text-center font-bold text-slate-600 bg-slate-100 py-1 rounded">{item.quantity}g</div>
+                           <div className="w-16 text-center font-bold text-slate-600 bg-slate-100 py-1 rounded print:border">{item.quantity}g</div>
                            <div className="flex flex-col">
-                              {/* 🌟 MATEMÁTICA NA LISTA DA DIETA */}
                               <span className="font-semibold text-slate-700">{item.food.name}</span>
-                              <span className="text-xs text-slate-500 font-medium">
+                              <span className="text-xs text-slate-500 font-medium print:hidden">
                                 {calcMacro(item.food.kcal, item.food.baseAmount, item.quantity)} kcal | 
                                 <span className="text-rose-600 ml-1">P: {calcMacro(item.food.protein, item.food.baseAmount, item.quantity)}g</span> | 
                                 <span className="text-emerald-600 ml-1">C: {calcMacro(item.food.carbs, item.food.baseAmount, item.quantity)}g</span> | 
@@ -318,27 +345,85 @@ export default function NovaDietaPage() {
                               </span>
                            </div>
                         </div>
-                        <Button variant="ghost" className="text-slate-400 hover:text-rose-500" onClick={() => removeFoodFromMeal(meal.id, item.id)}><Trash2 className="w-4 h-4" /></Button>
+                        <Button variant="ghost" className="text-slate-400 hover:text-rose-500 print:hidden" onClick={() => removeFoodFromMeal(meal.id, item.id)}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     ))}
                   </div>
-                  
-                  <div className="p-4 bg-slate-50/30 flex flex-col gap-4">
+                  <div className="p-4 bg-slate-50/30 flex flex-col gap-4 print:hidden">
                     <Button variant="outline" className="w-full border-dashed text-teal-600" onClick={() => setActiveMealId(meal.id)}><Search className="w-4 h-4 mr-2" /> Buscar Alimento</Button>
                     <textarea value={meal.notes || ""} onChange={(e) => { const n = [...meals]; n[index].notes = e.target.value; setMeals(n) }} placeholder='Observações...' className="w-full min-h-[60px] p-3 text-sm border rounded-lg" />
                   </div>
+                  {meal.notes && <div className="hidden print:block p-3 mx-4 mb-4 mt-2 bg-slate-50 text-slate-600 text-sm rounded border border-slate-200 italic">📌 {meal.notes}</div>}
                 </CardContent>
               </Card>
             ))}
-
-            <Button onClick={addMeal} className="w-full h-14 border-dashed"><Plus className="w-5 h-5 mr-2" /> Adicionar Refeição</Button>
-            
-            <Card className="bg-teal-900 text-white mt-12"><CardContent className="p-6"><textarea value={dietInfo.notes} onChange={(e) => setDietInfo({...dietInfo, notes: e.target.value})} placeholder="Orientações gerais..." className="w-full min-h-[100px] p-4 bg-teal-950/40 rounded-xl" /></CardContent></Card>
+            <Button onClick={addMeal} className="w-full h-14 border-dashed print:hidden"><Plus className="w-5 h-5 mr-2" /> Adicionar Refeição</Button>
+            <Card className="bg-teal-900 text-white mt-12 print:hidden"><CardContent className="p-6"><textarea value={dietInfo.notes} onChange={(e) => setDietInfo({...dietInfo, notes: e.target.value})} placeholder="Orientações gerais..." className="w-full min-h-[100px] p-4 bg-teal-950/40 rounded-xl" /></CardContent></Card>
           </div>
         </div>
       </div>
 
-      {/* MODAL */}
+      {/* APENAS PARA IMPRESSÃO: LISTA DE COMPRAS */}
+      <div className={`hidden w-full max-w-4xl mx-auto ${printMode === 'list' ? 'print:block' : 'print:hidden'}`}>
+        <div className="border-b-2 border-teal-600 pb-6 mb-8">
+          <h1 className="text-3xl font-bold text-slate-800 uppercase tracking-tight">Lista de Compras Inteligente</h1>
+          <h2 className="text-xl text-slate-600 mt-2 font-medium">Quantidade calculada para {shoppingDays} dias de prescrição.</h2>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+          {shoppingList.map((item, index) => (
+            <div key={index} className="flex items-center justify-between border-b border-slate-200 py-2">
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 border-2 border-slate-300 rounded-sm"></div>
+                <span className="font-semibold text-slate-700 text-lg">{item.name}</span>
+              </div>
+              <span className="font-black text-teal-700 text-lg">{formatQty(item.qty)}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-12 text-center text-slate-400 italic">
+          Lista gerada automaticamente pelo seu Nutricionista através do SafeMove B2B. Boas compras! 🛒
+        </div>
+      </div>
+
+      {/* MODAL DE COMPARTILHAMENTO E WHATSAPP */}
+      {showShareModal && (
+        <>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 print:hidden" onClick={() => setShowShareModal(false)}></div>
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl z-50 overflow-hidden print:hidden">
+            <div className="bg-teal-600 p-6 text-white text-center">
+              <Share2 className="w-10 h-10 mx-auto mb-2 text-teal-200" />
+              <h2 className="text-2xl font-bold">Compartilhar com Paciente</h2>
+              <p className="text-teal-100 text-sm mt-1">Dispare a dieta e gere a lista de supermercado</p>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="font-bold text-slate-700 flex items-center gap-2"><ShoppingCart className="w-4 h-4 text-teal-600"/> Lista de Compras para quantos dias?</Label>
+                  <Input type="number" value={shoppingDays} onChange={(e) => setShoppingDays(Number(e.target.value) || 1)} className="w-20 text-center font-bold border-teal-500" />
+                </div>
+                <p className="text-xs text-slate-500">O sistema multiplicou todas as gramas da dieta por {shoppingDays} dias. Foram encontrados <b>{shoppingList.length} itens</b> diferentes.</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Button onClick={handlePrintList} variant="outline" className="h-14 border-slate-300 text-slate-700 font-bold hover:bg-slate-50">
+                  <Printer className="w-5 h-5 mr-2" /> PDF da Lista
+                </Button>
+                <Button onClick={handlePrintDiet} variant="outline" className="h-14 border-slate-300 text-slate-700 font-bold hover:bg-slate-50">
+                  <Printer className="w-5 h-5 mr-2" /> PDF da Dieta
+                </Button>
+              </div>
+
+              <Button onClick={handleWhatsAppShare} className="w-full h-14 bg-green-600 hover:bg-green-700 text-white font-bold text-lg shadow-lg">
+                <Smartphone className="w-5 h-5 mr-2" /> Enviar Mensagem via WhatsApp
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* MODAL DO BANCO DE ALIMENTOS */}
       {activeMealId && (
         <>
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40" onClick={closeModal}></div>
