@@ -1,31 +1,34 @@
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
-import { Toaster } from '@/components/ui/sonner'
+import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/contexts/auth-context'
+import { Sidebar } from '@/components/Sidebar'
+import { LayoutWrapper } from '@/components/LayoutWrapper' 
+import { Toaster } from 'sonner'
 
+const inter = Inter({ subsets: ['latin'] })
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: 'SafeMove B2B',
-  description: 'Plataforma Corporativa de Resiliência',
+export const metadata = {
+  title: 'SafeMove - Plataforma Multidisciplinar',
+  description: 'Gestão integrada para Nutricionistas, Personais e Fisioterapeutas.',
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
-    <html lang="pt-PT">
-      <body className="font-sans antialiased">
+    <html lang="pt-BR">
+      <body className={inter.className}>
         <AuthProvider>
-          {children}
-          <Analytics />
-          <Toaster richColors position="top-right" />
+          <div className="flex min-h-screen bg-slate-50">
+            <Sidebar />
+            <LayoutWrapper>
+              {children}
+            </LayoutWrapper>
+            
+          </div>
+          <Toaster position="top-right" richColors />
         </AuthProvider>
       </body>
     </html>

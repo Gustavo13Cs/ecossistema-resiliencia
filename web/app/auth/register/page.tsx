@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
+import { User, Apple, Dumbbell, Activity } from "lucide-react"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -21,7 +22,7 @@ export default function RegisterPage() {
     password: "",
     phone: "",
     companyName: "",
-    profession: "PERSONAL_TRAINER", 
+    role: "PATIENT", 
   })
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -30,7 +31,7 @@ export default function RegisterPage() {
 
     try {
       await api.post("/auth/register", formData)
-      toast.success("Conta corporativa criada com sucesso! Faça o login.")
+      toast.success("Conta criada com sucesso! Faça o login.")
       router.push("/auth/login")
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Erro ao criar conta. Verifique os dados.")
@@ -39,76 +40,109 @@ export default function RegisterPage() {
     }
   }
 
+  // Perfis disponíveis para seleção
+  const roles = [
+    { id: "PATIENT", label: "Paciente / Aluno", icon: User, color: "text-slate-600", bg: "bg-slate-100", border: "border-slate-200", activeBorder: "border-slate-500", activeBg: "bg-slate-50" },
+    { id: "NUTRITIONIST", label: "Nutricionista", icon: Apple, color: "text-emerald-600", bg: "bg-emerald-100", border: "border-emerald-200", activeBorder: "border-emerald-500", activeBg: "bg-emerald-50" },
+    { id: "PERSONAL", label: "Personal Trainer", icon: Dumbbell, color: "text-blue-600", bg: "bg-blue-100", border: "border-blue-200", activeBorder: "border-blue-500", activeBg: "bg-blue-50" },
+    { id: "PHYSIO", label: "Fisioterapeuta", icon: Activity, color: "text-purple-600", bg: "bg-purple-100", border: "border-purple-200", activeBorder: "border-purple-500", activeBg: "bg-purple-50" },
+  ]
+
+  const isProfessional = formData.role !== "PATIENT"
+
   return (
-    <div className="flex min-h-screen w-full items-center justify-center p-6 bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50">
+    <div className="flex min-h-screen w-full items-center justify-center p-6 bg-slate-50">
       <div className="w-full max-w-2xl">
-        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur">
-          <CardHeader className="space-y-2 text-center pb-8 border-b border-slate-100">
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">
-              SafeMove B2B Premium
+        <Card className="shadow-xl border-0 bg-white">
+          <CardHeader className="space-y-2 text-center pb-6 border-b border-slate-100">
+            <CardTitle className="text-3xl font-black text-slate-800">
+              Crie a sua conta
             </CardTitle>
-            <CardDescription className="text-base text-slate-600">
-              Configure o seu ambiente de trabalho e comece a monitorizar a sua equipa, alunos ou pacientes hoje mesmo.
+            <CardDescription className="text-base text-slate-500">
+              Junte-se à plataforma de saúde mais completa e integrada.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-8">
-            <form onSubmit={handleRegister} className="space-y-6">
-              
-              {/* Secção 1: Dados Pessoais */}
-              <div className="grid md:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Seu Nome Completo</Label>
-                  <Input id="name" required placeholder="Ex: Carlos Silva" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="h-11 bg-slate-50" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">WhatsApp para Contacto</Label>
-                  <Input id="phone" required placeholder="(11) 99999-9999" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="h-11 bg-slate-50" />
-                </div>
-              </div>
-
-              {/* Secção 2: Dados do Negócio */}
-              <div className="grid md:grid-cols-2 gap-5 p-5 bg-blue-50/50 rounded-lg border border-blue-100">
-                <div className="space-y-2">
-                  <Label htmlFor="companyName" className="text-blue-900">Nome do Negócio / Empresa</Label>
-                  <Input id="companyName" required placeholder="Ex: Studio Fit, TechCorp" value={formData.companyName} onChange={(e) => setFormData({ ...formData, companyName: e.target.value })} className="h-11 border-blue-200" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="profession" className="text-blue-900">Área de Atuação</Label>
-                  <select
-                    id="profession"
-                    className="flex h-11 w-full rounded-md border border-blue-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-600"
-                    value={formData.profession}
-                    onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
-                  >
-                    <option value="PERSONAL_TRAINER">Personal Trainer</option>
-                    <option value="NUTRITIONIST">Nutricionista / Clínica</option>
-                    <option value="HR_CORPORATE">Recursos Humanos (Empresa)</option>
-                    <option value="PHYSIOTHERAPIST">Fisioterapeuta</option>
-                    <option value="OTHER">Outro</option>
-                  </select>
+            <form onSubmit={handleRegister} className="space-y-8">
+              <div className="space-y-3">
+                <Label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Como você quer utilizar a plataforma?</Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {roles.map((r) => {
+                    const Icon = r.icon
+                    const isActive = formData.role === r.id
+                    
+                    return (
+                      <div 
+                        key={r.id}
+                        onClick={() => setFormData({ ...formData, role: r.id, companyName: r.id === "PATIENT" ? "" : formData.companyName })}
+                        className={`cursor-pointer rounded-xl border-2 p-4 flex flex-col items-center justify-center gap-3 transition-all duration-200 ${
+                          isActive 
+                            ? `${r.activeBorder} ${r.activeBg} shadow-md scale-[1.02]` 
+                            : `border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50`
+                        }`}
+                      >
+                        <div className={`p-3 rounded-full ${isActive ? r.bg : 'bg-slate-100'}`}>
+                          <Icon className={`w-6 h-6 ${isActive ? r.color : 'text-slate-400'}`} />
+                        </div>
+                        <span className={`text-sm font-bold text-center ${isActive ? 'text-slate-800' : 'text-slate-500'}`}>
+                          {r.label}
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-mail Corporativo</Label>
-                  <Input id="email" type="email" required placeholder="contato@suaempresa.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="h-11 bg-slate-50" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Senha de Acesso</Label>
-                  <Input id="password" type="password" required placeholder="Mínimo 6 caracteres" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="h-11 bg-slate-50" />
+              {/* Dados Pessoais */}
+              <div className="space-y-4 bg-slate-50 p-6 rounded-xl border border-slate-100">
+                <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                  <User className="w-4 h-4" /> Dados Pessoais
+                </h3>
+                <div className="grid md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome Completo</Label>
+                    <Input id="name" required placeholder="Ex: Carlos Silva" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="h-11 bg-white" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">WhatsApp</Label>
+                    <Input id="phone" required placeholder="(11) 99999-9999" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="h-11 bg-white" />
+                  </div>
                 </div>
               </div>
 
-              <Button type="submit" className="w-full h-12 text-lg bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white shadow-lg mt-4" disabled={isLoading}>
-                {isLoading ? "A preparar o seu ambiente..." : "Criar Plataforma B2B"}
+              {isProfessional && (
+                <div className="space-y-4 bg-blue-50/50 p-6 rounded-xl border border-blue-100 animate-in fade-in slide-in-from-top-4">
+                  <h3 className="font-bold text-blue-900 flex items-center gap-2">
+                    🏢 Informações do Consultório / Estúdio
+                  </h3>
+                  <div className="space-y-2">
+                    <Label htmlFor="companyName" className="text-blue-900">Nome do Local de Atendimento (Opcional)</Label>
+                    <Input id="companyName" placeholder="Ex: Clínica Bem Estar, Studio Fit" value={formData.companyName} onChange={(e) => setFormData({ ...formData, companyName: e.target.value })} className="h-11 bg-white border-blue-200 focus-visible:ring-blue-500" />
+                  </div>
+                </div>
+              )}
+
+              {/* Dados de Acesso */}
+              <div className="grid md:grid-cols-2 gap-5 pt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="email">E-mail de Acesso</Label>
+                  <Input id="email" type="email" required placeholder="seu@email.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="h-11" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha de Segurança</Label>
+                  <Input id="password" type="password" required placeholder="Mínimo 6 caracteres" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="h-11" />
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full h-14 text-lg bg-slate-800 hover:bg-slate-900 text-white shadow-lg font-bold" disabled={isLoading}>
+                {isLoading ? "A criar conta..." : "Finalizar Cadastro"}
               </Button>
             </form>
 
             <div className="mt-8 text-center text-sm text-slate-600 border-t pt-6">
-              Já é um parceiro SafeMove?{" "}
-              <Link href="/auth/login" className="font-semibold text-blue-600 hover:text-blue-700 hover:underline">
-                Faça Login na sua conta
+              Já possui uma conta?{" "}
+              <Link href="/auth/login" className="font-bold text-slate-800 hover:text-slate-600 hover:underline">
+                Faça Login aqui
               </Link>
             </div>
           </CardContent>

@@ -6,108 +6,108 @@ datasource db {
   provider = "postgresql"
 }
 
-// Tabela 1: Usuários
+// Tabela 1: Usuários (Pacientes e Profissionais)
 model User {
   id          String       @id @default(uuid())
   name        String
   email       String       @unique
   password    String
-  role        Role         @default(EMPLOYEE)
+  role        Role         @default(PATIENT)
   
-  phone       String?      // Telefone/WhatsApp
-  birthDate   DateTime?    // Data de Nascimento
-  department  String?      // Departamento (Para RH)
-  goal        String?      // Objetivo (Para Personal/Nutri)
-  companyName String?      // Nome da Empresa / Consultório
-  profession  String?      // Área de Atuação (RH, Personal, etc)
+  phone       String?
+  birthDate   DateTime?    
+  goal        String?
+  companyName String?      
+  profession  String?      // Fisio, Nutri, Personal (ou especialidade)
   
-  gender        String?    // Sexo Biológico (M/F)
-  height        Float?     // Altura em cm
-  initialWeight Float?     // Peso inicial na primeira consulta
-  allergies     String?    // Alergias / Intolerâncias
-  pathologies   String?    // Patologias (Diabetes, HAS, etc)
+  gender        String?
+  height        Float?
+  initialWeight Float?     
+  allergies     String?
+  pathologies   String?    
 
   // ESTILO DE VIDA
-  typicalSleep         String?    // Horas de sono por noite
-  stressLevel          Int?       // Nível de estresse (1-5)
-  foodRelationship     String?    // Relação com a comida / Compulsão
-  psychologyHistory    String?    // Acompanhamento psicológico
+  typicalSleep         String?
+  stressLevel          Int?
+  foodRelationship     String?
+  psychologyHistory    String?
 
   // ATIVIDADE FÍSICA
-  exerciseType         String?    // Pratica exercício? Qual?
-  exerciseFrequency    String?    // Frequência semanal
-  exerciseDuration     String?    // Duração média
-  hasPersonal          String?    // Tem personal/assessoria?
-  workActivityLevel    String?    // Nível de atividade no trabalho
+  exerciseType         String?
+  exerciseFrequency    String?    
+  exerciseDuration     String?
+  hasPersonal          String?    
+  workActivityLevel    String?    
 
   // OBSERVAÇÕES DO PROFISSIONAL (Privado)
-  nutritionistNotes    String?    @db.Text
-
-  managerId   String?      // O ID do gestor que criou esta conta
-  manager     User?        @relation("UserToManager", fields: [managerId], references: [id])
-  employees   User[]       @relation("UserToManager")
+  nutritionistNotes    String? @db.Text
 
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   
-  workoutLogs WorkoutLog[]
-  diets       DietPlan[]   @relation("UserDiets") // Relação com as dietas
+  // workoutLogs   WorkoutLog[]
+  
+  diets         DietPlan[]   @relation("UserDiets") 
+  
+  createdDiets  DietPlan[]   @relation("CreatedDiets")
 
-  assessments PhysicalAssessment[] @relation("UserAssessments")
+  assessments   PhysicalAssessment[] @relation("UserAssessments")
+
+  patients      ProfessionalPatientLink[] @relation("ProfessionalLink")
+  professionals ProfessionalPatientLink[] @relation("PatientLink")
 }
 
-// Tabela 2: O Core da Resiliência Física e Mental
-model WorkoutLog {
-  id              String   @id @default(uuid())
+model ProfessionalPatientLink {
+  id             String   @id @default(uuid())
   
-  activityType    String   // Ex: Musculação, Corrida, Yoga, Meditação
-  durationMinutes Int      // Duração em minutos
-  intensity       String   // Ex: LEVE, MODERADO, INTENSO
+  professionalId String
+  professional   User     @relation("ProfessionalLink", fields: [professionalId], references: [id], onDelete: Cascade)
   
-  sleepHours      Float?   // Horas de sono na noite anterior
-  moodLevel       Int?     // Nível de humor de 1 a 5
-
-  notes           String?  // Campo de texto para as observações do aluno
-  weight          Float?   // Peso em kg
+  patientId      String
+  patient        User     @relation("PatientLink", fields: [patientId], references: [id], onDelete: Cascade)
   
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isActive       Boolean  @default(true) // Permite inativar um paciente sem apagar os dados
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  createdAt       DateTime @default(now())
-
-  @@map("workout_logs")
+  @@unique([professionalId, patientId]) // O mesmo nutri não se liga 2x ao mesmo paciente
+  @@map("professional_patient_links")
 }
 
 enum Role {
   ADMIN
-  HR_MANAGER
-  EMPLOYEE
+  PATIENT
+  NUTRITIONIST
+  PERSONAL
+  PHYSIO
 }
-
 
 // Tabela 3: O Planeamento Nutricional
 model DietPlan {
   id          String   @id @default(uuid())
-  title       String   // Ex: "Fase 1 - Emagrecimento Agressivo"
-  goal        String   // Emagrecimento, Manutenção, Hipertrofia
+  title       String   
+  goal        String   
 
   durationDays Int     @default(30)
   
-  tmb         Float?   // Taxa Metabólica Basal calculada
-  get         Float?   // Gasto Energético Total
-  targetKcal  Float    // A meta final de calorias após o déficit/superávit
+  tmb         Float?
+  get         Float?
+  targetKcal  Float    
   
   proteinG    Float    
   fatG        Float    
   carbsG      Float    
   
-  notes       String?  @db.Text 
+  notes       String? @db.Text 
 
   userId      String   
   user        User     @relation("UserDiets", fields: [userId], references: [id], onDelete: Cascade)
-  creatorId   String   // ID do Nutricionista que montou
+  
+  creatorId   String   
+  creator     User     @relation("CreatedDiets", fields: [creatorId], references: [id])
 
-  isActive    Boolean  @default(true) // Para sabermos qual é a dieta atual do aluno
+  isActive    Boolean  @default(true) 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   

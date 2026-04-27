@@ -1,7 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -13,8 +12,7 @@ export class AuthService {
 
   async login(loginDto: any) {
     const user = await this.prisma.user.findUnique({
-      where: { email: loginDto.email },
-      include: { manager: true } 
+      where: { email: loginDto.email }
     });
 
     if (!user) {
@@ -26,14 +24,12 @@ export class AuthService {
       throw new UnauthorizedException('E-mail ou senha incorretos');
     }
 
-    const businessContext = (user.role === 'HR_MANAGER' || user.role === 'ADMIN')
-      ? user.profession
-      : user.manager?.profession || 'PERSONAL_TRAINER'; 
     const payload = { 
       sub: user.id, 
+      name: user.name,
       role: user.role,
       email: user.email,
-      businessContext: businessContext 
+      businessContext: user.role 
     };
 
     return {
@@ -45,9 +41,12 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(signUpDto.password, 10);
     const newUser = await this.prisma.user.create({
       data: {
-        ...signUpDto,
-        password: hashedPassword, 
-        role: 'HR_MANAGER',
+        name: signUpDto.name,
+        email: signUpDto.email,
+        password: hashedPassword,
+        phone: signUpDto.phone,
+        companyName: signUpDto.companyName,
+        role: signUpDto.role || 'PATIENT', 
       },
     });
 

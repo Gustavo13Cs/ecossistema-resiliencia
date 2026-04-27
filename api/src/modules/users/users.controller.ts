@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards, Request, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request, Param, Delete } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 
@@ -9,6 +9,7 @@ export class UsersController {
 
   @Post()
   create(@Request() req, @Body() createUserDto: any) {
+    // O req.user.sub é o ID do profissional logado
     return this.usersService.create(createUserDto, req.user.sub);
   }
 
@@ -22,8 +23,16 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  @Delete(':id')
+  remove(@Request() req, @Param('id') id: string) {
+    return this.usersService.unlinkPatient(req.user.sub, id);
+  }
+
+  // ⚠️ Rota comentada para não quebrar a compilação
+  /*
   @Get(':id/workouts')
   getUserWorkouts(@Param('id') id: string) {
     return this.usersService.getUserWorkouts(id);
   }
+  */
 }
