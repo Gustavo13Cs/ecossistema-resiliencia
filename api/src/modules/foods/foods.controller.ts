@@ -32,4 +32,13 @@ export class FoodsController {
   remove(@Param('id') id: string) {
     return this.foodsService.remove(id);
   }
+
+  @Get(':id/preference')
+  async getPreference(
+    @Param('id') foodId: string, 
+    @Query('nutritionistId') nutritionistId: string,
+    @Query('quantity') quantity: string 
+  ) {
+    return this.foodsService.getPreference(foodId, nutritionistId, Number(quantity));
+  }
 }

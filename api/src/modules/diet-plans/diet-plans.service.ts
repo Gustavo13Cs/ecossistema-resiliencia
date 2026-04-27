@@ -7,17 +7,16 @@ export class DietPlansService {
   constructor(private prisma: PrismaService) {}
 
   async create(createDietDto: CreateDietPlanDto, creatorId: string) {
-    // 1. Arquiva a dieta antiga (Deixa inativa) para manter o histórico
     await this.prisma.dietPlan.updateMany({
       where: { userId: createDietDto.userId, isActive: true },
       data: { isActive: false },
     });
 
-    // 2. Cria a Nova Dieta + Refeições + Itens numa única transação!
-    return this.prisma.dietPlan.create({
+    const novaDieta = await this.prisma.dietPlan.create({
       data: {
         title: createDietDto.title,
         goal: createDietDto.goal,
+        durationDays: createDietDto.durationDays, 
         tmb: createDietDto.tmb,
         get: createDietDto.get,
         targetKcal: createDietDto.targetKcal,
@@ -36,22 +35,45 @@ export class DietPlansService {
               create: meal.items.map((item) => ({
                 quantity: item.quantity,
                 measure: item.measure,
-                notes: item.notes,
+                notes: item.notes, 
                 foodId: item.foodId,
               })),
             },
           })),
         },
       },
-      // Retorna a dieta já com tudo preenchido (incluindo os nomes dos alimentos TACO)
       include: {
         meals: {
           include: { items: { include: { food: true } } },
         },
       },
     });
-  }
 
+    for (const meal of createDietDto.meals) {
+      for (const item of meal.items) {
+        if (item.measure && item.measure.trim() !== '' && item.measure !== 'g') {
+          await this.prisma.foodPreference.upsert({
+            where: {
+              nutritionistId_foodId_quantity: { 
+                nutritionistId: creatorId,
+                foodId: item.foodId,
+                quantity: item.quantity, 
+              },
+            },
+            update: { measure: item.measure },
+            create: {
+              nutritionistId: creatorId,
+              foodId: item.foodId,
+              quantity: item.quantity, 
+              measure: item.measure,
+            },
+          });
+        }
+      }
+    }
+
+    return novaDieta;
+  }
   // Busca a dieta ativa atual de um paciente para mostrar no App dele
   async findActiveByUserId(userId: string) {
     return this.prisma.dietPlan.findFirst({

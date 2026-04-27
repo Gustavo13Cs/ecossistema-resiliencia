@@ -207,3 +207,18 @@ model PhysicalAssessment {
 
   @@map("physical_assessments")
 }
+
+// Tabela 8: Memória de Medidas Caseiras (Dicionário do Nutri)
+model FoodPreference {
+  id              String   @id @default(uuid())
+  
+  nutritionistId  String   
+  foodId          String   
+  quantity        Float    @default(0) 
+  measure         String   
+  
+  updatedAt       DateTime @updatedAt
+
+  @@unique([nutritionistId, foodId, quantity])
+  @@map("food_preferences")
+}

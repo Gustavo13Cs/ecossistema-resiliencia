@@ -10,14 +10,15 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
+import { useAuth } from "@/contexts/auth-context" 
 
 export default function NovaDietaPage() {
   const params = useParams()
   const router = useRouter()
+  const { user: loggedInUser } = useAuth()
   const [loading, setLoading] = useState(false)
   const [isRestored, setIsRestored] = useState(false)
 
-  // 🌟 ESTADOS REVERTIDOS PARA O PADRÃO (SÓ NÚMEROS REAIS)
   const [dietInfo, setDietInfo] = useState({ title: "Fase 1 - Adaptação", goal: "Emagrecimento", notes: "", durationDays: 30, patientWeight: 80 })
   const [targets, setTargets] = useState({ kcal: 2000, pro: 150, carb: 200, fat: 60 })
 
@@ -134,17 +135,52 @@ export default function NovaDietaPage() {
   const addMeal = () => setMeals([...meals, { id: `m${Date.now()}`, name: "Nova Refeição", time: "12:00", notes: "", items: [] }])
   const removeMeal = (id: string) => setMeals(meals.filter(m => m.id !== id))
   
-  const addFoodToMeal = async (food: any, quantity: number = amountToAdd) => {
+  const addFoodToMeal = async (food: any, quantity: number | string = amountToAdd) => {
     if (!activeMealId) return
-    const newItem = { id: `i${Date.now()}`, quantity, measure: "", food }
+    
+    const safeQty = Number(quantity) || 0
+    let savedMeasure = ""
+    
+    const itemJaNaTela = meals
+      .flatMap(m => m.items)
+      .find(i => i.food.id === food.id && Number(i.quantity) === safeQty && i.measure && i.measure.trim() !== "" && i.measure !== "g")
+      
+    if (itemJaNaTela) {
+      savedMeasure = itemJaNaTela.measure
+    } 
+    else if (loggedInUser?.id) {
+      try {
+        const prefRes = await api.get(`/foods/${food.id}/preference?nutritionistId=${loggedInUser.id}&quantity=${safeQty}`)
+        if (prefRes.data && prefRes.data.measure) {
+          savedMeasure = prefRes.data.measure
+        }
+      } catch (e) {
+      }
+    }
+
+    const newItem = { id: `i${Date.now()}`, quantity: safeQty, measure: savedMeasure, food }
     setMeals(meals.map(m => m.id === activeMealId ? { ...m, items: [...m.items, newItem] } : m))
     closeModal()
   }
 
   const updateItemValue = (mealId: string, itemId: string, field: 'quantity' | 'measure', value: any) => {
-    setMeals(meals.map(m => m.id === mealId ? {
-      ...m, items: m.items.map(i => i.id === itemId ? { ...i, [field]: value } : i)
-    } : m))
+    setMeals(meals.map(m => {
+      if (m.id !== mealId) return m;
+      return {
+        ...m,
+        items: m.items.map(i => {
+          if (i.id !== itemId) return i;
+          if (field === 'quantity') {
+            const newQty = Number(value) || 0;
+            if (newQty !== Number(i.quantity)) {
+              return { ...i, quantity: newQty, measure: "" }; 
+            }
+          }
+          
+          return { ...i, [field]: value };
+        })
+      };
+    }));
   }
 
   const removeFoodFromMeal = (mealId: string, itemId: string) => setMeals(meals.map(m => m.id === mealId ? { ...m, items: m.items.filter(i => i.id !== itemId) } : m))
@@ -212,7 +248,14 @@ export default function NovaDietaPage() {
         fatG: targets.fat, 
         userId: params.id, 
         notes: dietInfo.notes,
-        meals: meals.map(m => ({ name: m.name, time: m.time, notes: m.notes, items: m.items.map(item => ({ quantity: item.quantity, measure: item.measure || "g", foodId: item.food.id }))}))
+        meals: meals.map(m => ({ 
+          name: m.name, time: m.time, notes: m.notes, 
+          items: m.items.map(item => ({ 
+            quantity: Number(item.quantity) || 0, 
+            measure: item.measure || "", 
+            foodId: item.food.id 
+          }))
+        }))
       }
       await api.post('/diet-plans', payload)
       localStorage.removeItem(`diet_draft_${params.id}`)
@@ -407,6 +450,35 @@ export default function NovaDietaPage() {
               </CardContent>
             </Card>
           </div>
+        </div>
+      </div>
+
+      <div className={`hidden ${printMode === 'list' ? 'print:block' : ''} w-full max-w-4xl mx-auto bg-white`}>
+        <div className="border-b-4 border-teal-600 pb-6 mb-8 mt-10">
+          <h1 className="text-4xl font-black text-slate-800 uppercase tracking-tight">Lista de Compras</h1>
+          <h2 className="text-xl text-slate-600 mt-2 font-medium">Plano: {dietInfo.title} • Quantidade para {shoppingDays} dias</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+          {shoppingList.map((item, index) => (
+            <div key={index} className="flex items-center justify-between border-b-2 border-slate-100 pb-3 break-inside-avoid">
+              <div className="flex items-center gap-4">
+                <div className="w-6 h-6 rounded-md border-2 border-slate-400"></div>
+                <span className="font-bold text-slate-800 text-lg">{item.name}</span>
+              </div>
+              <span className="font-black text-teal-700 text-lg bg-teal-50 px-3 py-1 rounded-lg border border-teal-100">
+                {formatQty(item.qty)}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {shoppingList.length === 0 && (
+          <p className="text-slate-500 italic text-center py-10">Nenhum item adicionado à dieta ainda.</p>
+        )}
+        
+        <div className="mt-16 pt-6 border-t border-slate-200 text-center text-sm text-slate-400 font-medium">
+          Documento gerado digitalmente • Foco no Objetivo: {dietInfo.goal}
         </div>
       </div>
 

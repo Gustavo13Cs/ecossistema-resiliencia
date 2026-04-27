@@ -77,4 +77,12 @@ export class FoodsService implements OnModuleInit {
     await this.prisma.mealItem.deleteMany({ where: { foodId: id } });
     return this.prisma.food.delete({ where: { id } });
   }
+
+  async getPreference(foodId: string, nutritionistId: string, quantity: number) {
+    return this.prisma.foodPreference.findUnique({
+      where: {
+        nutritionistId_foodId_quantity: { nutritionistId, foodId, quantity },
+      },
+    });
+  }
 }
