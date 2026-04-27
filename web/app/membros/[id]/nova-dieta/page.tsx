@@ -148,9 +148,9 @@ export default function NovaDietaPage() {
     if (itemJaNaTela) {
       savedMeasure = itemJaNaTela.measure
     } 
-    else if (loggedInUser?.id) {
+    else if ((loggedInUser as any)?.id) {
       try {
-        const prefRes = await api.get(`/foods/${food.id}/preference?nutritionistId=${loggedInUser.id}&quantity=${safeQty}`)
+        const prefRes = await api.get(`/foods/${food.id}/preference?nutritionistId=${(loggedInUser as any).id}&quantity=${safeQty}`)
         if (prefRes.data && prefRes.data.measure) {
           savedMeasure = prefRes.data.measure
         }
