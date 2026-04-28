@@ -22,4 +22,9 @@ export class AssessmentsController {
   remove(@Param('id') id: string) {
     return this.assessmentsService.remove(id);
   }
+
+  @Get()
+  findAll() {
+    return this.assessmentsService.findAll();
+  }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { CreateFoodDto } from './dto/create-food.dto';
 
@@ -50,7 +50,14 @@ export class FoodsService {
   }
 
   async remove(id: string) {
-    await this.prisma.mealItem.deleteMany({ where: { foodId: id } });
+    const inUse = await this.prisma.mealItem.findFirst({
+      where: { foodId: id }
+    });
+
+    if (inUse) {
+      throw new BadRequestException('Este alimento não pode ser apagado pois está a ser utilizado numa prescrição.');
+    }
+
     return this.prisma.food.delete({ where: { id } });
   }
 

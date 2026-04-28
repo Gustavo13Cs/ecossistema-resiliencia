@@ -13,6 +13,11 @@ export class DietPlansController {
     return this.dietPlansService.create(createDietDto, req.user.sub);
   }
 
+  @Get()
+  findAll(@Request() req) {
+    return this.dietPlansService.findAll(req.user.sub);
+  }
+
   @Get('user/:userId/active')
   findActiveByUser(@Param('userId') userId: string) {
     return this.dietPlansService.findActiveByUserId(userId);

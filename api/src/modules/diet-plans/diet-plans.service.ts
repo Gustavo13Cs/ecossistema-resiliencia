@@ -96,4 +96,14 @@ export class DietPlansService {
       data: { isConsumed: !meal.isConsumed },
     });
   }
+
+  async findAll(creatorId: string) {
+    return this.prisma.dietPlan.findMany({
+      where: { creatorId: creatorId },
+      include: {
+        user: { select: { name: true } } 
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
 }

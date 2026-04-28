@@ -6,14 +6,12 @@ import { CreateAssessmentDto } from './dto/create-assessment.dto';
 export class AssessmentsService {
   constructor(private prisma: PrismaService) {}
 
-  // Cria uma nova avaliação
   async create(createAssessmentDto: CreateAssessmentDto) {
     return this.prisma.physicalAssessment.create({
       data: createAssessmentDto,
     });
   }
 
-  // Busca o histórico do paciente ordenado pela data (do mais antigo para o mais novo)
   async findByUser(userId: string) {
     return this.prisma.physicalAssessment.findMany({
       where: { userId },
@@ -21,10 +19,18 @@ export class AssessmentsService {
     });
   }
 
-  // Apaga uma avaliação caso o Nutri tenha errado
   async remove(id: string) {
     return this.prisma.physicalAssessment.delete({
       where: { id },
+    });
+  }
+
+ async findAll() {
+    return this.prisma.physicalAssessment.findMany({
+      include: {
+        user: { select: { name: true } } 
+      },
+      orderBy: { date: 'desc' }
     });
   }
 }
