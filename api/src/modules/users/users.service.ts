@@ -7,20 +7,57 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: any, professionalId: string) {
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: createUserDto.email }
+    });
 
-    // 🌟 MÁGICA: Cria o Paciente e já cria o Vínculo com o Profissional na mesma hora!
+    if (existingUser) {
+      const { password, ...dataToUpdate } = createUserDto; 
+      
+      const updatedUser = await this.prisma.user.update({
+        where: { id: existingUser.id },
+        data: dataToUpdate,
+      });
+
+      await this.prisma.professionalPatientLink.upsert({
+        where: {
+          professionalId_patientId: {
+            professionalId: professionalId,
+            patientId: existingUser.id,
+          }
+        },
+        update: { isActive: true }, 
+        create: {
+          professionalId: professionalId,
+          patientId: existingUser.id,
+        }
+      });
+      return updatedUser;
+    }
+
+    // SE O PACIENTE NÃO EXISTE: Cria do zero com senha
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     return this.prisma.user.create({
       data: {
         ...createUserDto,
         password: hashedPassword,
         role: 'PATIENT',
         professionals: {
-          create: {
-            professionalId: professionalId
-          }
+          create: { professionalId: professionalId }
         }
       },
+    });
+  }
+
+  async findByEmail(email: string) {
+    return this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true, name: true, email: true, phone: true, birthDate: true, gender: true,
+        goal: true, height: true, initialWeight: true, allergies: true, pathologies: true,
+        typicalSleep: true, stressLevel: true, foodRelationship: true, psychologyHistory: true,
+        exerciseType: true, exerciseFrequency: true, exerciseDuration: true, hasPersonal: true
+      } 
     });
   }
 
@@ -65,6 +102,15 @@ export class UsersService {
       data: {
         isActive: false, 
       },
+    });
+  }
+
+  async update(id: string, data: any) {
+    const { id: _, email, password, role, professionals, createdAt, updatedAt, ...updateData } = data;
+    
+    return this.prisma.user.update({
+      where: { id },
+      data: updateData,
     });
   }
 

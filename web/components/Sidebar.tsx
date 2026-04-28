@@ -11,7 +11,7 @@ import {
 
 const MENU_ITEMS = [
   // 🌍 Visível para todos
-  { title: "Início", icon: Home, href: "/dashboard", roles: ["NUTRITIONIST", "PERSONAL", "PHYSIO", "PATIENT"] },
+  { title: "Início", icon: Home, href: "/home", roles: ["NUTRITIONIST", "PERSONAL", "PHYSIO", "PATIENT"] },
   
   // 👨‍⚕️ Gestão (Profissionais)
   { title: "Meus Pacientes", icon: Users, href: "/membros", roles: ["NUTRITIONIST", "PHYSIO"] },

@@ -7,8 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
-// 🌟 NOVO: Adicionamos o AlertTriangle para o nosso modal de aviso
-import { Eye, UserPlus, X, ClipboardList, Trash2, AlertTriangle } from "lucide-react"
+import { Eye, UserPlus, X, ClipboardList, Trash2, AlertTriangle, Link as LinkIcon } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
@@ -17,20 +16,22 @@ export default function MembrosPage() {
   const { user } = useAuth()
   const [users, setUsers] = useState<any[]>([])
   
-  // Estados do Modal de Criação
   const [showAddModal, setShowAddModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
-  // 🌟 NOVO: Estados do Modal de Exclusão Bonito
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, patientId: "", patientName: "" })
   const [isDeleting, setIsDeleting] = useState(false)
+  
+  const [linkModal, setLinkModal] = useState({ isOpen: false, data: null as any })
+  const [isExistingPatient, setIsExistingPatient] = useState(false)
 
-  const [formData, setFormData] = useState({
+  const initialForm = {
     name: "", email: "", password: "", phone: "", birthDate: "", gender: "",
     goal: "", height: "", initialWeight: "", allergies: "", pathologies: "",
     typicalSleep: "", stressLevel: "", foodRelationship: "", psychologyHistory: "",
     exerciseType: "", exerciseFrequency: "", exerciseDuration: "", hasPersonal: ""
-  })
+  }
+
+  const [formData, setFormData] = useState(initialForm)
 
   useEffect(() => {
     fetchUsers()
@@ -43,6 +44,30 @@ export default function MembrosPage() {
     } catch (error) {
       console.error("Erro ao buscar membros", error)
     }
+  }
+  const handleCheckEmail = async () => {
+    if (!formData.email || !formData.email.includes("@")) return;
+    try {
+      const res = await api.get(`/users/check-email?email=${formData.email}`)
+      if (res.data) {
+        setLinkModal({ isOpen: true, data: res.data })
+      }
+    } catch (error) {
+      setIsExistingPatient(false)
+    }
+  }
+
+  const acceptLinkPatient = () => {
+    const data = linkModal.data;
+    setFormData({
+      ...formData,
+      ...data,
+      birthDate: data.birthDate ? data.birthDate.split('T')[0] : "",
+      password: "usuario_vinculado", 
+    })
+    setIsExistingPatient(true)
+    setLinkModal({ isOpen: false, data: null })
+    toast.info("Dados importados com sucesso! Revise as informações e clique em Salvar.")
   }
 
   const handleCreatePatient = async (e: React.FormEvent) => {
@@ -58,15 +83,10 @@ export default function MembrosPage() {
       }
 
       await api.post("/users", payload)
-      toast.success(`${clientLabel} cadastrado com sucesso!`)
+      toast.success(`${clientLabel} ${isExistingPatient ? 'vinculado e atualizado' : 'cadastrado'} com sucesso!`)
       setShowAddModal(false)
-      
-      setFormData({
-        name: "", email: "", password: "", phone: "", birthDate: "", gender: "",
-        goal: "", height: "", initialWeight: "", allergies: "", pathologies: "",
-        typicalSleep: "", stressLevel: "", foodRelationship: "", psychologyHistory: "",
-        exerciseType: "", exerciseFrequency: "", exerciseDuration: "", hasPersonal: ""
-      })
+      setFormData(initialForm)
+      setIsExistingPatient(false)
       fetchUsers() 
     } catch (error: any) {
       toast.error(error.response?.data?.message || `Erro ao cadastrar ${clientLabel.toLowerCase()}.`)
@@ -75,12 +95,10 @@ export default function MembrosPage() {
     }
   }
 
-  // 🌟 NOVO: Função que abre o Modal Bonito
   const confirmDelete = (id: string, name: string) => {
     setDeleteModal({ isOpen: true, patientId: id, patientName: name })
   }
 
-  // 🌟 NOVO: Função que realmente deleta no banco quando o usuário clica em "Sim"
   const executeDelete = async () => {
     setIsDeleting(true)
     try {
@@ -114,11 +132,13 @@ export default function MembrosPage() {
           </div>
 
           <Button 
-            onClick={() => setShowAddModal(true)}
+            onClick={() => {
+              setFormData(initialForm); 
+              setIsExistingPatient(false);
+              setShowAddModal(true);
+            }}
             className={`h-12 px-6 shadow-md text-base text-white ${
-              isPersonal ? 'bg-blue-600 hover:bg-blue-700' : 
-              isFisio ? 'bg-purple-600 hover:bg-purple-700' : 
-              'bg-teal-600 hover:bg-teal-700'
+              isPersonal ? 'bg-blue-600 hover:bg-blue-700' : isFisio ? 'bg-purple-600 hover:bg-purple-700' : 'bg-teal-600 hover:bg-teal-700'
             }`}
           >
             <UserPlus className="w-5 h-5 mr-2" />
@@ -128,9 +148,7 @@ export default function MembrosPage() {
 
         <Card className="shadow-lg border-0 overflow-hidden">
           <CardHeader className={`${
-            isPersonal ? 'bg-blue-50 border-blue-100' : 
-            isFisio ? 'bg-purple-50 border-purple-100' : 
-            'bg-teal-50 border-teal-100'
+            isPersonal ? 'bg-blue-50 border-blue-100' : isFisio ? 'bg-purple-50 border-purple-100' : 'bg-teal-50 border-teal-100'
           } border-b`}>
             <CardTitle className={`text-lg flex items-center gap-2 ${
               isPersonal ? 'text-blue-800' : isFisio ? 'text-purple-800' : 'text-teal-800'
@@ -163,7 +181,6 @@ export default function MembrosPage() {
                           </Button>
                         </Link>
                         
-                        {/* 🌟 Botão de Deletar agora chama o nosso Modal Bonito */}
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -191,11 +208,11 @@ export default function MembrosPage() {
         </Card>
       </div>
 
-      {/* MODAL DE CADASTRO ... (MANTIDO IGUAL) */}
       {showAddModal && (
         <>
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40" onClick={() => setShowAddModal(false)}></div>
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+            
             <div className={`sticky top-0 z-10 flex justify-between items-center p-5 border-b shadow-sm ${
               isPersonal ? 'bg-blue-50 border-blue-100' : isFisio ? 'bg-purple-50 border-purple-100' : 'bg-teal-50 border-teal-100'
             }`}>
@@ -214,16 +231,31 @@ export default function MembrosPage() {
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-b pb-2">1. Dados de Acesso</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
+                    <Label>E-mail de Login *</Label>
+                    <Input 
+                      type="email" required placeholder="carlos@email.com" 
+                      value={formData.email} 
+                      onChange={e => setFormData({...formData, email: e.target.value})} 
+                      onBlur={handleCheckEmail}
+                      className="h-11" 
+                      disabled={isExistingPatient}
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label>Nome Completo *</Label>
                     <Input required placeholder="Ex: Carlos Mendes" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="h-11" />
                   </div>
                   <div className="space-y-2">
-                    <Label>E-mail de Login *</Label>
-                    <Input type="email" required placeholder="carlos@email.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="h-11" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Senha Temporária *</Label>
-                    <Input type="password" required placeholder="Mínimo 6 caracteres" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="h-11" />
+                    <Label>Senha Temporária {isExistingPatient ? "" : "*"}</Label>
+                    <Input 
+                      type="password" 
+                      required={!isExistingPatient} 
+                      disabled={isExistingPatient}
+                      placeholder={isExistingPatient ? "Senha mantida com segurança pelo paciente" : "Mínimo 6 caracteres"} 
+                      value={isExistingPatient ? "" : formData.password} 
+                      onChange={e => setFormData({...formData, password: e.target.value})} 
+                      className="h-11" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>WhatsApp</Label>
@@ -325,7 +357,43 @@ export default function MembrosPage() {
         </>
       )}
 
-      {/* 🌟 NOVO: MEGA MODAL DE CONFIRMAÇÃO PADRÃO */}
+      {/* 🌟 MODAL DE CONFIRMAÇÃO DE VÍNCULO (NOVO!) */}
+      {linkModal.isOpen && (
+        <>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60]" onClick={() => setLinkModal({ isOpen: false, data: null })}></div>
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-2xl shadow-2xl z-[70] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 text-center space-y-4">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                <LinkIcon className="w-8 h-8 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800">Paciente Localizado!</h2>
+              <p className="text-slate-600">
+                O e-mail <strong>{linkModal.data?.email}</strong> já pertence a <strong>{linkModal.data?.name}</strong> no nosso sistema.
+              </p>
+              <p className="text-sm text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                Deseja importar a ficha médica e vincular este {clientLabel.toLowerCase()} ao seu perfil? 
+              </p>
+            </div>
+            
+            <div className="p-4 bg-slate-50 border-t flex gap-3">
+              <Button 
+                variant="outline" 
+                className="flex-1 h-12 text-slate-600 font-bold" 
+                onClick={() => setLinkModal({ isOpen: false, data: null })}
+              >
+                Não, cancelar
+              </Button>
+              <Button 
+                onClick={acceptLinkPatient} 
+                className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md"
+              >
+                Sim, Vincular Ficha
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
+
       {deleteModal.isOpen && (
         <>
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40" onClick={() => setDeleteModal({ isOpen: false, patientId: "", patientName: "" })}></div>
