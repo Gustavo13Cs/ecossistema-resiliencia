@@ -1,31 +1,60 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, Min, Max, IsInt } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsArray, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class CreateWorkoutDto {
+export class CreateExerciseDto {
   @IsString()
-  activityType!: string; 
-
-  @IsInt()
-  @Min(1, { message: 'A duração deve ser de pelo menos 1 minuto' })
-  durationMinutes!: number; 
+  name!: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'A intensidade é obrigatória (ex: INTENSO)' })
-  intensity!: string; 
+  sets!: string;
+
+  @IsString()
+  reps!: string;
 
   @IsOptional()
-  @IsNumber()
-  sleepHours?: number;
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(5, { message: 'O humor deve ser uma nota de 1 a 5' })
-  moodLevel?: number;
-
-  @IsOptional()
-  @IsNumber()
-  weight?: number;
+  @IsString()
+  rest?: string;
 
   @IsOptional()
   @IsString()
   notes?: string;
+}
+
+export class CreateSplitDto {
+  @IsString()
+  name!: string;
+
+  @IsOptional()
+  @IsString()
+  focus?: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateExerciseDto)
+  exercises!: CreateExerciseDto[];
+}
+
+export class CreateWorkoutDto {
+  @IsString()
+  title!: string;
+
+  @IsOptional()
+  @IsString()
+  goal?: string;
+
+  @IsOptional()
+  @IsNumber()
+  durationWeeks?: number;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsString()
+  userId!: string; 
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateSplitDto)
+  splits!: CreateSplitDto[];
 }

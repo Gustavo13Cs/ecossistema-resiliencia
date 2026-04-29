@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards,Request } from '@nestjs/common';
 import { AssessmentsService } from './assessments.service';
 import { CreateAssessmentDto } from './dto/create-assessment.dto';
 import { AuthGuard } from '../../common/guards/auth.guard';
@@ -24,7 +24,7 @@ export class AssessmentsController {
   }
 
   @Get()
-  findAll() {
-    return this.assessmentsService.findAll();
+  findAll(@Request() req) {
+    return this.assessmentsService.findAll(req.user.sub);
   }
 }

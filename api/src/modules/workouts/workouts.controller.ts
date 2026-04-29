@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UseGuards, Request,Delete} from '@nestjs/common';
 import { WorkoutsService } from './workouts.service';
 import { CreateWorkoutDto } from './dto/create-workout.dto';
 import { AuthGuard } from '../../common/guards/auth.guard';
@@ -10,13 +10,21 @@ export class WorkoutsController {
 
   @Post()
   create(@Request() req, @Body() createWorkoutDto: CreateWorkoutDto) {
-    const userId = req.user.sub; 
-    return this.workoutsService.create(userId, createWorkoutDto);
+    return this.workoutsService.create(req.user.sub, createWorkoutDto);
   }
 
   @Get()
   findAll(@Request() req) {
-    return this.workoutsService.findAll(req.user.sub, req.user.role);
+    return this.workoutsService.findAllByProfessional(req.user.sub);
   }
 
+  @Get('user/:userId/active')
+  findActiveByUser(@Param('userId') userId: string) {
+    return this.workoutsService.findActiveByUser(userId);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.workoutsService.remove(id);
+  }
 }

@@ -74,7 +74,7 @@ export class DietPlansService {
 
     return novaDieta;
   }
-  // Busca a dieta ativa atual de um paciente para mostrar no App dele
+
   async findActiveByUserId(userId: string) {
     return this.prisma.dietPlan.findFirst({
       where: { userId, isActive: true },
@@ -86,7 +86,6 @@ export class DietPlansService {
     });
   }
 
-  // Altera o status da refeição (Check / Uncheck)
   async toggleMealStatus(mealId: string) {
     const meal = await this.prisma.meal.findUnique({ where: { id: mealId } });
     if (!meal) throw new Error('Refeição não encontrada');
@@ -105,5 +104,9 @@ export class DietPlansService {
       },
       orderBy: { createdAt: 'desc' }
     });
+  }
+
+  async remove(id: string) {
+    return this.prisma.dietPlan.delete({ where: { id } });
   }
 }

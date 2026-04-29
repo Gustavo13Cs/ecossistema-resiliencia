@@ -25,8 +25,17 @@ export class AssessmentsService {
     });
   }
 
- async findAll() {
+ async findAll(professionalId: string) {
     return this.prisma.physicalAssessment.findMany({
+      where: {
+        user: {
+          professionals: {
+            some: {
+              id: professionalId
+            }
+          }
+        }
+      },
       include: {
         user: { select: { name: true } } 
       },

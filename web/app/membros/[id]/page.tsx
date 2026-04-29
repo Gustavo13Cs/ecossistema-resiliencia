@@ -189,17 +189,17 @@ export default function FichaPacientePage() {
               </Link>
             )}
             {isPersonal && (
-              <Button className="h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md">
-                <Dumbbell className="w-4 h-4 mr-2" /> Prescrever Treino
-              </Button>
+              <Link href={`/membros/${params.id}/novo-treino`}>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Dumbbell className="w-4 h-4 mr-2" /> Prescrever Treino
+                </Button>
+              </Link>
             )}
             {isFisio && (
               <Button className="h-11 bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md">
                 <Activity className="w-4 h-4 mr-2" /> Avaliação Postural
               </Button>
             )}
-            
-            {/* 🌟 O BOTÃO AGORA CHAMA O MODAL DE EDIÇÃO */}
             <Button variant="outline" className="h-11 text-slate-700 border-slate-300" onClick={handleOpenEdit}>
               Editar Cadastro
             </Button>
