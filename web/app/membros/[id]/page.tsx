@@ -14,6 +14,9 @@ import { useAuth } from "@/contexts/auth-context"
 
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 
+import { AssessmentModal } from "@/components/AssessmentModal"
+import { PhysioAssessmentModal } from "@/components/PhysioAssessmentModal"
+
 export default function FichaPacientePage() {
   const { user: loggedInUser } = useAuth()
   const params = useParams()
@@ -196,7 +199,10 @@ export default function FichaPacientePage() {
               </Link>
             )}
             {isFisio && (
-              <Button className="h-11 bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md">
+              <Button 
+                onClick={() => setShowAssessmentModal(true)} 
+                className="h-11 bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md"
+              >
                 <Activity className="w-4 h-4 mr-2" /> Avaliação Postural
               </Button>
             )}
@@ -461,72 +467,21 @@ export default function FichaPacientePage() {
         </>
       )}
 
-      {/* MODAL DE AVALIAÇÃO ... MANTIDO ... */}
-      {showAssessmentModal && (
-        <>
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40" onClick={() => setShowAssessmentModal(false)}></div>
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-2xl shadow-2xl z-50 overflow-hidden">
-            <div className={`p-5 text-white flex items-center justify-between ${isPersonal ? 'bg-blue-800' : 'bg-slate-800'}`}>
-              <div className="flex items-center gap-3">
-                <div className={`${isPersonal ? 'bg-blue-500' : 'bg-emerald-500'} p-2 rounded-lg`}><TrendingUp className="w-5 h-5 text-white" /></div>
-                <div>
-                  <h2 className="text-xl font-bold">Nova Avaliação Corporal</h2>
-                  <p className="text-slate-300 text-xs mt-0.5">Registe os dados da avaliação de hoje</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="icon" className="text-slate-300 hover:text-white" onClick={() => setShowAssessmentModal(false)}>
-                <X className="w-5 h-5" />
-              </Button>
-            </div>
-            
-            <div className="p-6 space-y-6">
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <p className="text-sm font-bold text-slate-600 mb-3 uppercase tracking-wider">Medidas Globais</p>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-slate-700">Peso (kg) <span className="text-rose-500">*</span></Label>
-                    <Input type="number" placeholder="Ex: 85.5" value={newAssessment.weight} onChange={e => setNewAssessment({...newAssessment, weight: e.target.value})} className="font-semibold text-lg h-12" autoFocus />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-slate-700">% Gordura</Label>
-                    <Input type="number" placeholder="Ex: 18.2" value={newAssessment.bodyFat} onChange={e => setNewAssessment({...newAssessment, bodyFat: e.target.value})} className="h-12" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-slate-700">Músculo (kg/% )</Label>
-                    <Input type="number" placeholder="Ex: 35.0" value={newAssessment.muscleMass} onChange={e => setNewAssessment({...newAssessment, muscleMass: e.target.value})} className="h-12" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <p className="text-sm font-bold text-slate-600 mb-3 uppercase tracking-wider">Circunferências Principais (cm)</p>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-slate-700">Cintura</Label>
-                    <Input type="number" placeholder="Ex: 80" value={newAssessment.waist} onChange={e => setNewAssessment({...newAssessment, waist: e.target.value})} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-slate-700">Abdômen</Label>
-                    <Input type="number" placeholder="Ex: 85" value={newAssessment.abdomen} onChange={e => setNewAssessment({...newAssessment, abdomen: e.target.value})} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-slate-700">Quadril</Label>
-                    <Input type="number" placeholder="Ex: 100" value={newAssessment.hips} onChange={e => setNewAssessment({...newAssessment, hips: e.target.value})} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button variant="outline" className="flex-1 h-12 text-slate-600" onClick={() => setShowAssessmentModal(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleSaveAssessment} disabled={savingAssessment || !newAssessment.weight} className={`flex-1 h-12 text-white font-bold shadow-md ${isPersonal ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
-                  {savingAssessment ? "A Salvar..." : <><Save className="w-4 h-4 mr-2" /> Salvar Medidas</>}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </>
+      {/* RENDERIZAÇÃO INTELIGENTE DOS MODAIS DE AVALIAÇÃO */}
+      {isFisio ? (
+        <PhysioAssessmentModal 
+          isOpen={showAssessmentModal} 
+          onClose={() => setShowAssessmentModal(false)} 
+          patientId={params.id as string}
+          onSuccess={fetchAssessments} 
+        />
+      ) : (
+        <AssessmentModal 
+          isOpen={showAssessmentModal} 
+          onClose={() => setShowAssessmentModal(false)} 
+          patientId={params.id as string}
+          onSuccess={fetchAssessments} 
+        />
       )}
 
     </div>

@@ -7,6 +7,7 @@ import { MetricsModule } from './modules/metrics/metrics.module';
 import { DietPlansModule } from './modules/diet-plans/diet-plans.module';
 import { FoodsModule } from './modules/foods/foods.module';
 import { AssessmentsModule } from './modules/assessments/assessments.module';
+import { PhysioAssessmentsModule } from './modules/physio-assessments/physio-assessments.module';
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { AssessmentsModule } from './modules/assessments/assessments.module';
     MetricsModule,
     DietPlansModule,
     FoodsModule,
-    AssessmentsModule
+    AssessmentsModule,
+    PhysioAssessmentsModule
   ],
 })
 export class AppModule {}

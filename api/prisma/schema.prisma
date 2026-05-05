@@ -47,6 +47,9 @@ model User {
 
   workouts         Workout[] @relation("UserWorkouts")
   createdWorkouts  Workout[] @relation("CreatedWorkouts")
+  physioAssessments PhysioAssessment[] @relation("UserPhysioAssessments")
+  rehabs            RehabPlan[]        @relation("UserRehabs")
+  createdRehabs     RehabPlan[]        @relation("CreatedRehabs")
   
   // workoutLogs   WorkoutLog[]
   
@@ -187,21 +190,42 @@ model MealItem {
 // Tabela 7: Avaliações Físicas / Antropometria
 model PhysicalAssessment {
   id          String   @id @default(uuid())
-  date        DateTime @default(now()) // Data da consulta/avaliação
+  date        DateTime @default(now())
   
   // ⚖️ Medidas Globais
-  weight      Float?   // Peso (kg)
-  bodyFat     Float?   // Percentual de Gordura (%)
-  muscleMass  Float?   // Massa Muscular (kg ou %)
+  weight      Float?
+  bodyFat     Float?   
+  muscleMass  Float?
   
-  // 📏 Circunferências Principais (cm)
+  // 📏 Circunferências (cm)
   waist       Float?   // Cintura
   abdomen     Float?   // Abdômen
   hips        Float?   // Quadril
+  thorax      Float?   // Tórax
+  armLeft     Float?
+  armRight    Float?
+  thighLeft   Float?
+  thighRight  Float?
+  calfLeft    Float?
+  calfRight   Float?
+
+  // 🧪 Dobras Cutâneas (mm) - Protocolo 7 Dobras
+  skinfoldTriceps      Float?
+  skinfoldSubscapular  Float?
+  skinfoldChest        Float?
+  skinfoldAxillary     Float?
+  skinfoldSuprailiac   Float?
+  skinfoldAbdominal    Float?
+  skinfoldThigh        Float?
+
+  // ⚡ Performance / Força
+  benchPress1RM  Float?
+  squat1RM       Float?
+  deadlift1RM    Float?
+  vo2Max         Float?
   
   notes       String?  @db.Text
 
-  // 🔗 Relação com o Paciente
   userId      String
   user        User     @relation("UserAssessments", fields: [userId], references: [id], onDelete: Cascade)
 
@@ -281,4 +305,84 @@ model WorkoutExercise {
   split       WorkoutSplit @relation("SplitToExercises", fields: [splitId], references: [id], onDelete: Cascade)
 
   @@map("workout_exercises")
+}
+
+// ==========================================
+// MÓDULO DE FISIOTERAPIA (REABILITAÇÃO)
+// ==========================================
+
+// Tabela 12: Avaliação Fisioterapêutica / Postural
+model PhysioAssessment {
+  id              String   @id @default(uuid())
+  date            DateTime @default(now())
+
+  chiefComplaint  String?  @db.Text // Queixa Principal (QP)
+  historyOfIllness String? @db.Text // História da Moléstia Atual (HMA)
+  painLevel       Int?     // Escala de Dor (EVA) de 0 a 10
+
+  posturalAnalysis String? @db.Text // Análise Postural
+  palpation       String?  @db.Text // Palpação
+  jointMobility   String?  @db.Text // Amplitude de Movimento (ADM)
+  orthopedicTests String?  @db.Text // Testes Especiais (Ex: Lachman, Gaveta)
+  
+  treatmentPlan   String?  @db.Text // Conduta / Plano de Tratamento
+
+  userId          String
+  user            User     @relation("UserPhysioAssessments", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("physio_assessments")
+}
+
+// Tabela 13: Plano de Reabilitação (O "Treino" da Fisio)
+model RehabPlan {
+  id            String   @id @default(uuid())
+  title         String   // Ex: "Pós-Operatório LCA"
+  goal          String?  // Ex: "Controle de dor e edema"
+  durationWeeks Int?
+  notes         String?  @db.Text // Orientações para casa
+
+  userId        String
+  user          User     @relation("UserRehabs", fields: [userId], references: [id], onDelete: Cascade)
+  
+  creatorId     String
+  creator       User     @relation("CreatedRehabs", fields: [creatorId], references: [id])
+
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions      RehabSession[] @relation("PlanToSessions")
+
+  @@map("rehab_plans")
+}
+
+// Tabela 14: Fases ou Sessões da Reabilitação
+model RehabSession {
+  id          String   @id @default(uuid())
+  name        String   // Ex: "Fase 1 - Analgésica" ou "Sessão 1 a 5"
+  focus       String?  // Ex: "Eletroterapia + Cinesioterapia"
+
+  rehabPlanId String
+  rehabPlan   RehabPlan @relation("PlanToSessions", fields: [rehabPlanId], references: [id], onDelete: Cascade)
+
+  exercises   RehabExercise[] @relation("SessionToExercises")
+
+  @@map("rehab_sessions")
+}
+
+// Tabela 15: Terapias e Exercícios
+model RehabExercise {
+  id          String   @id @default(uuid())
+  name        String   // Ex: "TENS", "Alongamento Isquiotibiais", "Ponte"
+  sets        String?  // Ex: "20 min" ou "3"
+  reps        String?  // Ex: "Contínuo" ou "15"
+  notes       String?  @db.Text // Ex: "Frequência 100Hz" ou "Até o limite da dor"
+
+  sessionId   String
+  session     RehabSession @relation("SessionToExercises", fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("rehab_exercises")
 }
