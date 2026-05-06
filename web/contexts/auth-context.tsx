@@ -20,6 +20,16 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+const getRedirectPath = (role?: string) => {
+  switch (role) {
+    case 'PATIENT': return '/paciente'
+    case 'NUTRITIONIST': return '/dietas'
+    case 'PERSONAL': return '/treinos'
+    case 'PHYSIO': return '/reabilitacao'
+    default: return '/membros' 
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -47,11 +57,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isPublicRoute = publicRoutes.includes(pathname)
       
       if (!user && !isPublicRoute) {
-        // Se não tem login e tenta aceder a uma área privada -> Rua!
+        // Se não está logado e tenta aceder a rota privada -> Vai para Login
         router.push("/auth/login")
       } else if (user && isPublicRoute) {
-        // Se já tem login e tenta ir para a página de login -> Dashboard!
-        router.push("/home")
+        // 🌟 Se está logado e tenta ir para a Landing Page ou Login -> Vai para a sua Central
+        router.push(getRedirectPath(user.role))
       }
     }
   }, [user, isLoading, pathname, router])
@@ -60,7 +70,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("token", token)
     const decoded = jwtDecode(token) as User
     setUser(decoded)
-    router.push("/home")
+    
+    // 🌟 Após o login bem sucedido, envia para a página certa
+    router.push(getRedirectPath(decoded.role))
   }
 
   const logout = () => {
@@ -68,6 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
     router.push("/auth/login")
   }
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">

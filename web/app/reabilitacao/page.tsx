@@ -247,7 +247,7 @@ export default function ReabilitacaoHubPage() {
         </>
       )}
 
-      {/* 🌟 MODAL BONITO DE EXCLUSÃO */}
+      {/* 🌟 MODAL DE EXCLUSÃO */}
       {planToDelete && (
         <>
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50" onClick={() => setPlanToDelete(null)}></div>
