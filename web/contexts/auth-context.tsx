@@ -8,6 +8,7 @@ type User = {
   sub: string;
   role: string;
   email?: string;
+  name?: string;
   businessContext?: string;
 }
 
