@@ -51,8 +51,10 @@ export class WorkoutsService {
     return this.prisma.workout.findFirst({
       where: { userId: userId, isActive: true },
       include: {
-        splits: {
-          include: { exercises: true } 
+        splits: { // <-- Era 'days', mudamos para 'splits'
+          include: {
+            exercises: true
+          }
         }
       },
       orderBy: { createdAt: 'desc' }

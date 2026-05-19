@@ -3,6 +3,7 @@
 import { useAuth } from "@/contexts/auth-context"
 import { Card, CardContent } from "@/components/ui/card"
 import { Apple, Dumbbell, Activity, Droplets, Flame } from "lucide-react"
+import Link from "next/link"
 
 export default function PacienteDashboard() {
   const { user } = useAuth()
@@ -49,7 +50,8 @@ export default function PacienteDashboard() {
       <div>
         <h3 className="text-lg font-bold text-slate-800 mb-4">O seu acompanhamento</h3>
         <div className="space-y-4">
-          <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 cursor-pointer hover:border-teal-300 hover:shadow-md transition-all group">
+          
+          <Link href="/paciente/dieta" className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 cursor-pointer hover:border-teal-300 hover:shadow-md transition-all group block">
             <div className="w-14 h-14 rounded-full bg-teal-50 flex items-center justify-center group-hover:bg-teal-100 transition-colors">
               <Apple className="w-6 h-6 text-teal-600" />
             </div>
@@ -57,9 +59,9 @@ export default function PacienteDashboard() {
               <h4 className="font-bold text-slate-800">Plano Alimentar</h4>
               <p className="text-sm text-slate-500">Veja o que comer na próxima refeição.</p>
             </div>
-          </div>
+          </Link>
 
-          <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all group">
+          <Link href="/paciente/treino" className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all group block">
             <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
               <Dumbbell className="w-6 h-6 text-blue-600" />
             </div>
@@ -67,9 +69,9 @@ export default function PacienteDashboard() {
               <h4 className="font-bold text-slate-800">Treino do Dia</h4>
               <p className="text-sm text-slate-500">Acesse a sua ficha de hipertrofia.</p>
             </div>
-          </div>
+          </Link>
 
-          <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 cursor-pointer hover:border-purple-300 hover:shadow-md transition-all group">
+          <Link href="/paciente/reabilitacao" className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 cursor-pointer hover:border-purple-300 hover:shadow-md transition-all group block">
             <div className="w-14 h-14 rounded-full bg-purple-50 flex items-center justify-center group-hover:bg-purple-100 transition-colors">
               <Activity className="w-6 h-6 text-purple-600" />
             </div>
@@ -77,7 +79,8 @@ export default function PacienteDashboard() {
               <h4 className="font-bold text-slate-800">Reabilitação</h4>
               <p className="text-sm text-slate-500">Protocolo de fisioterapia ativo.</p>
             </div>
-          </div>
+          </Link>
+
         </div>
       </div>
     </div>

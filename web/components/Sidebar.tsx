@@ -11,7 +11,7 @@ import {
 
 const MENU_ITEMS = [
   // 🌍 Visível para todos
-  { title: "Início", icon: Home, href: "/home", roles: ["NUTRITIONIST", "PERSONAL", "PHYSIO", "PATIENT"] },
+  { title: "Início", icon: Home, href: "/home", roles: ["NUTRITIONIST", "PERSONAL", "PHYSIO"] },
   
   // 👨‍⚕️ Gestão (Profissionais)
   { title: "Meus Pacientes", icon: Users, href: "/membros", roles: ["NUTRITIONIST", "PHYSIO"] },
@@ -36,6 +36,7 @@ export function Sidebar() {
   const pathname = usePathname()
   const { user, logout } = useAuth()
 
+  if (pathname.startsWith('/paciente')) return null
   if (!user) return null
 
   const permittedMenuItems = MENU_ITEMS.filter(item => item.roles.includes((user as any).role))

@@ -75,14 +75,21 @@ export class DietPlansService {
     return novaDieta;
   }
 
-  async findActiveByUserId(userId: string) {
+  async findActiveByUser(userId: string) {
     return this.prisma.dietPlan.findFirst({
-      where: { userId, isActive: true },
+      where: { userId: userId, isActive: true },
       include: {
         meals: {
-          include: { items: { include: { food: true } } },
-        },
+          include: {
+            items: { 
+              include: {
+                food: true 
+              }
+            }
+          }
+        }
       },
+      orderBy: { createdAt: 'desc' }
     });
   }
 

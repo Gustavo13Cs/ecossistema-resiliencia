@@ -20,7 +20,7 @@ export class DietPlansController {
 
   @Get('user/:userId/active')
   findActiveByUser(@Param('userId') userId: string) {
-    return this.dietPlansService.findActiveByUserId(userId);
+   return this.dietPlansService.findActiveByUser(userId);
   }
 
   @Patch('meal/:mealId/toggle')

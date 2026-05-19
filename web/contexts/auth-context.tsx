@@ -58,11 +58,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isPublicRoute = publicRoutes.includes(pathname)
       
       if (!user && !isPublicRoute) {
-        // Se não está logado e tenta aceder a rota privada -> Vai para Login
         router.push("/auth/login")
-      } else if (user && isPublicRoute) {
-        // 🌟 Se está logado e tenta ir para a Landing Page ou Login -> Vai para a sua Central
-        router.push(getRedirectPath(user.role))
+      } else if (user) {
+        if (isPublicRoute) {
+          router.push(getRedirectPath(user.role))
+        } 
+        else if (user.role === 'PATIENT' && !pathname.startsWith('/paciente')) {
+          router.push('/paciente')
+        } 
+        else if (user.role !== 'PATIENT' && pathname.startsWith('/paciente')) {
+          router.push(getRedirectPath(user.role))
+        }
       }
     }
   }, [user, isLoading, pathname, router])
