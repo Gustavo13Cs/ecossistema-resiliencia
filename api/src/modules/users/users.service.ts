@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { UpdateUserDto } from './dto/update-user.dto'; // Import apenas no topo!
 
 @Injectable()
 export class UsersService {
@@ -85,9 +86,35 @@ export class UsersService {
     return links.map(link => link.patient);
   }
 
+  // 🔒 RESOLVE O PONTO 1: Expondo apenas campos seguros (SEM PASSWORD)
   async findOne(id: string) {
     return this.prisma.user.findUnique({
-      where: { id: id },
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        gender: true,
+        birthDate: true,
+        height: true,
+        initialWeight: true,
+        goal: true,
+        allergies: true,
+        pathologies: true,
+        typicalSleep: true,
+        exerciseType: true,
+        exerciseFrequency: true,
+        workActivityLevel: true,
+        role: true,
+      }
+    });
+  }
+
+  async update(id: string, data: UpdateUserDto) {
+    return this.prisma.user.update({
+      where: { id },
+      data, 
     });
   }
 
@@ -104,23 +131,4 @@ export class UsersService {
       },
     });
   }
-
-  async update(id: string, data: any) {
-    const { id: _, email, password, role, professionals, createdAt, updatedAt, ...updateData } = data;
-    
-    return this.prisma.user.update({
-      where: { id },
-      data: updateData,
-    });
-  }
-
-  // ⚠️ DESATIVADO TEMPORARIAMENTE: Pois removemos o WorkoutLog do schema!
-  /*
-  async getUserWorkouts(userId: string) {
-    return this.prisma.workoutLog.findMany({
-      where: { userId: userId },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-  */
 }

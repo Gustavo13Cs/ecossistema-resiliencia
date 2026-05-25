@@ -1,8 +1,11 @@
-import { Controller, Post, Body, Get, UseGuards, Request, Param, Delete, Query, NotFoundException,Put } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request, Param, Delete, Query, NotFoundException,Put,Patch } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @UseGuards(AuthGuard)
+
+
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -36,15 +39,9 @@ export class UsersController {
     return this.usersService.unlinkPatient(req.user.sub, id);
   }
 
-  @Put(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: any) {
+ @Patch(':id')
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
-  // ⚠️ Rota comentada para não quebrar a compilação
-  /*
-  @Get(':id/workouts')
-  getUserWorkouts(@Param('id') id: string) {
-    return this.usersService.getUserWorkouts(id);
-  }
-  */
+
 }
