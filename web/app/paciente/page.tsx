@@ -1,20 +1,22 @@
 "use client"
 
 import { useAuth } from "@/contexts/auth-context"
-import { usePacienteDashboard } from "@/hooks/usePacienteDashboard"
+import { usePacienteDashboard } from "@/hooks/core/usePacienteDashboard"
 import { Card, CardContent } from "@/components/ui/card"
-import { Apple, Dumbbell, Activity, Droplets, Flame, Clock, ArrowRight, AlertTriangle,Plus } from "lucide-react"
+import { Apple, Dumbbell, Activity, Droplets, Flame, Clock, ArrowRight, AlertTriangle,Plus,CheckCircle2 } from "lucide-react"
+import { useCheckIn } from "@/hooks/features/useCheckIn"
 import Link from "next/link"
-import { useWaterTracker } from "@/hooks/useWaterTracker"
-import { useWeather } from "@/hooks/useWeather"
+import { useWaterTracker } from "@/hooks/features/useWaterTracker"
+import { useWeather } from "@/hooks/features/useWeather"
+import { Button } from "@/components/ui/button"
 
 export default function PacienteDashboard() {
   const { user } = useAuth()
   
-  // A Lógica de Negócio foi extraída!
   const { dietPlan, nextMeal, waterGoal, loading, error } = usePacienteDashboard(user?.sub)
   const { currentWaterMl, addWater, progressPercentage } = useWaterTracker(waterGoal)
   const { weather, loadingWeather } = useWeather()
+  const { handleCheckIn, loadingItems, completedItems } = useCheckIn(user?.sub)
 
 
   const getGreeting = () => {
@@ -125,31 +127,46 @@ export default function PacienteDashboard() {
             </Card>
           </div>
 
-          {/* WIDGET DA PRÓXIMA REFEIÇÃO */}
+          {/* CARTÃO DA PRÓXIMA REFEIÇÃO */}
           {nextMeal && (
-            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-teal-100 rounded-2xl p-5 shadow-sm relative overflow-hidden group">
-              <div className="absolute right-0 top-0 w-24 h-24 bg-teal-500/10 rounded-full blur-xl -mr-10 -mt-10 transition-all group-hover:scale-150"></div>
+            <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl relative shadow-sm">
               
-              <div className="flex items-center justify-between relative z-10">
-                <div className="flex items-center gap-3 mb-1">
-                  <Clock className="w-5 h-5 text-teal-600" />
-                  <span className="font-bold text-teal-800 text-sm uppercase tracking-wider">Próxima Refeição</span>
-                </div>
-                <span className="bg-white text-teal-700 font-bold px-3 py-1 rounded-full shadow-sm text-sm border border-teal-100">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-emerald-800 font-bold flex items-center gap-2 text-sm uppercase tracking-wider">
+                  <Clock className="w-4 h-4" /> Próxima Refeição
+                </h3>
+                <span className="bg-white text-emerald-700 font-bold px-3 py-1 rounded-full text-sm border border-emerald-100">
                   {nextMeal.time}
                 </span>
               </div>
-              
-              <div className="mt-3 relative z-10 flex justify-between items-end">
-                <div>
-                  <h3 className="text-xl font-black text-slate-800">{nextMeal.name}</h3>
-                  <Link href="/paciente/dieta" className="text-teal-600 text-sm font-bold mt-1 flex items-center gap-1 hover:underline">
-                    Ver o que comer <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
+
+              <h2 className="text-2xl font-black text-slate-800 mb-4">{nextMeal.name}</h2>
+
+              <div className="flex items-center justify-between mt-2">
+                <Link href="/paciente/dieta" className="text-emerald-600 font-bold text-sm hover:underline flex items-center transition-all">
+                  Ver o que comer <ArrowRight className="w-4 h-4 ml-1" />
+                </Link>
+                <Button
+                  onClick={() => handleCheckIn('MEAL', nextMeal.name)}
+                  disabled={completedItems.includes(nextMeal.name) || loadingItems.includes(nextMeal.name)}
+                  className={`h-9 px-4 shadow-sm transition-all ${
+                    completedItems.includes(nextMeal.name) 
+                      ? "bg-emerald-500 hover:bg-emerald-600 text-white opacity-100" 
+                      : "bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+                  }`}
+                >
+                  {loadingItems.includes(nextMeal.name) ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  ) : completedItems.includes(nextMeal.name) ? (
+                    <><CheckCircle2 className="w-4 h-4 mr-2" /> Feito!</>
+                  ) : (
+                    "Marcar como Feito"
+                  )}
+                </Button>
               </div>
             </div>
           )}
+          
         </>
       )}
 

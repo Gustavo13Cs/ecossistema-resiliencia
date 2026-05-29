@@ -2,7 +2,7 @@
 
 import { UserCircle, LogOut, Scale, Save, Activity, HeartPulse, Phone, Ruler, Target, Dumbbell, Calendar } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
-import { useProfile } from "@/hooks/useProfile"
+import { useProfile } from "@/hooks/core/useProfile"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 

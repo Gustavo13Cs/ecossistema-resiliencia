@@ -1,19 +1,26 @@
-// api/src/modules/metrics/metrics.controller.ts
-
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param } from '@nestjs/common';
 import { MetricsService } from './metrics.service';
-import { AuthGuard } from '../../common/guards/auth.guard';
 
-@UseGuards(AuthGuard)
 @Controller('metrics')
 export class MetricsController {
   constructor(private readonly metricsService: MetricsService) {}
 
-  @Get('dashboard')
-  getDashboard(@Request() req) {
-    const userId = req.user.sub;
-    const role = req.user.role; 
-    
-    return this.metricsService.getDashboard(userId, role);
+  @Post('checkin')
+  async createCheckIn(
+    @Body('patientId') patientId: string,
+    @Body('type') type: string, 
+    @Body('itemName') itemName: string,
+  ) {
+    return this.metricsService.registerCheckIn(patientId, type, itemName);
+  }
+
+  @Get('consistency/:patientId')
+  async getConsistency(@Param('patientId') patientId: string) {
+    return this.metricsService.getWeeklyConsistency(patientId);
+  }
+
+  @Get('today/:patientId')
+  async getTodayCheckIns(@Param('patientId') patientId: string) {
+    return this.metricsService.getTodayLogs(patientId);
   }
 }

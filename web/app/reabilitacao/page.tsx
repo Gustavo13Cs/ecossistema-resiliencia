@@ -2,7 +2,7 @@
 
 import { Activity, Info, Timer, Repeat, AlertTriangle } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
-import { useFisio } from "@/hooks/useFisio"
+import { useFisio } from "@/hooks/features/useFisio"
 
 export default function FisioPacientePage() {
   const { user } = useAuth()

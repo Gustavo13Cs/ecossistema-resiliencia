@@ -59,6 +59,8 @@ model User {
 
   assessments   PhysicalAssessment[] @relation("UserAssessments")
 
+  trackings DailyTracking[]
+  
   patients      ProfessionalPatientLink[] @relation("ProfessionalLink")
   professionals ProfessionalPatientLink[] @relation("PatientLink")
 }
@@ -385,4 +387,18 @@ model RehabExercise {
   session     RehabSession @relation("SessionToExercises", fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("rehab_exercises")
+}
+
+model DailyTracking {
+  id          String   @id @default(uuid())
+  patientId   String
+  patient     User     @relation(fields: [patientId], references: [id])
+  
+  type        String   // Vai guardar "MEAL" ou "WORKOUT"
+  itemName    String   // Ex: "Café da Manhã" ou "Treino A" (Salvamos o nome direto pra poupar processamento na hora de mostrar pro Nutri)
+  
+  completedAt DateTime @default(now())
+
+  // Um index para deixar a busca do Nutricionista ultra rápida quando ele filtrar por mês/semana
+  @@index([patientId, completedAt])
 }
