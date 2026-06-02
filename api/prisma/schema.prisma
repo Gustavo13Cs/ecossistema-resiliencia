@@ -402,3 +402,4 @@ model DailyTracking {
   // Um index para deixar a busca do Nutricionista ultra rápida quando ele filtrar por mês/semana
   @@index([patientId, completedAt])
 }
+

@@ -10,6 +10,7 @@ import { Apple, Plus, Search, FileText, ArrowRight, X, Clock, Edit, Trash2,Check
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { ConsistencyBadge } from "@/components/ConsistencyBadge"
 
 export default function DietasHubPage() {
   const router = useRouter()
@@ -152,8 +153,13 @@ export default function DietasHubPage() {
                   ) : (
                     prescriptions.map((dieta) => (
                       <TableRow key={dieta.id} className="hover:bg-slate-50 transition-colors">
-                        <TableCell className="font-semibold text-slate-700 py-4 px-6">
-                          {dieta.user?.name || "Paciente Removido"}
+                        <TableCell className="py-4 px-6">
+                          <div className="flex items-center gap-3">
+                            <span className="font-semibold text-slate-700">
+                              {dieta.user?.name || "Paciente Removido"}
+                            </span>
+                            {dieta.userId && <ConsistencyBadge patientId={dieta.userId} />}
+                          </div>
                         </TableCell>
                         <TableCell className="text-slate-500 px-6">
                           {new Date(dieta.createdAt).toLocaleDateString('pt-PT')}
@@ -233,7 +239,11 @@ export default function DietasHubPage() {
                         <p className="font-bold text-slate-700 group-hover:text-teal-800">{patient.name}</p>
                         <p className="text-xs text-slate-400">{patient.goal || "Sem objetivo mapeado"}</p>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-teal-600" />
+                      
+                      <div className="flex items-center gap-4">
+                        <ConsistencyBadge patientId={patient.id} />
+                        <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-teal-600" />
+                      </div>
                     </div>
                   ))
                 )}
