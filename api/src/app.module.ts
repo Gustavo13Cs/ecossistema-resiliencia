@@ -9,6 +9,7 @@ import { FoodsModule } from './modules/foods/foods.module';
 import { AssessmentsModule } from './modules/assessments/assessments.module';
 import { PhysioAssessmentsModule } from './modules/physio-assessments/physio-assessments.module';
 import { RehabPlansModule } from './modules/rehab-plans/rehab-plans.module';
+import { AppController } from '../app.controller';
 
 @Module({
   imports: [
@@ -22,5 +23,6 @@ import { RehabPlansModule } from './modules/rehab-plans/rehab-plans.module';
     PhysioAssessmentsModule,
     RehabPlansModule
   ],
+  controllers: [AppController]
 })
 export class AppModule {}
