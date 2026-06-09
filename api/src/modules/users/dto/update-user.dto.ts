@@ -3,7 +3,15 @@ import { IsOptional, IsString, IsNumber } from 'class-validator';
 export class UpdateUserDto {
   @IsOptional()
   @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
   phone?: string;
+
+  @IsOptional()
+  @IsString()
+  birthDate?: string;
 
   @IsOptional()
   @IsString()
@@ -34,6 +42,18 @@ export class UpdateUserDto {
   typicalSleep?: string;
 
   @IsOptional()
+  @IsNumber()
+  stressLevel?: number;
+
+  @IsOptional()
+  @IsString()
+  foodRelationship?: string;
+
+  @IsOptional()
+  @IsString()
+  psychologyHistory?: string;
+
+  @IsOptional()
   @IsString()
   exerciseType?: string;
 
@@ -43,5 +63,13 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
+  exerciseDuration?: string;
+
+  @IsOptional()
+  @IsString()
   workActivityLevel?: string;
+  
+  @IsOptional()
+  @IsString()
+  nutritionistNotes?: string;
 }

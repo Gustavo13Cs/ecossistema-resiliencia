@@ -20,7 +20,16 @@ export default function NovaDietaPage() {
   const [isRestored, setIsRestored] = useState(false)
 
   const [dietInfo, setDietInfo] = useState({ title: "Fase 1 - Adaptação", goal: "Emagrecimento", notes: "", durationDays: 30, patientWeight: 80 })
-  const [targets, setTargets] = useState({ kcal: 2000, pro: 150, carb: 200, fat: 60 })
+  const [targets, setTargets] = useState({ 
+  kcal: 2000, 
+  pro: 150, 
+  carb: 200, 
+  fat: 60, 
+  fiber: 30, 
+  sodium: 2000, 
+  calcium: 1000, 
+  iron: 15 
+  })
 
   const [meals, setMeals] = useState([
     { id: `m${Date.now()}`, name: "Café da Manhã", time: "08:00", notes: "", items: [] as any[] }
@@ -89,7 +98,16 @@ export default function NovaDietaPage() {
       const res = await api.get(`/diet-plans/user/${params.id}/active`)
       if (res.data) {
         setDietInfo({ title: res.data.title, goal: res.data.goal, notes: res.data.notes || "", durationDays: res.data.durationDays || 30, patientWeight: 80 })
-        setTargets({ kcal: res.data.targetKcal, pro: res.data.proteinG, carb: res.data.carbsG, fat: res.data.fatG })
+        setTargets({ 
+          kcal: res.data.targetKcal, 
+          pro: res.data.proteinG, 
+          carb: res.data.carbsG, 
+          fat: res.data.fatG,
+          fiber: res.data.fiberG || 0, 
+          sodium: res.data.sodiumMg || 0, 
+          calcium: res.data.calciumMg || 0, 
+          iron: res.data.ironMg || 0 
+        })
         setMeals(res.data.meals.map((m: any) => ({
           id: m.id, name: m.name, time: m.time, notes: m.notes || "",
           items: m.items.map((i: any) => ({ id: i.id, quantity: i.quantity, measure: i.measure || "", food: i.food }))
@@ -101,14 +119,18 @@ export default function NovaDietaPage() {
   const calcMacro = (value: number, baseAmount: number = 100, targetAmount: number) => Number(((value / baseAmount) * targetAmount).toFixed(1))
 
   const currentTotals = useMemo(() => {
-    let kcal = 0, pro = 0, carb = 0, fat = 0
-    meals.forEach(meal => meal.items.forEach(item => {
-      kcal += calcMacro(item.food.kcal, item.food.baseAmount, item.quantity)
-      pro += calcMacro(item.food.protein, item.food.baseAmount, item.quantity)
-      carb += calcMacro(item.food.carbs, item.food.baseAmount, item.quantity)
-      fat += calcMacro(item.food.fat, item.food.baseAmount, item.quantity)
-    }))
-    return { kcal: Math.round(kcal), pro: Math.round(pro), carb: Math.round(carb), fat: Math.round(fat) }
+  let kcal = 0, pro = 0, carb = 0, fat = 0, fiber = 0, sodium = 0, calcium = 0, iron = 0
+  meals.forEach(meal => meal.items.forEach(item => {
+    kcal += calcMacro(item.food.kcal, item.food.baseAmount, item.quantity)
+    pro += calcMacro(item.food.protein, item.food.baseAmount, item.quantity)
+    carb += calcMacro(item.food.carbs, item.food.baseAmount, item.quantity)
+    fat += calcMacro(item.food.fat, item.food.baseAmount, item.quantity)
+    fiber += calcMacro(item.food.fiber || 0, item.food.baseAmount, item.quantity)
+    sodium += calcMacro(item.food.sodium || 0, item.food.baseAmount, item.quantity)
+    calcium += calcMacro(item.food.calcium || 0, item.food.baseAmount, item.quantity)
+    iron += calcMacro(item.food.iron || 0, item.food.baseAmount, item.quantity)
+  }))
+  return { kcal, pro, carb, fat, fiber, sodium, calcium, iron }
   }, [meals])
 
   const getMealTotals = (items: any[]) => {
@@ -272,6 +294,23 @@ export default function NovaDietaPage() {
     return 'bg-slate-100 text-slate-700'
   }
 
+  const NutrientRow = ({ label, current, target, unit }: any) => {
+  const percent = target > 0 ? (current / target) * 100 : 0
+  const color = percent >= 80 && percent <= 120 ? 'bg-emerald-500' : 'bg-amber-500'
+
+  return (
+    <div className="space-y-1 mb-3">
+      <div className="flex justify-between text-xs font-bold text-slate-600">
+        <span>{label}</span>
+        <span>{current.toFixed(1)} / {target} {unit}</span>
+      </div>
+      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+        <div className={`h-full ${color}`} style={{ width: `${Math.min(percent, 100)}%` }} />
+      </div>
+    </div>
+  )
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 py-8 print:bg-white print:py-0">
       
@@ -295,7 +334,7 @@ export default function NovaDietaPage() {
 
         <div className="grid lg:grid-cols-12 gap-8 items-start print:block print:gap-0">
           
-          <div className="lg:col-span-3 space-y-6 sticky top-8 print:hidden">
+          <div className="lg:col-span-3 space-y-6 sticky top-8 print:hidden max-h-[calc(100vh-4rem)] overflow-y-auto pr-2 pb-4 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
              <Card className="border-0 shadow-lg bg-white overflow-hidden">
                 <CardHeader className="bg-slate-800 text-white border-b-4 border-teal-500 py-4"><CardTitle className="text-lg">Metas</CardTitle></CardHeader>
                 <CardContent className="p-5 space-y-4">
@@ -360,6 +399,26 @@ export default function NovaDietaPage() {
                     )
                   })}
                 </div>
+
+                <div className="space-y-3 pt-6 border-t border-slate-200 mt-4">
+                  <h4 className="text-xs font-black text-slate-400 uppercase">Micronutrientes</h4>
+                  {[
+                    { label: 'Fibras', current: currentTotals.fiber, target: targets.fiber, set: (v: number) => setTargets({...targets, fiber: v}), unit: 'g' },
+                    { label: 'Sódio', current: currentTotals.sodium, target: targets.sodium, set: (v: number) => setTargets({...targets, sodium: v}), unit: 'mg' },
+                    { label: 'Cálcio', current: currentTotals.calcium, target: targets.calcium, set: (v: number) => setTargets({...targets, calcium: v}), unit: 'mg' },
+                    { label: 'Ferro', current: currentTotals.iron, target: targets.iron, set: (v: number) => setTargets({...targets, iron: v}), unit: 'mg' },
+                  ].map(m => (
+                    <div key={m.label} className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-slate-600">{m.label}</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`font-bold ${m.current < m.target ? 'text-amber-600' : 'text-teal-600'}`}>
+                            {m.current.toFixed(0)}<span className="text-[10px] text-slate-400 ml-0.5">{m.unit}</span>
+                        </span>
+                        <Input type="number" value={m.target || ""} onChange={(e) => m.set(Number(e.target.value))} className="w-14 h-6 text-[10px] text-center" />
+                      </div>
+                    </div>
+                    ))}
+                  </div>                
               </CardContent>
             </Card>
           </div>

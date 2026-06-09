@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
-import { ArrowLeft, User, Activity, Brain, Lock, Apple, TrendingUp, Plus, Save, X, Dumbbell, Stethoscope, ClipboardList } from "lucide-react"
+import { ArrowLeft, User, Activity, Brain, Lock, Apple, TrendingUp, Plus, Save, X, Dumbbell, Stethoscope, ClipboardList,LineChart as LineChartIcon, TableProperties} from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
@@ -23,6 +23,7 @@ export default function FichaPacientePage() {
   const [patient, setPatient] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
+  const [viewMode, setViewMode] = useState<"chart" | "table">("chart")
   const [assessments, setAssessments] = useState<any[]>([])
   const [showAssessmentModal, setShowAssessmentModal] = useState(false)
   const [savingAssessment, setSavingAssessment] = useState(false)
@@ -30,7 +31,6 @@ export default function FichaPacientePage() {
     weight: "", bodyFat: "", muscleMass: "", waist: "", abdomen: "", hips: "", notes: ""
   })
 
-  // 🌟 NOVOS ESTADOS PARA O MODAL DE EDIÇÃO
   const [showEditModal, setShowEditModal] = useState(false)
   const [isSavingEdit, setIsSavingEdit] = useState(false)
   const [editData, setEditData] = useState<any>({})
@@ -80,8 +80,7 @@ export default function FichaPacientePage() {
       psychologyHistory: patient.psychologyHistory || "",
       exerciseType: patient.exerciseType || "",
       exerciseFrequency: patient.exerciseFrequency || "",
-      exerciseDuration: patient.exerciseDuration || "",
-      hasPersonal: patient.hasPersonal || ""
+      exerciseDuration: patient.exerciseDuration || ""
     })
     setShowEditModal(true)
   }
@@ -98,7 +97,7 @@ export default function FichaPacientePage() {
         stressLevel: editData.stressLevel ? Number(editData.stressLevel) : null,
         birthDate: editData.birthDate ? new Date(editData.birthDate).toISOString() : null,
       }
-      await api.put(`/users/${params.id}`, payload)
+      await api.patch(`/users/${params.id}`, payload)
       toast.success("Ficha atualizada com sucesso!")
       setShowEditModal(false)
       fetchPatient() // Recarrega os dados na tela
@@ -139,9 +138,9 @@ export default function FichaPacientePage() {
   }
 
   const DataBlock = ({ label, value }: { label: string, value: any }) => (
-    <div className="space-y-1 bg-white p-4 rounded-lg border border-slate-100 shadow-sm w-full">
+    <div className="space-y-1 bg-white p-4 rounded-lg border border-slate-100 shadow-sm w-full overflow-hidden">
       <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{label}</span>
-      <p className="text-sm font-medium text-slate-800">{value || <span className="text-slate-300">-</span>}</p>
+      <p className="text-sm font-medium text-slate-800 break-words">{value || <span className="text-slate-300">-</span>}</p>
     </div>
   )
 
@@ -248,24 +247,45 @@ export default function FichaPacientePage() {
           <div className="lg:col-span-9 space-y-6">
             {(isNutri || isPersonal) && (
               <Card className="shadow-md border-0 overflow-hidden ring-1 ring-slate-200">
-                <CardHeader className="bg-slate-800 border-b border-slate-700 py-4 flex flex-row items-center justify-between">
+                <CardHeader className="bg-slate-800 border-b border-slate-700 py-4 flex flex-col sm:flex-row gap-4 sm:items-center justify-between">
                   <CardTitle className="text-base flex items-center gap-2 text-white">
                     <TrendingUp className={`w-5 h-5 ${isPersonal ? 'text-blue-400' : 'text-emerald-400'}`} /> 
                     Composição Corporal
                   </CardTitle>
-                  <Button onClick={() => setShowAssessmentModal(true)} size="sm" className={`${isPersonal ? 'bg-blue-500 hover:bg-blue-600' : 'bg-emerald-500 hover:bg-emerald-600'} text-white border-0`}>
-                    <Plus className="w-4 h-4 mr-1" /> Nova Avaliação
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-slate-900 rounded-lg p-1 flex">
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => setViewMode("chart")}
+                        className={`h-8 px-3 ${viewMode === 'chart' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                      >
+                        <LineChartIcon className="w-4 h-4 mr-2" /> Gráfico
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => setViewMode("table")}
+                        className={`h-8 px-3 ${viewMode === 'table' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                      >
+                        <TableProperties className="w-4 h-4 mr-2" /> Tabela
+                      </Button>
+                    </div>
+
+                    <Button onClick={() => setShowAssessmentModal(true)} size="sm" className={`${isPersonal ? 'bg-blue-500 hover:bg-blue-600' : 'bg-emerald-500 hover:bg-emerald-600'} text-white border-0`}>
+                      <Plus className="w-4 h-4 mr-1" /> Avaliar
+                    </Button>
+                  </div>
                 </CardHeader>
-                <CardContent className="p-6 bg-white">
+                <CardContent className="p-0 sm:p-6 bg-white">
                   {assessments.length === 0 ? (
                     <div className="text-center py-12 text-slate-400">
                       <TrendingUp className="w-12 h-12 mx-auto mb-3 text-slate-200" />
                       <p className="font-medium">Nenhuma avaliação registada ainda.</p>
-                      <p className="text-sm mt-1">Registe as medidas da primeira consulta para iniciar o gráfico.</p>
+                      <p className="text-sm mt-1">Registe as medidas da primeira consulta para iniciar o acompanhamento.</p>
                     </div>
-                  ) : (
-                    <div className="h-[300px] w-full mt-4">
+                  ) : viewMode === "chart" ? (
+                    <div className="h-[300px] w-full mt-4 px-4 sm:px-0">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
@@ -282,10 +302,40 @@ export default function FichaPacientePage() {
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
+                  ) : (
+                    <div className="w-full overflow-x-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="bg-slate-50 text-slate-500 font-semibold uppercase text-[11px] tracking-wider">
+                          <tr>
+                            <th className="px-6 py-4">Data</th>
+                            <th className="px-6 py-4">Peso (kg)</th>
+                            <th className="px-6 py-4">Gordura (%)</th>
+                            <th className="px-6 py-4">Músculo (kg)</th>
+                            <th className="px-6 py-4">Cintura / Abdômen</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {assessments.slice().reverse().map((assessment, index) => (
+                            <tr key={index} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">
+                                {new Date(assessment.date).toLocaleDateString('pt-BR')}
+                              </td>
+                              <td className="px-6 py-4 text-slate-700 font-bold">{assessment.weight || '-'}</td>
+                              <td className="px-6 py-4 text-rose-600 font-medium">{assessment.bodyFat ? `${assessment.bodyFat}%` : '-'}</td>
+                              <td className="px-6 py-4 text-emerald-600 font-medium">{assessment.muscleMass || '-'}</td>
+                              <td className="px-6 py-4 text-slate-600">
+                                {assessment.waist || '-'} cm / {assessment.abdomen || '-'} cm
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </CardContent>
               </Card>
             )}
+
 
             <div className="grid md:grid-cols-1 gap-6">
               <Card className="shadow-sm border-0 border-t-4 border-t-teal-500">
@@ -297,7 +347,7 @@ export default function FichaPacientePage() {
                 <CardContent className="p-5 bg-slate-50/50">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <DataBlock label="Altura" value={patient.height ? `${patient.height} cm` : null} />
-                    <DataBlock label="Peso Declarado" value={patient.initialWeight ? `${patient.initialWeight} kg` : null} />
+                    <DataBlock label="Peso" value={patient.initialWeight ? `${patient.initialWeight} kg` : null} />
                     <DataBlock label="Alergias / Intolerâncias" value={patient.allergies} />
                     <DataBlock label="Patologias Diagnosticadas" value={patient.pathologies} />
                   </div>
@@ -327,11 +377,10 @@ export default function FichaPacientePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-5 bg-slate-50/50">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <DataBlock label="Pratica Exercício?" value={patient.exerciseType} />
-                    <DataBlock label="Frequência" value={patient.exerciseFrequency} />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <DataBlock label="Esportes / Exercícios" value={patient.exerciseType} />
+                    <DataBlock label="Frequência Semanal" value={patient.exerciseFrequency} />
                     <DataBlock label="Duração Média" value={patient.exerciseDuration} />
-                    <DataBlock label="Possui Personal?" value={patient.hasPersonal} />
                   </div>
                 </CardContent>
               </Card>
@@ -432,22 +481,33 @@ export default function FichaPacientePage() {
 
               <div className="mb-4">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-b pb-2">4. Atividade Física</h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                   <div className="space-y-2">
-                    <Label>Pratica Exercício?</Label>
-                    <Input value={editData.exerciseType} onChange={e => setEditData({...editData, exerciseType: e.target.value})} className="h-11" />
+                    <Label>Esportes / Exercícios praticados</Label>
+                    <Input 
+                      placeholder="Ex: Musculação, Corrida, Crossfit..." 
+                      value={editData.exerciseType} 
+                      onChange={e => setEditData({...editData, exerciseType: e.target.value})} 
+                      className="h-11" 
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label>Frequência</Label>
-                    <Input value={editData.exerciseFrequency} onChange={e => setEditData({...editData, exerciseFrequency: e.target.value})} className="h-11" />
+                    <Label>Frequência Semanal</Label>
+                    <Input 
+                      placeholder="Ex: 3 a 4x na semana" 
+                      value={editData.exerciseFrequency} 
+                      onChange={e => setEditData({...editData, exerciseFrequency: e.target.value})} 
+                      className="h-11" 
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label>Duração Média</Label>
-                    <Input value={editData.exerciseDuration} onChange={e => setEditData({...editData, exerciseDuration: e.target.value})} className="h-11" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Possui Personal?</Label>
-                    <Input value={editData.hasPersonal} onChange={e => setEditData({...editData, hasPersonal: e.target.value})} className="h-11" />
+                    <Label>Duração Média (por treino)</Label>
+                    <Input 
+                      placeholder="Ex: 60 minutos" 
+                      value={editData.exerciseDuration} 
+                      onChange={e => setEditData({...editData, exerciseDuration: e.target.value})} 
+                      className="h-11" 
+                    />
                   </div>
                 </div>
               </div>

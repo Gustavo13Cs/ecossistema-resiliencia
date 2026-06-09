@@ -1,7 +1,8 @@
+import { UpdateUserDto } from './dto/update-user.dto';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { UpdateUserDto } from './dto/update-user.dto'; // Import apenas no topo!
+
 
 @Injectable()
 export class UsersService {
@@ -36,7 +37,6 @@ export class UsersService {
       return updatedUser;
     }
 
-    // SE O PACIENTE NÃO EXISTE: Cria do zero com senha
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     return this.prisma.user.create({
       data: {
@@ -50,14 +50,14 @@ export class UsersService {
     });
   }
 
-  async findByEmail(email: string) {
+ async findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
       select: {
         id: true, name: true, email: true, phone: true, birthDate: true, gender: true,
         goal: true, height: true, initialWeight: true, allergies: true, pathologies: true,
         typicalSleep: true, stressLevel: true, foodRelationship: true, psychologyHistory: true,
-        exerciseType: true, exerciseFrequency: true, exerciseDuration: true, hasPersonal: true
+        exerciseType: true, exerciseFrequency: true, exerciseDuration: true
       } 
     });
   }
@@ -86,7 +86,6 @@ export class UsersService {
     return links.map(link => link.patient);
   }
 
-  // 🔒 RESOLVE O PONTO 1: Expondo apenas campos seguros (SEM PASSWORD)
   async findOne(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
@@ -103,10 +102,16 @@ export class UsersService {
         allergies: true,
         pathologies: true,
         typicalSleep: true,
+        stressLevel: true,           
+        foodRelationship: true,      
+        psychologyHistory: true,    
         exerciseType: true,
         exerciseFrequency: true,
+        exerciseDuration: true,      
         workActivityLevel: true,
+        nutritionistNotes: true,    
         role: true,
+        createdAt: true,     
       }
     });
   }
