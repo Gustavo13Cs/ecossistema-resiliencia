@@ -24,7 +24,7 @@ export default function AlimentosHubPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   
-  const initialFoodState = { name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0 }
+  const initialFoodState = { name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 }
   const [newFood, setNewFood] = useState(initialFoodState)
 
   useEffect(() => {
@@ -80,7 +80,9 @@ export default function AlimentosHubPage() {
       carb: food.carbs,
       fat: food.fat,
       fiber: food.fiber || 0,
-      sodium: food.sodium || 0
+      sodium: food.sodium || 0,
+      calcium: food.calcium || 0,
+      iron: food.iron || 0
     })
     setShowModal(true)
   }
@@ -88,8 +90,6 @@ export default function AlimentosHubPage() {
   const handleSaveFood = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSaving(true)
-    
-    // Todos os alimentos manuais são inseridos com base em 100g para facilitar os cálculos
     const payload = {
       name: newFood.name,
       kcal: Number(newFood.kcal),
@@ -98,6 +98,8 @@ export default function AlimentosHubPage() {
       fat: Number(newFood.fat),
       fiber: Number(newFood.fiber),
       sodium: Number(newFood.sodium),
+      calcium: Number(newFood.calcium),
+      iron: Number(newFood.iron),
       baseUnit: "100g",
       baseAmount: 100,
       source: "MANUAL"
@@ -270,7 +272,6 @@ export default function AlimentosHubPage() {
         </Card>
       </div>
 
-      {/* MODAL DE CRIAÇÃO / EDIÇÃO MANUAL */}
       {showModal && (
         <>
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40" onClick={() => setShowModal(false)}></div>
@@ -297,21 +298,19 @@ export default function AlimentosHubPage() {
               <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Macronutrientes Principais (em 100g)</p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-slate-700 font-bold">Kcal</Label>
-                    <Input required type="number" step="0.1" min="0" value={newFood.kcal === 0 ? "" : newFood.kcal} onChange={e => setNewFood({...newFood, kcal: Number(e.target.value)})} className="h-11 bg-white font-bold" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-rose-600 font-bold">PTN (g)</Label>
-                    <Input required type="number" step="0.1" min="0" value={newFood.pro === 0 ? "" : newFood.pro} onChange={e => setNewFood({...newFood, pro: Number(e.target.value)})} className="h-11 bg-white border-rose-200 focus-visible:ring-rose-500" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-emerald-600 font-bold">CARB (g)</Label>
-                    <Input required type="number" step="0.1" min="0" value={newFood.carb === 0 ? "" : newFood.carb} onChange={e => setNewFood({...newFood, carb: Number(e.target.value)})} className="h-11 bg-white border-emerald-200 focus-visible:ring-emerald-500" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-amber-600 font-bold">GOR (g)</Label>
-                    <Input required type="number" step="0.1" min="0" value={newFood.fat === 0 ? "" : newFood.fat} onChange={e => setNewFood({...newFood, fat: Number(e.target.value)})} className="h-11 bg-white border-amber-200 focus-visible:ring-amber-500" />
+                  <div className="space-y-1.5"><Label className="font-bold">Kcal</Label><Input required type="number" step="0.1" min="0" value={newFood.kcal === 0 ? "" : newFood.kcal} onChange={e => setNewFood({...newFood, kcal: Number(e.target.value)})} className="h-11 bg-white font-bold" /></div>
+                  <div className="space-y-1.5"><Label className="text-rose-600 font-bold">PTN (g)</Label><Input required type="number" step="0.1" min="0" value={newFood.pro === 0 ? "" : newFood.pro} onChange={e => setNewFood({...newFood, pro: Number(e.target.value)})} className="h-11 bg-white border-rose-200" /></div>
+                  <div className="space-y-1.5"><Label className="text-emerald-600 font-bold">CARB (g)</Label><Input required type="number" step="0.1" min="0" value={newFood.carb === 0 ? "" : newFood.carb} onChange={e => setNewFood({...newFood, carb: Number(e.target.value)})} className="h-11 bg-white border-emerald-200" /></div>
+                  <div className="space-y-1.5"><Label className="text-amber-600 font-bold">GOR (g)</Label><Input required type="number" step="0.1" min="0" value={newFood.fat === 0 ? "" : newFood.fat} onChange={e => setNewFood({...newFood, fat: Number(e.target.value)})} className="h-11 bg-white border-amber-200" /></div>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-slate-200">
+                  <p className="text-xs font-bold mb-4 text-slate-500 uppercase tracking-wider">Micronutrientes e Fibras (Opcional)</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-1.5"><Label className="text-slate-600">Fibras (g)</Label><Input type="number" step="0.1" min="0" value={newFood.fiber === 0 ? "" : newFood.fiber} onChange={e => setNewFood({...newFood, fiber: Number(e.target.value)})} className="h-11 bg-white" /></div>
+                    <div className="space-y-1.5"><Label className="text-slate-600">Sódio (mg)</Label><Input type="number" step="0.1" min="0" value={newFood.sodium === 0 ? "" : newFood.sodium} onChange={e => setNewFood({...newFood, sodium: Number(e.target.value)})} className="h-11 bg-white" /></div>
+                    <div className="space-y-1.5"><Label className="text-slate-600">Cálcio (mg)</Label><Input type="number" step="0.1" min="0" value={newFood.calcium === 0 ? "" : newFood.calcium} onChange={e => setNewFood({...newFood, calcium: Number(e.target.value)})} className="h-11 bg-white" /></div>
+                    <div className="space-y-1.5"><Label className="text-slate-600">Ferro (mg)</Label><Input type="number" step="0.1" min="0" value={newFood.iron === 0 ? "" : newFood.iron} onChange={e => setNewFood({...newFood, iron: Number(e.target.value)})} className="h-11 bg-white" /></div>
                   </div>
                 </div>
               </div>

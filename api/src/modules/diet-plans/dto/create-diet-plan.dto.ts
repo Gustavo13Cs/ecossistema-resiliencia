@@ -49,6 +49,10 @@ export class CreateDietPlanDto {
   @IsNumber() proteinG!: number;
   @IsNumber() fatG!: number;
   @IsNumber() carbsG!: number;
+  @IsOptional() @IsNumber() fiberG?: number;
+  @IsOptional() @IsNumber() sodiumMg?: number;
+  @IsOptional() @IsNumber() calciumMg?: number;
+  @IsOptional() @IsNumber() ironMg?: number;
 
   @IsOptional() @IsString() notes?: string;
 

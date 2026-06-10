@@ -5,12 +5,43 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Plus, Search, Trash2, Edit2, CheckCircle2, Target, Printer, Share2, ShoppingCart, Smartphone, Database, Info, Loader2 } from "lucide-react"
+import { ArrowLeft, Plus, Search, Trash2, Edit2, CheckCircle2, Target, Printer, Share2, ShoppingCart, Smartphone, Database, Info, Loader2, X } from "lucide-react"
 import Link from "next/link"
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts"
 import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context" 
+
+
+const calculateAge = (birthDate: string) => {
+  if (!birthDate) return 30; 
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+};
+
+const getAutoDRI = (gender: string, age: number) => {
+  const isMale = gender === 'M' || gender?.toUpperCase() === 'MASCULINO';
+  const isFemale = gender === 'F' || gender?.toUpperCase() === 'FEMININO';
+
+  let fiber = 25, iron = 14, calcium = 1000, sodium = 2000;
+
+  if (isMale) {
+    fiber = age > 50 ? 30 : 38;
+    iron = 8;
+    calcium = age > 70 ? 1200 : 1000;
+  } else if (isFemale) {
+    fiber = age > 50 ? 21 : 25;
+    iron = age > 50 ? 8 : 18; 
+    calcium = age > 50 ? 1200 : 1000; 
+  }
+
+  return { fiber, iron, calcium, sodium };
+};
 
 export default function NovaDietaPage() {
   const params = useParams()
@@ -48,6 +79,10 @@ export default function NovaDietaPage() {
   const [showShareModal, setShowShareModal] = useState(false)
   const [shoppingDays, setShoppingDays] = useState(30)
   const [printMode, setPrintMode] = useState<'diet' | 'list'>('diet')
+  const [showDriModal, setShowDriModal] = useState(false)
+
+  const [patientProfile, setPatientProfile] = useState<any>(null);
+  const [patientAge, setPatientAge] = useState<number>(0);
 
   const [newFood, setNewFood] = useState({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 })
 
@@ -55,16 +90,66 @@ export default function NovaDietaPage() {
   useEffect(() => { loadInitialData() }, [])
 
   const loadInitialData = async () => {
+    let defaultDri = { fiber: 30, sodium: 2000, calcium: 1000, iron: 15 };
+    let age = 0;
+    let pData = null;
+
+    try {
+      const userRes = await api.get(`/users/${params.id}`);
+      pData = userRes.data;
+      setPatientProfile(pData);
+      
+      if (pData.birthDate) {
+         age = calculateAge(pData.birthDate);
+         setPatientAge(age);
+      }
+      
+      defaultDri = getAutoDRI(pData.gender, age);
+    } catch (e) { console.error("Erro ao buscar perfil biológico", e) }
+
     const draftKey = `diet_draft_${params.id}`
     const savedDraft = localStorage.getItem(draftKey)
     if (savedDraft) {
       try {
         const parsed = JSON.parse(savedDraft)
-        setDietInfo(parsed.dietInfo); setTargets(parsed.targets); setMeals(parsed.meals); setIsRestored(true)
-        return
-      } catch (error) { console.error("Erro ao ler rascunho", error) }
+        setDietInfo({ ...parsed.dietInfo, patientWeight: pData?.initialWeight || parsed.dietInfo.patientWeight || 80 });
+        setTargets({
+          ...parsed.targets,
+          fiber: parsed.targets.fiber || defaultDri.fiber,
+          sodium: parsed.targets.sodium || defaultDri.sodium,
+          calcium: parsed.targets.calcium || defaultDri.calcium,
+          iron: parsed.targets.iron || defaultDri.iron
+        });
+        setMeals(parsed.meals); setIsRestored(true);
+        return;
+      } catch (error) {}
     }
-    await fetchActiveDiet()
+
+    try {
+      const res = await api.get(`/diet-plans/user/${params.id}/active`)
+      if (res.data) {
+        setDietInfo({
+           title: res.data.title, goal: res.data.goal, notes: res.data.notes || "",
+           durationDays: res.data.durationDays || 30,
+           patientWeight: pData?.initialWeight || 80
+        })
+        setTargets({
+          kcal: res.data.targetKcal, pro: res.data.proteinG, carb: res.data.carbsG, fat: res.data.fatG,
+          fiber: res.data.fiberG || defaultDri.fiber,
+          sodium: res.data.sodiumMg || defaultDri.sodium,
+          calcium: res.data.calciumMg || defaultDri.calcium,
+          iron: res.data.ironMg || defaultDri.iron
+        })
+        setMeals(res.data.meals.map((m: any) => ({
+          id: m.id, name: m.name, time: m.time, notes: m.notes || "",
+          items: m.items.map((i: any) => ({ id: i.id, quantity: i.quantity, measure: i.measure || "", food: i.food }))
+        })))
+      } else {
+        setTargets(prev => ({ ...prev, ...defaultDri }));
+        setDietInfo(prev => ({ ...prev, patientWeight: pData?.initialWeight || 80 }));
+      }
+    } catch (error) {}
+
     setIsRestored(true)
   }
 
@@ -93,28 +178,6 @@ export default function NovaDietaPage() {
     } catch (error) { }
   }
 
-  const fetchActiveDiet = async () => {
-    try {
-      const res = await api.get(`/diet-plans/user/${params.id}/active`)
-      if (res.data) {
-        setDietInfo({ title: res.data.title, goal: res.data.goal, notes: res.data.notes || "", durationDays: res.data.durationDays || 30, patientWeight: 80 })
-        setTargets({ 
-          kcal: res.data.targetKcal, 
-          pro: res.data.proteinG, 
-          carb: res.data.carbsG, 
-          fat: res.data.fatG,
-          fiber: res.data.fiberG || 0, 
-          sodium: res.data.sodiumMg || 0, 
-          calcium: res.data.calciumMg || 0, 
-          iron: res.data.ironMg || 0 
-        })
-        setMeals(res.data.meals.map((m: any) => ({
-          id: m.id, name: m.name, time: m.time, notes: m.notes || "",
-          items: m.items.map((i: any) => ({ id: i.id, quantity: i.quantity, measure: i.measure || "", food: i.food }))
-        })))
-      }
-    } catch (error) { }
-  }
 
   const calcMacro = (value: number, baseAmount: number = 100, targetAmount: number) => Number(((value / baseAmount) * targetAmount).toFixed(1))
 
@@ -132,6 +195,12 @@ export default function NovaDietaPage() {
   }))
   return { kcal, pro, carb, fat, fiber, sodium, calcium, iron }
   }, [meals])
+
+  const macroPieData = useMemo(() => [
+    { name: 'Proteínas', value: currentTotals.pro * 4, color: '#f43f5e' },
+    { name: 'Carboidratos', value: currentTotals.carb * 4, color: '#0ea5e9' },
+    { name: 'Lipídios', value: currentTotals.fat * 9, color: '#f59e0b' },
+  ], [currentTotals])
 
   const getMealTotals = (items: any[]) => {
     let kcal = 0, pro = 0, carb = 0, fat = 0
@@ -222,7 +291,22 @@ export default function NovaDietaPage() {
 
   const handleSaveManualFood = async () => {
     if (!newFood.name.trim()) return
-    const payload = { ...newFood, baseUnit: "100g", baseAmount: 100, source: "MANUAL" }
+    
+    const payload = { 
+      name: newFood.name,
+      kcal: Number(newFood.kcal),
+      protein: Number(newFood.pro),
+      carbs: Number(newFood.carb),
+      fat: Number(newFood.fat),
+      fiber: Number(newFood.fiber),
+      sodium: Number(newFood.sodium),
+      calcium: Number(newFood.calcium),
+      iron: Number(newFood.iron),
+      baseUnit: "100g", 
+      baseAmount: 100, 
+      source: "MANUAL" 
+    }
+    
     try {
       if (editingFoodId) {
         const res = await api.put(`/foods/${editingFoodId}`, payload)
@@ -268,6 +352,11 @@ export default function NovaDietaPage() {
         proteinG: targets.pro, 
         carbsG: targets.carb, 
         fatG: targets.fat, 
+        fiberG: targets.fiber,
+        sodiumMg: targets.sodium,
+        calciumMg: targets.calcium,
+        ironMg: targets.iron,
+
         userId: params.id, 
         notes: dietInfo.notes,
         meals: meals.map(m => ({ 
@@ -292,23 +381,6 @@ export default function NovaDietaPage() {
     if (source === 'TBCA') return 'bg-amber-100 text-amber-700'
     if (source === 'MANUAL') return 'bg-purple-100 text-purple-700'
     return 'bg-slate-100 text-slate-700'
-  }
-
-  const NutrientRow = ({ label, current, target, unit }: any) => {
-  const percent = target > 0 ? (current / target) * 100 : 0
-  const color = percent >= 80 && percent <= 120 ? 'bg-emerald-500' : 'bg-amber-500'
-
-  return (
-    <div className="space-y-1 mb-3">
-      <div className="flex justify-between text-xs font-bold text-slate-600">
-        <span>{label}</span>
-        <span>{current.toFixed(1)} / {target} {unit}</span>
-      </div>
-      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-        <div className={`h-full ${color}`} style={{ width: `${Math.min(percent, 100)}%` }} />
-      </div>
-    </div>
-  )
   }
 
   return (
@@ -369,6 +441,7 @@ export default function NovaDietaPage() {
                   </div>
                 </div>
 
+                {/* Apenas os Macros Principais Aqui */}
                 <div className="space-y-5 pt-4 border-t border-slate-100">
                   {[
                     { label: 'PTN', current: currentTotals.pro, target: targets.pro, set: (v: number) => setTargets({...targets, pro: v}), color: 'text-rose-500', bg: 'bg-rose-500', multiplier: 4 },
@@ -399,26 +472,6 @@ export default function NovaDietaPage() {
                     )
                   })}
                 </div>
-
-                <div className="space-y-3 pt-6 border-t border-slate-200 mt-4">
-                  <h4 className="text-xs font-black text-slate-400 uppercase">Micronutrientes</h4>
-                  {[
-                    { label: 'Fibras', current: currentTotals.fiber, target: targets.fiber, set: (v: number) => setTargets({...targets, fiber: v}), unit: 'g' },
-                    { label: 'Sódio', current: currentTotals.sodium, target: targets.sodium, set: (v: number) => setTargets({...targets, sodium: v}), unit: 'mg' },
-                    { label: 'Cálcio', current: currentTotals.calcium, target: targets.calcium, set: (v: number) => setTargets({...targets, calcium: v}), unit: 'mg' },
-                    { label: 'Ferro', current: currentTotals.iron, target: targets.iron, set: (v: number) => setTargets({...targets, iron: v}), unit: 'mg' },
-                  ].map(m => (
-                    <div key={m.label} className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-slate-600">{m.label}</span>
-                      <div className="flex items-center gap-2">
-                        <span className={`font-bold ${m.current < m.target ? 'text-amber-600' : 'text-teal-600'}`}>
-                            {m.current.toFixed(0)}<span className="text-[10px] text-slate-400 ml-0.5">{m.unit}</span>
-                        </span>
-                        <Input type="number" value={m.target || ""} onChange={(e) => m.set(Number(e.target.value))} className="w-14 h-6 text-[10px] text-center" />
-                      </div>
-                    </div>
-                    ))}
-                  </div>                
               </CardContent>
             </Card>
           </div>
@@ -501,6 +554,93 @@ export default function NovaDietaPage() {
             })}
             
             <Button onClick={addMeal} className="w-full h-14 border-dashed bg-white text-slate-600 hover:text-teal-600 hover:border-teal-300 hover:bg-teal-50 print:hidden transition-all"><Plus className="w-5 h-5 mr-2" /> Adicionar Nova Refeição</Button>
+
+            {/* 🌟 NOVA SEÇÃO: ANÁLISE DE NUTRIENTES DO CARDÁPIO */}
+            <Card className="bg-white mt-8 print:break-before-page border-0 shadow-lg ring-1 ring-slate-200/50">
+              <CardHeader className="border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between py-5 bg-slate-50/50">
+                <CardTitle className="text-xl font-black text-slate-800">Análise de nutrientes do cardápio</CardTitle>
+                <Button onClick={() => setShowDriModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-6 h-9 text-xs font-bold shadow-md mt-4 md:mt-0">
+                  Ver todos os nutrientes
+                </Button>
+              </CardHeader>
+              <CardContent className="p-6">
+                 <div className="grid lg:grid-cols-2 gap-10 items-center">
+                    
+                    {/* Tabela Esquerda (Prescrito vs Teórico) */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="text-slate-500 border-b-2 border-slate-100">
+                          <tr>
+                            <th className="pb-3 font-semibold">Parâmetro</th>
+                            <th className="pb-3 font-semibold">Prescrito</th>
+                            <th className="pb-3 font-semibold">Teórico</th>
+                            <th className="pb-3 font-semibold">Diferença</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {[
+                            { label: 'Proteínas totais', current: currentTotals.pro, target: targets.pro, unit: 'g' },
+                            { label: 'Lipídios totais', current: currentTotals.fat, target: targets.fat, unit: 'g' },
+                            { label: 'Carboidratos totais', current: currentTotals.carb, target: targets.carb, unit: 'g' },
+                            { label: 'Fibras totais', current: currentTotals.fiber, target: targets.fiber, unit: 'g', isFiber: true },
+                            { label: 'Calorias totais', current: currentTotals.kcal, target: targets.kcal, unit: ' Kcal', isKcal: true },
+                          ].map(n => {
+                            const diff = n.current - n.target
+                            const weight = dietInfo.patientWeight || 1
+                            return (
+                              <tr key={n.label} className="hover:bg-slate-50/50">
+                                <td className="py-3 text-slate-600 font-medium">{n.label}</td>
+                                <td className="py-3 text-slate-800 font-bold">
+                                  {n.current.toFixed(1)}{n.unit}
+                                  {!n.isFiber && <span className="text-[10px] text-slate-400 font-normal block md:inline md:ml-1">({(n.current/weight).toFixed(1)}{n.unit}/Kg)</span>}
+                                </td>
+                                <td className="py-3 text-slate-500">{n.isFiber ? '-' : `${n.target.toFixed(1)}${n.unit}`}</td>
+                                <td className={`py-3 font-bold ${diff > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                  {n.isFiber ? '-' : `${diff > 0 ? '+' : ''}${diff.toFixed(1)}${n.unit}`}
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Gráfico Direita (Donut) */}
+                    <div className="flex flex-col items-center">
+                       <div className="h-48 w-full max-w-[250px]">
+                         <ResponsiveContainer width="100%" height="100%">
+                           <PieChart>
+                             <Pie data={macroPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} stroke="none">
+                               {macroPieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                             </Pie>
+                             <RechartsTooltip formatter={(value: number) => `${value.toFixed(1)} Kcal`} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                           </PieChart>
+                         </ResponsiveContainer>
+                       </div>
+                       
+                       {/* Legendas do Gráfico */}
+                       <div className="grid grid-cols-2 gap-3 mt-2 w-full">
+                          <div className="border-l-4 border-rose-500 bg-slate-50 p-2.5 rounded-r-lg text-xs">
+                             <p className="font-bold text-slate-700">Proteínas</p>
+                             <p className="text-slate-500">{macroPieData[0].value.toFixed(1)} Kcal - {((macroPieData[0].value/(currentTotals.kcal||1))*100).toFixed(1)}%</p>
+                          </div>
+                          <div className="border-l-4 border-sky-500 bg-slate-50 p-2.5 rounded-r-lg text-xs">
+                             <p className="font-bold text-slate-700">Carboidratos</p>
+                             <p className="text-slate-500">{macroPieData[1].value.toFixed(1)} Kcal - {((macroPieData[1].value/(currentTotals.kcal||1))*100).toFixed(1)}%</p>
+                          </div>
+                          <div className="border-l-4 border-amber-500 bg-slate-50 p-2.5 rounded-r-lg text-xs">
+                             <p className="font-bold text-slate-700">Lipídios</p>
+                             <p className="text-slate-500">{macroPieData[2].value.toFixed(1)} Kcal - {((macroPieData[2].value/(currentTotals.kcal||1))*100).toFixed(1)}%</p>
+                          </div>
+                          <div className="border-l-4 border-teal-500 bg-slate-50 p-2.5 rounded-r-lg text-xs">
+                             <p className="font-bold text-slate-700">Total Kcal</p>
+                             <p className="text-slate-500 font-bold">{currentTotals.kcal.toFixed(0)} Kcal</p>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+              </CardContent>
+            </Card>
             
             <Card className="bg-teal-900 text-white mt-12 print:hidden">
               <CardHeader className="pb-2"><CardTitle className="text-lg flex items-center gap-2"><Info className="w-5 h-5 text-teal-300" /> Orientações Gerais da Dieta</CardTitle></CardHeader>
@@ -598,17 +738,34 @@ export default function NovaDietaPage() {
             <div className="overflow-y-auto flex-1">
               {isCreatingManual ? (
                 <div className="p-6 space-y-6">
-                  <Input placeholder="Nome..." value={newFood.name || ""} onChange={e => setNewFood({...newFood, name: e.target.value})} className="h-12 text-lg" />
-                  <div className="bg-slate-50 p-5 rounded-xl border">
-                    <p className="text-xs font-bold mb-4">Macros Principais (Por 100g)</p>
+                  <div className="space-y-2">
+                    <Label className="text-slate-600">Nome do Alimento / Receita <span className="text-rose-500">*</span></Label>
+                    <Input placeholder="Ex: Panqueca de Aveia do Nutri" value={newFood.name || ""} onChange={e => setNewFood({...newFood, name: e.target.value})} className="h-12 text-lg font-medium" />
+                  </div>
+                  
+                  <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                    <p className="text-xs font-bold mb-4 text-slate-500 uppercase tracking-wider">Macronutrientes Principais (em 100g)</p>
                     <div className="grid grid-cols-4 gap-4">
                       <div><Label>Kcal</Label><Input type="number" value={newFood.kcal || ""} onChange={e => setNewFood({...newFood, kcal: Number(e.target.value)})} /></div>
                       <div><Label className="text-rose-600">PTN (g)</Label><Input type="number" value={newFood.pro || ""} onChange={e => setNewFood({...newFood, pro: Number(e.target.value)})} /></div>
                       <div><Label className="text-emerald-600">CARB (g)</Label><Input type="number" value={newFood.carb || ""} onChange={e => setNewFood({...newFood, carb: Number(e.target.value)})} /></div>
                       <div><Label className="text-amber-600">GOR (g)</Label><Input type="number" value={newFood.fat || ""} onChange={e => setNewFood({...newFood, fat: Number(e.target.value)})} /></div>
                     </div>
+
+                    <div className="mt-6 pt-4 border-t border-slate-200">
+                      <p className="text-xs font-bold mb-4 text-slate-500 uppercase tracking-wider">Micronutrientes e Fibras (Opcional)</p>
+                      <div className="grid grid-cols-4 gap-4">
+                        <div><Label className="text-slate-600">Fibras (g)</Label><Input type="number" value={newFood.fiber || ""} onChange={e => setNewFood({...newFood, fiber: Number(e.target.value)})} /></div>
+                        <div><Label className="text-slate-600">Sódio (mg)</Label><Input type="number" value={newFood.sodium || ""} onChange={e => setNewFood({...newFood, sodium: Number(e.target.value)})} /></div>
+                        <div><Label className="text-slate-600">Cálcio (mg)</Label><Input type="number" value={newFood.calcium || ""} onChange={e => setNewFood({...newFood, calcium: Number(e.target.value)})} /></div>
+                        <div><Label className="text-slate-600">Ferro (mg)</Label><Input type="number" value={newFood.iron || ""} onChange={e => setNewFood({...newFood, iron: Number(e.target.value)})} /></div>
+                      </div>
+                    </div>
                   </div>
-                  <Button onClick={handleSaveManualFood} className="w-full h-12 bg-teal-600 font-bold">{editingFoodId ? "Salvar Alterações" : "Salvar na Base e Adicionar"}</Button>
+
+                  <Button onClick={handleSaveManualFood} className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white font-bold text-lg shadow-md">
+                    {editingFoodId ? "Salvar Alterações" : "Cadastrar no Banco"}
+                  </Button>
                 </div>
               ) : (
                 <div className="p-2">
@@ -640,6 +797,73 @@ export default function NovaDietaPage() {
                 </div>
               )}
             </div>
+          </div>
+        </>
+      )}
+
+      {/* 🌟 MODAL DRI: SOMATÓRIO DE MICRONUTRIENTES */}
+      {showDriModal && (
+        <>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 print:hidden" onClick={() => setShowDriModal(false)}></div>
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl z-50 print:hidden animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+             <div className="sticky top-0 bg-white border-b border-slate-100 p-6 flex justify-between items-center z-10 shadow-sm">
+               <h2 className="text-xl font-bold text-slate-800">Somatório de nutrientes <span className="text-slate-400 font-medium">Todo o cardápio</span></h2>
+               <Button variant="ghost" size="icon" className="rounded-full bg-slate-100 hover:bg-rose-100 hover:text-rose-600" onClick={() => setShowDriModal(false)}><X className="w-5 h-5"/></Button>
+             </div>
+             
+             <div className="p-6 pb-0 flex flex-col items-center">
+               <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-700 px-4 py-2 rounded-full text-xs font-bold mb-2">
+                 <Info className="w-4 h-4" />
+                 DRIs personalizados para: {patientProfile?.gender === 'M' ? 'Homem' : patientProfile?.gender === 'F' ? 'Mulher' : 'Não informado'} • {patientAge > 0 ? `${patientAge} anos` : '--'} • {patientProfile?.initialWeight || dietInfo.patientWeight} kg
+               </div>
+               <p className="text-slate-500 text-xs text-center max-w-md">As metas (DRI) foram calculadas automaticamente com base no perfil biológico e idade do paciente.</p>
+             </div>
+
+             <div className="p-6">
+               <div className="flex items-center justify-center gap-8 mb-8 text-sm font-semibold bg-slate-50 py-3 rounded-lg border border-slate-100">
+                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-teal-500"></div> Dentro do recomendado (± 20%)</div>
+                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-amber-500"></div> Fora do recomendado</div>
+               </div>
+               
+               <table className="w-full text-sm text-left">
+                 <thead className="text-slate-500 border-b-2 border-slate-100">
+                   <tr>
+                     <th className="pb-3 px-2 font-semibold">Micronutrientes</th>
+                     <th className="pb-3 px-2 font-semibold text-center">Valor atual</th>
+                     <th className="pb-3 px-2 font-semibold text-center">DRI (Meta)</th>
+                     <th className="pb-3 px-2 font-semibold text-right">Adequação</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-slate-100">
+                   {[
+                     { name: 'Cálcio', current: currentTotals.calcium, target: targets.calcium, unit: 'mg' },
+                     { name: 'Ferro', current: currentTotals.iron, target: targets.iron, unit: 'mg' },
+                     { name: 'Sódio', current: currentTotals.sodium, target: targets.sodium, unit: 'mg' },
+                     { name: 'Fibras', current: currentTotals.fiber, target: targets.fiber, unit: 'g' },
+                   ].map(n => {
+                      const percent = n.target > 0 ? (n.current / n.target) * 100 : 0
+                      const isOk = percent >= 80 && percent <= 120
+                      const barWidth = Math.min((percent / 200) * 100, 100);
+                      
+                      return (
+                        <tr key={n.name} className="hover:bg-slate-50/30 transition-colors">
+                          <td className="py-4 px-2 font-semibold text-slate-700">{n.name}</td>
+                          <td className="py-4 px-2 text-center font-bold text-slate-800">{n.current.toFixed(1)} <span className="text-xs text-slate-400 font-normal">{n.unit}</span></td>
+                          <td className="py-4 px-2 text-center text-slate-500 font-medium">{n.target} <span className="text-xs text-slate-400 font-normal">{n.unit}</span></td>
+                          <td className="py-4 px-2 text-right">
+                            <div className="flex justify-end items-center">
+                               <div className="relative w-32 h-2 bg-slate-100 rounded-full flex items-center">
+                                 <div className="absolute left-1/2 top-[-6px] bottom-[-6px] w-[1px] bg-slate-400 z-10 opacity-50"></div>
+                                 <div className={`h-full rounded-full transition-all duration-700 ${isOk ? 'bg-teal-500' : 'bg-amber-500'}`} style={{ width: `${barWidth}%` }}></div>
+                               </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                   })}
+                 </tbody>
+               </table>
+             </div>
           </div>
         </>
       )}
