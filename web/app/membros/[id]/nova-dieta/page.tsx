@@ -456,7 +456,7 @@ export default function NovaDietaPage() {
                         <div className="flex items-center justify-between mb-1">
                           <Label className="text-xs font-bold text-slate-500">{m.label} (g)</Label>
                           <div className="flex items-center gap-2">
-                            <span className={`text-sm font-bold ${m.current > m.target ? 'text-rose-500 animate-pulse' : m.color}`}>{m.current}</span>
+                            <span className={`text-sm font-bold ${m.current > m.target ? 'text-rose-500 animate-pulse' : m.color}`}>{m.current.toFixed(1)}</span>
                             <span className="text-slate-300">/</span>
                             <Input type="number" value={m.target || ""} onChange={(e) => m.set(Number(e.target.value))} className="w-16 h-7 text-xs text-center p-1 font-medium" />
                           </div>
