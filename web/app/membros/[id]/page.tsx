@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
-import { ArrowLeft, User, Activity, Brain, Lock, Apple, TrendingUp, Plus, Save, X, Dumbbell, Stethoscope, ClipboardList,LineChart as LineChartIcon, TableProperties} from "lucide-react"
+import { ArrowLeft, User, Activity, Brain, Lock, Apple, TrendingUp, Plus, Save, X, Dumbbell, Stethoscope, ClipboardList,LineChart as LineChartIcon, TableProperties ,FileText, Eye} from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
@@ -35,11 +35,23 @@ export default function FichaPacientePage() {
   const [isSavingEdit, setIsSavingEdit] = useState(false)
   const [editData, setEditData] = useState<any>({})
 
+  const [anamneses, setAnamneses] = useState<any[]>([])
+  const [selectedAnamnesis, setSelectedAnamnesis] = useState<any>(null)
+
   useEffect(() => {
     if (params.id) {
       fetchPatient()
       fetchAssessments()
     }
+
+    const fetchAnamneses = async () => {
+      try {
+        const res = await api.get(`/anamneses/user/${params.id}`)
+        setAnamneses(res.data)
+      } catch (error) {}
+    }
+
+    fetchAnamneses()
   }, [params.id])
 
   const fetchPatient = async () => {
@@ -61,6 +73,7 @@ export default function FichaPacientePage() {
       console.error("Erro ao carregar avaliações", error)
     }
   }
+
 
   // 🌟 FUNÇÃO PARA ABRIR O MODAL E PREENCHER COM OS DADOS ATUAIS
   const handleOpenEdit = () => {
@@ -183,6 +196,13 @@ export default function FichaPacientePage() {
           </div>
           
           <div className="flex items-center gap-3">
+            {isNutri && (
+              <Link href={`/membros/${params.id}/nova-anamnese`}>
+                <Button className="h-11 bg-teal-50 border border-teal-200 hover:bg-teal-100 text-teal-700 font-bold shadow-sm">
+                  <ClipboardList className="w-4 h-4 mr-2" /> Nova Anamnese
+                </Button>
+              </Link>
+            )}
             {isNutri && (
               <Link href={`/membros/${params.id}/nova-dieta`}>
                 <Button className="h-11 bg-teal-600 hover:bg-teal-700 text-white font-bold shadow-md">
@@ -384,6 +404,43 @@ export default function FichaPacientePage() {
                   </div>
                 </CardContent>
               </Card>
+
+              <Card className="border border-slate-200 shadow-sm mt-6">
+                <CardHeader className="bg-slate-50 border-b border-slate-100 py-4 flex flex-row items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-teal-600" /> Histórico Clínico (Anamneses)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto">
+                    {anamneses.length === 0 ? (
+                      <div className="p-6 text-center text-slate-500 text-sm">
+                        Nenhuma anamnese registada. Preencha uma nova anamnese na consulta.
+                      </div>
+                    ) : (
+                      anamneses.map(anamnese => (
+                        <div key={anamnese.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                          <div>
+                            <p className="font-bold text-slate-700">Anamnese Geral</p>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              Registada a {new Date(anamnese.createdAt).toLocaleDateString('pt-BR')} 
+                              {anamnese.creator?.name ? ` por ${anamnese.creator.name}` : ''}
+                            </p>
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-teal-700 border-teal-200 hover:bg-teal-50" 
+                            onClick={() => setSelectedAnamnesis(anamnese)}
+                          >
+                            <Eye className="w-4 h-4 mr-2"/> Consultar
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
@@ -544,6 +601,83 @@ export default function FichaPacientePage() {
         />
       )}
 
+      {selectedAnamnesis && (
+        <>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40" onClick={() => setSelectedAnamnesis(null)}></div>
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl max-h-[90vh] bg-white rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+             
+             <div className="bg-slate-50 p-5 border-b border-slate-200 flex justify-between items-center shrink-0">
+               <div>
+                 <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                   <FileText className="w-5 h-5 text-teal-600"/> Documento Clínico Oficial
+                 </h3>
+                 <p className="text-xs text-slate-500 mt-1">Registado a {new Date(selectedAnamnesis.createdAt).toLocaleDateString('pt-BR')} às {new Date(selectedAnamnesis.createdAt).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</p>
+               </div>
+               <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-200" onClick={() => setSelectedAnamnesis(null)}>
+                 <X className="w-5 h-5"/>
+               </Button>
+             </div>
+
+             {/* Corpo do Documento */}
+             <div className="p-6 overflow-y-auto flex-1 space-y-6 bg-white">
+                
+                {/* Secção Clínica */}
+                <div className="space-y-4">
+                  <h4 className="font-black text-sm text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2">Histórico Clínico e Atual</h4>
+                  
+                  {selectedAnamnesis.clinicalHistory && (
+                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100"><p className="text-xs font-bold text-slate-500 mb-1">Doenças Anteriores e Atuais:</p><p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedAnamnesis.clinicalHistory}</p></div>
+                  )}
+                  {selectedAnamnesis.pathologies && (
+                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100"><p className="text-xs font-bold text-slate-500 mb-1">Patologias Confirmadas:</p><p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedAnamnesis.pathologies}</p></div>
+                  )}
+                  {selectedAnamnesis.medications && (
+                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100"><p className="text-xs font-bold text-slate-500 mb-1">Medicamentos em Uso:</p><p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedAnamnesis.medications}</p></div>
+                  )}
+                </div>
+
+                {/* Secção Intestino */}
+                <div className="space-y-4">
+                  <h4 className="font-black text-sm text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2">Intestino & Urina</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedAnamnesis.bowelMovement && (
+                      <div className="bg-slate-50 p-4 rounded-lg border border-slate-100"><p className="text-xs font-bold text-slate-500 mb-1">Frequência Evacuatória:</p><p className="text-sm text-slate-700">{selectedAnamnesis.bowelMovement}</p></div>
+                    )}
+                    {selectedAnamnesis.bristolScale && (
+                      <div className="bg-slate-50 p-4 rounded-lg border border-slate-100"><p className="text-xs font-bold text-slate-500 mb-1">Escala de Bristol:</p><p className="text-sm text-slate-700">Tipo {selectedAnamnesis.bristolScale}</p></div>
+                    )}
+                  </div>
+                  {selectedAnamnesis.urineColor && (
+                     <div className="bg-slate-50 p-4 rounded-lg border border-slate-100"><p className="text-xs font-bold text-slate-500 mb-1">Coloração da Urina:</p><p className="text-sm text-slate-700">{selectedAnamnesis.urineColor}</p></div>
+                  )}
+                </div>
+
+                {/* Secção Queixas e Família */}
+                <div className="space-y-4">
+                  <h4 className="font-black text-sm text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2">Sintomas & Estilo de Vida</h4>
+                  {selectedAnamnesis.symptoms && (
+                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100"><p className="text-xs font-bold text-slate-500 mb-1">Sintomas e Queixas:</p><p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedAnamnesis.symptoms}</p></div>
+                  )}
+                  {selectedAnamnesis.familyHistory && (
+                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100"><p className="text-xs font-bold text-slate-500 mb-1">Histórico Familiar:</p><p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedAnamnesis.familyHistory}</p></div>
+                  )}
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedAnamnesis.waterIntake && (
+                      <div className="bg-slate-50 p-4 rounded-lg border border-slate-100"><p className="text-xs font-bold text-slate-500 mb-1">Água Diária:</p><p className="text-sm text-slate-700">{selectedAnamnesis.waterIntake} L</p></div>
+                    )}
+                    {selectedAnamnesis.alcoholAndSmoking && (
+                      <div className="bg-slate-50 p-4 rounded-lg border border-slate-100"><p className="text-xs font-bold text-slate-500 mb-1">Álcool/Tabagismo:</p><p className="text-sm text-slate-700">{selectedAnamnesis.alcoholAndSmoking}</p></div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="text-center pt-4 opacity-50">
+                  <p className="text-xs font-bold text-slate-400">Documento fechado. Edições não são permitidas por segurança ética.</p>
+                </div>
+             </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

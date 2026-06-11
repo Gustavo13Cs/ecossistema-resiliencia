@@ -10,6 +10,7 @@ import { AssessmentsModule } from './modules/assessments/assessments.module';
 import { PhysioAssessmentsModule } from './modules/physio-assessments/physio-assessments.module';
 import { RehabPlansModule } from './modules/rehab-plans/rehab-plans.module';
 import { AppController } from '../app.controller';
+import { AnamnesesModule } from './modules/anamneses/anamneses.module';
 
 @Module({
   imports: [
@@ -21,7 +22,8 @@ import { AppController } from '../app.controller';
     FoodsModule,
     AssessmentsModule,
     PhysioAssessmentsModule,
-    RehabPlansModule
+    RehabPlansModule,
+    AnamnesesModule
   ],
   controllers: [AppController]
 })
