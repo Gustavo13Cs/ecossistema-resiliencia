@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
-import { ArrowLeft, User, Activity, Brain, Lock, Apple, TrendingUp, Plus, Save, X, Dumbbell, Stethoscope, ClipboardList,LineChart as LineChartIcon, TableProperties ,FileText, Eye} from "lucide-react"
+import { ArrowLeft, User, Activity, Brain, Lock, Apple, TrendingUp, Plus, Save, X, Dumbbell, Stethoscope, ClipboardList,LineChart as LineChartIcon, TableProperties ,FileText, Eye, Calculator, Beaker} from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
@@ -195,14 +195,12 @@ export default function FichaPacientePage() {
             </div>
           </div>
           
+          {/* CABEÇALHO - APENAS AÇÕES PRINCIPAIS */}
           <div className="flex items-center gap-3">
-            {isNutri && (
-              <Link href={`/membros/${params.id}/nova-anamnese`}>
-                <Button className="h-11 bg-teal-50 border border-teal-200 hover:bg-teal-100 text-teal-700 font-bold shadow-sm">
-                  <ClipboardList className="w-4 h-4 mr-2" /> Nova Anamnese
-                </Button>
-              </Link>
-            )}
+            <Button variant="outline" className="h-11 text-slate-700 border-slate-300 bg-white" onClick={handleOpenEdit}>
+              Editar Cadastro
+            </Button>
+            
             {isNutri && (
               <Link href={`/membros/${params.id}/nova-dieta`}>
                 <Button className="h-11 bg-teal-600 hover:bg-teal-700 text-white font-bold shadow-md">
@@ -210,25 +208,50 @@ export default function FichaPacientePage() {
                 </Button>
               </Link>
             )}
+
             {isPersonal && (
               <Link href={`/membros/${params.id}/novo-treino`}>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md h-11">
                   <Dumbbell className="w-4 h-4 mr-2" /> Prescrever Treino
                 </Button>
               </Link>
             )}
-            {isFisio && (
-              <Button 
-                onClick={() => setShowAssessmentModal(true)} 
-                className="h-11 bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md"
-              >
-                <Activity className="w-4 h-4 mr-2" /> Avaliação Postural
-              </Button>
-            )}
-            <Button variant="outline" className="h-11 text-slate-700 border-slate-300" onClick={handleOpenEdit}>
-              Editar Cadastro
-            </Button>
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {isNutri && (
+            <Link href={`/membros/${params.id}/nova-anamnese`}>
+              <Button className="w-full h-14 bg-teal-50 border border-teal-200 hover:bg-teal-100 text-teal-700 font-bold shadow-sm justify-start px-5 transition-all">
+                <ClipboardList className="w-5 h-5 mr-3 opacity-70" /> Nova Anamnese
+              </Button>
+            </Link>
+          )}
+          
+          {isNutri && (
+             <Link href={`/membros/${params.id}/calculo-energetico`}>
+               <Button className="w-full h-14 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-700 font-bold shadow-sm justify-start px-5 transition-all">
+                 <Calculator className="w-5 h-5 mr-3 opacity-70" /> Cálculo Energético
+               </Button>
+             </Link>
+          )}
+          
+          {isNutri && (
+             <Link href={`/membros/${params.id}/nova-suplementacao`}>
+               <Button className="w-full h-14 bg-amber-50 border border-amber-200 hover:bg-amber-100 text-amber-700 font-bold shadow-sm justify-start px-5 transition-all">
+                 <Beaker className="w-5 h-5 mr-3 opacity-70" /> Fórmulas / Suplementos
+               </Button>
+             </Link>
+          )}
+
+          {isFisio && (
+             <Button onClick={() => setShowAssessmentModal(true)} className="w-full h-14 bg-purple-50 border border-purple-200 hover:bg-purple-100 text-purple-700 font-bold shadow-sm justify-start px-5 transition-all">
+               <Activity className="w-5 h-5 mr-3 opacity-70" /> Avaliação Postural
+             </Button>
+          )}
+        </div>
+
+        <div className="grid lg:grid-cols-12 gap-8">
         </div>
 
         <div className="grid lg:grid-cols-12 gap-8">

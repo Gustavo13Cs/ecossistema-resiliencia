@@ -72,4 +72,16 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   nutritionistNotes?: string;
+
+  @IsOptional()
+  @IsNumber()
+  tmb?: number;
+
+  @IsOptional()
+  @IsNumber()
+  get?: number;
+
+  @IsOptional()
+  @IsNumber()
+  activityFactor?: number;
 }

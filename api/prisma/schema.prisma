@@ -22,7 +22,12 @@ model User {
   
   gender        String?
   height        Float?
-  initialWeight Float?     
+  initialWeight Float?   
+
+  tmb               Float?   // Taxa de Metabolismo Basal
+  get               Float?   // Gasto Energético Total
+  activityFactor    Float?   // Fator de Atividade escolhido
+
   allergies     String?
   pathologies   String?    
 
@@ -66,6 +71,8 @@ model User {
 
   patientAnamneses Anamnesis[] @relation("PatientAnamneses")
   createdAnamneses Anamnesis[] @relation("CreatedAnamneses")
+  patientSupplements SupplementPlan[] @relation("PatientSupplements")
+  createdSupplements SupplementPlan[] @relation("CreatedSupplements")
 }
 
 model ProfessionalPatientLink {
@@ -445,4 +452,36 @@ model Anamnesis {
   updatedAt   DateTime @updatedAt
 
   @@map("anamneses")
+}
+
+model SupplementPlan {
+  id          String   @id @default(uuid())
+  title       String   // ex: Receituário Nutricional
+  notes       String?  @db.Text
+  
+  patientId   String
+  patient     User     @relation("PatientSupplements", fields: [patientId], references: [id], onDelete: Cascade)
+  
+  creatorId   String
+  creator     User     @relation("CreatedSupplements", fields: [creatorId], references: [id])
+  
+  items       SupplementItem[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("supplement_plans")
+}
+
+model SupplementItem {
+  id               String   @id @default(uuid())
+  name             String   // ex: Fórmula 1 - Hipertrofia
+  composition      String?  @db.Text // ex: Creatina 5g, Beta-alanina 2g
+  dosage           String?  // ex: 1 dose
+  instructions     String?  @db.Text // ex: Tomar 30 min antes do treino
+
+  planId           String
+  plan             SupplementPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("supplement_items")
 }

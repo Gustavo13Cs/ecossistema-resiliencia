@@ -112,6 +112,9 @@ export class UsersService {
         nutritionistNotes: true,    
         role: true,
         createdAt: true,     
+        tmb: true,
+        get: true,
+        activityFactor: true,
       }
     });
   }

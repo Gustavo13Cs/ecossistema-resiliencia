@@ -1,62 +1,35 @@
 "use client"
 
+import { Apple, Clock, Info, AlertTriangle, CheckCircle2, Beaker, Pill } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
-import { usePacienteDashboard } from "@/hooks/core/usePacienteDashboard"
-import { Card, CardContent } from "@/components/ui/card"
-import { Apple, Dumbbell, Activity, Droplets, Flame, Clock, ArrowRight, AlertTriangle,Plus,CheckCircle2 } from "lucide-react"
+import { useDiet } from "@/hooks/features/useDiet"
 import { useCheckIn } from "@/hooks/features/useCheckIn"
-import Link from "next/link"
-import { useWaterTracker } from "@/hooks/features/useWaterTracker"
-import { useWeather } from "@/hooks/features/useWeather"
+import { useSuplementosPaciente } from "@/hooks/features/useSuplementosPaciente" // 🌟 O NOVO HOOK AQUI
 import { Button } from "@/components/ui/button"
 
-export default function PacienteDashboard() {
+export default function DietaPacientePage() {
   const { user } = useAuth()
   
-  const { dietPlan, nextMeal, waterGoal, loading, error } = usePacienteDashboard(user?.sub)
-  const { currentWaterMl, addWater, progressPercentage } = useWaterTracker(waterGoal)
-  const { weather, loadingWeather } = useWeather()
-  const { handleCheckIn, loadingItems, completedItems } = useCheckIn(user?.sub)
-
-
-  const getGreeting = () => {
-    const hour = new Date().getHours()
-    if (hour < 12) return "Bom dia"
-    if (hour < 18) return "Boa tarde"
-    return "Boa noite"
-  }
+  const { dietPlan, loading, error } = useDiet(user?.sub)
+  const { handleCheckIn, loadingItems, completedItems, consistency } = useCheckIn(user?.sub)
+  
+  // 🌟 CONSUMINDO O HOOK DOS SUPLEMENTOS
+  const { supplements, loadingSupplements } = useSuplementosPaciente(user?.sub)
 
   return (
-    <div className="p-6 md:p-10 max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="p-6 md:p-10 max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       
-      {/* CABEÇALHO */}
-      <div>
-        <h2 className="text-slate-500 text-lg font-medium">{getGreeting()},</h2>
-        <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">
-          {user?.name?.split(' ')[0] || "Paciente"}! 👋
-        </h1>
-        <p className="text-slate-600 mt-2">Aqui está o seu resumo de saúde para hoje.</p>
+      {/* CABEÇALHO DA PÁGINA */}
+      <div className="flex items-center gap-4">
+        <div className="p-3 bg-teal-100 text-teal-600 rounded-xl">
+          <Apple className="w-6 h-6" />
+        </div>
+        <div>
+          <h1 className="text-3xl font-black text-slate-800">Plano Alimentar</h1>
+          <p className="text-slate-500">Acompanhe as suas refeições e fórmulas diárias.</p>
+        </div>
       </div>
 
-      {/* 🌟 WIDGET DE INTELIGÊNCIA CLIMÁTICA */}
-      {weather && !loadingWeather && (
-        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100/50 rounded-2xl p-4 flex items-center gap-4 shadow-sm animate-in slide-in-from-top-2">
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-2xl shrink-0">
-            {weather.icon}
-          </div>
-          <div>
-            <h4 className="font-bold text-indigo-900 text-sm flex items-center gap-2">
-              Assistente SafeMove <span className="text-xs bg-indigo-200/50 px-2 py-0.5 rounded text-indigo-700">IA</span>
-            </h4>
-            <p className="text-indigo-700/80 text-sm mt-0.5 leading-snug">
-              {weather.healthTip}
-            </p>
-          </div>
-        </div>
-      )}
-
-
-      {/* TRATAMENTO DE ERRO EXPLÍCITO */}
       {error && (
         <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5 flex items-start gap-4 shadow-sm">
           <AlertTriangle className="w-6 h-6 text-rose-500 shrink-0 mt-0.5" />
@@ -66,146 +39,167 @@ export default function PacienteDashboard() {
           </div>
         </div>
       )}
-
+      
       {loading ? (
-        <div className="h-40 flex items-center justify-center bg-white rounded-2xl border border-slate-100 shadow-sm">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="bg-white p-10 rounded-2xl border border-slate-100 text-center shadow-sm">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto mb-4"></div>
+          <p className="text-slate-500 font-medium">A buscar o seu plano alimentar...</p>
         </div>
-      ) : (
-        <>
-          {/* CARTÕES DE METAS */}
-          <div className="grid grid-cols-2 gap-4">
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600 text-white relative overflow-hidden group">
-              {/* 🌊 BARRA DE PROGRESSO ANIMADA (A água a subir!) */}
-              <div 
-                className="absolute bottom-0 left-0 w-full bg-blue-400/40 transition-all duration-1000 ease-out z-0"
-                style={{ height: `${progressPercentage}%` }}
-              />
-              
-              <CardContent className="p-4 md:p-6 flex flex-col justify-between h-full relative z-10">
-                <div className="flex justify-between items-start mb-4">
-                  <Droplets className="w-6 h-6 text-blue-100" />
-                  
-                  {/* BOTÃO MÁGICO DE BEBER ÁGUA */}
-                  <button 
-                    onClick={() => addWater(250)}
-                    disabled={waterGoal === null}
-                    className="bg-white/20 hover:bg-white/30 disabled:opacity-50 text-white rounded-full p-1.5 transition-all active:scale-90"
-                    title="Beber 250ml"
-                  >
-                    <Plus className="w-5 h-5" />
-                  </button>
-                </div>
-                <div>
-                  <p className="text-blue-100 text-xs md:text-sm font-bold uppercase tracking-wider flex justify-between items-end">
-                    <span>Meta de Água</span>
-                    <span className="text-xs bg-blue-700/50 px-2 py-0.5 rounded-full">{progressPercentage.toFixed(0)}%</span>
-                  </p>
-                  
-                  {waterGoal === null ? (
-                    <h3 className="text-xl font-black mt-1">Não calculada</h3>
-                  ) : (
-                    <h3 className="text-2xl md:text-3xl font-black mt-1 flex items-baseline gap-1">
-                      {(currentWaterMl / 1000).toFixed(1)}L
-                      <span className="text-sm font-medium text-blue-200">/ {waterGoal}L</span>
-                    </h3>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-orange-500 to-rose-500 text-white">
-              <CardContent className="p-4 md:p-6 flex flex-col justify-between h-full">
-                <Flame className="w-6 h-6 text-orange-200 mb-4" />
-                <div>
-                  <p className="text-orange-100 text-xs md:text-sm font-bold uppercase tracking-wider">Meta Diária</p>
-                  <h3 className="text-2xl md:text-3xl font-black mt-1">
-                    {dietPlan?.targetKcal ? `${Math.round(dietPlan.targetKcal)} kcal` : "--- kcal"}
-                  </h3>
-                </div>
-              </CardContent>
-            </Card>
+      ) : !dietPlan && !error ? (
+        <div className="bg-white p-10 rounded-2xl border border-slate-100 text-center shadow-sm">
+           <Apple className="w-12 h-12 text-slate-200 mx-auto mb-3" />
+           <p className="text-slate-500 font-medium">Você ainda não tem um plano alimentar ativo.</p>
+           <p className="text-sm text-slate-400 mt-1">Fale com o seu Nutricionista.</p>
+        </div>
+      ) : dietPlan && (
+        <div className="space-y-6">
+          
+          {/* CARTÃO PRINCIPAL DA DIETA */}
+          <div className="bg-gradient-to-r from-teal-500 to-emerald-500 rounded-2xl p-6 text-white shadow-md">
+            <h2 className="text-2xl font-bold">{dietPlan.title}</h2>
+            <p className="opacity-90 mt-1">{dietPlan.goal}</p>
+            {dietPlan.notes && (
+              <div className="mt-4 p-3 bg-black/10 rounded-lg flex gap-3 text-sm">
+                <Info className="w-5 h-5 shrink-0" />
+                <p>{dietPlan.notes}</p>
+              </div>
+            )}
           </div>
 
-          {/* CARTÃO DA PRÓXIMA REFEIÇÃO */}
-          {nextMeal && (
-            <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl relative shadow-sm">
-              
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-emerald-800 font-bold flex items-center gap-2 text-sm uppercase tracking-wider">
-                  <Clock className="w-4 h-4" /> Próxima Refeição
+          {/* 🌟 BARRINHA DE CONSISTÊNCIA CORRIGIDA (AGORA FICA DE FORA DAS REFEIÇÕES) */}
+          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm mt-4">
+            <div className="flex justify-between items-end mb-2">
+              <div>
+                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                  🔥 Consistência da Semana
                 </h3>
-                <span className="bg-white text-emerald-700 font-bold px-3 py-1 rounded-full text-sm border border-emerald-100">
-                  {nextMeal.time}
-                </span>
+                <p className="text-xs text-slate-500">Mantenha o foco para atingir a sua meta diária.</p>
               </div>
-
-              <h2 className="text-2xl font-black text-slate-800 mb-4">{nextMeal.name}</h2>
-
-              <div className="flex items-center justify-between mt-2">
-                <Link href="/paciente/dieta" className="text-emerald-600 font-bold text-sm hover:underline flex items-center transition-all">
-                  Ver o que comer <ArrowRight className="w-4 h-4 ml-1" />
-                </Link>
-                <Button
-                  onClick={() => handleCheckIn('MEAL', nextMeal.name)}
-                  disabled={completedItems.includes(nextMeal.name) || loadingItems.includes(nextMeal.name)}
-                  className={`h-9 px-4 shadow-sm transition-all ${
-                    completedItems.includes(nextMeal.name) 
-                      ? "bg-emerald-500 hover:bg-emerald-600 text-white opacity-100" 
-                      : "bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-100"
-                  }`}
-                >
-                  {loadingItems.includes(nextMeal.name) ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                  ) : completedItems.includes(nextMeal.name) ? (
-                    <><CheckCircle2 className="w-4 h-4 mr-2" /> Feito!</>
-                  ) : (
-                    "Marcar como Feito"
-                  )}
-                </Button>
-              </div>
+              <span className="text-xl font-black text-emerald-500">{consistency}%</span>
             </div>
-          )}
-          
-        </>
+            <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+              <div 
+                className="bg-emerald-500 h-3 rounded-full transition-all duration-1000 ease-out" 
+                style={{ width: `${consistency}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* LISTA DE REFEIÇÕES */}
+          <div className="space-y-4">
+            {dietPlan.meals?.map((meal: any) => (
+              <div key={meal.id} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+                
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-4 border-b border-slate-50 pb-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-teal-500" />
+                    <h3 className="font-bold text-slate-800 text-lg">{meal.name}</h3>
+                    <span className="ml-2 text-sm font-bold bg-teal-50 text-teal-700 px-3 py-1 rounded-full">{meal.time}</span>
+                  </div>
+
+                  <Button
+                    onClick={() => handleCheckIn('MEAL', meal.name)}
+                    disabled={completedItems.includes(meal.name) || loadingItems.includes(meal.name)}
+                    className={`h-9 px-4 shadow-sm transition-all ${
+                      completedItems.includes(meal.name) 
+                        ? "bg-emerald-500 hover:bg-emerald-600 text-white opacity-100" 
+                        : "bg-white border border-slate-200 text-slate-600 hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                    }`}
+                  >
+                    {loadingItems.includes(meal.name) ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : completedItems.includes(meal.name) ? (
+                      <><CheckCircle2 className="w-4 h-4 mr-2" /> Feito!</>
+                    ) : (
+                      "Marcar como Feito"
+                    )}
+                  </Button>
+                </div>
+                
+                {meal.notes && (
+                  <p className="text-sm text-slate-500 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <span className="font-bold text-slate-600">Observação:</span> {meal.notes}
+                  </p>
+                )}
+
+                <ul className="space-y-3">
+                  {meal.items?.map((item: any) => (
+                    <li key={item.id} className="flex justify-between items-center text-slate-600 border-b border-slate-50 last:border-0 pb-2 last:pb-0">
+                      <div>
+                        <span className="font-medium text-slate-800">{item.food?.name || 'Alimento não encontrado'}</span>
+                        {item.notes && <p className="text-xs text-slate-400 mt-0.5">{item.notes}</p>}
+                      </div>
+                      <span className="font-bold text-slate-700 bg-teal-50 px-3 py-1 rounded-md text-sm border border-teal-100 shrink-0 ml-4">
+                        {item.quantity} {item.measure}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
-      {/* NAVEGAÇÃO PRINCIPAL */}
-      <div>
-        <h3 className="text-lg font-bold text-slate-800 mb-4">O seu acompanhamento</h3>
-        <div className="space-y-4">
-          <Link href="/paciente/dieta" className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 cursor-pointer hover:border-teal-300 hover:shadow-md transition-all group block">
-            <div className="w-14 h-14 rounded-full bg-teal-50 flex items-center justify-center group-hover:bg-teal-100 transition-colors">
-              <Apple className="w-6 h-6 text-teal-600" />
+      {/* 🌟 NOVA SESSÃO: FÓRMULAS E SUPLEMENTOS */}
+      {!loadingSupplements && supplements && (
+        <div className="space-y-6 mt-16 pt-8 border-t-2 border-dashed border-slate-200">
+          
+          <div className="flex items-center gap-4 mb-2">
+            <div className="p-3 bg-amber-100 text-amber-600 rounded-xl">
+              <Beaker className="w-6 h-6" />
             </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-slate-800">Plano Alimentar</h4>
-              <p className="text-sm text-slate-500">Veja o que comer na próxima refeição.</p>
+            <div>
+              <h2 className="text-2xl font-black text-slate-800">Prescrição de Fórmulas</h2>
+              <p className="text-slate-500">Seus manipulados e suplementos ativos.</p>
             </div>
-          </Link>
+          </div>
 
-          <Link href="/paciente/treino" className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all group block">
-            <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-              <Dumbbell className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-slate-800">Treino do Dia</h4>
-              <p className="text-sm text-slate-500">Acesse a sua ficha de hipertrofia.</p>
-            </div>
-          </Link>
+          <div className="bg-gradient-to-r from-amber-500 to-orange-400 rounded-2xl p-6 text-white shadow-md">
+            <h3 className="text-xl font-bold">{supplements.title}</h3>
+            {supplements.notes && (
+              <div className="mt-3 p-3 bg-black/10 rounded-lg flex gap-3 text-sm">
+                <Info className="w-5 h-5 shrink-0" />
+                <p>{supplements.notes}</p>
+              </div>
+            )}
+          </div>
 
-          <Link href="/paciente/reabilitacao" className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 cursor-pointer hover:border-purple-300 hover:shadow-md transition-all group block">
-            <div className="w-14 h-14 rounded-full bg-purple-50 flex items-center justify-center group-hover:bg-purple-100 transition-colors">
-              <Activity className="w-6 h-6 text-purple-600" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-slate-800">Reabilitação</h4>
-              <p className="text-sm text-slate-500">Protocolo de fisioterapia ativo.</p>
-            </div>
-          </Link>
+          <div className="space-y-4">
+            {supplements.items?.map((item: any, idx: number) => (
+              <div key={item.id} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                
+                <div className="flex flex-wrap items-center justify-between mb-3 border-b border-slate-50 pb-3 gap-3">
+                  <h4 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <Pill className="w-5 h-5 text-amber-500" />
+                    {idx + 1}. {item.name}
+                  </h4>
+                  <span className="font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-md text-sm border border-amber-200 shadow-sm">
+                    {item.dosage}
+                  </span>
+                </div>
+
+                {item.composition && (
+                  <div className="mb-4 md:pl-7">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Composição Mágica:</p>
+                    <p className="text-sm text-slate-600 whitespace-pre-wrap font-mono bg-slate-50 p-3 rounded-lg border border-slate-100">{item.composition}</p>
+                  </div>
+                )}
+
+                <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-100 md:ml-7 flex gap-3">
+                  <Info className="w-5 h-5 text-amber-500 shrink-0" />
+                  <div>
+                    <p className="text-[10px] font-bold text-amber-600/70 uppercase tracking-wider mb-0.5">Modo de Uso / Posologia:</p>
+                    <p className="text-sm font-bold text-slate-700">{item.instructions}</p>
+                  </div>
+                </div>
+                
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-      
+      )}
+
     </div>
   )
 }
