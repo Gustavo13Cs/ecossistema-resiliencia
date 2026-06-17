@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
-import { ArrowLeft, User, Activity, Brain, Lock, Apple, TrendingUp, Plus, Save, X, Dumbbell, Stethoscope, ClipboardList,LineChart as LineChartIcon, TableProperties ,FileText, Eye, Calculator, Beaker} from "lucide-react"
+import { ArrowLeft, User, Activity, Brain, Lock, Apple, TrendingUp, Plus, Save, X, Dumbbell, Stethoscope, ClipboardList,LineChart as LineChartIcon, TableProperties ,FileText, Eye, Calculator, Beaker, ActivitySquare} from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
@@ -240,6 +240,14 @@ export default function FichaPacientePage() {
              <Link href={`/membros/${params.id}/nova-suplementacao`}>
                <Button className="w-full h-14 bg-amber-50 border border-amber-200 hover:bg-amber-100 text-amber-700 font-bold shadow-sm justify-start px-5 transition-all">
                  <Beaker className="w-5 h-5 mr-3 opacity-70" /> Fórmulas / Suplementos
+               </Button>
+             </Link>
+          )}
+
+          {isNutri && (
+             <Link href={`/membros/${params.id}/exames`}>
+               <Button className="w-full h-14 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 font-bold shadow-sm justify-start px-5 transition-all">
+                 <ActivitySquare className="w-5 h-5 mr-3 opacity-70" /> Exames Lab.
                </Button>
              </Link>
           )}
