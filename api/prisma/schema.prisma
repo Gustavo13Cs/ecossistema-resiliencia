@@ -76,6 +76,9 @@ model User {
 
   patientLabExams LabExam[] @relation("PatientLabExams")
   createdLabExams LabExam[] @relation("CreatedLabExams")
+
+  patientAlerts      PatientAlert[] @relation("PatientAlerts")
+  professionalAlerts PatientAlert[] @relation("ProfessionalAlerts")
 }
 
 model ProfessionalPatientLink {
@@ -520,4 +523,34 @@ model LabMarker {
   exam        LabExam     @relation(fields: [examId], references: [id], onDelete: Cascade)
 
   @@map("lab_markers")
+}
+
+enum AlertType {
+  INACTIVE_5_DAYS
+  PLATEAU_3_WEEKS
+  OVERTRAINING_RISK
+}
+
+enum AlertSeverity {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model PatientAlert {
+  id             String        @id @default(uuid())
+  type           AlertType
+  severity       AlertSeverity
+  message        String        // Ex: "Nenhum treino registrado há 6 dias."
+  
+  patientId      String
+  patient        User          @relation("PatientAlerts", fields: [patientId], references: [id], onDelete: Cascade)
+  
+  professionalId String
+  professional   User          @relation("ProfessionalAlerts", fields: [professionalId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime      @default(now())
+
+  @@index([professionalId])
+  @@map("patient_alerts")
 }

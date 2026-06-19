@@ -13,6 +13,8 @@ import { AppController } from '../app.controller';
 import { AnamnesesModule } from './modules/anamneses/anamneses.module';
 import { SupplementsModule } from './modules/supplements/supplements.module';
 import { LabExamsModule } from './modules/lab-exams/lab-exams.module';
+import { ScheduleModule } from '@nestjs/schedule'; 
+import { AlertsModule } from './modules/alerts/alerts.module';
 
 @Module({
   imports: [
@@ -27,7 +29,9 @@ import { LabExamsModule } from './modules/lab-exams/lab-exams.module';
     RehabPlansModule,
     AnamnesesModule,
     SupplementsModule,
-    LabExamsModule
+    LabExamsModule,
+    ScheduleModule.forRoot(),
+    AlertsModule,
   ],
   controllers: [AppController]
 })

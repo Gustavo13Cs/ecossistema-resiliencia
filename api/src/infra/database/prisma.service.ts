@@ -6,6 +6,7 @@ import 'dotenv/config';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
+  [x: string]: any;
   constructor() {
     const dbUrl = process.env.DATABASE_URL as string;
     
