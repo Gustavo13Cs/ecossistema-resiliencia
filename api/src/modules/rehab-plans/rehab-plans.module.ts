@@ -1,10 +1,13 @@
+// api/src/modules/rehab-plans/rehab-plans.module.ts
+
 import { Module } from '@nestjs/common';
 import { RehabPlansService } from './rehab-plans.service';
 import { RehabPlansController } from './rehab-plans.controller';
-import { PrismaService } from '../../infra/database/prisma.service';
+import { DatabaseModule } from '../../infra/database/database.module';
 
 @Module({
+  imports: [DatabaseModule],
   controllers: [RehabPlansController],
-  providers: [RehabPlansService, PrismaService],
+  providers: [RehabPlansService],
 })
 export class RehabPlansModule {}

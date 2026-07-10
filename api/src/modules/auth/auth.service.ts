@@ -1,7 +1,13 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
@@ -10,9 +16,9 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async login(loginDto: any) {
+  async login(loginDto: LoginDto) {
     const user = await this.prisma.user.findUnique({
-      where: { email: loginDto.email }
+      where: { email: loginDto.email },
     });
 
     if (!user) {
@@ -24,12 +30,11 @@ export class AuthService {
       throw new UnauthorizedException('E-mail ou senha incorretos');
     }
 
-    const payload = { 
-      sub: user.id, 
+    const payload = {
+      sub: user.id,
       name: user.name,
       role: user.role,
       email: user.email,
-      businessContext: user.role 
     };
 
     return {
@@ -37,16 +42,34 @@ export class AuthService {
     };
   }
 
-  async register(signUpDto: any) {
-    const hashedPassword = await bcrypt.hash(signUpDto.password, 10);
+  async register(registerDto: RegisterDto) {
+    const existing = await this.prisma.user.findUnique({
+      where: { email: registerDto.email },
+    });
+
+    if (existing) {
+      throw new ConflictException('E-mail já cadastrado');
+    }
+
+    const hashedPassword = await bcrypt.hash(registerDto.password, 12);
+
     const newUser = await this.prisma.user.create({
       data: {
-        name: signUpDto.name,
-        email: signUpDto.email,
+        name: registerDto.name,
+        email: registerDto.email,
         password: hashedPassword,
-        phone: signUpDto.phone,
-        companyName: signUpDto.companyName,
-        role: signUpDto.role || 'PATIENT', 
+        phone: registerDto.phone,
+        companyName: registerDto.companyName,
+        role: registerDto.role ?? 'PATIENT', // enum validado pelo DTO, ADMIN bloqueado
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        companyName: true,
+        role: true,
+        createdAt: true,
       },
     });
 

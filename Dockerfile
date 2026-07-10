@@ -1,23 +1,24 @@
-FROM node:20-alpine
+FROM node:22-alpine AS builder
 
 WORKDIR /usr/src/app
 
-# Copia os arquivos de dependência da API
-COPY api/package*.json ./api/
+COPY api/package*.json ./
+RUN npm ci
 
-# Entra na pasta e instala
-RUN cd api && npm install
+COPY api/ ./
 
-# Copia o resto do código da API
-COPY api/ ./api/
-
-# Define a pasta de trabalho como a da API para rodar os comandos
-WORKDIR /usr/src/app/api
-
-# Gera o Prisma
 RUN npx prisma generate
+RUN npm run build
+
+FROM node:22-alpine AS production
+
+ENV NODE_ENV=production
+WORKDIR /usr/src/app
+
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/prisma ./prisma
+COPY --from=builder /usr/src/app/package*.json ./
 
 EXPOSE 3000
-
-# Roda o NestJS em modo de desenvolvimento
-CMD ["npm", "run", "start:dev"]
+CMD ["node", "dist/src/main.js"]

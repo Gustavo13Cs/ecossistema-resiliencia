@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Body, UseGuards, Query, Param, Delete, Put } from '@nestjs/common';
 import { FoodsService } from './foods.service';
 import { CreateFoodDto } from './dto/create-food.dto';
-import { AuthGuard } from '../../common/guards/auth.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
-@UseGuards(AuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('foods')
 export class FoodsController {
   constructor(private readonly foodsService: FoodsService) {}

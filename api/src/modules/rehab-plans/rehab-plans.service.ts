@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { CreateRehabPlanDto } from './dto/create-rehab-plan.dto';
 
@@ -56,7 +60,15 @@ export class RehabPlansService {
     });
   }
 
-  async remove(id: string) {
-    return this.prisma.rehabPlan.delete({ where: { id } });
+  async remove(id: string, requesterId: string) {
+  const plan = await this.prisma.rehabPlan.findUnique({ where: { id } });
+
+  if (!plan) throw new NotFoundException('Plano de reabilitação não encontrado');
+
+  if (plan.creatorId !== requesterId) {
+    throw new ForbiddenException('Você não pode deletar um plano que não criou');
   }
+
+  return this.prisma.rehabPlan.delete({ where: { id } });
+}
 }

@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { WorkoutsService } from './workouts.service';
 import { WorkoutsController } from './workouts.controller';
-import { PrismaService } from '../../infra/database/prisma.service';
+import { DatabaseModule } from '../../infra/database/database.module';
 
 @Module({
+  imports: [DatabaseModule],
   controllers: [WorkoutsController],
-  providers: [WorkoutsService, PrismaService],
+  providers: [WorkoutsService],
 })
 export class WorkoutsModule {}

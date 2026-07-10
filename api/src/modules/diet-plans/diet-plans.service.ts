@@ -1,4 +1,10 @@
-import { Injectable } from '@nestjs/common';
+// api/src/modules/diet-plans/diet-plans.service.ts
+
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { CreateDietPlanDto } from './dto/create-diet-plan.dto';
 
@@ -16,7 +22,7 @@ export class DietPlansService {
       data: {
         title: createDietDto.title,
         goal: createDietDto.goal,
-        durationDays: createDietDto.durationDays, 
+        durationDays: createDietDto.durationDays,
         tmb: createDietDto.tmb,
         get: createDietDto.get,
         targetKcal: createDietDto.targetKcal,
@@ -29,7 +35,7 @@ export class DietPlansService {
         ironMg: createDietDto.ironMg,
         notes: createDietDto.notes,
         userId: createDietDto.userId,
-        creatorId: creatorId,
+        creatorId,
         meals: {
           create: createDietDto.meals.map((meal) => ({
             name: meal.name,
@@ -39,7 +45,7 @@ export class DietPlansService {
               create: meal.items.map((item) => ({
                 quantity: item.quantity,
                 measure: item.measure,
-                notes: item.notes, 
+                notes: item.notes,
                 foodId: item.foodId,
               })),
             },
@@ -47,9 +53,7 @@ export class DietPlansService {
         },
       },
       include: {
-        meals: {
-          include: { items: { include: { food: true } } },
-        },
+        meals: { include: { items: { include: { food: true } } } },
       },
     });
 
@@ -58,17 +62,17 @@ export class DietPlansService {
         if (item.measure && item.measure.trim() !== '' && item.measure !== 'g') {
           await this.prisma.foodPreference.upsert({
             where: {
-              nutritionistId_foodId_quantity: { 
+              nutritionistId_foodId_quantity: {
                 nutritionistId: creatorId,
                 foodId: item.foodId,
-                quantity: item.quantity, 
+                quantity: item.quantity,
               },
             },
             update: { measure: item.measure },
             create: {
               nutritionistId: creatorId,
               foodId: item.foodId,
-              quantity: item.quantity, 
+              quantity: item.quantity,
               measure: item.measure,
             },
           });
@@ -79,28 +83,53 @@ export class DietPlansService {
     return novaDieta;
   }
 
-  async findActiveByUser(userId: string) {
+  async findActiveByUser(userId: string, requesterId: string, isProfessional: boolean) {
+    // profissional: verifica se o paciente está vinculado a ele
+    if (isProfessional) {
+      const link = await this.prisma.professionalPatientLink.findUnique({
+        where: {
+          professionalId_patientId: {
+            professionalId: requesterId,
+            patientId: userId,
+          },
+        },
+      });
+
+      if (!link || !link.isActive) {
+        throw new ForbiddenException('Este paciente não está vinculado a você');
+      }
+    }
+
     return this.prisma.dietPlan.findFirst({
-      where: { userId: userId, isActive: true },
+      where: { userId, isActive: true },
       include: {
         meals: {
-          include: {
-            items: { 
-              include: {
-                food: true 
-              }
-            }
-          }
-        }
+          include: { items: { include: { food: true } } },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
-  async toggleMealStatus(mealId: string) {
-    const meal = await this.prisma.meal.findUnique({ where: { id: mealId } });
-    if (!meal) throw new Error('Refeição não encontrada');
-    
+  async toggleMealStatus(mealId: string, requesterId: string, requesterRole: string) {
+    const meal = await this.prisma.meal.findUnique({
+      where: { id: mealId },
+      include: {
+        dietPlan: { select: { userId: true, creatorId: true } },
+      },
+    });
+
+    if (!meal) throw new NotFoundException('Refeição não encontrada');
+
+    const isProfessional = ['NUTRITIONIST', 'ADMIN'].includes(requesterRole);
+    const isOwner = meal.dietPlan.userId === requesterId;
+    const isCreator = meal.dietPlan.creatorId === requesterId;
+
+    // só o paciente dono ou o profissional criador da dieta pode fazer toggle
+    if (!isOwner && !isCreator && !isProfessional) {
+      throw new ForbiddenException('Acesso negado');
+    }
+
     return this.prisma.meal.update({
       where: { id: mealId },
       data: { isConsumed: !meal.isConsumed },
@@ -109,15 +138,21 @@ export class DietPlansService {
 
   async findAll(creatorId: string) {
     return this.prisma.dietPlan.findMany({
-      where: { creatorId: creatorId },
-      include: {
-        user: { select: { name: true } } 
-      },
-      orderBy: { createdAt: 'desc' }
+      where: { creatorId },
+      include: { user: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
-  async remove(id: string) {
+  async remove(id: string, requesterId: string) {
+    const plan = await this.prisma.dietPlan.findUnique({ where: { id } });
+
+    if (!plan) throw new NotFoundException('Plano de dieta não encontrado');
+
+    if (plan.creatorId !== requesterId) {
+      throw new ForbiddenException('Você não pode deletar um plano que não criou');
+    }
+
     return this.prisma.dietPlan.delete({ where: { id } });
   }
 }

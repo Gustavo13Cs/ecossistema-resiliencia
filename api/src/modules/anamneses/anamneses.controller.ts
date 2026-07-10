@@ -1,9 +1,11 @@
 import { Controller, Post, Body, Get, Param, UseGuards, Request } from '@nestjs/common';
 import { AnamnesesService } from './anamneses.service';
 import { CreateAnamnesisDto } from './dto/create-anamnesis.dto';
-import { AuthGuard } from '../../common/guards/auth.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
-@UseGuards(AuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('anamneses')
 export class AnamnesesController {
   constructor(private readonly anamnesesService: AnamnesesService) {}

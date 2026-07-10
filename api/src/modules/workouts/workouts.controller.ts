@@ -1,30 +1,50 @@
-import { Controller, Post, Body, Get, Param, UseGuards, Request,Delete} from '@nestjs/common';
+// api/src/modules/workouts/workouts.controller.ts
+
+import {
+  Controller, Post, Body, Get, Param,
+  Delete, Request, ForbiddenException, UseGuards,
+} from '@nestjs/common';
 import { WorkoutsService } from './workouts.service';
 import { CreateWorkoutDto } from './dto/create-workout.dto';
-import { AuthGuard } from '../../common/guards/auth.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
-@UseGuards(AuthGuard) 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('workouts')
 export class WorkoutsController {
   constructor(private readonly workoutsService: WorkoutsService) {}
 
+  // Só personal e admin criam treinos
+  @Roles('PERSONAL', 'ADMIN')
   @Post()
   create(@Request() req, @Body() createWorkoutDto: CreateWorkoutDto) {
     return this.workoutsService.create(req.user.sub, createWorkoutDto);
   }
 
+  // Lista treinos criados pelo profissional logado
+  @Roles('PERSONAL', 'ADMIN')
   @Get()
   findAll(@Request() req) {
     return this.workoutsService.findAllByProfessional(req.user.sub);
   }
 
+  // Paciente só vê o próprio treino ativo; profissional vê de paciente vinculado
   @Get('user/:userId/active')
-  findActiveByUser(@Param('userId') userId: string) {
-    return this.workoutsService.findActiveByUser(userId);
+  findActiveByUser(@Request() req, @Param('userId') userId: string) {
+    const isProfessional = ['PERSONAL', 'ADMIN'].includes(req.user.role);
+
+    if (!isProfessional && req.user.sub !== userId) {
+      throw new ForbiddenException('Acesso negado');
+    }
+
+    return this.workoutsService.findActiveByUser(userId, req.user.sub, isProfessional);
   }
 
+  // Só o criador do treino pode deletar
+  @Roles('PERSONAL', 'ADMIN')
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.workoutsService.remove(id);
+  remove(@Request() req, @Param('id') id: string) {
+    return this.workoutsService.remove(id, req.user.sub);
   }
 }

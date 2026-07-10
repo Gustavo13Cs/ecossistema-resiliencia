@@ -53,7 +53,18 @@ export default function LoginPage() {
       login(response.data.access_token)
       
     } catch (error: any) {
-      setError(error.response?.data?.message || "E-mail ou senha incorretos")
+      if (error.response) {
+        // A API respondeu com um status de erro (401, 500, etc.)
+        setError(error.response.data?.message || "E-mail ou senha incorretos")
+      } else if (error.request) {
+        // A requisição foi feita mas não houve resposta (API offline / URL errada)
+        setError("Não foi possível conectar ao servidor. Verifique se a API está rodando.")
+        console.error("[Login] Erro de rede:", error.message)
+      } else {
+        // Erro ao montar a requisição ou ao processar a resposta (ex: jwtDecode falhou)
+        setError("Erro inesperado. Tente novamente.")
+        console.error("[Login] Erro:", error.message)
+      }
     } finally {
       setIsLoading(false)
     }

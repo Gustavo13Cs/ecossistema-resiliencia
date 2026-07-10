@@ -1,8 +1,10 @@
 import { Controller, Get, UseGuards, Request } from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
-import { AuthGuard } from '../../common/guards/auth.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
-@UseGuards(AuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('alerts')
 export class AlertsController {
   constructor(private prisma: PrismaService) {}

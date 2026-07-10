@@ -1,30 +1,44 @@
-import { Controller, Post, Body, Get, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller, Post, Body, Get, Param,
+  Delete, Request, ForbiddenException, UseGuards,
+} from '@nestjs/common';
 import { RehabPlansService } from './rehab-plans.service';
 import { CreateRehabPlanDto } from './dto/create-rehab-plan.dto';
-import { AuthGuard } from '../../common/guards/auth.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
-@UseGuards(AuthGuard) 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('rehab-plans')
 export class RehabPlansController {
   constructor(private readonly service: RehabPlansService) {}
 
+  @Roles('PHYSIO', 'ADMIN')
   @Post()
   create(@Request() req, @Body() dto: CreateRehabPlanDto) {
     return this.service.create(req.user.sub, dto);
   }
 
+  @Roles('PHYSIO', 'ADMIN')
   @Get()
   findAll(@Request() req) {
     return this.service.findAllByProfessional(req.user.sub);
   }
 
   @Get('user/:userId/active')
-  findActiveByUser(@Param('userId') userId: string) {
+  findActiveByUser(@Request() req, @Param('userId') userId: string) {
+    const isProfessional = ['PHYSIO', 'ADMIN'].includes(req.user.role);
+
+    if (!isProfessional && req.user.sub !== userId) {
+      throw new ForbiddenException('Acesso negado');
+    }
+
     return this.service.findActiveByUser(userId);
   }
 
+  @Roles('PHYSIO', 'ADMIN')
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(@Request() req, @Param('id') id: string) {
+    return this.service.remove(id, req.user.sub);
   }
 }

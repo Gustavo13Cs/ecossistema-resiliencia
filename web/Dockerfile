@@ -1,17 +1,24 @@
-FROM node:20-alpine
+FROM node:22-alpine AS builder
 
-WORKDIR /usr/src/app/web
+WORKDIR /usr/src/app
 
-# Copia apenas os arquivos do frontend
 COPY package*.json ./
+RUN npm ci --legacy-peer-deps
 
-# Instala as dependências forçando ignorar conflitos de versão do React 19
-RUN npm install --legacy-peer-deps
-
-# Copia o resto do código do frontend
 COPY . .
+RUN npm run build
 
-EXPOSE 3000
+FROM node:22-alpine AS production
 
-# Roda o Next.js em modo de desenvolvimento
-CMD ["npm", "run", "dev"]
+ENV NODE_ENV=production
+ENV PORT=3001
+
+WORKDIR /usr/src/app
+
+COPY --from=builder /usr/src/app/.next ./.next
+COPY --from=builder /usr/src/app/public ./public
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+COPY --from=builder /usr/src/app/package*.json ./
+
+EXPOSE 3001
+CMD ["npm", "start"]
