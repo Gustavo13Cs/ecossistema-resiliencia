@@ -92,19 +92,17 @@ export class WorkoutLogsService {
     });
 
     // Agrupa por sessão: pega o maior peso de cada sessão
-    const progressBySession = sets.reduce<Record<string, { date: Date; maxWeight: number }>>(
-      (acc, s) => {
-        const sessionId = s.logId;
-        if (!acc[sessionId] || (s.weightKg ?? 0) > acc[sessionId].maxWeight) {
-          acc[sessionId] = { date: s.log.executedAt, maxWeight: s.weightKg ?? 0 };
-        }
-        return acc;
-      },
-      {},
-    );
+    const progressBySession: Record<string, { date: Date; maxWeight: number }> = {}
+    for (const s of sets) {
+      const sessionId = s.logId;
+      if (!progressBySession[sessionId] || (s.weightKg ?? 0) > progressBySession[sessionId].maxWeight) {
+        progressBySession[sessionId] = { date: s.log.executedAt, maxWeight: s.weightKg ?? 0 };
+      }
+    }
 
     return Object.values(progressBySession).sort(
-      (a, b) => a.date.getTime() - b.date.getTime(),
+      (a: { date: Date; maxWeight: number }, b: { date: Date; maxWeight: number }) =>
+        a.date.getTime() - b.date.getTime(),
     );
   }
 }

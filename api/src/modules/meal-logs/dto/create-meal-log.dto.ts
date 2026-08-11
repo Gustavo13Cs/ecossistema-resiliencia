@@ -1,11 +1,13 @@
 import { IsString, IsEnum, IsOptional } from 'class-validator';
-import { MealLogStatus } from '@prisma/client';
+
+export type MealLogStatus = 'FOLLOWED' | 'SUBSTITUTED' | 'SKIPPED';
+const MEAL_LOG_STATUS_VALUES = ['FOLLOWED', 'SUBSTITUTED', 'SKIPPED'] as const;
 
 export class CreateMealLogDto {
   @IsString()
   mealId!: string;
 
-  @IsEnum(MealLogStatus)
+  @IsEnum(MEAL_LOG_STATUS_VALUES)
   status!: MealLogStatus;
 
   @IsOptional()
