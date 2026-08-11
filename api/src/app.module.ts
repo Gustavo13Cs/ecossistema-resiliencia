@@ -19,6 +19,8 @@ import { AnamnesesModule } from './modules/anamneses/anamneses.module';
 import { SupplementsModule } from './modules/supplements/supplements.module';
 import { LabExamsModule } from './modules/lab-exams/lab-exams.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
+import { WorkoutLogsModule } from './modules/workout-logs/workout-logs.module';
+import { MealLogsModule } from './modules/meal-logs/meal-logs.module';
 import { AppController } from '../app.controller';
 
 @Module({
@@ -44,6 +46,8 @@ import { AppController } from '../app.controller';
     SupplementsModule,
     LabExamsModule,
     AlertsModule,
+    WorkoutLogsModule,
+    MealLogsModule,
   ],
   controllers: [AppController],
   providers: [

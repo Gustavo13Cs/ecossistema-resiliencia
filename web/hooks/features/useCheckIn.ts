@@ -40,5 +40,5 @@ export function useCheckIn(patientId?: string) {
     }
   }
 
-  return { handleCheckIn, loadingItems, completedItems, consistency }
+  return { handleCheckIn, loadingItems, completedItems, setCompletedItems, consistency }
 }

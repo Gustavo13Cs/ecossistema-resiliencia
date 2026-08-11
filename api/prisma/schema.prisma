@@ -56,8 +56,6 @@ model User {
   rehabs            RehabPlan[]        @relation("UserRehabs")
   createdRehabs     RehabPlan[]        @relation("CreatedRehabs")
   
-  // workoutLogs   WorkoutLog[]
-  
   diets         DietPlan[]   @relation("UserDiets") 
   
   createdDiets  DietPlan[]   @relation("CreatedDiets")
@@ -79,6 +77,9 @@ model User {
 
   patientAlerts      PatientAlert[] @relation("PatientAlerts")
   professionalAlerts PatientAlert[] @relation("ProfessionalAlerts")
+
+  workoutLogs WorkoutLog[] @relation("PatientWorkoutLogs")
+  mealLogs    MealLog[]    @relation("PatientMealLogs")
 }
 
 model ProfessionalPatientLink {
@@ -186,7 +187,8 @@ model Meal {
   
   // Os alimentos que estão dentro desta refeição
   items       MealItem[] @relation("MealToItems")
-  isConsumed Boolean    @default(false)
+  isConsumed  Boolean    @default(false)
+  logs        MealLog[]
   
   @@map("meals")
 }
@@ -296,6 +298,7 @@ model Workout {
   updatedAt     DateTime @updatedAt
 
   splits        WorkoutSplit[] @relation("WorkoutToSplits")
+  logs          WorkoutLog[]
 
   @@map("workouts")
 }
@@ -310,6 +313,7 @@ model WorkoutSplit {
   workout     Workout  @relation("WorkoutToSplits", fields: [workoutId], references: [id], onDelete: Cascade)
 
   exercises   WorkoutExercise[] @relation("SplitToExercises")
+  logs        WorkoutLog[]
 
   @@map("workout_splits")
 }
@@ -325,6 +329,8 @@ model WorkoutExercise {
 
   splitId     String
   split       WorkoutSplit @relation("SplitToExercises", fields: [splitId], references: [id], onDelete: Cascade)
+
+  logSets     WorkoutLogSet[]
 
   @@map("workout_exercises")
 }
@@ -407,6 +413,75 @@ model RehabExercise {
   session     RehabSession @relation("SessionToExercises", fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("rehab_exercises")
+}
+
+// ==========================================
+// MÓDULO DE ACTIVITY LOGS
+// ==========================================
+
+// Log de uma sessão de treino completa
+model WorkoutLog {
+  id          String   @id @default(uuid())
+
+  workoutId   String
+  workout     Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  splitId     String
+  split       WorkoutSplit @relation(fields: [splitId], references: [id])
+
+  patientId   String
+  patient     User     @relation("PatientWorkoutLogs", fields: [patientId], references: [id], onDelete: Cascade)
+
+  pse         Int?     // Percepção Subjetiva de Esforço (1-10)
+  notes       String?  @db.Text
+
+  executedAt  DateTime @default(now())
+  sets        WorkoutLogSet[]
+
+  @@index([patientId, executedAt])
+  @@map("workout_logs")
+}
+
+// Cada série real executada por exercício
+model WorkoutLogSet {
+  id          String   @id @default(uuid())
+
+  logId       String
+  log         WorkoutLog      @relation(fields: [logId], references: [id], onDelete: Cascade)
+
+  exerciseId  String
+  exercise    WorkoutExercise @relation(fields: [exerciseId], references: [id])
+
+  setNumber   Int      // Número da série (1, 2, 3...)
+  repsActual  Int      // Reps realmente feitas
+  weightKg    Float?   // Peso usado (null = bodyweight)
+
+  @@map("workout_log_sets")
+}
+
+enum MealLogStatus {
+  FOLLOWED    // Seguiu o plano
+  SUBSTITUTED // Substituiu algum alimento
+  SKIPPED     // Pulou a refeição
+}
+
+// Log de adesão a uma refeição
+model MealLog {
+  id        String         @id @default(uuid())
+
+  mealId    String
+  meal      Meal           @relation(fields: [mealId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   User           @relation("PatientMealLogs", fields: [patientId], references: [id], onDelete: Cascade)
+
+  status    MealLogStatus  // FOLLOWED | SUBSTITUTED | SKIPPED
+  notes     String?        @db.Text
+
+  loggedAt  DateTime       @default(now())
+
+  @@index([patientId, loggedAt])
+  @@map("meal_logs")
 }
 
 model DailyTracking {
