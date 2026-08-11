@@ -5,39 +5,18 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-// 1. Adicionamos o useEffect
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { api } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import Link from "next/link"
-// 2. Adicionamos o roteador para expulsar quem já está logado
-import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  
-  // 3. A nossa nova "Cortina" (começa fechada)
-  const [isPageLoading, setIsPageLoading] = useState(true) 
-  
-  const { login } = useAuth()
-  const router = useRouter()
 
-  // 4. O Vigia da Portaria: Verifica se já há token antes de renderizar
-  useEffect(() => {
-    // Procura o token no armazenamento (ajuste o nome se o seu useAuth salvar com outro nome, ex: '@SafeMove:token')
-    const token = localStorage.getItem('token') || localStorage.getItem('access_token') || localStorage.getItem('safeMove_token')
-    
-    if (token) {
-      // Se tem crachá, joga direto pro sistema! A cortina nem abre.
-      router.push('/paciente') // ou '/home' dependendo de onde é o seu painel principal
-    } else {
-      // Se não tem crachá, abrimos a cortina e mostramos o formulário
-      setIsPageLoading(false)
-    }
-  }, [router])
+  const { login } = useAuth()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,23 +24,18 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const response = await api.post("/auth/login", {
-        email,
-        password,
-      })
+      // POST /auth/login seta o cookie HttpOnly no browser automaticamente
+      await api.post("/auth/login", { email, password })
 
-      login(response.data.access_token)
-      
+      // Agora busca os dados do usuário via cookie e redireciona
+      await login()
     } catch (error: any) {
       if (error.response) {
-        // A API respondeu com um status de erro (401, 500, etc.)
         setError(error.response.data?.message || "E-mail ou senha incorretos")
       } else if (error.request) {
-        // A requisição foi feita mas não houve resposta (API offline / URL errada)
         setError("Não foi possível conectar ao servidor. Verifique se a API está rodando.")
         console.error("[Login] Erro de rede:", error.message)
       } else {
-        // Erro ao montar a requisição ou ao processar a resposta (ex: jwtDecode falhou)
         setError("Erro inesperado. Tente novamente.")
         console.error("[Login] Erro:", error.message)
       }
@@ -70,19 +44,7 @@ export default function LoginPage() {
     }
   }
 
-  // 5. O que aparece enquanto verificamos o crachá
-  if (isPageLoading) {
-    return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-500 border-t-transparent"></div>
-          <p className="font-semibold text-teal-700 animate-pulse">A preparar a portaria...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // 6. O Formulário Original (só renderiza se não tiver token)
+  // Formulário de login
   return (
     <div className="flex min-h-screen w-full items-center justify-center p-6 bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50">
       <div className="w-full max-w-sm">

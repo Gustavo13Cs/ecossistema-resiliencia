@@ -2,21 +2,20 @@
 
 import { createContext, useContext, useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { jwtDecode } from "jwt-decode"
+import { api } from "@/lib/api"
 
 type User = {
   sub: string;
   role: string;
   email?: string;
   name?: string;
-  businessContext?: string;
 }
 
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
-  login: (token: string) => void;
-  logout: () => void;
+  login: () => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -27,7 +26,7 @@ const getRedirectPath = (role?: string) => {
     case 'NUTRITIONIST': return '/dietas'
     case 'PERSONAL': return '/treinos'
     case 'PHYSIO': return '/reabilitacao'
-    default: return '/membros' 
+    default: return '/membros'
   }
 }
 
@@ -39,33 +38,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const publicRoutes = ["/", "/auth/login", "/auth/register"]
 
+  // Ao montar o provider (ex: refresh de página), tenta hidratar o usuário
+  // a partir do cookie HttpOnly via GET /auth/me.
+  // O browser envia o cookie automaticamente — sem precisar de localStorage.
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    if (token) {
+    const hydrateUser = async () => {
       try {
-        const decoded = jwtDecode(token) as User
-        setUser(decoded)
-      } catch (err) {
-        localStorage.removeItem("token")
+        const { data } = await api.get<User>('/auth/me')
+        setUser(data)
+      } catch {
+        // Cookie expirado ou ausente — usuário não autenticado
         setUser(null)
+      } finally {
+        setIsLoading(false)
       }
     }
-    setIsLoading(false)
+
+    hydrateUser()
   }, [])
 
   useEffect(() => {
     if (!isLoading) {
       const isPublicRoute = publicRoutes.includes(pathname)
-      
+
       if (!user && !isPublicRoute) {
         router.push("/auth/login")
       } else if (user) {
         if (isPublicRoute) {
           router.push(getRedirectPath(user.role))
-        } 
+        }
         else if (user.role === 'PATIENT' && !pathname.startsWith('/paciente')) {
           router.push('/paciente')
-        } 
+        }
         else if (user.role !== 'PATIENT' && pathname.startsWith('/paciente')) {
           router.push(getRedirectPath(user.role))
         }
@@ -73,19 +77,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, isLoading, pathname, router])
 
-  const login = (token: string) => {
-    localStorage.setItem("token", token)
-    const decoded = jwtDecode(token) as User
-    setUser(decoded)
-    
-    // 🌟 Após o login bem sucedido, envia para a página certa
-    router.push(getRedirectPath(decoded.role))
+  // Chamado pelo componente de login APÓS a requisição POST /auth/login ter sido feita com sucesso.
+  // O cookie já foi setado pelo servidor — basta buscar os dados do usuário.
+  const login = async () => {
+    const { data } = await api.get<User>('/auth/me')
+    setUser(data)
+    router.push(getRedirectPath(data.role))
   }
 
-  const logout = () => {
-    localStorage.removeItem("token")
-    setUser(null)
-    router.push("/auth/login")
+  // Chama o endpoint de logout no servidor para limpar o cookie HttpOnly.
+  // JavaScript não tem acesso ao cookie — só o servidor pode apagá-lo.
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout')
+    } finally {
+      setUser(null)
+      router.push("/auth/login")
+    }
   }
 
   if (isLoading) {

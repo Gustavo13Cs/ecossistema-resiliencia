@@ -1,10 +1,28 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Res } from '@nestjs/common';
-import { Response } from 'express';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import { Request, Response } from 'express';
 import { Public } from '../../common/decorators/public.decorator';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { Throttle } from '@nestjs/throttler';
+import { AuthGuard } from '@nestjs/passport';
+
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+};
 
 @Controller('auth')
 export class AuthController {
@@ -14,18 +32,35 @@ export class AuthController {
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
+  async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const { access_token } = await this.authService.login(loginDto);
-    
-    res.cookie('access_token', access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // true em prod
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
-    });
 
-    // Retorna o token no body também — o frontend precisa dele para salvar no localStorage
-    return { access_token, message: 'Login realizado com sucesso' };
+    // Token vai exclusivamente via HttpOnly cookie — nunca exposto no body
+    res.cookie('access_token', access_token, COOKIE_OPTIONS);
+
+    return { message: 'Login realizado com sucesso' };
+  }
+
+  // Endpoint que o frontend usa para hidratar o usuário após refresh de página.
+  // O cookie HttpOnly é enviado automaticamente pelo browser — sem precisar de token no body.
+  @Get('me')
+  @UseGuards(AuthGuard('jwt'))
+  me(@Req() req: Request) {
+    return req.user;
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
+    return { message: 'Logout realizado com sucesso' };
   }
 
   @Public()
