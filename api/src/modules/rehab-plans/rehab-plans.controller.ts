@@ -1,6 +1,6 @@
-import {
+﻿import {
   Controller, Post, Body, Get, Param,
-  Delete, Request, ForbiddenException, UseGuards,
+  Patch, Delete, Request, ForbiddenException, UseGuards,
 } from '@nestjs/common';
 import { RehabPlansService } from './rehab-plans.service';
 import { CreateRehabPlanDto } from './dto/create-rehab-plan.dto';
@@ -25,14 +25,19 @@ export class RehabPlansController {
     return this.service.findAllByProfessional(req.user.sub);
   }
 
+  // templates antes de :id para evitar conflito de rotas
+  @Roles('PHYSIO', 'ADMIN')
+  @Get('templates')
+  listTemplates(@Request() req) {
+    return this.service.listTemplates(req.user.sub);
+  }
+
   @Get('user/:userId/active')
   findActiveByUser(@Request() req, @Param('userId') userId: string) {
     const isProfessional = ['PHYSIO', 'ADMIN'].includes(req.user.role);
-
     if (!isProfessional && req.user.sub !== userId) {
       throw new ForbiddenException('Acesso negado');
     }
-
     return this.service.findActiveByUser(userId);
   }
 
@@ -40,5 +45,11 @@ export class RehabPlansController {
   @Delete(':id')
   remove(@Request() req, @Param('id') id: string) {
     return this.service.remove(id, req.user.sub);
+  }
+
+  @Roles('PHYSIO', 'ADMIN')
+  @Patch(':id/save-as-template')
+  saveAsTemplate(@Request() req, @Param('id') id: string) {
+    return this.service.saveAsTemplate(id, req.user.sub);
   }
 }

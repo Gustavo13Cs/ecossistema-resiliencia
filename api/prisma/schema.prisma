@@ -137,6 +137,7 @@ model DietPlan {
   creator     User     @relation("CreatedDiets", fields: [creatorId], references: [id])
 
   isActive    Boolean  @default(true) 
+  isTemplate  Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
@@ -294,6 +295,7 @@ model Workout {
   creator       User     @relation("CreatedWorkouts", fields: [creatorId], references: [id])
 
   isActive      Boolean  @default(true)
+  isTemplate    Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -379,6 +381,7 @@ model RehabPlan {
   creator       User     @relation("CreatedRehabs", fields: [creatorId], references: [id])
 
   isActive      Boolean  @default(true)
+  isTemplate    Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

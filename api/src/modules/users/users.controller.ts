@@ -39,6 +39,12 @@ export class UsersController {
     return this.usersService.findAll(req.user.sub);
   }
 
+  // Visão 360°: dados agregados de todas as áreas do paciente
+  @Get(':id/overview')
+  getPatientOverview(@Request() req, @Param('id') id: string) {
+    return this.usersService.getPatientOverview(id, req.user.sub);
+  }
+
   // Profissional vê perfil completo; paciente vê só o próprio (sem notas clínicas)
   @Get(':id')
   findOne(@Request() req, @Param('id') id: string) {

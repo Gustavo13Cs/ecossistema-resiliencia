@@ -155,4 +155,32 @@ export class DietPlansService {
 
     return this.prisma.dietPlan.delete({ where: { id } });
   }
+
+  async saveAsTemplate(id: string, requesterId: string) {
+    const plan = await this.prisma.dietPlan.findUnique({ where: { id } });
+
+    if (!plan) throw new NotFoundException('Plano de dieta não encontrado');
+
+    if (plan.creatorId !== requesterId) {
+      throw new ForbiddenException('Você não pode salvar um plano que não criou como template');
+    }
+
+    return this.prisma.dietPlan.update({
+      where: { id },
+      data: { isTemplate: true },
+      select: { id: true, title: true, isTemplate: true },
+    });
+  }
+
+  async listTemplates(creatorId: string) {
+    return this.prisma.dietPlan.findMany({
+      where: { creatorId, isTemplate: true },
+      include: {
+        meals: {
+          include: { items: { include: { food: true } } },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
 }
