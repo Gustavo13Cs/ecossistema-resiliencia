@@ -58,9 +58,10 @@ export function SportSelector() {
     }
   }
 
-  const currentContext = user?.businessContext && contextConfig[user.businessContext] 
-    ? contextConfig[user.businessContext] 
-    : contextConfig["PERSONAL_TRAINER"]
+  const currentContextKey = user?.role === "NUTRITIONIST"
+    ? "NUTRITIONIST"
+    : "PERSONAL_TRAINER"
+  const currentContext = contextConfig[currentContextKey]
 
   const colorMap: Record<string, any> = {
     blue: { activeCard: "border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500", activeButton: "bg-blue-600 hover:bg-blue-700", topBar: "bg-blue-500" },

@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/auth-context"
 
 export default function NovoMembroPage() {
   const { user } = useAuth()
+  const isNutritionist = user?.role === "NUTRITIONIST"
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -57,7 +58,7 @@ export default function NovoMembroPage() {
             </Button>
           </Link>
           <h1 className="text-3xl font-bold text-slate-800">
-            {user?.businessContext === 'NUTRITIONIST' ? 'Novo Paciente' : 'Novo Membro'}
+            {isNutritionist ? 'Novo Paciente' : 'Novo Membro'}
           </h1>
         </div>
 
@@ -99,7 +100,7 @@ export default function NovoMembroPage() {
                 </div>
               </div>
 
-              {user?.businessContext === 'NUTRITIONIST' && (
+              {isNutritionist && (
                 <>
                   <div className="space-y-5 bg-teal-50/50 p-8 rounded-2xl border border-teal-100">
                     <h3 className="text-sm font-bold text-teal-700 uppercase tracking-wider border-b border-teal-200 pb-2">Saúde Física</h3>
@@ -189,7 +190,7 @@ export default function NovoMembroPage() {
               )}
 
               <div className="pt-6 border-t border-slate-100">
-                <Button type="submit" disabled={loading} className={`w-full h-14 text-lg font-semibold shadow-xl ${user?.businessContext === 'NUTRITIONIST' ? 'bg-teal-600 hover:bg-teal-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                <Button type="submit" disabled={loading} className={`w-full h-14 text-lg font-semibold shadow-xl ${isNutritionist ? 'bg-teal-600 hover:bg-teal-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
                   {loading ? "A processar..." : "Finalizar Prontuário e Cadastrar"}
                 </Button>
               </div>

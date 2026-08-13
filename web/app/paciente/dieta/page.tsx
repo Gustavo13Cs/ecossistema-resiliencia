@@ -124,7 +124,11 @@ export default function DietaPacientePage() {
                       </div>
                     ) : (
                       <Button
-                        onClick={() => setActiveMeal({ id: meal.id, name: meal.name, time: meal.time })}
+                        onClick={() => setActiveMeal({
+                          id: meal.id,
+                          name: meal.name,
+                          time: meal.time ?? undefined,
+                        })}
                         className="h-9 px-4 bg-teal-500 hover:bg-teal-600 text-white shadow-sm flex items-center gap-2"
                       >
                         <UtensilsCrossed className="w-4 h-4" />
