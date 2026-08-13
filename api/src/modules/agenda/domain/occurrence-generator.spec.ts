@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { RRule } from 'rrule';
 import {
   generateOccurrenceDates,
   validateRecurrenceRule,
@@ -117,6 +118,50 @@ describe('generateOccurrenceDates', () => {
         windowEnd: new Date('2027-01-02T12:00:00.000Z'),
       }),
     ).toThrow(BadRequestException);
+  });
+
+  it('stops an extreme range while evaluating the 367th occurrence', () => {
+    const originalBetween = RRule.prototype.between;
+    let evaluatedOccurrences = 0;
+    const betweenSpy = jest
+      .spyOn(RRule.prototype, 'between')
+      .mockImplementation(function (
+        this: RRule,
+        after: Date,
+        before: Date,
+        inc?: boolean,
+        iterator?: (date: Date, length: number) => boolean,
+      ) {
+        if (!iterator) {
+          throw new Error('between was called without a bounded iterator');
+        }
+
+        return originalBetween.call(
+          this,
+          after,
+          before,
+          inc,
+          (date, length) => {
+            evaluatedOccurrences += 1;
+            return iterator(date, length);
+          },
+        );
+      });
+
+    try {
+      expect(() =>
+        generateOccurrenceDates({
+          startsAt: new Date('1900-01-01T12:00:00.000Z'),
+          timeZone: 'UTC',
+          recurrenceRule: 'FREQ=DAILY',
+          windowStart: new Date('1900-01-01T00:00:00.000Z'),
+          windowEnd: new Date('9999-12-31T23:59:59.999Z'),
+        }),
+      ).toThrow(BadRequestException);
+      expect(evaluatedOccurrences).toBe(367);
+    } finally {
+      betweenSpy.mockRestore();
+    }
   });
 
   it('rejects an invalid IANA time zone', () => {

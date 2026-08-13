@@ -140,9 +140,22 @@ export function generateOccurrenceDates(
     dtstart: toWallClockDate(startsAt, formatter),
     tzid: timeZone,
   });
-  const dates = rule.between(windowStart, effectiveEnd, true);
+  let occurrenceLimitExceeded = false;
+  const dates = rule.between(
+    windowStart,
+    effectiveEnd,
+    true,
+    (_date, length) => {
+      if (length >= MAX_OCCURRENCES_PER_CALL) {
+        occurrenceLimitExceeded = true;
+        return false;
+      }
 
-  if (dates.length > MAX_OCCURRENCES_PER_CALL) {
+      return true;
+    },
+  );
+
+  if (occurrenceLimitExceeded || dates.length > MAX_OCCURRENCES_PER_CALL) {
     throw new BadRequestException(
       `A maximum of ${MAX_OCCURRENCES_PER_CALL} occurrences can be generated`,
     );
