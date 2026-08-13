@@ -21,6 +21,8 @@ import { LabExamsModule } from './modules/lab-exams/lab-exams.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
 import { WorkoutLogsModule } from './modules/workout-logs/workout-logs.module';
 import { MealLogsModule } from './modules/meal-logs/meal-logs.module';
+import { PatientAccessModule } from './common/patient-access/patient-access.module';
+import { ConsentsModule } from './modules/consents/consents.module';
 import { AppController } from '../app.controller';
 
 @Module({
@@ -48,6 +50,8 @@ import { AppController } from '../app.controller';
     AlertsModule,
     WorkoutLogsModule,
     MealLogsModule,
+    PatientAccessModule,
+    ConsentsModule,
   ],
   controllers: [AppController],
   providers: [
