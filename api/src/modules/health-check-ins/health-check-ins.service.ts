@@ -29,10 +29,17 @@ export class HealthCheckInsService {
 
     const symptoms = dto.symptoms?.trim();
     const notes = dto.notes?.trim();
+    const hasNullNumericField =
+      dto.waterMl === null || dto.painLevel === null || dto.mood === null;
+
+    if (hasNullNumericField) {
+      throw new BadRequestException('Campos numéricos não podem ser nulos');
+    }
+
     const hasHealthData =
-      dto.waterMl !== undefined ||
-      dto.painLevel !== undefined ||
-      dto.mood !== undefined ||
+      (dto.waterMl !== undefined && dto.waterMl !== null) ||
+      (dto.painLevel !== undefined && dto.painLevel !== null) ||
+      (dto.mood !== undefined && dto.mood !== null) ||
       Boolean(symptoms) ||
       Boolean(notes);
 

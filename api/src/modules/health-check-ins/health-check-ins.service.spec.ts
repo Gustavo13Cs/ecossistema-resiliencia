@@ -70,6 +70,20 @@ describe('HealthCheckInsService', () => {
     expect(prisma.healthCheckIn.create).not.toHaveBeenCalled();
   });
 
+  it.each(['waterMl', 'painLevel', 'mood'])(
+    'rejects a check-in whose %s is null at runtime',
+    async (field) => {
+      await expect(
+        service.create({ sub: 'patient-1', role: 'PATIENT' }, {
+          [field]: null,
+          notes: 'Registro válido',
+        } as unknown as CreateHealthCheckInDto),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      expect(prisma.healthCheckIn.create).not.toHaveBeenCalled();
+    },
+  );
+
   it('creates a partial check-in for the patient identified by the JWT', async () => {
     await expect(
       service.create({ sub: 'patient-1', role: 'PATIENT' }, {
