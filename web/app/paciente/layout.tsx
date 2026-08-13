@@ -1,7 +1,7 @@
 "use client"
 
 import { useAuth } from "@/contexts/auth-context"
-import { Home, Dumbbell, Apple, Activity, UserCircle } from "lucide-react"
+import { Home, Dumbbell, Apple, Activity, UserCircle, CalendarDays } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -11,6 +11,7 @@ export default function PacienteLayout({ children }: { children: React.ReactNode
 
   const navItems = [
     { name: "Início", href: "/paciente", icon: Home },
+    { name: "Agenda", href: "/paciente/agenda", icon: CalendarDays },
     { name: "Dieta", href: "/paciente/dieta", icon: Apple },
     { name: "Treino", href: "/paciente/treino", icon: Dumbbell },
     { name: "Fisio", href: "/paciente/reabilitacao", icon: Activity },
@@ -23,8 +24,8 @@ export default function PacienteLayout({ children }: { children: React.ReactNode
         {children}
       </main>
 
-      <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] z-50 px-2 py-2 safe-area-pb">
-        <div className="flex items-center justify-around">
+      <nav className="md:hidden fixed bottom-0 left-0 w-full overflow-x-auto bg-white border-t border-slate-200 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] z-50 px-2 py-2 safe-area-pb">
+        <div className="flex min-w-max items-center gap-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href
             const Icon = item.icon
@@ -32,7 +33,7 @@ export default function PacienteLayout({ children }: { children: React.ReactNode
               <Link 
                 key={item.name} 
                 href={item.href}
-                className={`flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-all ${
+                className={`flex h-14 w-16 shrink-0 flex-col items-center justify-center rounded-xl transition-all ${
                   isActive ? "text-blue-600" : "text-slate-400 hover:text-slate-600"
                 }`}
               >
