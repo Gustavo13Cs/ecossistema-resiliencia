@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseEnumPipe,
   Put,
   Request,
   UseGuards,
@@ -16,10 +17,6 @@ import { ConsentsService } from './consents.service';
 import { UpdateConsentDto } from './dto/update-consent.dto';
 
 type AuthenticatedRequest = { user: AuthUser };
-type ConsentParams = {
-  professionalId: string;
-  category: ConsentCategory;
-};
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('PATIENT')
@@ -35,13 +32,15 @@ export class ConsentsController {
   @Put(':professionalId/:category')
   setMine(
     @Request() req: AuthenticatedRequest,
-    @Param() params: ConsentParams,
+    @Param('professionalId') professionalId: string,
+    @Param('category', new ParseEnumPipe(ConsentCategory))
+    category: ConsentCategory,
     @Body() dto: UpdateConsentDto,
   ) {
     return this.consentsService.setMine(
       req.user,
-      params.professionalId,
-      params.category,
+      professionalId,
+      category,
       dto,
     );
   }
