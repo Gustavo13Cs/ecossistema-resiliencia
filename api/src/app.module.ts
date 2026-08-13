@@ -23,14 +23,15 @@ import { WorkoutLogsModule } from './modules/workout-logs/workout-logs.module';
 import { MealLogsModule } from './modules/meal-logs/meal-logs.module';
 import { PatientAccessModule } from './common/patient-access/patient-access.module';
 import { ConsentsModule } from './modules/consents/consents.module';
+import { AgendaModule } from './modules/agenda/agenda.module';
 import { AppController } from '../app.controller';
 
 @Module({
   imports: [
     ThrottlerModule.forRoot([
       {
-        ttl: 60_000, 
-        limit: 20,   
+        ttl: 60_000,
+        limit: 20,
       },
     ]),
     ScheduleModule.forRoot(),
@@ -52,6 +53,7 @@ import { AppController } from '../app.controller';
     MealLogsModule,
     PatientAccessModule,
     ConsentsModule,
+    AgendaModule,
   ],
   controllers: [AppController],
   providers: [
