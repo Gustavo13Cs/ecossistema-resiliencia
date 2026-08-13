@@ -24,6 +24,7 @@ import { MealLogsModule } from './modules/meal-logs/meal-logs.module';
 import { PatientAccessModule } from './common/patient-access/patient-access.module';
 import { ConsentsModule } from './modules/consents/consents.module';
 import { AgendaModule } from './modules/agenda/agenda.module';
+import { HealthCheckInsModule } from './modules/health-check-ins/health-check-ins.module';
 import { AppController } from '../app.controller';
 
 @Module({
@@ -54,6 +55,7 @@ import { AppController } from '../app.controller';
     PatientAccessModule,
     ConsentsModule,
     AgendaModule,
+    HealthCheckInsModule,
   ],
   controllers: [AppController],
   providers: [
