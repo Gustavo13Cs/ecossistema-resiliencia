@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import axios from "axios"
 import { api } from "@/lib/api"
 import type { AgendaDay } from "@/types/agenda"
@@ -35,41 +35,71 @@ export function useAgenda(patientId: string | undefined, selectedDate: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [mutatingId, setMutatingId] = useState<string | null>(null)
+  const patientIdRef = useRef(patientId)
+  const selectedDateRef = useRef(selectedDate)
+  const activeRequestRef = useRef<AbortController | null>(null)
+  const requestIdRef = useRef(0)
 
-  const loadAgenda = useCallback(
-    async (signal?: AbortSignal) => {
-      if (!patientId) {
-        setData(null)
-        setLoading(false)
-        return
-      }
+  patientIdRef.current = patientId
+  selectedDateRef.current = selectedDate
 
-      setLoading(true)
+  const loadAgenda = useCallback(async () => {
+    const requestId = ++requestIdRef.current
+    activeRequestRef.current?.abort()
+    activeRequestRef.current = null
+
+    const currentPatientId = patientIdRef.current
+    const currentSelectedDate = selectedDateRef.current
+
+    if (!currentPatientId) {
+      setData(null)
       setError(null)
+      setLoading(false)
+      return
+    }
 
-      try {
-        const { from, to } = localDayUtcRange(selectedDate)
-        const response = await api.get<AgendaDay>(`/agenda/patient/${patientId}`, {
-          params: { from, to },
-          signal,
-        })
+    const controller = new AbortController()
+    activeRequestRef.current = controller
+    const isCurrentRequest = () =>
+      requestId === requestIdRef.current && !controller.signal.aborted
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const { from, to } = localDayUtcRange(currentSelectedDate)
+      const response = await api.get<AgendaDay>(`/agenda/patient/${currentPatientId}`, {
+        params: { from, to },
+        signal: controller.signal,
+      })
+
+      if (isCurrentRequest()) {
         setData(response.data)
-      } catch (requestError) {
-        if (axios.isCancel(requestError)) return
+      }
+    } catch (requestError) {
+      if (axios.isCancel(requestError) || !isCurrentRequest()) return
+
+      if (isCurrentRequest()) {
         setData(null)
         setError(safeApiMessage(requestError, LOAD_ERROR))
-      } finally {
-        if (!signal?.aborted) setLoading(false)
       }
-    },
-    [patientId, selectedDate],
-  )
+    } finally {
+      if (isCurrentRequest()) {
+        activeRequestRef.current = null
+        setLoading(false)
+      }
+    }
+  }, [])
 
   useEffect(() => {
-    const controller = new AbortController()
-    void loadAgenda(controller.signal)
-    return () => controller.abort()
-  }, [loadAgenda])
+    void loadAgenda()
+
+    return () => {
+      requestIdRef.current += 1
+      activeRequestRef.current?.abort()
+      activeRequestRef.current = null
+    }
+  }, [loadAgenda, patientId, selectedDate])
 
   const refetch = useCallback(() => loadAgenda(), [loadAgenda])
 
@@ -77,10 +107,13 @@ export function useAgenda(patientId: string | undefined, selectedDate: string) {
     async (occurrenceId: string, operation: () => Promise<unknown>) => {
       setMutatingId(occurrenceId)
       try {
-        await operation()
+        try {
+          await operation()
+        } catch (mutationError) {
+          throw new Error(safeApiMessage(mutationError, MUTATION_ERROR))
+        }
+
         await refetch()
-      } catch (requestError) {
-        throw new Error(safeApiMessage(requestError, MUTATION_ERROR))
       } finally {
         setMutatingId(null)
       }
