@@ -537,6 +537,36 @@ describe('Agenda DTO validation', () => {
     await expect(validate(tooLong)).resolves.not.toHaveLength(0);
   });
 
+  it.each([
+    {
+      field: 'from',
+      from: '2026-08-13T08:00:00',
+      to: '2026-08-13T12:00:00.000Z',
+    },
+    {
+      field: 'to',
+      from: '2026-08-13T08:00:00.000Z',
+      to: '2026-08-13T12:00:00',
+    },
+  ])('rejects a range whose $field has no UTC offset', async (range) => {
+    const dto = plainToInstance(AgendaRangeQueryDto, range);
+
+    await expect(validate(dto)).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ property: range.field }),
+      ]),
+    );
+  });
+
+  it('accepts ranges with Z and explicit numeric offsets', async () => {
+    const dto = plainToInstance(AgendaRangeQueryDto, {
+      from: '2026-08-13T08:00:00-03:00',
+      to: '2026-08-13T15:00:00.000Z',
+    });
+
+    await expect(validate(dto)).resolves.toHaveLength(0);
+  });
+
   it('requires a non-empty skip reason at runtime', async () => {
     const dto = plainToInstance(SkipOccurrenceDto, { reason: '' });
 

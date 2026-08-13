@@ -1,6 +1,7 @@
-import { IsISO8601, ValidateBy } from 'class-validator';
+import { IsISO8601, Matches, ValidateBy } from 'class-validator';
 
 const MAX_RANGE_MILLISECONDS = 31 * 24 * 60 * 60 * 1000;
+const EXPLICIT_UTC_OFFSET = /(?:Z|[+-]\d{2}:\d{2})$/;
 
 function IsValidAgendaRange(): PropertyDecorator {
   return ValidateBy({
@@ -36,9 +37,15 @@ function IsValidAgendaRange(): PropertyDecorator {
 
 export class AgendaRangeQueryDto {
   @IsISO8601()
+  @Matches(EXPLICIT_UTC_OFFSET, {
+    message: 'from must include Z or an explicit UTC offset',
+  })
   from!: string;
 
   @IsISO8601()
+  @Matches(EXPLICIT_UTC_OFFSET, {
+    message: 'to must include Z or an explicit UTC offset',
+  })
   @IsValidAgendaRange()
   to!: string;
 }
