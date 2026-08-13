@@ -80,6 +80,13 @@ model User {
 
   workoutLogs WorkoutLog[] @relation("PatientWorkoutLogs")
   mealLogs    MealLog[]    @relation("PatientMealLogs")
+
+  patientAgendaTasks      AgendaTask[]           @relation("PatientAgendaTasks")
+  professionalAgendaTasks AgendaTask[]           @relation("ProfessionalAgendaTasks")
+  agendaOccurrences       AgendaTaskOccurrence[] @relation("PatientAgendaOccurrences")
+  patientConsents         PatientConsent[]        @relation("PatientConsents")
+  professionalConsents    PatientConsent[]        @relation("ProfessionalConsents")
+  healthCheckIns           HealthCheckIn[]         @relation("PatientHealthCheckIns")
 }
 
 model ProfessionalPatientLink {
@@ -106,6 +113,43 @@ enum Role {
   NUTRITIONIST
   PERSONAL
   PHYSIO
+}
+
+enum AgendaTaskCategory {
+  NUTRITION
+  TRAINING
+  REHABILITATION
+  SUPPLEMENT
+  HYDRATION
+  CUSTOM
+}
+
+enum AgendaTaskPriority {
+  LOW
+  NORMAL
+  HIGH
+}
+
+enum AgendaTaskStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum AgendaOccurrenceStatus {
+  PENDING
+  COMPLETED
+  SKIPPED
+  OVERDUE
+  CANCELLED
+}
+
+enum ConsentCategory {
+  GENERAL
+  NUTRITION
+  TRAINING
+  REHABILITATION
+  HEALTH_CHECK_IN
 }
 
 // Tabela 3: O Planeamento Nutricional
@@ -502,6 +546,83 @@ model DailyTracking {
 }
 
 // Tabela 16: Anamnese Geral (Documento Intocável)
+model AgendaTask {
+  id             String             @id @default(uuid())
+  patientId      String
+  patient        User               @relation("PatientAgendaTasks", fields: [patientId], references: [id], onDelete: Cascade)
+  professionalId String
+  professional   User               @relation("ProfessionalAgendaTasks", fields: [professionalId], references: [id], onDelete: Cascade)
+  title          String
+  category       AgendaTaskCategory
+  instructions   String?            @db.Text
+  priority       AgendaTaskPriority @default(NORMAL)
+  startsAt       DateTime
+  endsAt         DateTime?
+  timeZone       String
+  recurrenceRule String?
+  status         AgendaTaskStatus   @default(ACTIVE)
+  occurrences    AgendaTaskOccurrence[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([patientId, status])
+  @@index([professionalId, status])
+  @@map("agenda_tasks")
+}
+
+model AgendaTaskOccurrence {
+  id           String                 @id @default(uuid())
+  taskId       String
+  task         AgendaTask             @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  patientId    String
+  patient      User                   @relation("PatientAgendaOccurrences", fields: [patientId], references: [id], onDelete: Cascade)
+  scheduledFor DateTime
+  status       AgendaOccurrenceStatus @default(PENDING)
+  completedAt  DateTime?
+  skipReason   String?
+  patientNote  String?                @db.Text
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@unique([taskId, scheduledFor])
+  @@index([patientId, scheduledFor, status])
+  @@map("agenda_task_occurrences")
+}
+
+model PatientConsent {
+  id             String          @id @default(uuid())
+  patientId      String
+  patient        User            @relation("PatientConsents", fields: [patientId], references: [id], onDelete: Cascade)
+  professionalId String
+  professional   User            @relation("ProfessionalConsents", fields: [professionalId], references: [id], onDelete: Cascade)
+  dataCategory   ConsentCategory
+  granted        Boolean         @default(false)
+  grantedAt      DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([patientId, professionalId, dataCategory])
+  @@map("patient_consents")
+}
+
+model HealthCheckIn {
+  id         String   @id @default(uuid())
+  patientId  String
+  patient    User     @relation("PatientHealthCheckIns", fields: [patientId], references: [id], onDelete: Cascade)
+  recordedAt DateTime @default(now())
+  waterMl    Int?
+  painLevel  Int?
+  mood       Int?
+  symptoms   String?  @db.Text
+  notes      String?  @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([patientId, recordedAt])
+  @@map("health_check_ins")
+}
+
 model Anamnesis {
   id          String   @id @default(uuid())
 
