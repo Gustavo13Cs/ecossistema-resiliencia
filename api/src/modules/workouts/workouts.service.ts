@@ -95,4 +95,32 @@ export class WorkoutsService {
 
     return this.prisma.workout.delete({ where: { id } });
   }
+
+  async saveAsTemplate(id: string, requesterId: string) {
+    const workout = await this.prisma.workout.findUnique({ where: { id } });
+
+    if (!workout) throw new NotFoundException('Treino não encontrado');
+
+    if (workout.creatorId !== requesterId) {
+      throw new ForbiddenException('Você não pode salvar um treino que não criou como template');
+    }
+
+    return this.prisma.workout.update({
+      where: { id },
+      data: { isTemplate: true },
+      select: { id: true, title: true, isTemplate: true },
+    });
+  }
+
+  async listTemplates(creatorId: string) {
+    return this.prisma.workout.findMany({
+      where: { creatorId, isTemplate: true },
+      include: {
+        splits: {
+          include: { exercises: true },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
 }

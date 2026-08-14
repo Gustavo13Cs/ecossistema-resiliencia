@@ -19,14 +19,20 @@ import { AnamnesesModule } from './modules/anamneses/anamneses.module';
 import { SupplementsModule } from './modules/supplements/supplements.module';
 import { LabExamsModule } from './modules/lab-exams/lab-exams.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
+import { WorkoutLogsModule } from './modules/workout-logs/workout-logs.module';
+import { MealLogsModule } from './modules/meal-logs/meal-logs.module';
+import { PatientAccessModule } from './common/patient-access/patient-access.module';
+import { ConsentsModule } from './modules/consents/consents.module';
+import { AgendaModule } from './modules/agenda/agenda.module';
+import { HealthCheckInsModule } from './modules/health-check-ins/health-check-ins.module';
 import { AppController } from '../app.controller';
 
 @Module({
   imports: [
     ThrottlerModule.forRoot([
       {
-        ttl: 60_000, 
-        limit: 20,   
+        ttl: 60_000,
+        limit: 20,
       },
     ]),
     ScheduleModule.forRoot(),
@@ -44,6 +50,12 @@ import { AppController } from '../app.controller';
     SupplementsModule,
     LabExamsModule,
     AlertsModule,
+    WorkoutLogsModule,
+    MealLogsModule,
+    PatientAccessModule,
+    ConsentsModule,
+    AgendaModule,
+    HealthCheckInsModule,
   ],
   controllers: [AppController],
   providers: [

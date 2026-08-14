@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { api } from "@/lib/api"
-import { Apple, Plus, Search, FileText, ArrowRight, X, Clock, Edit, Trash2,CheckCircle2 } from "lucide-react"
+import { Apple, Plus, Search, FileText, ArrowRight, X, Clock, Edit, Trash2, CheckCircle2, Bookmark, BookmarkCheck } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -19,7 +19,8 @@ export default function DietasHubPage() {
   const [loading, setLoading] = useState(true)
   const [showSelectModal, setShowSelectModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-    const [dietToDelete, setDietToDelete] = useState<{id: string, name: string} | null>(null)
+  const [dietToDelete, setDietToDelete] = useState<{id: string, name: string} | null>(null)
+  const [savingTemplateId, setSavingTemplateId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchDashboardData()
@@ -63,6 +64,19 @@ export default function DietasHubPage() {
 
   const handleSelectPatient = (patientId: string) => {
     router.push(`/membros/${patientId}/nova-dieta`)
+  }
+
+  const handleSaveAsTemplate = async (dietId: string) => {
+    setSavingTemplateId(dietId)
+    try {
+      await api.patch(`/diet-plans/${dietId}/save-as-template`)
+      setPrescriptions(prev => prev.map(d => d.id === dietId ? { ...d, isTemplate: true } : d))
+      toast.success("Salvo como template! Disponível para reutilizar em novas prescrições.")
+    } catch {
+      toast.error("Erro ao salvar como template.")
+    } finally {
+      setSavingTemplateId(null)
+    }
   }
 
   return (
@@ -172,6 +186,18 @@ export default function DietasHubPage() {
                         </TableCell>
                         <TableCell className="text-right px-6">
                           <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="outline" size="sm"
+                              onClick={() => handleSaveAsTemplate(dieta.id)}
+                              disabled={savingTemplateId === dieta.id || dieta.isTemplate}
+                              className={dieta.isTemplate ? "text-amber-600 border-amber-200 bg-amber-50" : "text-slate-500 border-slate-200 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-300"}
+                            >
+                              {dieta.isTemplate
+                                ? <><BookmarkCheck className="w-4 h-4 mr-1" /> Template</>  
+                                : savingTemplateId === dieta.id
+                                  ? <span className="animate-pulse">...</span>
+                                  : <><Bookmark className="w-4 h-4 mr-1" /> Salvar Template</>}
+                            </Button>
                             <Button 
                               variant="outline" size="sm" 
                               onClick={() => router.push(`/membros/${dieta.userId}/nova-dieta`)}

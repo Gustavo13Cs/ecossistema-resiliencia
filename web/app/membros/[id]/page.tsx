@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
-import { ArrowLeft, User, Activity, Brain, Lock, Apple, TrendingUp, Plus, Save, X, Dumbbell, Stethoscope, ClipboardList,LineChart as LineChartIcon, TableProperties ,FileText, Eye, Calculator, Beaker, ActivitySquare} from "lucide-react"
+import { ArrowLeft, User, Activity, Brain, Lock, Apple, TrendingUp, Plus, Save, X, Dumbbell, Stethoscope, ClipboardList,LineChart as LineChartIcon, TableProperties ,FileText, Eye, Calculator, Beaker, ActivitySquare, LayoutGrid } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
@@ -197,6 +197,11 @@ export default function FichaPacientePage() {
           
           {/* CABEÇALHO - APENAS AÇÕES PRINCIPAIS */}
           <div className="flex items-center gap-3">
+            <Link href={`/membros/${params.id}/visao-360`}>
+              <Button variant="outline" className="h-11 text-slate-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-400 hover:text-indigo-700 font-bold">
+                <LayoutGrid className="w-4 h-4 mr-2" /> Visão 360°
+              </Button>
+            </Link>
             <Button variant="outline" className="h-11 text-slate-700 border-slate-300 bg-white" onClick={handleOpenEdit}>
               Editar Cadastro
             </Button>
