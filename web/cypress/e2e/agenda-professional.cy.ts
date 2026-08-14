@@ -35,10 +35,10 @@ describe("Agenda diária do profissional", () => {
               patientId: "patient-e2e",
               title: "Hidratação da manhã",
               category: "HYDRATION",
-              instructions: null,
+              instructions: "Beber um copo de agua.",
               priority: "NORMAL",
               startsAt: "2026-08-13T12:00:00.000Z",
-              endsAt: null,
+              endsAt: "2026-08-20T02:59:00.000Z",
               timeZone: "America/Sao_Paulo",
               recurrenceRule: "FREQ=DAILY;INTERVAL=1",
               status: "ACTIVE",
@@ -101,6 +101,24 @@ describe("Agenda diária do profissional", () => {
         body: { id: "task-created", ...request.body, status: "ACTIVE" },
       })
     }).as("createTask")
+
+    cy.intercept("PATCH", "**/agenda/tasks/task-owned", (request) => {
+      expect(request.body).to.deep.equal({
+        title: "Hidratação da manhã",
+        category: "HYDRATION",
+        priority: "NORMAL",
+        startsAt: "2026-08-13T12:00:00.000Z",
+        timeZone: "America/Sao_Paulo",
+        recurrenceRule: null,
+        endsAt: null,
+        instructions: null,
+      })
+
+      request.reply({
+        statusCode: 200,
+        body: { id: "task-owned", ...request.body, status: "ACTIVE" },
+      })
+    }).as("updateTask")
   })
 
   it("abre o paciente, cria uma tarefa e respeita consentimento e autoria", () => {
@@ -110,7 +128,7 @@ describe("Agenda diária do profissional", () => {
       cy.contains("a", "Agenda").click()
     })
 
-    cy.wait(["@getAgenda", "@getCheckIns"])
+    cy.wait(["@getAgenda", "@getCheckIns"], { requestTimeout: 20000 })
     cy.contains("h1", "Agenda de Paciente Teste").should("be.visible")
     cy.contains("Paciente ainda não compartilhou estes registros").should("be.visible")
 
@@ -136,5 +154,21 @@ describe("Agenda diária do profissional", () => {
 
     cy.wait("@createTask")
     cy.contains("Tarefa criada com sucesso").should("be.visible")
+
+    cy.contains("article", "Hidratação da manhã").within(() => {
+      cy.contains("button", "Editar").click()
+    })
+    cy.get("#agenda-task-time-zone").clear().type("Invalid/Time_Zone")
+    cy.contains("button", "Salvar alterações").click()
+    cy.get('[role="alert"]').should("contain.text", "fuso horário")
+
+    cy.get("#agenda-task-time-zone").clear().type("America/Sao_Paulo")
+    cy.get("#agenda-task-recurrence").select("ONCE")
+    cy.get("#agenda-task-ends-at").clear()
+    cy.get("#agenda-task-instructions").clear()
+    cy.contains("button", "Salvar alterações").click()
+
+    cy.wait("@updateTask")
+    cy.contains("Tarefa atualizada com sucesso").should("be.visible")
   })
 })

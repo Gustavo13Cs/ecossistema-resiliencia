@@ -11,6 +11,7 @@ import { AgendaService } from './agenda.service';
 import { AgendaRangeQueryDto } from './dto/agenda-range-query.dto';
 import { CreateAgendaTaskDto } from './dto/create-agenda-task.dto';
 import { SkipOccurrenceDto } from './dto/skip-occurrence.dto';
+import { UpdateAgendaTaskDto } from './dto/update-agenda-task.dto';
 
 describe('AgendaService', () => {
   const now = new Date('2026-08-13T12:00:00.000Z');
@@ -212,6 +213,61 @@ describe('AgendaService', () => {
           taskId: 'task-1',
           patientId: 'patient-1',
           scheduledFor: new Date('2026-08-14T15:00:00.000Z'),
+        },
+      ],
+      skipDuplicates: true,
+    });
+  });
+
+  it('clears nullable fields and rematerializes a recurring task as a single occurrence', async () => {
+    const recurringTask = {
+      ...task,
+      instructions: 'Repetir diariamente',
+      endsAt: new Date('2026-08-20T23:59:00.000Z'),
+      recurrenceRule: 'FREQ=DAILY;INTERVAL=1',
+    };
+    const updatedTask = {
+      ...recurringTask,
+      instructions: null,
+      endsAt: null,
+      recurrenceRule: null,
+    };
+    prisma.agendaTask.findUnique.mockResolvedValue(recurringTask);
+    prisma.agendaTask.update.mockResolvedValue(updatedTask);
+
+    await expect(
+      service.updateTask(
+        { sub: 'professional-1', role: 'PHYSIO' },
+        'task-1',
+        {
+          instructions: null,
+          endsAt: null,
+          recurrenceRule: null,
+        } as unknown as UpdateAgendaTaskDto,
+      ),
+    ).resolves.toEqual(updatedTask);
+
+    expect(prisma.agendaTaskOccurrence.deleteMany).toHaveBeenCalledWith({
+      where: {
+        taskId: 'task-1',
+        scheduledFor: { gte: now },
+        status: 'PENDING',
+      },
+    });
+    expect(prisma.agendaTask.update).toHaveBeenCalledWith({
+      where: { id: 'task-1' },
+      data: {
+        instructions: null,
+        endsAt: null,
+        recurrenceRule: null,
+      },
+    });
+    expect(prisma.agendaTaskOccurrence.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          taskId: 'task-1',
+          patientId: 'patient-1',
+          scheduledFor: new Date('2026-08-13T13:00:00.000Z'),
         },
       ],
       skipDuplicates: true,
@@ -496,6 +552,30 @@ describe('AgendaService', () => {
 });
 
 describe('Agenda DTO validation', () => {
+  it('accepts null only for nullable update fields', async () => {
+    const nullable = plainToInstance(UpdateAgendaTaskDto, {
+      instructions: null,
+      endsAt: null,
+      recurrenceRule: null,
+    });
+
+    await expect(validate(nullable)).resolves.toHaveLength(0);
+
+    for (const property of [
+      'title',
+      'category',
+      'priority',
+      'startsAt',
+      'timeZone',
+    ] as const) {
+      const dto = plainToInstance(UpdateAgendaTaskDto, { [property]: null });
+
+      await expect(validate(dto)).resolves.toEqual(
+        expect.arrayContaining([expect.objectContaining({ property })]),
+      );
+    }
+  });
+
   it('validates IANA time zones at runtime', async () => {
     const valid = plainToInstance(CreateAgendaTaskDto, {
       patientId: 'efc4a745-d7c7-4a64-a85d-c65f2f158c67',

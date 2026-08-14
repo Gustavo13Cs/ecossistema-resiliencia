@@ -175,11 +175,11 @@ export default function MembrosPage() {
                       <TableCell className="text-slate-500 px-6 font-medium">{u.phone || '-'}</TableCell>
                       
                       <TableCell className="text-right space-x-2 px-6">
-                        <Link href={`/membros/${u.id}/agenda`}>
-                          <Button variant="outline" size="sm" className="text-blue-700 border-blue-200 hover:bg-blue-50">
+                        <Button asChild variant="outline" size="sm" className="text-blue-700 border-blue-200 hover:bg-blue-50">
+                          <Link href={`/membros/${u.id}/agenda`}>
                             <CalendarDays className="w-4 h-4 mr-1" /> Agenda
-                          </Button>
-                        </Link>
+                          </Link>
+                        </Button>
 
                         <Link href={`/membros/${u.id}`}>
                           <Button variant="outline" size="sm" className="text-slate-600 border-slate-200 hover:bg-slate-100">

@@ -23,9 +23,9 @@ type AgendaTaskPayload = {
   priority: AgendaTaskPriority
   startsAt: string
   timeZone: string
-  recurrenceRule?: string
-  endsAt?: string
-  instructions?: string
+  recurrenceRule?: string | null
+  endsAt?: string | null
+  instructions?: string | null
 }
 
 type AgendaTaskDialogProps = {
@@ -44,6 +44,16 @@ const weekdays = [
 
 function detectedTimeZone() {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo"
+}
+
+function isValidTimeZone(timeZone: string) {
+  try {
+    new Intl.DateTimeFormat("en", { timeZone })
+    return true
+  } catch (error) {
+    if (error instanceof RangeError) return false
+    throw error
+  }
 }
 
 function emptyForm() {
@@ -127,6 +137,11 @@ export function AgendaTaskDialog({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
+    const timeZone = form.timeZone.trim()
+    if (!isValidTimeZone(timeZone)) {
+      setValidationError("Informe um fuso horário IANA válido.")
+      return
+    }
     if (form.recurrence === "WEEKLY" && form.selectedDays.length === 0) {
       setValidationError("Selecione ao menos um dia da semana.")
       return
@@ -137,16 +152,37 @@ export function AgendaTaskDialog({
       : form.recurrence === "DAILY"
         ? "FREQ=DAILY;INTERVAL=1"
         : `FREQ=WEEKLY;INTERVAL=1;BYDAY=${form.selectedDays.join(",")}`
+    const instructions = form.instructions.trim()
+    let startsAt: string
+    let endsAt: string | null
+    try {
+      startsAt = localDateTimeToIso(form.startsAt, timeZone)
+      endsAt = form.endsAt ? localDateTimeToIso(`${form.endsAt}T23:59`, timeZone) : null
+    } catch (error) {
+      if (error instanceof RangeError) {
+        setValidationError("Informe um fuso horário IANA válido.")
+        return
+      }
+      throw error
+    }
     const payload: AgendaTaskPayload = {
       ...(!task ? { patientId } : {}),
       title: form.title.trim(),
       category: form.category,
       priority: form.priority,
-      startsAt: localDateTimeToIso(form.startsAt, form.timeZone),
-      timeZone: form.timeZone,
-      ...(recurrenceRule ? { recurrenceRule } : {}),
-      ...(form.endsAt ? { endsAt: localDateTimeToIso(`${form.endsAt}T23:59`, form.timeZone) } : {}),
-      ...(form.instructions.trim() ? { instructions: form.instructions.trim() } : {}),
+      startsAt,
+      timeZone,
+      ...(task
+        ? {
+            recurrenceRule: recurrenceRule ?? null,
+            endsAt,
+            instructions: instructions || null,
+          }
+        : {
+            ...(recurrenceRule ? { recurrenceRule } : {}),
+            ...(endsAt ? { endsAt } : {}),
+            ...(instructions ? { instructions } : {}),
+          }),
     }
     await onSubmit(payload)
   }

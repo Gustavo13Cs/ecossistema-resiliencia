@@ -80,9 +80,17 @@ export class AgendaService {
     const startsAt = dto.startsAt
       ? new Date(dto.startsAt)
       : existingTask.startsAt;
-    const endsAt = dto.endsAt ? new Date(dto.endsAt) : existingTask.endsAt;
+    const endsAt =
+      dto.endsAt === undefined
+        ? existingTask.endsAt
+        : dto.endsAt === null
+          ? null
+          : new Date(dto.endsAt);
     const timeZone = dto.timeZone ?? existingTask.timeZone;
-    const recurrenceRule = dto.recurrenceRule ?? existingTask.recurrenceRule;
+    const recurrenceRule =
+      dto.recurrenceRule === undefined
+        ? existingTask.recurrenceRule
+        : dto.recurrenceRule;
     const now = new Date();
     const windowEnd = addUtcDays(now, MATERIALIZATION_DAYS);
     const scheduleChanged =
