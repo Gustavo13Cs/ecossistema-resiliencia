@@ -35,7 +35,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]
+    command:
+      - "sh"
+      - "-c"
+      - |
+        # Em bancos que já existiam (produção), o baseline já foi aplicado
+        # pelas migrations antigas. Marcamos como "resolvido" para o Prisma
+        # não tentar re-criar tabelas que já existem.
+        npx prisma migrate resolve --applied 20260813000000_baseline || true
+        npx prisma migrate deploy
+        node dist/src/main.js
 
   web:
     build:
