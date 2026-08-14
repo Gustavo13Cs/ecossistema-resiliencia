@@ -19,6 +19,8 @@ COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/prisma ./prisma
 COPY --from=builder /usr/src/app/package*.json ./
+# Necessário para o Prisma 7: a URL do banco fica aqui (schema.prisma não tem url)
+COPY --from=builder /usr/src/app/prisma.config.ts ./prisma.config.ts
 
 EXPOSE 3000
 CMD ["node", "dist/src/main.js"]
