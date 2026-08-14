@@ -213,13 +213,17 @@ createdb ecossistema_resiliencia
 ```
 
 #### Opção B: Docker (Recomendado)
-```bash
-docker run --name postgres-resiliencia \
-  -e POSTGRES_DB=ecossistema_resiliencia \
-  -e POSTGRES_PASSWORD=sua_senha \
-  -p 5432:5432 \
-  -d postgres:16
+```powershell
+docker compose up --build -d
 ```
+
+O Compose inicia o serviço local `db`, aplica as migrations versionadas antes
+de subir a aplicação, publica a API em `http://localhost:3000` e a web em
+`http://localhost:3001`.
+
+Para reconciliar um banco remoto com o baseline, siga somente
+[`docs/database-baseline.md`](docs/database-baseline.md). Não execute comandos
+de reconciliação remota a partir deste fluxo local.
 
 ### 3️⃣ Setup do Backend (API)
 
@@ -458,9 +462,14 @@ cd api && npm run start:dev -- --port 3002
 ```env
 # Database
 DATABASE_URL="postgresql://user:password@localhost:5432/ecossistema_resiliencia"
+DIRECT_URL="postgresql://user:password@localhost:5432/ecossistema_resiliencia"
 
 # JWT
 JWT_SECRET="sua-chave-segura-aqui"
+
+# CORS e fuso horário
+ALLOWED_ORIGINS="http://localhost:3001"
+TZ="UTC"
 
 # Environment
 NODE_ENV="development"
