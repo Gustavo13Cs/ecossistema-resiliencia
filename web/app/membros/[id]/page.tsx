@@ -1,13 +1,18 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
-import { ArrowLeft, User, Activity, Brain, Lock, Apple, TrendingUp, Plus, Save, X, Dumbbell, Stethoscope, ClipboardList,LineChart as LineChartIcon, TableProperties ,FileText, Eye, Calculator, Beaker, ActivitySquare} from "lucide-react"
+import { ArrowLeft, User, Activity, Brain, Lock, Apple, TrendingUp, Plus, Save, X, Dumbbell, Stethoscope, ClipboardList,LineChart as LineChartIcon, TableProperties ,FileText, Eye, Calculator, Beaker, ActivitySquare, LayoutGrid, BarChart2, Download, Loader2 } from "lucide-react"
+import { WorkoutLogsPanel } from "@/components/features/WorkoutLogsPanel"
+import { MealLogsPanel } from "@/components/features/MealLogsPanel"
+import { ProntuarioPrint } from "@/components/features/ProntuarioPrint"
+import { usePatientExport } from "@/hooks/features/usePatientExport"
+import { useReactToPrint } from "react-to-print"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
@@ -22,6 +27,23 @@ export default function FichaPacientePage() {
   const params = useParams()
   const [patient, setPatient] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+
+  // PDF Export
+  const printRef = useRef<HTMLDivElement>(null)
+  const { data: exportData, loading: exportLoading, fetchExportData } = usePatientExport(params.id as string)
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `Prontuario_${patient?.name ?? 'paciente'}`,
+  })
+
+  const handleExportClick = useCallback(async () => {
+    const data = await fetchExportData()
+    if (data) {
+      // Aguarda o React renderizar o componente antes de chamar o print
+      setTimeout(() => handlePrint(), 300)
+    }
+  }, [fetchExportData, handlePrint])
 
   const [viewMode, setViewMode] = useState<"chart" | "table">("chart")
   const [assessments, setAssessments] = useState<any[]>([])
@@ -196,9 +218,25 @@ export default function FichaPacientePage() {
           </div>
           
           {/* CABEÇALHO - APENAS AÇÕES PRINCIPAIS */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Link href={`/membros/${params.id}/visao-360`}>
+              <Button variant="outline" className="h-11 text-slate-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-400 hover:text-indigo-700 font-bold">
+                <LayoutGrid className="w-4 h-4 mr-2" /> Visão 360°
+              </Button>
+            </Link>
             <Button variant="outline" className="h-11 text-slate-700 border-slate-300 bg-white" onClick={handleOpenEdit}>
               Editar Cadastro
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 hover:border-rose-400 font-bold"
+              onClick={handleExportClick}
+              disabled={exportLoading}
+            >
+              {exportLoading
+                ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando PDF...</>
+                : <><Download className="w-4 h-4 mr-2" /> Exportar PDF</>
+              }
             </Button>
             
             {isNutri && (
@@ -387,6 +425,24 @@ export default function FichaPacientePage() {
               </Card>
             )}
 
+            {/* ── ATIVIDADE — Logs de Treino / Dieta ── */}
+            {(isPersonal || isNutri) && (
+              <Card className="shadow-md border-0 overflow-hidden ring-1 ring-slate-200">
+                <CardHeader className="bg-slate-800 border-b border-slate-700 py-4">
+                  <CardTitle className="text-base flex items-center gap-2 text-white">
+                    <BarChart2 className={`w-5 h-5 ${isPersonal ? 'text-blue-400' : 'text-teal-400'}`} />
+                    {isPersonal ? 'Histórico de Treinos' : 'Adesão à Dieta'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 bg-white">
+                  {isPersonal
+                    ? <WorkoutLogsPanel patientId={params.id as string} />
+                    : <MealLogsPanel patientId={params.id as string} />
+                  }
+                </CardContent>
+              </Card>
+            )}
+
 
             <div className="grid md:grid-cols-1 gap-6">
               <Card className="shadow-sm border-0 border-t-4 border-t-teal-500">
@@ -476,6 +532,13 @@ export default function FichaPacientePage() {
           </div>
         </div>
       </div>
+
+      {/* ── Componente de impressão oculto (ativado pelo Exportar PDF) ── */}
+      {exportData && (
+        <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+          <ProntuarioPrint ref={printRef} data={exportData} />
+        </div>
+      )}
 
       {/* 🌟 MODAL DE EDIÇÃO DE CADASTRO */}
       {showEditModal && (

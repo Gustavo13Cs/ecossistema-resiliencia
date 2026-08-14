@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { api } from "@/lib/api"
-import { Dumbbell, Plus, Search, Activity, ArrowRight, X, Clock, Edit, Trash2 } from "lucide-react"
+import { Dumbbell, Plus, Search, Activity, ArrowRight, X, Clock, Edit, Trash2, Bookmark, BookmarkCheck } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -23,6 +23,7 @@ export default function TreinosHubPage() {
   
   // Estado para o Modal Bonito de Apagar
   const [workoutToDelete, setWorkoutToDelete] = useState<{id: string, name: string} | null>(null)
+  const [savingTemplateId, setSavingTemplateId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchDashboardData()
@@ -65,6 +66,19 @@ export default function TreinosHubPage() {
 
   const handleSelectPatient = (patientId: string) => {
     router.push(`/membros/${patientId}/novo-treino`)
+  }
+
+  const handleSaveAsTemplate = async (workoutId: string) => {
+    setSavingTemplateId(workoutId)
+    try {
+      await api.patch(`/workouts/${workoutId}/save-as-template`)
+      setWorkouts(prev => prev.map(w => w.id === workoutId ? { ...w, isTemplate: true } : w))
+      toast.success("Salvo como template! Disponível para reutilizar em novas prescrições.")
+    } catch {
+      toast.error("Erro ao salvar como template.")
+    } finally {
+      setSavingTemplateId(null)
+    }
   }
 
   return (
@@ -169,6 +183,18 @@ export default function TreinosHubPage() {
                         </TableCell>
                         <TableCell className="text-right px-6">
                           <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline" size="sm"
+                              onClick={() => handleSaveAsTemplate(treino.id)}
+                              disabled={savingTemplateId === treino.id || treino.isTemplate}
+                              className={treino.isTemplate ? "text-amber-600 border-amber-200 bg-amber-50" : "text-slate-500 border-slate-200 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-300"}
+                            >
+                              {treino.isTemplate
+                                ? <><BookmarkCheck className="w-4 h-4 mr-1" /> Template</>
+                                : savingTemplateId === treino.id
+                                  ? <span className="animate-pulse">...</span>
+                                  : <><Bookmark className="w-4 h-4 mr-1" /> Salvar Template</>}
+                            </Button>
                             <Button 
                               variant="outline" size="sm" 
                               onClick={() => router.push(`/membros/${treino.userId}/novo-treino`)}

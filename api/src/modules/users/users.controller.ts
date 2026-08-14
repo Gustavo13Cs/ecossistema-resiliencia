@@ -10,11 +10,15 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UseGuards } from '@nestjs/common';
+import { PrismaService } from '../../infra/database/prisma.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   // Só PERSONAL, NUTRITIONIST e ADMIN podem buscar por email
   @Roles('PERSONAL', 'NUTRITIONIST', 'ADMIN')
@@ -37,6 +41,99 @@ export class UsersController {
   @Get()
   findAll(@Request() req) {
     return this.usersService.findAll(req.user.sub);
+  }
+
+  // Visão 360°: dados agregados de todas as áreas do paciente
+  @Get(':id/overview')
+  getPatientOverview(@Request() req, @Param('id') id: string) {
+    return this.usersService.getPatientOverview(id, req.user.sub);
+  }
+
+  // Exportação completa do prontuário para PDF — todas as informações em uma chamada
+  @Roles('PERSONAL', 'NUTRITIONIST', 'PHYSIO', 'ADMIN')
+  @Get(':id/export')
+  async exportPatient(@Request() req, @Param('id') id: string) {
+    const [patient, activeDiet, activeWorkout, activeRehab, lastAssessment, lastLabExam, lastAnamnesis] =
+      await Promise.all([
+        this.prisma.user.findUnique({
+          where: { id },
+          select: {
+            id: true, name: true, email: true, phone: true,
+            birthDate: true, gender: true, goal: true,
+            height: true, initialWeight: true,
+            allergies: true, pathologies: true,
+            exerciseType: true, exerciseFrequency: true,
+            createdAt: true,
+          },
+        }),
+        this.prisma.dietPlan.findFirst({
+          where: { userId: id, isActive: true },
+          include: {
+            meals: {
+              include: {
+                items: { include: { food: { select: { name: true, kcal: true, protein: true, carbs: true, fat: true } } } },
+              },
+              orderBy: { time: 'asc' },
+            },
+            creator: { select: { name: true, role: true } },
+          },
+        }),
+        this.prisma.workout.findFirst({
+          where: { userId: id, isActive: true },
+          include: {
+            splits: {
+              include: { exercises: true },
+            },
+            creator: { select: { name: true, role: true } },
+          },
+        }),
+        this.prisma.rehabPlan.findFirst({
+          where: { userId: id, isActive: true },
+          include: {
+            sessions: {
+              include: { exercises: true },
+            },
+            creator: { select: { name: true, role: true } },
+          },
+        }),
+        this.prisma.physicalAssessment.findFirst({
+          where: { userId: id },
+          orderBy: { date: 'desc' },
+        }),
+        this.prisma.labExam.findFirst({
+          where: { patientId: id },
+          orderBy: { date: 'desc' },
+          include: { markers: { orderBy: { name: 'asc' } } },
+        }),
+        this.prisma.anamnesis.findFirst({
+          where: { patientId: id },
+          orderBy: { createdAt: 'desc' },
+          select: {
+            clinicalHistory: true,
+            medications: true,
+            pathologies: true,
+            symptoms: true,
+            familyHistory: true,
+            bowelMovement: true,
+            waterIntake: true,
+            alcoholAndSmoking: true,
+            createdAt: true,
+          },
+        }),
+      ]);
+
+    if (!patient) throw new NotFoundException('Paciente não encontrado');
+
+    return {
+      exportedAt: new Date().toISOString(),
+      patient,
+      activeDiet,
+      activeWorkout,
+      activeRehab,
+      lastAssessment,
+      lastLabExam,
+      lastAnamnesis,
+    };
   }
 
   // Profissional vê perfil completo; paciente vê só o próprio (sem notas clínicas)

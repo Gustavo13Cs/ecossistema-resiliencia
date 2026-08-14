@@ -71,4 +71,32 @@ export class RehabPlansService {
 
   return this.prisma.rehabPlan.delete({ where: { id } });
 }
+
+  async saveAsTemplate(id: string, requesterId: string) {
+    const plan = await this.prisma.rehabPlan.findUnique({ where: { id } });
+
+    if (!plan) throw new NotFoundException('Plano de reabilitação não encontrado');
+
+    if (plan.creatorId !== requesterId) {
+      throw new ForbiddenException('Você não pode salvar um plano que não criou como template');
+    }
+
+    return this.prisma.rehabPlan.update({
+      where: { id },
+      data: { isTemplate: true },
+      select: { id: true, title: true, isTemplate: true },
+    });
+  }
+
+  async listTemplates(creatorId: string) {
+    return this.prisma.rehabPlan.findMany({
+      where: { creatorId, isTemplate: true },
+      include: {
+        sessions: {
+          include: { exercises: true },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
 }

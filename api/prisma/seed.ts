@@ -78,7 +78,7 @@ async function main() {
     // 1. Criar pacientes
     console.log('👥 Criando pacientes...');
     const patients = await Promise.all(
-      PATIENTS_DATA.map(p =>
+      PATIENTS_DATA.map(async p =>
         prisma.user.upsert({
           where: { email: p.email },
           update: {},

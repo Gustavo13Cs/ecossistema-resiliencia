@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Plus, Search, Trash2, Edit2, CheckCircle2, Target, Printer, Share2, ShoppingCart, Smartphone, Database, Info, Loader2, X } from "lucide-react"
+import { ArrowLeft, Plus, Search, Trash2, Edit2, CheckCircle2, Target, Printer, Share2, ShoppingCart, Smartphone, Database, Info, Loader2, X, Bookmark } from "lucide-react"
+
 import Link from "next/link"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts"
 import { useParams, useRouter } from "next/navigation"
@@ -80,6 +81,10 @@ export default function NovaDietaPage() {
   const [shoppingDays, setShoppingDays] = useState(30)
   const [printMode, setPrintMode] = useState<'diet' | 'list'>('diet')
   const [showDriModal, setShowDriModal] = useState(false)
+  const [showTemplateModal, setShowTemplateModal] = useState(false)
+  const [templates, setTemplates] = useState<any[]>([])
+  const [loadingTemplates, setLoadingTemplates] = useState(false)
+
 
   const [patientProfile, setPatientProfile] = useState<any>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
@@ -341,6 +346,56 @@ export default function NovaDietaPage() {
   const handlePrintDiet = () => { setPrintMode('diet'); setShowShareModal(false); setTimeout(() => window.print(), 300) }
   const handlePrintList = () => { setPrintMode('list'); setShowShareModal(false); setTimeout(() => window.print(), 300) }
 
+  const handleOpenTemplateModal = async () => {
+    setShowTemplateModal(true)
+    setLoadingTemplates(true)
+    try {
+      const res = await api.get('/diet-plans/templates')
+      setTemplates(res.data || [])
+    } catch {
+      toast.error("Erro ao carregar templates.")
+    } finally {
+      setLoadingTemplates(false)
+    }
+  }
+
+  const applyTemplate = (template: any) => {
+    setDietInfo({
+      title: template.title,
+      goal: template.goal,
+      notes: template.notes || "",
+      durationDays: template.durationDays || 30,
+      patientWeight: patientProfile?.initialWeight || 80,
+    })
+    setTargets({
+      kcal: template.targetKcal,
+      pro: template.proteinG,
+      carb: template.carbsG,
+      fat: template.fatG,
+      fiber: template.fiberG || 30,
+      sodium: template.sodiumMg || 2000,
+      calcium: template.calciumMg || 1000,
+      iron: template.ironMg || 15,
+    })
+    setMeals(
+      (template.meals || []).map((m: any) => ({
+        id: `m${Date.now()}_${Math.random()}`,
+        name: m.name,
+        time: m.time || "",
+        notes: m.notes || "",
+        items: (m.items || []).map((i: any) => ({
+          id: `i${Date.now()}_${Math.random()}`,
+          quantity: i.quantity,
+          measure: i.measure || "",
+          food: i.food,
+        }))
+      }))
+    )
+    setShowTemplateModal(false)
+    toast.success(`Template "${template.title}" aplicado! Ajuste conforme necessário.`)
+  }
+
+
   const handleSaveDiet = async () => {
     setLoading(true)
     try {
@@ -396,6 +451,9 @@ export default function NovaDietaPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Button onClick={handleOpenTemplateModal} variant="outline" className="h-12 border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 font-bold">
+              <Bookmark className="w-5 h-5 mr-2" /> Usar Template
+            </Button>
             <Button onClick={handleOpenShareModal} variant="outline" className="h-12 border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100">
               <Share2 className="w-5 h-5 mr-2" /> Compartilhar & Lista
             </Button>
@@ -867,6 +925,62 @@ export default function NovaDietaPage() {
           </div>
         </>
       )}
+
+      {/* ════════ MODAL DE TEMPLATES ════════ */}
+      {showTemplateModal && (
+        <>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40" onClick={() => setShowTemplateModal(false)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-slate-100 bg-amber-50 flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <Bookmark className="w-5 h-5 text-amber-600" /> Usar Template de Dieta
+                </h2>
+                <p className="text-sm text-slate-500">Selecione um template para pré-preencher o formulário.</p>
+              </div>
+              <button onClick={() => setShowTemplateModal(false)} className="p-1.5 rounded-full hover:bg-amber-100 text-slate-500">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-5 max-h-96 overflow-y-auto space-y-3">
+              {loadingTemplates ? (
+                <div className="text-center py-8 text-slate-400">
+                  <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin text-amber-400" />
+                  <p className="text-sm">Carregando templates...</p>
+                </div>
+              ) : templates.length === 0 ? (
+                <div className="text-center py-8 text-slate-400">
+                  <Bookmark className="w-10 h-10 mx-auto mb-3 text-slate-200" />
+                  <p className="text-sm font-medium">Nenhum template salvo.</p>
+                  <p className="text-xs mt-1">Na Central de Dietas, clique em "Salvar Template" em qualquer dieta.</p>
+                </div>
+              ) : (
+                templates.map(t => (
+                  <div
+                    key={t.id}
+                    onClick={() => applyTemplate(t)}
+                    className="flex items-start justify-between p-4 rounded-xl border border-slate-100 hover:border-amber-300 hover:bg-amber-50 cursor-pointer transition-all group"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-800 group-hover:text-amber-800">{t.title}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{t.goal}</p>
+                      <div className="flex gap-3 mt-2 text-[10px] font-bold text-slate-500">
+                        <span className="bg-teal-50 text-teal-700 px-2 py-0.5 rounded">{t.targetKcal} kcal</span>
+                        <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded">P: {t.proteinG}g</span>
+                        <span className="bg-slate-50 px-2 py-0.5 rounded">{(t.meals || []).length} refeições</span>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-amber-600 bg-amber-100 px-3 py-1 rounded-full ml-3 shrink-0 mt-1">
+                      Usar →
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
+

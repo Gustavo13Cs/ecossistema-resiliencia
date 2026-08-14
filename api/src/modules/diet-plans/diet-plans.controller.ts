@@ -51,4 +51,18 @@ export class DietPlansController {
   remove(@Request() req, @Param('id') id: string) {
     return this.dietPlansService.remove(id, req.user.sub);
   }
+
+  // Salvar um plano existente como template reutilizável
+  @Roles('NUTRITIONIST', 'ADMIN')
+  @Patch(':id/save-as-template')
+  saveAsTemplate(@Request() req, @Param('id') id: string) {
+    return this.dietPlansService.saveAsTemplate(id, req.user.sub);
+  }
+
+  // Listar todos os templates do profissional logado (com refeições completas para pré-preencher)
+  @Roles('NUTRITIONIST', 'ADMIN')
+  @Get('templates')
+  listTemplates(@Request() req) {
+    return this.dietPlansService.listTemplates(req.user.sub);
+  }
 }

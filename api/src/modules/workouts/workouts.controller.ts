@@ -2,7 +2,7 @@
 
 import {
   Controller, Post, Body, Get, Param,
-  Delete, Request, ForbiddenException, UseGuards,
+  Patch, Delete, Request, ForbiddenException, UseGuards,
 } from '@nestjs/common';
 import { WorkoutsService } from './workouts.service';
 import { CreateWorkoutDto } from './dto/create-workout.dto';
@@ -46,5 +46,19 @@ export class WorkoutsController {
   @Delete(':id')
   remove(@Request() req, @Param('id') id: string) {
     return this.workoutsService.remove(id, req.user.sub);
+  }
+
+  // Salvar um treino existente como template reutilizável
+  @Roles('PERSONAL', 'ADMIN')
+  @Patch(':id/save-as-template')
+  saveAsTemplate(@Request() req, @Param('id') id: string) {
+    return this.workoutsService.saveAsTemplate(id, req.user.sub);
+  }
+
+  // Listar todos os templates do personal logado (com splits e exercícios para pré-preencher)
+  @Roles('PERSONAL', 'ADMIN')
+  @Get('templates')
+  listTemplates(@Request() req) {
+    return this.workoutsService.listTemplates(req.user.sub);
   }
 }
