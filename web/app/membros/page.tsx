@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
-import { Eye, UserPlus, X, ClipboardList, Trash2, AlertTriangle, Link as LinkIcon } from "lucide-react"
+import { Eye, UserPlus, X, ClipboardList, Trash2, AlertTriangle, Link as LinkIcon, CalendarDays } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
@@ -175,6 +175,12 @@ export default function MembrosPage() {
                       <TableCell className="text-slate-500 px-6 font-medium">{u.phone || '-'}</TableCell>
                       
                       <TableCell className="text-right space-x-2 px-6">
+                        <Link href={`/membros/${u.id}/agenda`}>
+                          <Button variant="outline" size="sm" className="text-blue-700 border-blue-200 hover:bg-blue-50">
+                            <CalendarDays className="w-4 h-4 mr-1" /> Agenda
+                          </Button>
+                        </Link>
+
                         <Link href={`/membros/${u.id}`}>
                           <Button variant="outline" size="sm" className="text-slate-600 border-slate-200 hover:bg-slate-100">
                             <Eye className="w-4 h-4 mr-1" /> Prontuário Completo
