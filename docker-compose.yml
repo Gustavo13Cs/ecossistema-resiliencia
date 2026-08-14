@@ -41,11 +41,21 @@ services:
       - "sh"
       - "-c"
       - |
-        # Em bancos que já existiam (produção), o baseline já foi aplicado
-        # pelas migrations antigas. Marcamos como "resolvido" para o Prisma
-        # não tentar re-criar tabelas que já existem.
-        npx prisma migrate resolve --applied 20260813000000_baseline || true
-        npx prisma migrate deploy
+        # Estratégia robusta para todos os cenários:
+        #
+        # Banco NOVO (Docker dev/CI): deploy roda baseline + add_agenda_core → OK
+        #
+        # Banco EXISTENTE com tabelas antigas (produção sem histórico Prisma):
+        #   deploy tenta o baseline mas as tabelas já existem → falha
+        #   então: resolvemos o baseline como "já aplicado" e fazemos deploy novamente
+        #   → só add_agenda_core é executada → OK
+        #
+        # Banco JÁ MIGRADO (tem baseline + add_agenda_core no histórico):
+        #   deploy não tem nada a fazer → sai com 0 → OK
+        npx prisma migrate deploy || (
+          npx prisma migrate resolve --applied 20260813000000_baseline &&
+          npx prisma migrate deploy
+        )
         node dist/src/main.js
 
   web:
