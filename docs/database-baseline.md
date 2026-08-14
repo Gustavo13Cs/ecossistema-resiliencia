@@ -9,28 +9,28 @@ feature de agenda diária integrada.
 
 ## Estratégia de startup automático (docker-compose)
 
-O container da API executa, na ordem:
+O container da API executa, na ordem, uma lógica que funciona para **todos os cenários**:
 
 ```sh
-# 1. Marca o baseline como "já aplicado" em bancos que já existiam.
-#    Em bancos novos o comando falha silenciosamente (|| true).
-npx prisma migrate resolve --applied 20260813000000_baseline || true
-
-# 2. Aplica apenas as migrations ainda não registradas no banco.
-npx prisma migrate deploy
-
-# 3. Sobe a aplicação.
+# Tenta aplicar as migrations normalmente.
+# Em banco NOVO → roda baseline + add_agenda_core → OK
+# Em banco EXISTENTE com tabelas antigas → falha (tabelas já existem) → vai pro fallback
+npx prisma migrate deploy || (
+  # Fallback para banco de produção com tabelas antigas sem histórico Prisma:
+  # marca o baseline como "já aplicado" e faz deploy novamente.
+  npx prisma migrate resolve --applied 20260813000000_baseline &&
+  npx prisma migrate deploy
+)
 node dist/src/main.js
 ```
 
-### Por que `|| true`?
+### Por que "deploy primeiro"?
 
-- **Banco novo (CI / dev)**: `migrate resolve` falha porque o baseline ainda não está
-  registrado na tabela `_prisma_migrations`. O `|| true` ignora esse erro e o passo 2
-  aplica baseline + add_agenda_core normalmente.
-- **Banco existente (produção)**: `migrate resolve` marca o baseline como aplicado.
-  O passo 2 aplica apenas `add_agenda_core` (as tabelas novas de agenda).
-- **Banco já migrado**: se o baseline já foi marcado, `migrate resolve` é idempotente.
+| Cenário | O que acontece |
+|---|---|
+| **Banco novo** (Docker dev/CI) | `deploy` cria tudo (baseline + add_agenda_core) → OK |
+| **Banco existente** (produção, tabelas já existem) | `deploy` falha no baseline → fallback: resolve + deploy novamente → só `add_agenda_core` roda → OK |
+| **Banco já migrado** (tem os dois no histórico) | `deploy` não tem nada a fazer → sai com 0 → OK |
 
 ## Banco de testes e2e (porta 5434)
 
