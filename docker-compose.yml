@@ -1,22 +1,4 @@
 services:
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ecossistema_resiliencia
-    # Sem exposição de porta ao host: a API acessa via rede interna Docker (db:5432).
-    # Se precisar conectar com um client externo (ex: DBeaver), adicione:
-    #   ports:
-    #     - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ecossistema_resiliencia"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    volumes:
-      - ecossistema_resiliencia_pgdata:/var/lib/postgresql/data
-
   api:
     build: 
       context: .
@@ -26,17 +8,12 @@ services:
     env_file:
       - ./api/.env
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/ecossistema_resiliencia
-      DIRECT_URL: postgresql://postgres:postgres@db:5432/ecossistema_resiliencia
       ALLOWED_ORIGINS: http://localhost:3001
       TZ: UTC
     volumes:
       - ./api:/usr/src/app/api
       # Esse comando blinda o node_modules do container para não ser esmagado pelo Windows
       - /usr/src/app/api/node_modules 
-    depends_on:
-      db:
-        condition: service_healthy
     command:
       - "sh"
       - "-c"
@@ -74,5 +51,3 @@ services:
     depends_on:
       - api
 
-volumes:
-  ecossistema_resiliencia_pgdata:
