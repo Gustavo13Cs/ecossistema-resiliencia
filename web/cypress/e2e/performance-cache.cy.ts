@@ -110,4 +110,25 @@ describe("Cache de navegação", () => {
 
     cy.then(() => expect(counts).to.deep.equal({ patient: 1, assessments: 1, anamneses: 1 }))
   })
+
+  it("reutiliza a dieta ativa entre Início e Dieta do paciente", () => {
+    const patientUser = { sub: patient.id, role: "PATIENT", name: patient.name, email: patient.email }
+    let dietRequests = 0
+    cy.intercept("GET", "**/auth/me", { body: patientUser })
+    cy.intercept("GET", `**/diet-plans/user/${patient.id}/active`, (request) => {
+      dietRequests += 1
+      request.reply({ body: { id: "diet-1", title: "Dieta Cache", goal: "Saúde", meals: [] } })
+    })
+    cy.intercept("GET", "**/metrics/**", { body: { completedItems: [], consistency: 0 } })
+    cy.intercept("GET", "**/supplements/**", { statusCode: 404, body: {} })
+
+    cy.visit("http://localhost:3001/paciente")
+    cy.get('aside a[href="/paciente/dieta"]', { timeout: 20_000 }).click()
+    cy.contains("Plano Alimentar", { timeout: 20_000 }).should("be.visible")
+    cy.get('aside a[href="/paciente"]').click()
+    cy.contains("Dieta Cache", { timeout: 20_000 }).should("be.visible")
+    cy.get('aside a[href="/paciente/dieta"]').click()
+    cy.contains("Plano Alimentar", { timeout: 20_000 }).should("be.visible")
+    cy.then(() => expect(dietRequests).to.equal(1))
+  })
 })

@@ -602,14 +602,14 @@ export default function FichaPacientePage() {
           isOpen={showAssessmentModal} 
           onClose={() => setShowAssessmentModal(false)} 
           patientId={params.id as string}
-          onSuccess={refreshAssessments} 
+          onSuccess={refreshAssessments}
         />
       ) : (
         <AssessmentModal 
           isOpen={showAssessmentModal} 
           onClose={() => setShowAssessmentModal(false)} 
           patientId={params.id as string}
-          onSuccess={refreshAssessments} 
+          onSuccess={refreshAssessments}
         />
       )}
 
