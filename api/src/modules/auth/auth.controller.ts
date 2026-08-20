@@ -38,14 +38,11 @@ export class AuthController {
   ) {
     const { access_token } = await this.authService.login(loginDto);
 
-    // Token vai exclusivamente via HttpOnly cookie — nunca exposto no body
     res.cookie('access_token', access_token, COOKIE_OPTIONS);
 
     return { message: 'Login realizado com sucesso' };
   }
 
-  // Endpoint que o frontend usa para hidratar o usuário após refresh de página.
-  // O cookie HttpOnly é enviado automaticamente pelo browser — sem precisar de token no body.
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
   me(@Req() req: Request) {
