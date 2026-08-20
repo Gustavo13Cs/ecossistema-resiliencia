@@ -10,12 +10,13 @@ import { Dumbbell, Plus, Search, Activity, ArrowRight, X, Clock, Edit, Trash2, B
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { useUsers } from "@/hooks/features/useUsers"
 
 export default function TreinosHubPage() {
   const router = useRouter()
   const [workouts, setWorkouts] = useState<any[]>([])
-  const [patients, setPatients] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const { users: patients, loading: usersLoading } = useUsers()
+  const [loadingWorkouts, setLoadingWorkouts] = useState(true)
   
   // Estados para o Modal de Seleção de Aluno
   const [showSelectModal, setShowSelectModal] = useState(false)
@@ -30,22 +31,18 @@ export default function TreinosHubPage() {
   }, [])
 
   const fetchDashboardData = async () => {
-    setLoading(true)
+    setLoadingWorkouts(true)
     try {
-      const patientsRes = await api.get("/users")
-      setPatients(patientsRes.data)
-      try {
-        const workoutsRes = await api.get("/workouts")
-        setWorkouts(workoutsRes.data || [])
-      } catch (err) {
-        setWorkouts([])
-      }
+      const workoutsRes = await api.get("/workouts")
+      setWorkouts(workoutsRes.data || [])
     } catch (error) {
-      console.error("Erro ao carregar dados", error)
+      setWorkouts([])
     } finally {
-      setLoading(false)
+      setLoadingWorkouts(false)
     }
   }
+
+  const loading = usersLoading || loadingWorkouts
 
   const executeDelete = async () => {
     if (!workoutToDelete) return

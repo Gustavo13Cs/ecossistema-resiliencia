@@ -11,12 +11,13 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ConsistencyBadge } from "@/components/ConsistencyBadge"
+import { useUsers } from "@/hooks/features/useUsers"
 
 export default function DietasHubPage() {
   const router = useRouter()
   const [prescriptions, setPrescriptions] = useState<any[]>([])
-  const [patients, setPatients] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const { users: patients, loading: usersLoading } = useUsers()
+  const [loadingPrescriptions, setLoadingPrescriptions] = useState(true)
   const [showSelectModal, setShowSelectModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [dietToDelete, setDietToDelete] = useState<{id: string, name: string} | null>(null)
@@ -27,23 +28,18 @@ export default function DietasHubPage() {
   }, [])
 
   const fetchDashboardData = async () => {
-    setLoading(true)
+    setLoadingPrescriptions(true)
     try {
-      const patientsRes = await api.get("/users")
-      setPatients(patientsRes.data)
-      try {
-        const dietsRes = await api.get("/diet-plans")
-        setPrescriptions(dietsRes.data || [])
-      } catch (dietError) {
-        setPrescriptions([])
-      }
-      
+      const dietsRes = await api.get("/diet-plans")
+      setPrescriptions(dietsRes.data || [])
     } catch (error) {
-      console.error("Erro ao carregar pacientes", error)
+      setPrescriptions([])
     } finally {
-      setLoading(false)
+      setLoadingPrescriptions(false)
     }
   }
+
+  const loading = usersLoading || loadingPrescriptions
 
   const executeDelete = async () => {
     if (!dietToDelete) return

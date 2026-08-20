@@ -9,12 +9,13 @@ import { api } from "@/lib/api"
 import { Activity, Plus, Search, TrendingUp, ArrowRight, X, Scale } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useUsers } from "@/hooks/features/useUsers"
 
 export default function AvaliacoesHubPage() {
   const router = useRouter()
   const [assessments, setAssessments] = useState<any[]>([])
-  const [patients, setPatients] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const { users: patients, loading: usersLoading } = useUsers()
+  const [loadingAssessments, setLoadingAssessments] = useState(true)
   
   const [showSelectModal, setShowSelectModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
@@ -24,22 +25,18 @@ export default function AvaliacoesHubPage() {
   }, [])
 
   const fetchDashboardData = async () => {
-    setLoading(true)
+    setLoadingAssessments(true)
     try {
-      const patientsRes = await api.get("/users")
-      setPatients(patientsRes.data)
-      try {
-        const assessmentsRes = await api.get("/assessments")
-        setAssessments(assessmentsRes.data || [])
-      } catch (err) {
-        setAssessments([])
-      }
+      const assessmentsRes = await api.get("/assessments")
+      setAssessments(assessmentsRes.data || [])
     } catch (error) {
-      console.error("Erro ao carregar dados", error)
+      setAssessments([])
     } finally {
-      setLoading(false)
+      setLoadingAssessments(false)
     }
   }
+
+  const loading = usersLoading || loadingAssessments
 
   const filteredPatients = patients.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
