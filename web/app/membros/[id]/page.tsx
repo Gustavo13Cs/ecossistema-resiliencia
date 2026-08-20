@@ -14,11 +14,15 @@ import { useAuth } from "@/contexts/auth-context"
 import { useQueryClient } from "@tanstack/react-query"
 import { usePatientRecord } from "@/hooks/features/usePatientRecord"
 import { queryKeys } from "@/lib/query-keys"
-
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
+import dynamic from "next/dynamic"
 
 import { AssessmentModal } from "@/components/AssessmentModal"
 import { PhysioAssessmentModal } from "@/components/PhysioAssessmentModal"
+
+const BodyCompositionChart = dynamic(() => import("@/components/features/patient/BodyCompositionChart"), {
+  ssr: false,
+  loading: () => <div className="h-[300px] w-full animate-pulse rounded-xl bg-slate-100" aria-label="Carregando gráfico" />,
+})
 
 export default function FichaPacientePage() {
   const { user: loggedInUser } = useAuth()
@@ -317,23 +321,7 @@ export default function FichaPacientePage() {
                       <p className="text-sm mt-1">Registe as medidas da primeira consulta para iniciar o acompanhamento.</p>
                     </div>
                   ) : viewMode === "chart" ? (
-                    <div className="h-[300px] w-full mt-4 px-4 sm:px-0">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                          <XAxis dataKey="displayDate" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                          <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} width={40} />
-                          <Tooltip 
-                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                            labelStyle={{ fontWeight: 'bold', color: '#1e293b', marginBottom: '4px' }}
-                          />
-                          <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                          <Line type="monotone" dataKey="weight" name="Peso (kg)" stroke="#0f172a" strokeWidth={3} dot={{ r: 5, strokeWidth: 2 }} activeDot={{ r: 8 }} />
-                          <Line type="monotone" dataKey="bodyFat" name="Gordura (%)" stroke="#f43f5e" strokeWidth={3} dot={{ r: 5, strokeWidth: 2 }} />
-                          <Line type="monotone" dataKey="muscleMass" name="Músculo (kg)" stroke={isPersonal ? '#3b82f6' : '#10b981'} strokeWidth={3} dot={{ r: 5, strokeWidth: 2 }} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
+                    <BodyCompositionChart data={chartData} isPersonal={isPersonal} />
                   ) : (
                     <div className="w-full overflow-x-auto">
                       <table className="w-full text-sm text-left">

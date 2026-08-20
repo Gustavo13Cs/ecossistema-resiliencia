@@ -131,4 +131,25 @@ describe("Cache de navegação", () => {
     cy.contains("Plano Alimentar", { timeout: 20_000 }).should("be.visible")
     cy.then(() => expect(dietRequests).to.equal(1))
   })
+
+  it("mantém os gráficos acessíveis ao carregá-los sob demanda", () => {
+    cy.intercept("GET", /\/users(?:\?.*)?$/, { body: [patient] })
+    cy.intercept("GET", `**/users/${patient.id}`, { body: patient })
+    cy.intercept("GET", `**/assessments/user/${patient.id}`, {
+      body: [{ id: "assessment-1", date: "2026-08-20T12:00:00.000Z", weight: 75, bodyFat: 20, muscleMass: 35 }],
+    })
+    cy.intercept("GET", `**/anamneses/user/${patient.id}`, { body: [] })
+    cy.intercept("GET", `**/diet-plans/user/${patient.id}/active`, { statusCode: 404, body: {} })
+    cy.intercept("GET", "**/foods?*", { body: [] })
+
+    cy.visit(`http://localhost:3001/membros/${patient.id}`, {
+      onBeforeLoad(window) { window.localStorage.clear() },
+    })
+    cy.contains("Cadastrado em", { timeout: 20_000 }).should("be.visible")
+    cy.get('[aria-label="Evolução da composição corporal"]').should("be.visible")
+
+    cy.get(`a[href="/membros/${patient.id}/nova-dieta"]`).click()
+    cy.contains("Prescrição Dietética", { timeout: 60_000 }).should("be.visible")
+    cy.get('[aria-label="Distribuição de macronutrientes"]').should("be.visible")
+  })
 })
