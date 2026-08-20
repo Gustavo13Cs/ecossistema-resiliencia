@@ -21,7 +21,7 @@ describe("Cache de navegação", () => {
 
   it("reutiliza a lista de pacientes ao alternar entre Home e Membros", () => {
     let usersRequests = 0
-    cy.intercept("GET", "**/users", (request) => {
+    cy.intercept("GET", /\/users(?:\?.*)?$/, (request) => {
       usersRequests += 1
       request.reply({ body: [patient] })
     }).as("getUsers")
@@ -53,7 +53,7 @@ describe("Cache de navegação", () => {
       request.reply({ body: { message: "Login realizado" } })
     })
     cy.intercept("GET", "**/diet-plans", { body: [] })
-    cy.intercept("GET", "**/users", (request) => {
+    cy.intercept("GET", /\/users(?:\?.*)?$/, (request) => {
       if (currentProfessional.sub === professional.sub) requestsForA += 1
       request.reply({ body: [currentProfessional.sub === professional.sub ? patient : patientB] })
     }).as("sessionUsers")
@@ -79,5 +79,35 @@ describe("Cache de navegação", () => {
     login("cache@example.com")
     cy.contains("Paciente Cache", { timeout: 20_000 }).should("be.visible")
     cy.then(() => expect(requestsForA).to.equal(2))
+  })
+
+  it("reutiliza paciente, avaliações e anamneses ao reabrir a ficha", () => {
+    const counts = { patient: 0, assessments: 0, anamneses: 0 }
+    cy.intercept("GET", /\/users(?:\?.*)?$/, { body: [patient] })
+    cy.intercept("GET", `**/users/${patient.id}`, (request) => {
+      counts.patient += 1
+      request.reply({ body: patient })
+    }).as("patientDetail")
+    cy.intercept("GET", `**/assessments/user/${patient.id}`, (request) => {
+      counts.assessments += 1
+      request.reply({ body: [] })
+    }).as("patientAssessments")
+    cy.intercept("GET", `**/anamneses/user/${patient.id}`, (request) => {
+      counts.anamneses += 1
+      request.reply({ body: [] })
+    }).as("patientAnamneses")
+
+    cy.visit("http://localhost:3001/membros")
+    cy.contains("a", "Prontuário Completo", { timeout: 20_000 }).click()
+    cy.url({ timeout: 20_000 }).should("include", `/membros/${patient.id}`)
+    cy.wait(["@patientDetail", "@patientAssessments", "@patientAnamneses"])
+    cy.contains("Cadastrado em", { timeout: 20_000 }).should("be.visible")
+    cy.get('a[href="/membros"]').first().click()
+    cy.contains("Diretório de Pacientes", { timeout: 20_000 }).should("be.visible")
+    cy.contains("a", "Prontuário Completo").click()
+    cy.url({ timeout: 20_000 }).should("include", `/membros/${patient.id}`)
+    cy.contains("Cadastrado em", { timeout: 20_000 }).should("be.visible")
+
+    cy.then(() => expect(counts).to.deep.equal({ patient: 1, assessments: 1, anamneses: 1 }))
   })
 })

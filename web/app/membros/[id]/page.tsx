@@ -11,6 +11,9 @@ import { ArrowLeft, User, Activity, Brain, Lock, Apple, TrendingUp, Plus, Save, 
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
+import { useQueryClient } from "@tanstack/react-query"
+import { usePatientRecord } from "@/hooks/features/usePatientRecord"
+import { queryKeys } from "@/lib/query-keys"
 
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 
@@ -20,11 +23,11 @@ import { PhysioAssessmentModal } from "@/components/PhysioAssessmentModal"
 export default function FichaPacientePage() {
   const { user: loggedInUser } = useAuth()
   const params = useParams()
-  const [patient, setPatient] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const patientId = Array.isArray(params.id) ? params.id[0] : params.id
+  const queryClient = useQueryClient()
+  const { patient, assessments, anamneses, loading, patientError } = usePatientRecord(patientId)
 
   const [viewMode, setViewMode] = useState<"chart" | "table">("chart")
-  const [assessments, setAssessments] = useState<any[]>([])
   const [showAssessmentModal, setShowAssessmentModal] = useState(false)
   const [savingAssessment, setSavingAssessment] = useState(false)
   const [newAssessment, setNewAssessment] = useState({
@@ -35,42 +38,15 @@ export default function FichaPacientePage() {
   const [isSavingEdit, setIsSavingEdit] = useState(false)
   const [editData, setEditData] = useState<any>({})
 
-  const [anamneses, setAnamneses] = useState<any[]>([])
   const [selectedAnamnesis, setSelectedAnamnesis] = useState<any>(null)
 
   useEffect(() => {
-    if (params.id) {
-      fetchPatient()
-      fetchAssessments()
-    }
+    if (patientError) toast.error("Erro ao carregar a ficha do paciente.")
+  }, [patientError])
 
-    const fetchAnamneses = async () => {
-      try {
-        const res = await api.get(`/anamneses/user/${params.id}`)
-        setAnamneses(res.data)
-      } catch (error) {}
-    }
-
-    fetchAnamneses()
-  }, [params.id])
-
-  const fetchPatient = async () => {
-    try {
-      const response = await api.get(`/users/${params.id}`)
-      setPatient(response.data)
-    } catch (error) {
-      toast.error("Erro ao carregar a ficha do paciente.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchAssessments = async () => {
-    try {
-      const response = await api.get(`/assessments/user/${params.id}`)
-      setAssessments(response.data)
-    } catch (error) {
-      console.error("Erro ao carregar avaliações", error)
+  const refreshAssessments = async () => {
+    if (loggedInUser?.sub && patientId) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.assessments(loggedInUser.sub, patientId) })
     }
   }
 
@@ -110,10 +86,10 @@ export default function FichaPacientePage() {
         stressLevel: editData.stressLevel ? Number(editData.stressLevel) : null,
         birthDate: editData.birthDate ? new Date(editData.birthDate).toISOString() : null,
       }
-      await api.patch(`/users/${params.id}`, payload)
+      await api.patch(`/users/${patientId}`, payload)
       toast.success("Ficha atualizada com sucesso!")
       setShowEditModal(false)
-      fetchPatient() // Recarrega os dados na tela
+      if (loggedInUser?.sub && patientId) await queryClient.invalidateQueries({ queryKey: queryKeys.patient(loggedInUser.sub, patientId) })
     } catch (error) {
       toast.error("Erro ao atualizar o cadastro.")
     } finally {
@@ -129,7 +105,7 @@ export default function FichaPacientePage() {
     setSavingAssessment(true)
     try {
       const payload = {
-        userId: params.id,
+        userId: patientId,
         weight: Number(newAssessment.weight),
         bodyFat: newAssessment.bodyFat ? Number(newAssessment.bodyFat) : undefined,
         muscleMass: newAssessment.muscleMass ? Number(newAssessment.muscleMass) : undefined,
@@ -142,7 +118,7 @@ export default function FichaPacientePage() {
       toast.success("Avaliação salva com sucesso! Gráfico atualizado.")
       setNewAssessment({ weight: "", bodyFat: "", muscleMass: "", waist: "", abdomen: "", hips: "", notes: "" })
       setShowAssessmentModal(false)
-      fetchAssessments()
+      await refreshAssessments()
     } catch (error) {
       toast.error("Erro ao salvar a avaliação.")
     } finally {
@@ -626,14 +602,14 @@ export default function FichaPacientePage() {
           isOpen={showAssessmentModal} 
           onClose={() => setShowAssessmentModal(false)} 
           patientId={params.id as string}
-          onSuccess={fetchAssessments} 
+          onSuccess={refreshAssessments} 
         />
       ) : (
         <AssessmentModal 
           isOpen={showAssessmentModal} 
           onClose={() => setShowAssessmentModal(false)} 
           patientId={params.id as string}
-          onSuccess={fetchAssessments} 
+          onSuccess={refreshAssessments} 
         />
       )}
 

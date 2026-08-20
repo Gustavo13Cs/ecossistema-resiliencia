@@ -1,0 +1,22 @@
+import { useQuery } from "@tanstack/react-query"
+import { useAuth } from "@/contexts/auth-context"
+import { api } from "@/lib/api"
+import { queryKeys } from "@/lib/query-keys"
+
+export function usePatientRecord(patientId?: string) {
+  const { user } = useAuth()
+  const sessionUserId = user?.sub ?? "anonymous"
+  const enabled = Boolean(user?.sub && patientId)
+
+  const patientQuery = useQuery({ queryKey: queryKeys.patient(sessionUserId, patientId ?? "missing"), queryFn: async () => (await api.get<any>(`/users/${patientId}`)).data, enabled })
+  const assessmentsQuery = useQuery({ queryKey: queryKeys.assessments(sessionUserId, patientId ?? "missing"), queryFn: async () => (await api.get<any[]>(`/assessments/user/${patientId}`)).data ?? [], enabled })
+  const anamnesesQuery = useQuery({ queryKey: queryKeys.anamneses(sessionUserId, patientId ?? "missing"), queryFn: async () => (await api.get<any[]>(`/anamneses/user/${patientId}`)).data ?? [], enabled })
+
+  return {
+    patient: patientQuery.data ?? null,
+    assessments: assessmentsQuery.data ?? [],
+    anamneses: anamnesesQuery.data ?? [],
+    loading: patientQuery.isPending,
+    patientError: patientQuery.error,
+  }
+}
