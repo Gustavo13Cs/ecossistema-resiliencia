@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -11,10 +12,14 @@ import { Eye, UserPlus, X, ClipboardList, Trash2, AlertTriangle, Link as LinkIco
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { useUsers } from "@/hooks/features/useUsers"
+import { queryKeys } from "@/lib/query-keys"
+import { removePatientScopedQueries } from "@/lib/query-invalidation"
 
 export default function MembrosPage() {
   const { user } = useAuth()
-  const [users, setUsers] = useState<any[]>([])
+  const queryClient = useQueryClient()
+  const { users } = useUsers()
   
   const [showAddModal, setShowAddModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -33,18 +38,6 @@ export default function MembrosPage() {
 
   const [formData, setFormData] = useState(initialForm)
 
-  useEffect(() => {
-    fetchUsers()
-  }, [])
-
-  const fetchUsers = async () => {
-    try {
-      const response = await api.get("/users")
-      setUsers(response.data)
-    } catch (error) {
-      console.error("Erro ao buscar membros", error)
-    }
-  }
   const handleCheckEmail = async () => {
     if (!formData.email || !formData.email.includes("@")) return;
     try {
@@ -87,7 +80,9 @@ export default function MembrosPage() {
       setShowAddModal(false)
       setFormData(initialForm)
       setIsExistingPatient(false)
-      fetchUsers() 
+      if (user?.sub) {
+        await queryClient.invalidateQueries({ queryKey: queryKeys.users(user.sub) })
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || `Erro ao cadastrar ${clientLabel.toLowerCase()}.`)
     } finally {
@@ -104,7 +99,10 @@ export default function MembrosPage() {
     try {
       await api.delete(`/users/${deleteModal.patientId}`)
       toast.success(`${clientLabel} removido com sucesso!`)
-      fetchUsers() 
+      if (user?.sub) {
+        removePatientScopedQueries(queryClient, user.sub, deleteModal.patientId)
+        await queryClient.invalidateQueries({ queryKey: queryKeys.users(user.sub) })
+      }
       setDeleteModal({ isOpen: false, patientId: "", patientName: "" })
     } catch (error) {
       toast.error("Erro ao remover o paciente.")

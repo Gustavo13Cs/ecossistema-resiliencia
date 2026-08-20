@@ -1,28 +1,13 @@
-import { useState, useEffect } from "react"
-import { api } from "@/lib/api"
+import { useEffect } from "react"
 import { toast } from "sonner"
+import { useUsers } from "@/hooks/features/useUsers"
 
 export const useHomeDashboard = () => {
-  const [patients, setPatients] = useState<any[]>([])
-  const [patientsCount, setPatientsCount] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const { users: patients, loading, error } = useUsers()
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const response = await api.get("/users")
-        const data = response.data || []
-        setPatients(data)
-        setPatientsCount(data.length)
-      } catch (error) {
-        toast.error("Erro ao carregar os dados do painel.")
-      } finally {
-        setLoading(false)
-      }
-    }
+    if (error) toast.error("Erro ao carregar os dados do painel.")
+  }, [error])
 
-    fetchDashboardData()
-  }, [])
-
-  return { patients, patientsCount, loading }
+  return { patients, patientsCount: patients.length, loading }
 }

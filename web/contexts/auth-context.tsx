@@ -1,8 +1,9 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { api } from "@/lib/api"
+import { useQueryClient } from "@tanstack/react-query"
 
 type User = {
   sub: string;
@@ -35,6 +36,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
+  const queryClient = useQueryClient()
+
+  const setAuthenticatedUser = useCallback((nextUser: User) => {
+    setUser((currentUser) => {
+      if (currentUser?.sub && currentUser.sub !== nextUser.sub) {
+        queryClient.clear()
+      }
+      return nextUser
+    })
+  }, [queryClient])
 
   const publicRoutes = ["/", "/auth/login", "/auth/register"]
 
@@ -45,9 +56,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const hydrateUser = async () => {
       try {
         const { data } = await api.get<User>('/auth/me')
-        setUser(data)
+        setAuthenticatedUser(data)
       } catch {
         // Cookie expirado ou ausente — usuário não autenticado
+        queryClient.clear()
         setUser(null)
       } finally {
         setIsLoading(false)
@@ -55,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     hydrateUser()
-  }, [])
+  }, [queryClient, setAuthenticatedUser])
 
   useEffect(() => {
     if (!isLoading) {
@@ -81,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // O cookie já foi setado pelo servidor — basta buscar os dados do usuário.
   const login = async () => {
     const { data } = await api.get<User>('/auth/me')
-    setUser(data)
+    setAuthenticatedUser(data)
     router.push(getRedirectPath(data.role))
   }
 
@@ -91,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await api.post('/auth/logout')
     } finally {
+      queryClient.clear()
       setUser(null)
       router.push("/auth/login")
     }

@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react"
+import axios from "axios"
+import { useQuery } from "@tanstack/react-query"
 import { api } from "@/lib/api"
+import { useAuth } from "@/contexts/auth-context"
+import { queryKeys } from "@/lib/query-keys"
 
 // 1. As tipagens rigorosas que vão acabar com aquele erro "any" da Imagem 2!
 export interface Food {
@@ -33,38 +36,23 @@ export interface DietPlan {
 
 // 2. O Hook que faz a comunicação com o Backend
 export function useDiet(userId?: string) {
-  const [dietPlan, setDietPlan] = useState<DietPlan | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!userId) return
-
-    let isMounted = true
-
-    const fetchDiet = async () => {
-      setLoading(true)
-      setError(null)
+  const { user } = useAuth()
+  const query = useQuery({
+    queryKey: queryKeys.diet(user?.sub ?? "anonymous", userId ?? "missing"),
+    queryFn: async () => {
       try {
-        const res = await api.get<DietPlan>(`/diet-plans/user/${userId}/active`)
-        if (isMounted) setDietPlan(res.data)
-      } catch (err: any) {
-        if (isMounted) {
-          if (err.response?.status === 404) {
-            setDietPlan(null)
-          } else {
-            setError("Falha ao carregar o seu plano alimentar. Tente novamente mais tarde.")
-          }
-        }
-      } finally {
-        if (isMounted) setLoading(false)
+        return (await api.get<DietPlan>(`/diet-plans/user/${userId}/active`)).data
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) return null
+        throw error
       }
-    }
+    },
+    enabled: Boolean(user?.sub && userId),
+  })
 
-    fetchDiet()
-
-    return () => { isMounted = false }
-  }, [userId])
-
-  return { dietPlan, loading, error }
+  return {
+    dietPlan: query.data ?? null,
+    loading: query.isPending,
+    error: query.error && query.data === undefined ? "Falha ao carregar o seu plano alimentar. Tente novamente mais tarde." : null,
+  }
 }

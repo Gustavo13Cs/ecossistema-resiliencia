@@ -8,11 +8,18 @@ import { Label } from "@/components/ui/label"
 import { ArrowLeft, Plus, Search, Trash2, Edit2, CheckCircle2, Target, Printer, Share2, ShoppingCart, Smartphone, Database, Info, Loader2, X, Bookmark } from "lucide-react"
 
 import Link from "next/link"
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts"
+import dynamic from "next/dynamic"
 import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
-import { useAuth } from "@/contexts/auth-context" 
+import { useAuth } from "@/contexts/auth-context"
+import { useQueryClient } from "@tanstack/react-query"
+import { invalidatePatientDiet } from "@/lib/query-invalidation"
+
+const MacroDistributionChart = dynamic(() => import("@/components/features/diet/MacroDistributionChart"), {
+  ssr: false,
+  loading: () => <div className="h-48 w-full max-w-[250px] animate-pulse rounded-xl bg-slate-100" aria-label="Carregando gráfico" />,
+})
 
 
 const calculateAge = (birthDate: string) => {
@@ -48,6 +55,7 @@ export default function NovaDietaPage() {
   const params = useParams()
   const router = useRouter()
   const { user: loggedInUser } = useAuth()
+  const queryClient = useQueryClient()
   const [loading, setLoading] = useState(false)
   const [isRestored, setIsRestored] = useState(false)
 
@@ -424,6 +432,9 @@ export default function NovaDietaPage() {
         }))
       }
       await api.post('/diet-plans', payload)
+      if (loggedInUser?.sub) {
+        await invalidatePatientDiet(queryClient, loggedInUser.sub, params.id as string)
+      }
       localStorage.removeItem(`diet_draft_${params.id}`)
       toast.success("Dieta salva com sucesso!")
       router.push(`/membros/${params.id}`) 
@@ -665,16 +676,7 @@ export default function NovaDietaPage() {
 
                     {/* Gráfico Direita (Donut) */}
                     <div className="flex flex-col items-center">
-                       <div className="h-48 w-full max-w-[250px]">
-                         <ResponsiveContainer width="100%" height="100%">
-                           <PieChart>
-                             <Pie data={macroPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} stroke="none">
-                               {macroPieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                             </Pie>
-                             <RechartsTooltip formatter={(value: number) => `${value.toFixed(1)} Kcal`} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                           </PieChart>
-                         </ResponsiveContainer>
-                       </div>
+                       <MacroDistributionChart data={macroPieData} />
                        
                        {/* Legendas do Gráfico */}
                        <div className="grid grid-cols-2 gap-3 mt-2 w-full">
@@ -983,4 +985,3 @@ export default function NovaDietaPage() {
     </div>
   )
 }
-

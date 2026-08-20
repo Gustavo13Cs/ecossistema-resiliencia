@@ -1,5 +1,7 @@
-﻿import { useState, useEffect } from "react"
-import { api } from "@/lib/api"
+﻿import { api } from "@/lib/api"
+import { useQuery } from "@tanstack/react-query"
+import { useAuth } from "@/contexts/auth-context"
+import { queryKeys } from "@/lib/query-keys"
 
 export interface PatientOverview {
   patient: {
@@ -89,34 +91,16 @@ export interface PatientOverview {
 }
 
 export function usePatientOverview(patientId?: string) {
-  const [overview, setOverview] = useState<PatientOverview | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { user } = useAuth()
+  const query = useQuery({
+    queryKey: queryKeys.patientOverview(user?.sub ?? "anonymous", patientId ?? "missing"),
+    queryFn: async () => (await api.get<PatientOverview>(`/users/${patientId}/overview`)).data,
+    enabled: Boolean(user?.sub && patientId),
+  })
 
-  useEffect(() => {
-    if (!patientId) return
-
-    let isMounted = true
-
-    const fetchOverview = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const res = await api.get<PatientOverview>(`/users/${patientId}/overview`)
-        if (isMounted) setOverview(res.data)
-      } catch (err: any) {
-        if (isMounted) {
-          setError("Falha ao carregar a visão geral do paciente.")
-        }
-      } finally {
-        if (isMounted) setLoading(false)
-      }
-    }
-
-    fetchOverview()
-
-    return () => { isMounted = false }
-  }, [patientId])
-
-  return { overview, loading, error }
+  return {
+    overview: query.data ?? null,
+    loading: query.isPending,
+    error: query.error && !query.data ? "Falha ao carregar a visão geral do paciente." : null,
+  }
 }
