@@ -39,4 +39,45 @@ describe("Cache de navegação", () => {
       expect(usersRequests).to.equal(1)
     })
   })
+
+  it("descarta os dados em memória a cada logout", () => {
+    const professionalB = { ...professional, sub: "professional-b", name: "Dra. B", email: "b@example.com" }
+    const patientB = { ...patient, id: "patient-b", name: "Paciente B", email: "patient-b@example.com" }
+    let currentProfessional = professional
+    let requestsForA = 0
+
+    cy.intercept("GET", "**/auth/me", (request) => request.reply({ body: currentProfessional }))
+    cy.intercept("POST", "**/auth/logout", { body: { message: "Logout realizado" } })
+    cy.intercept("POST", "**/auth/login", (request) => {
+      currentProfessional = request.body.email === "b@example.com" ? professionalB : professional
+      request.reply({ body: { message: "Login realizado" } })
+    })
+    cy.intercept("GET", "**/diet-plans", { body: [] })
+    cy.intercept("GET", "**/users", (request) => {
+      if (currentProfessional.sub === professional.sub) requestsForA += 1
+      request.reply({ body: [currentProfessional.sub === professional.sub ? patient : patientB] })
+    }).as("sessionUsers")
+
+    const login = (email: string) => {
+      cy.get("#email").type(email)
+      cy.get("#password").type("senha-segura")
+      cy.contains("button", "Entrar no Sistema").click()
+      cy.contains("a", "Meus Pacientes", { timeout: 20_000 }).first().click()
+    }
+
+    cy.visit("http://localhost:3001/home")
+    cy.wait("@sessionUsers")
+    cy.contains("button", "Sair da Conta").click()
+    cy.url({ timeout: 20_000 }).should("include", "/auth/login")
+
+    login("b@example.com")
+    cy.contains("Paciente B", { timeout: 20_000 }).should("be.visible")
+    cy.contains("Paciente Cache").should("not.exist")
+    cy.contains("button", "Sair da Conta").click()
+    cy.url({ timeout: 20_000 }).should("include", "/auth/login")
+
+    login("cache@example.com")
+    cy.contains("Paciente Cache", { timeout: 20_000 }).should("be.visible")
+    cy.then(() => expect(requestsForA).to.equal(2))
+  })
 })

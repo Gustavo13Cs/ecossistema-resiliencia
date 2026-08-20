@@ -15,8 +15,8 @@ export function useUsers() {
   const sessionUserId = user?.sub ?? "anonymous"
   const query = useQuery({
     queryKey: queryKeys.users(sessionUserId),
-    queryFn: async ({ signal }) => {
-      const response = await api.get<UserListItem[]>("/users", { signal })
+    queryFn: async () => {
+      const response = await api.get<UserListItem[]>("/users")
       return response.data ?? []
     },
     enabled: Boolean(user?.sub),
