@@ -45,5 +45,13 @@ export function useAgenda(patientId: string | undefined, selectedDate: string) {
   const complete = useCallback((occurrenceId: string, patientNote?: string) => mutate(occurrenceId, () => api.post(`/agenda/occurrences/${occurrenceId}/complete`, { ...(patientNote ? { patientNote } : {}) })), [mutate])
   const skip = useCallback((occurrenceId: string, reason: string) => mutate(occurrenceId, () => api.post(`/agenda/occurrences/${occurrenceId}/skip`, { reason })), [mutate])
 
-  return { data: query.data ?? null, loading: query.isPending, error: query.error ? safeApiMessage(query.error, LOAD_ERROR) : null, complete, skip, refetch, mutatingId }
+  return {
+    data: query.data ?? null,
+    loading: query.isPending,
+    error: query.error && !query.data ? safeApiMessage(query.error, LOAD_ERROR) : null,
+    complete,
+    skip,
+    refetch,
+    mutatingId,
+  }
 }

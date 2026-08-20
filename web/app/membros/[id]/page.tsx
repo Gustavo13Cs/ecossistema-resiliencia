@@ -13,7 +13,7 @@ import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { useQueryClient } from "@tanstack/react-query"
 import { usePatientRecord } from "@/hooks/features/usePatientRecord"
-import { queryKeys } from "@/lib/query-keys"
+import { invalidatePatientAssessments, invalidatePatientProfile } from "@/lib/query-invalidation"
 import dynamic from "next/dynamic"
 
 import { AssessmentModal } from "@/components/AssessmentModal"
@@ -50,7 +50,7 @@ export default function FichaPacientePage() {
 
   const refreshAssessments = async () => {
     if (loggedInUser?.sub && patientId) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.assessments(loggedInUser.sub, patientId) })
+      await invalidatePatientAssessments(queryClient, loggedInUser.sub, patientId)
     }
   }
 
@@ -93,7 +93,9 @@ export default function FichaPacientePage() {
       await api.patch(`/users/${patientId}`, payload)
       toast.success("Ficha atualizada com sucesso!")
       setShowEditModal(false)
-      if (loggedInUser?.sub && patientId) await queryClient.invalidateQueries({ queryKey: queryKeys.patient(loggedInUser.sub, patientId) })
+      if (loggedInUser?.sub && patientId) {
+        await invalidatePatientProfile(queryClient, loggedInUser.sub, patientId)
+      }
     } catch (error) {
       toast.error("Erro ao atualizar o cadastro.")
     } finally {

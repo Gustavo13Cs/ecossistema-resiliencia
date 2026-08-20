@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { useUsers } from "@/hooks/features/useUsers"
 import { queryKeys } from "@/lib/query-keys"
+import { removePatientScopedQueries } from "@/lib/query-invalidation"
 
 export default function MembrosPage() {
   const { user } = useAuth()
@@ -99,6 +100,7 @@ export default function MembrosPage() {
       await api.delete(`/users/${deleteModal.patientId}`)
       toast.success(`${clientLabel} removido com sucesso!`)
       if (user?.sub) {
+        removePatientScopedQueries(queryClient, user.sub, deleteModal.patientId)
         await queryClient.invalidateQueries({ queryKey: queryKeys.users(user.sub) })
       }
       setDeleteModal({ isOpen: false, patientId: "", patientName: "" })

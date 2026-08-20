@@ -15,6 +15,8 @@ export function useUsers() {
   const sessionUserId = user?.sub ?? "anonymous"
   const query = useQuery({
     queryKey: queryKeys.users(sessionUserId),
+    // This shared request intentionally survives Strict Mode's simulated remount
+    // so the next route observer can reuse it instead of issuing a duplicate GET.
     queryFn: async () => {
       const response = await api.get<UserListItem[]>("/users")
       return response.data ?? []

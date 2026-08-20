@@ -50,5 +50,9 @@ export function useDiet(userId?: string) {
     enabled: Boolean(user?.sub && userId),
   })
 
-  return { dietPlan: query.data ?? null, loading: query.isPending, error: query.error ? "Falha ao carregar o seu plano alimentar. Tente novamente mais tarde." : null }
+  return {
+    dietPlan: query.data ?? null,
+    loading: query.isPending,
+    error: query.error && query.data === undefined ? "Falha ao carregar o seu plano alimentar. Tente novamente mais tarde." : null,
+  }
 }

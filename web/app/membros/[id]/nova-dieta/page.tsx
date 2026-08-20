@@ -12,7 +12,9 @@ import dynamic from "next/dynamic"
 import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
-import { useAuth } from "@/contexts/auth-context" 
+import { useAuth } from "@/contexts/auth-context"
+import { useQueryClient } from "@tanstack/react-query"
+import { invalidatePatientDiet } from "@/lib/query-invalidation"
 
 const MacroDistributionChart = dynamic(() => import("@/components/features/diet/MacroDistributionChart"), {
   ssr: false,
@@ -53,6 +55,7 @@ export default function NovaDietaPage() {
   const params = useParams()
   const router = useRouter()
   const { user: loggedInUser } = useAuth()
+  const queryClient = useQueryClient()
   const [loading, setLoading] = useState(false)
   const [isRestored, setIsRestored] = useState(false)
 
@@ -429,6 +432,9 @@ export default function NovaDietaPage() {
         }))
       }
       await api.post('/diet-plans', payload)
+      if (loggedInUser?.sub) {
+        await invalidatePatientDiet(queryClient, loggedInUser.sub, params.id as string)
+      }
       localStorage.removeItem(`diet_draft_${params.id}`)
       toast.success("Dieta salva com sucesso!")
       router.push(`/membros/${params.id}`) 
@@ -979,4 +985,3 @@ export default function NovaDietaPage() {
     </div>
   )
 }
-

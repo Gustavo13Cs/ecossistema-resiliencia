@@ -86,4 +86,41 @@ describe("Agenda diária do paciente", () => {
     cy.get('[data-testid="consent-professional-1"]').click()
     cy.wait("@updateConsent")
   })
+
+  it("mantém a agenda visível quando a revalidação falha", () => {
+    cy.wait("@getAgenda")
+    cy.contains("Tomar suplemento", { timeout: 20_000 }).should("be.visible")
+    cy.intercept("GET", "**/agenda/patient/patient-e2e*", {
+      statusCode: 400,
+      body: { message: "Falha temporária" },
+    }).as("failedAgendaRefresh")
+
+    cy.contains("Concluir").click()
+    cy.wait("@completeTask")
+    cy.wait("@failedAgendaRefresh")
+    cy.contains("Tomar suplemento").should("be.visible")
+    cy.contains("Não foi possível abrir sua agenda").should("not.exist")
+  })
+
+  it("reutiliza o intervalo de hoje ao navegar para amanhã e voltar", () => {
+    cy.wait("@getAgenda")
+    cy.contains("Tomar suplemento", { timeout: 20_000 }).should("be.visible")
+    let newRangeRequests = 0
+    cy.intercept("GET", "**/agenda/patient/patient-e2e*", (request) => {
+      newRangeRequests += 1
+      request.reply({
+        body: {
+          patient: { id: "patient-e2e", name: "Paciente Teste" },
+          occurrences: [],
+          summary: { actionable: 0, completed: 0, percentage: 0 },
+        },
+      })
+    }).as("newAgendaRange")
+
+    cy.get('button[aria-label="Próximo dia"]').click()
+    cy.wait("@newAgendaRange")
+    cy.contains("button", "Hoje").click()
+    cy.contains("Tomar suplemento", { timeout: 20_000 }).should("be.visible")
+    cy.then(() => expect(newRangeRequests).to.equal(1))
+  })
 })

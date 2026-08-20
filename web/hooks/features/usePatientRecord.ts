@@ -8,6 +8,8 @@ export function usePatientRecord(patientId?: string) {
   const sessionUserId = user?.sub ?? "anonymous"
   const enabled = Boolean(user?.sub && patientId)
 
+  // These requests intentionally survive a temporary observer unmount so a
+  // consecutive route can reuse the in-flight promise instead of duplicating it.
   const patientQuery = useQuery({ queryKey: queryKeys.patient(sessionUserId, patientId ?? "missing"), queryFn: async () => (await api.get<any>(`/users/${patientId}`)).data, enabled })
   const assessmentsQuery = useQuery({ queryKey: queryKeys.assessments(sessionUserId, patientId ?? "missing"), queryFn: async () => (await api.get<any[]>(`/assessments/user/${patientId}`)).data ?? [], enabled })
   const anamnesesQuery = useQuery({ queryKey: queryKeys.anamneses(sessionUserId, patientId ?? "missing"), queryFn: async () => (await api.get<any[]>(`/anamneses/user/${patientId}`)).data ?? [], enabled })

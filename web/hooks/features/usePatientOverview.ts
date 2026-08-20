@@ -1,5 +1,4 @@
-﻿import { useState, useEffect } from "react"
-import { api } from "@/lib/api"
+﻿import { api } from "@/lib/api"
 import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/auth-context"
 import { queryKeys } from "@/lib/query-keys"
@@ -99,5 +98,9 @@ export function usePatientOverview(patientId?: string) {
     enabled: Boolean(user?.sub && patientId),
   })
 
-  return { overview: query.data ?? null, loading: query.isPending, error: query.error ? "Falha ao carregar a visão geral do paciente." : null }
+  return {
+    overview: query.data ?? null,
+    loading: query.isPending,
+    error: query.error && !query.data ? "Falha ao carregar a visão geral do paciente." : null,
+  }
 }
