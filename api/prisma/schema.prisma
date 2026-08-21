@@ -66,6 +66,8 @@ model User {
   
   patients      ProfessionalPatientLink[] @relation("ProfessionalLink")
   professionals ProfessionalPatientLink[] @relation("PatientLink")
+  ownedClients      Client[]           @relation("ProfessionalClients")
+  clientAuditEvents ClientAuditEvent[] @relation("ProfessionalClientAuditEvents")
 
   patientAnamneses Anamnesis[] @relation("PatientAnamneses")
   createdAnamneses Anamnesis[] @relation("CreatedAnamneses")
@@ -115,6 +117,66 @@ enum Role {
   NUTRITIONIST
   PERSONAL
   PHYSIO
+}
+
+enum ClientStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum ClientAuditAction {
+  CREATED
+  UPDATED
+  ARCHIVED
+  RESTORED
+}
+
+model Client {
+  id                 String       @id @default(uuid())
+  professionalId     String
+  professional       User         @relation("ProfessionalClients", fields: [professionalId], references: [id], onDelete: Restrict)
+  name               String
+  email              String?
+  phone              String?
+  birthDate          DateTime?
+  gender             String?
+  goal               String?
+  height             Float?
+  initialWeight      Float?
+  allergies          String?
+  pathologies        String?
+  typicalSleep       String?
+  stressLevel        Int?
+  foodRelationship   String?
+  psychologyHistory  String?
+  exerciseType       String?
+  exerciseFrequency  String?
+  exerciseDuration   String?
+  hasPersonal        String?
+  workActivityLevel  String?
+  professionalNotes  String?      @db.Text
+  privacyNotes       String?      @db.Text
+  status             ClientStatus @default(ACTIVE)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  auditEvents        ClientAuditEvent[]
+
+  @@unique([professionalId, email])
+  @@index([professionalId, status, createdAt])
+  @@map("clients")
+}
+
+model ClientAuditEvent {
+  id             String            @id @default(uuid())
+  clientId       String
+  client         Client            @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  professionalId String
+  professional   User              @relation("ProfessionalClientAuditEvents", fields: [professionalId], references: [id], onDelete: Restrict)
+  action         ClientAuditAction
+  createdAt      DateTime          @default(now())
+
+  @@index([professionalId, clientId, createdAt])
+  @@map("client_audit_events")
 }
 
 enum AgendaTaskCategory {
