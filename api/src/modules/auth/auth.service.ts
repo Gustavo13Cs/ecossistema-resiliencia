@@ -60,7 +60,7 @@ export class AuthService {
         password: hashedPassword,
         phone: registerDto.phone,
         companyName: registerDto.companyName,
-        role: registerDto.role ?? 'PATIENT', // enum validado pelo DTO, ADMIN bloqueado
+        role: registerDto.role,
       },
       select: {
         id: true,

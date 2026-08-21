@@ -8,9 +8,9 @@ import {
 } from 'class-validator';
 
 export enum RegisterRole {
-  PATIENT = 'PATIENT',
-  PERSONAL = 'PERSONAL',      
-  NUTRITIONIST = 'NUTRITIONIST', 
+  NUTRITIONIST = 'NUTRITIONIST',
+  PERSONAL = 'PERSONAL',
+  PHYSIO = 'PHYSIO',
 }
 
 export class RegisterDto {
@@ -33,7 +33,8 @@ export class RegisterDto {
   @IsOptional()
   companyName?: string;
 
-  @IsEnum(RegisterRole, { message: 'Role inválida' })
-  @IsOptional()
-  role?: RegisterRole;
+  @IsEnum(RegisterRole, {
+    message: 'Escolha Nutricionista, Personal ou Fisioterapeuta',
+  })
+  role!: RegisterRole;
 }
