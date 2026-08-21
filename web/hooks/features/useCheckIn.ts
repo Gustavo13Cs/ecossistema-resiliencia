@@ -26,7 +26,7 @@ export function useCheckIn(patientId?: string) {
 
     setLoadingItems(prev => [...prev, itemName])
     try {
-      await api.post('/metrics/checkin', { patientId, type, itemName })
+      await api.post('/metrics/checkin', { type, itemName })
       
       setCompletedItems(prev => [...prev, itemName])
       toast.success(`${itemName} concluído com sucesso! 🔥 Continue focado!`)
