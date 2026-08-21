@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { MetricsService } from './metrics.service';
-import { MetricsController } from './metrics.controller';
+import { PatientAccessModule } from '../../common/patient-access/patient-access.module';
 import { DatabaseModule } from '../../infra/database/database.module';
+import { MetricsController } from './metrics.controller';
+import { MetricsService } from './metrics.service';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, PatientAccessModule],
   controllers: [MetricsController],
   providers: [MetricsService],
 })
