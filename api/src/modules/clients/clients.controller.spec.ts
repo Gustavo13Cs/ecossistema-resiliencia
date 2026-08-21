@@ -109,6 +109,15 @@ describe('ClientsController', () => {
     );
   });
 
+  it('rejects an invalid list status before calling the service', async () => {
+    await request(app.getHttpServer())
+      .get('/clients')
+      .query({ status: 'DELETED' })
+      .expect(400);
+
+    expect(clientsService.findAll).not.toHaveBeenCalled();
+  });
+
   it('rejects an invalid client status', async () => {
     await request(app.getHttpServer())
       .patch('/clients/client-1/status')
@@ -138,6 +147,15 @@ describe('ClientsController', () => {
       'client-1',
       { name: 'Ana Maria' },
     );
+  });
+
+  it('rejects professionalId in an update request body', async () => {
+    await request(app.getHttpServer())
+      .patch('/clients/client-1')
+      .send({ name: 'Ana Maria', professionalId: 'pro-2' })
+      .expect(400);
+
+    expect(clientsService.update).not.toHaveBeenCalled();
   });
 
   it('passes authenticated ownership and validated status to setStatus', async () => {
