@@ -1,5 +1,7 @@
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, ForbiddenException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 import { ClientAccessService } from '../../common/client-access/client-access.service';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { CreateClientDto } from './dto/create-client.dto';
@@ -30,20 +32,42 @@ describe('ClientsService', () => {
     );
   });
 
-  it('derives ownership and writes CREATED audit event', async () => {
-    tx.client.create.mockResolvedValue({ id: 'client-1', professionalId: 'pro-1' });
+  it('derives ownership, maps creation fields and writes CREATED audit event', async () => {
+    tx.client.create.mockResolvedValue({
+      id: 'client-1',
+      professionalId: 'pro-1',
+    });
 
     await service.create(
       { sub: 'pro-1', role: 'NUTRITIONIST' },
-      { name: 'Ana', email: ' ANA@EXAMPLE.COM ' } as CreateClientDto,
+      { name: 'Ana', email: 'ana@example.com' } as CreateClientDto,
     );
 
     expect(tx.client.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+      data: {
         professionalId: 'pro-1',
         name: 'Ana',
         email: 'ana@example.com',
-      }),
+        phone: null,
+        birthDate: null,
+        gender: null,
+        goal: null,
+        height: null,
+        initialWeight: null,
+        allergies: null,
+        pathologies: null,
+        typicalSleep: null,
+        stressLevel: null,
+        foodRelationship: null,
+        psychologyHistory: null,
+        exerciseType: null,
+        exerciseFrequency: null,
+        exerciseDuration: null,
+        hasPersonal: null,
+        workActivityLevel: null,
+        professionalNotes: null,
+        privacyNotes: null,
+      },
     });
     expect(tx.clientAuditEvent.create).toHaveBeenCalledWith({
       data: { clientId: 'client-1', professionalId: 'pro-1', action: 'CREATED' },
@@ -61,19 +85,59 @@ describe('ClientsService', () => {
     });
   });
 
+  it('delegates findOne to the ownership service', async () => {
+    const client = { id: 'client-1', professionalId: 'pro-1' };
+    access.getOwnedClient.mockResolvedValue(client);
+
+    await expect(
+      service.findOne({ sub: 'pro-1', role: 'NUTRITIONIST' }, 'client-1'),
+    ).resolves.toEqual(client);
+
+    expect(access.getOwnedClient).toHaveBeenCalledWith(
+      { sub: 'pro-1', role: 'NUTRITIONIST' },
+      'client-1',
+    );
+  });
+
   it('archives an owned client and writes ARCHIVED audit event', async () => {
-    access.getOwnedClient.mockResolvedValue({ id: 'client-1', professionalId: 'pro-1' });
+    const user = { sub: 'pro-1', role: 'PHYSIO' } as const;
+    access.getOwnedClient.mockResolvedValue({
+      id: 'client-1',
+      professionalId: 'pro-1',
+    });
     tx.client.update.mockResolvedValue({ id: 'client-1', status: 'ARCHIVED' });
 
-    await service.setStatus(
-      { sub: 'pro-1', role: 'PHYSIO' },
-      'client-1',
-      'ARCHIVED',
-    );
+    await service.setStatus(user, 'client-1', 'ARCHIVED');
 
+    expect(access.getOwnedClient).toHaveBeenCalledWith(user, 'client-1');
+    expect(tx.client.update).toHaveBeenCalledWith({
+      where: { id: 'client-1' },
+      data: { status: 'ARCHIVED' },
+    });
+    expect(access.getOwnedClient.mock.invocationCallOrder[0]).toBeLessThan(
+      tx.client.update.mock.invocationCallOrder[0],
+    );
     expect(tx.clientAuditEvent.create).toHaveBeenCalledWith({
       data: { clientId: 'client-1', professionalId: 'pro-1', action: 'ARCHIVED' },
     });
+  });
+
+  it('does not write or audit a status change when ownership fails', async () => {
+    access.getOwnedClient.mockRejectedValue(
+      new ForbiddenException('Cliente não pertence ao profissional'),
+    );
+
+    await expect(
+      service.setStatus(
+        { sub: 'pro-2', role: 'PHYSIO' },
+        'client-1',
+        'ARCHIVED',
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(tx.client.update).not.toHaveBeenCalled();
+    expect(tx.clientAuditEvent.create).not.toHaveBeenCalled();
   });
 
   it('returns 409 for a duplicate email inside the same professional account', async () => {
@@ -93,41 +157,68 @@ describe('ClientsService', () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
-  it('checks ownership before updating a client', async () => {
+  it('maps every mutable client field and audits an owned update', async () => {
     const user = { sub: 'pro-1', role: 'NUTRITIONIST' } as const;
-    access.getOwnedClient.mockResolvedValue({ id: 'client-1', professionalId: 'pro-1' });
+    access.getOwnedClient.mockResolvedValue({
+      id: 'client-1',
+      professionalId: 'pro-1',
+    });
     tx.client.update.mockResolvedValue({ id: 'client-1', name: 'Ana Maria' });
 
-    await service.update(user, 'client-1', { name: 'Ana Maria' } as UpdateClientDto);
+    await service.update(user, 'client-1', {
+      name: ' Ana Maria ',
+      email: ' UPDATE@EXAMPLE.COM ',
+      phone: ' 11999999999 ',
+      birthDate: '1990-01-02',
+      gender: ' Feminino ',
+      goal: ' Saúde ',
+      height: 1.7,
+      initialWeight: null,
+      allergies: ' Nenhuma ',
+      pathologies: null,
+      typicalSleep: ' 8 horas ',
+      stressLevel: 3,
+      foodRelationship: null,
+      psychologyHistory: ' Acompanhamento ',
+      exerciseType: ' Musculação ',
+      exerciseFrequency: null,
+      exerciseDuration: ' 45 min ',
+      hasPersonal: ' Sim ',
+      workActivityLevel: null,
+      professionalNotes: ' Nota clínica ',
+      privacyNotes: null,
+    } as UpdateClientDto);
 
     expect(access.getOwnedClient).toHaveBeenCalledWith(user, 'client-1');
     expect(tx.client.update).toHaveBeenCalledWith({
       where: { id: 'client-1' },
-      data: expect.objectContaining({ name: 'Ana Maria' }),
+      data: {
+        name: 'Ana Maria',
+        email: 'update@example.com',
+        phone: '11999999999',
+        birthDate: new Date('1990-01-02'),
+        gender: 'Feminino',
+        goal: 'Saúde',
+        height: 1.7,
+        initialWeight: null,
+        allergies: 'Nenhuma',
+        pathologies: null,
+        typicalSleep: '8 horas',
+        stressLevel: 3,
+        foodRelationship: null,
+        psychologyHistory: 'Acompanhamento',
+        exerciseType: 'Musculação',
+        exerciseFrequency: null,
+        exerciseDuration: '45 min',
+        hasPersonal: 'Sim',
+        workActivityLevel: null,
+        professionalNotes: 'Nota clínica',
+        privacyNotes: null,
+      },
     });
     expect(access.getOwnedClient.mock.invocationCallOrder[0]).toBeLessThan(
       tx.client.update.mock.invocationCallOrder[0],
     );
-  });
-
-  it('writes UPDATED audit event while preserving omitted fields', async () => {
-    access.getOwnedClient.mockResolvedValue({ id: 'client-1', professionalId: 'pro-1' });
-    tx.client.update.mockResolvedValue({ id: 'client-1', name: 'Ana' });
-
-    await service.update(
-      { sub: 'pro-1', role: 'NUTRITIONIST' },
-      'client-1',
-      { professionalNotes: null } as UpdateClientDto,
-    );
-
-    expect(tx.client.update).toHaveBeenCalledWith({
-      where: { id: 'client-1' },
-      data: expect.objectContaining({
-        professionalNotes: null,
-        name: undefined,
-        email: undefined,
-      }),
-    });
     expect(tx.clientAuditEvent.create).toHaveBeenCalledWith({
       data: { clientId: 'client-1', professionalId: 'pro-1', action: 'UPDATED' },
     });
@@ -146,5 +237,58 @@ describe('ClientsService', () => {
     expect(tx.clientAuditEvent.create).toHaveBeenCalledWith({
       data: { clientId: 'client-1', professionalId: 'pro-1', action: 'RESTORED' },
     });
+  });
+});
+
+describe('Client DTO validation', () => {
+  it('normalizes optional text before validating email and preserves null cleanup', async () => {
+    const dto = plainToInstance(CreateClientDto, {
+      name: ' Ana ',
+      email: ' ANA@EXAMPLE.COM ',
+      phone: '   ',
+      hasPersonal: ' Sim ',
+    });
+    const nullableEmail = plainToInstance(CreateClientDto, {
+      name: 'Ana',
+      email: null,
+    });
+    const blankEmail = plainToInstance(CreateClientDto, {
+      name: 'Ana',
+      email: '   ',
+    });
+
+    expect(dto).toMatchObject({
+      name: 'Ana',
+      email: 'ana@example.com',
+      phone: null,
+      hasPersonal: 'Sim',
+    });
+    expect(nullableEmail.email).toBeNull();
+    expect(blankEmail.email).toBeNull();
+    await expect(validate(dto)).resolves.toHaveLength(0);
+    await expect(validate(nullableEmail)).resolves.toHaveLength(0);
+    await expect(validate(blankEmail)).resolves.toHaveLength(0);
+  });
+
+  it('rejects a creation name that contains only whitespace', async () => {
+    const dto = plainToInstance(CreateClientDto, { name: '   ' });
+
+    await expect(validate(dto)).resolves.toEqual(
+      expect.arrayContaining([expect.objectContaining({ property: 'name' })]),
+    );
+  });
+
+  it('skips an omitted update name but rejects null and whitespace names', async () => {
+    const omitted = plainToInstance(UpdateClientDto, {});
+    const nullable = plainToInstance(UpdateClientDto, { name: null });
+    const blank = plainToInstance(UpdateClientDto, { name: '   ' });
+
+    await expect(validate(omitted)).resolves.toHaveLength(0);
+    await expect(validate(nullable)).resolves.toEqual(
+      expect.arrayContaining([expect.objectContaining({ property: 'name' })]),
+    );
+    await expect(validate(blank)).resolves.toEqual(
+      expect.arrayContaining([expect.objectContaining({ property: 'name' })]),
+    );
   });
 });
