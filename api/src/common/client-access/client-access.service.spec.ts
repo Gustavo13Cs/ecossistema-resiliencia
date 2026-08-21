@@ -10,23 +10,23 @@ describe('ClientAccessService', () => {
     service = new ClientAccessService(prisma as never);
   });
 
-  it('returns a client owned by the authenticated professional', async () => {
-    prisma.client.findFirst.mockResolvedValue({
-      id: 'client-1',
-      professionalId: 'pro-1',
-    });
+  it.each(['NUTRITIONIST', 'PERSONAL', 'PHYSIO'] as const)(
+    'returns a client owned by an authenticated %s',
+    async (role) => {
+      prisma.client.findFirst.mockResolvedValue({
+        id: 'client-1',
+        professionalId: 'pro-1',
+      });
 
-    await expect(
-      service.getOwnedClient(
-        { sub: 'pro-1', role: 'NUTRITIONIST' },
-        'client-1',
-      ),
-    ).resolves.toMatchObject({ id: 'client-1' });
+      await expect(
+        service.getOwnedClient({ sub: 'pro-1', role }, 'client-1'),
+      ).resolves.toMatchObject({ id: 'client-1' });
 
-    expect(prisma.client.findFirst).toHaveBeenCalledWith({
-      where: { id: 'client-1', professionalId: 'pro-1' },
-    });
-  });
+      expect(prisma.client.findFirst).toHaveBeenCalledWith({
+        where: { id: 'client-1', professionalId: 'pro-1' },
+      });
+    },
+  );
 
   it('returns 404 for another professional client', async () => {
     prisma.client.findFirst.mockResolvedValue(null);
@@ -34,13 +34,20 @@ describe('ClientAccessService', () => {
     await expect(
       service.getOwnedClient({ sub: 'pro-2', role: 'PERSONAL' }, 'client-1'),
     ).rejects.toBeInstanceOf(NotFoundException);
+
+    expect(prisma.client.findFirst).toHaveBeenCalledWith({
+      where: { id: 'client-1', professionalId: 'pro-2' },
+    });
   });
 
-  it('rejects non-clinical roles before querying', async () => {
-    await expect(
-      service.getOwnedClient({ sub: 'admin-1', role: 'ADMIN' }, 'client-1'),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+  it.each(['ADMIN', 'PATIENT'] as const)(
+    'rejects the non-clinical %s role before querying',
+    async (role) => {
+      await expect(
+        service.getOwnedClient({ sub: 'user-1', role }, 'client-1'),
+      ).rejects.toBeInstanceOf(ForbiddenException);
 
-    expect(prisma.client.findFirst).not.toHaveBeenCalled();
-  });
+      expect(prisma.client.findFirst).not.toHaveBeenCalled();
+    },
+  );
 });
