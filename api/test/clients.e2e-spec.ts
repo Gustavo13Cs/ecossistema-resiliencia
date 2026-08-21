@@ -72,6 +72,8 @@ describe('Clients tenant isolation and lifecycle (e2e)', () => {
   let prisma: PrismaService;
   let prismaServices: PrismaService[] = [];
   let databaseReadyForCleanup = false;
+  let jwtSecretWasPresent = false;
+  let originalJwtSecret: string | undefined;
 
   const asUser = (userId: string, role: Role) => ({
     'x-test-user-id': userId,
@@ -116,6 +118,8 @@ describe('Clients tenant isolation and lifecycle (e2e)', () => {
 
   beforeAll(async () => {
     assertSafeTestDatabase();
+    jwtSecretWasPresent = process.env.JWT_SECRET !== undefined;
+    originalJwtSecret = process.env.JWT_SECRET;
     process.env.JWT_SECRET = 'clients-e2e-only-secret';
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -169,12 +173,23 @@ describe('Clients tenant isolation and lifecycle (e2e)', () => {
         await expectNoFixtures();
       }
     } finally {
-      if (app) {
-        await app.close();
+      try {
+        if (app) {
+          await app.close();
+        }
+      } finally {
+        try {
+          await Promise.all(
+            prismaServices.map((prismaService) => prismaService.$disconnect()),
+          );
+        } finally {
+          if (jwtSecretWasPresent && originalJwtSecret !== undefined) {
+            process.env.JWT_SECRET = originalJwtSecret;
+          } else {
+            delete process.env.JWT_SECRET;
+          }
+        }
       }
-      await Promise.allSettled(
-        prismaServices.map((prismaService) => prismaService.$disconnect()),
-      );
     }
   });
 
