@@ -34,6 +34,18 @@ export class PatientAccessService {
     }
   }
 
+  async assertCanReadPatient(
+    user: AuthUser,
+    patientId: string,
+  ): Promise<void> {
+    if (user.role === 'PATIENT') {
+      this.assertPatientSelf(user, patientId);
+      return;
+    }
+
+    await this.assertProfessionalLink(user, patientId);
+  }
+
   assertTaskAuthor(user: AuthUser, professionalId: string): void {
     this.assertClinicalProfessional(user);
 
