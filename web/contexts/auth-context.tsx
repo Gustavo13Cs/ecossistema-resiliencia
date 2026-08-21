@@ -22,13 +22,11 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const getRedirectPath = (role?: string) => {
-  switch (role) {
-    case 'PATIENT': return '/paciente'
-    case 'NUTRITIONIST': return '/dietas'
-    case 'PERSONAL': return '/treinos'
-    case 'PHYSIO': return '/reabilitacao'
-    default: return '/membros'
+  if (role === 'PATIENT') return '/paciente'
+  if (['NUTRITIONIST', 'PERSONAL', 'PHYSIO'].includes(role ?? '')) {
+    return '/clientes'
   }
+  return '/auth/login'
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

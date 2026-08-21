@@ -12,6 +12,8 @@ import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { User, Apple, Dumbbell, Activity } from "lucide-react"
 
+type ProfessionalRole = "NUTRITIONIST" | "PERSONAL" | "PHYSIO"
+
 export default function RegisterPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
@@ -22,7 +24,7 @@ export default function RegisterPage() {
     password: "",
     phone: "",
     companyName: "",
-    role: "PATIENT", 
+    role: "NUTRITIONIST" as ProfessionalRole,
   })
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -40,15 +42,19 @@ export default function RegisterPage() {
     }
   }
 
-  // Perfis disponíveis para seleção
-  const roles = [
-    { id: "PATIENT", label: "Paciente / Aluno", icon: User, color: "text-slate-600", bg: "bg-slate-100", border: "border-slate-200", activeBorder: "border-slate-500", activeBg: "bg-slate-50" },
-    { id: "NUTRITIONIST", label: "Nutricionista", icon: Apple, color: "text-emerald-600", bg: "bg-emerald-100", border: "border-emerald-200", activeBorder: "border-emerald-500", activeBg: "bg-emerald-50" },
-    { id: "PERSONAL", label: "Personal Trainer", icon: Dumbbell, color: "text-blue-600", bg: "bg-blue-100", border: "border-blue-200", activeBorder: "border-blue-500", activeBg: "bg-blue-50" },
-    { id: "PHYSIO", label: "Fisioterapeuta", icon: Activity, color: "text-purple-600", bg: "bg-purple-100", border: "border-purple-200", activeBorder: "border-purple-500", activeBg: "bg-purple-50" },
+  const roles: Array<{
+    id: ProfessionalRole
+    label: string
+    icon: typeof Apple
+    color: string
+    bg: string
+    activeBorder: string
+    activeBg: string
+  }> = [
+    { id: "NUTRITIONIST", label: "Nutricionista", icon: Apple, color: "text-emerald-600", bg: "bg-emerald-100", activeBorder: "border-emerald-500", activeBg: "bg-emerald-50" },
+    { id: "PERSONAL", label: "Personal Trainer", icon: Dumbbell, color: "text-blue-600", bg: "bg-blue-100", activeBorder: "border-blue-500", activeBg: "bg-blue-50" },
+    { id: "PHYSIO", label: "Fisioterapeuta", icon: Activity, color: "text-purple-600", bg: "bg-purple-100", activeBorder: "border-purple-500", activeBg: "bg-purple-50" },
   ]
-
-  const isProfessional = formData.role !== "PATIENT"
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center p-6 bg-slate-50">
@@ -66,15 +72,16 @@ export default function RegisterPage() {
             <form onSubmit={handleRegister} className="space-y-8">
               <div className="space-y-3">
                 <Label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Como você quer utilizar a plataforma?</Label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {roles.map((r) => {
                     const Icon = r.icon
                     const isActive = formData.role === r.id
                     
                     return (
-                      <div 
+                      <button
+                        type="button"
                         key={r.id}
-                        onClick={() => setFormData({ ...formData, role: r.id, companyName: r.id === "PATIENT" ? "" : formData.companyName })}
+                        onClick={() => setFormData({ ...formData, role: r.id })}
                         className={`cursor-pointer rounded-xl border-2 p-4 flex flex-col items-center justify-center gap-3 transition-all duration-200 ${
                           isActive 
                             ? `${r.activeBorder} ${r.activeBg} shadow-md scale-[1.02]` 
@@ -87,7 +94,7 @@ export default function RegisterPage() {
                         <span className={`text-sm font-bold text-center ${isActive ? 'text-slate-800' : 'text-slate-500'}`}>
                           {r.label}
                         </span>
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
@@ -101,41 +108,39 @@ export default function RegisterPage() {
                 <div className="grid md:grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome Completo</Label>
-                    <Input id="name" required placeholder="Ex: Carlos Silva" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="h-11 bg-white" />
+                    <Input id="name" name="name" required placeholder="Ex: Carlos Silva" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="h-11 bg-white" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">WhatsApp</Label>
-                    <Input id="phone" required placeholder="(11) 99999-9999" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="h-11 bg-white" />
+                    <Input id="phone" placeholder="(11) 99999-9999" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="h-11 bg-white" />
                   </div>
                 </div>
               </div>
 
-              {isProfessional && (
-                <div className="space-y-4 bg-blue-50/50 p-6 rounded-xl border border-blue-100 animate-in fade-in slide-in-from-top-4">
-                  <h3 className="font-bold text-blue-900 flex items-center gap-2">
-                    🏢 Informações do Consultório / Estúdio
-                  </h3>
-                  <div className="space-y-2">
-                    <Label htmlFor="companyName" className="text-blue-900">Nome do Local de Atendimento (Opcional)</Label>
-                    <Input id="companyName" placeholder="Ex: Clínica Bem Estar, Studio Fit" value={formData.companyName} onChange={(e) => setFormData({ ...formData, companyName: e.target.value })} className="h-11 bg-white border-blue-200 focus-visible:ring-blue-500" />
-                  </div>
+              <div className="space-y-4 bg-blue-50/50 p-6 rounded-xl border border-blue-100 animate-in fade-in slide-in-from-top-4">
+                <h3 className="font-bold text-blue-900 flex items-center gap-2">
+                  🏢 Informações do Consultório / Estúdio
+                </h3>
+                <div className="space-y-2">
+                  <Label htmlFor="companyName" className="text-blue-900">Nome do Local de Atendimento (Opcional)</Label>
+                  <Input id="companyName" placeholder="Ex: Clínica Bem Estar, Studio Fit" value={formData.companyName} onChange={(e) => setFormData({ ...formData, companyName: e.target.value })} className="h-11 bg-white border-blue-200 focus-visible:ring-blue-500" />
                 </div>
-              )}
+              </div>
 
               {/* Dados de Acesso */}
               <div className="grid md:grid-cols-2 gap-5 pt-2">
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail de Acesso</Label>
-                  <Input id="email" type="email" required placeholder="seu@email.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="h-11" />
+                  <Input id="email" name="email" type="email" required placeholder="seu@email.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="h-11" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Senha de Segurança</Label>
-                  <Input id="password" type="password" required placeholder="Mínimo 6 caracteres" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="h-11" />
+                  <Input id="password" name="password" type="password" required placeholder="Mínimo 6 caracteres" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="h-11" />
                 </div>
               </div>
 
               <Button type="submit" className="w-full h-14 text-lg bg-slate-800 hover:bg-slate-900 text-white shadow-lg font-bold" disabled={isLoading}>
-                {isLoading ? "A criar conta..." : "Finalizar Cadastro"}
+                {isLoading ? "A criar conta..." : "Criar conta"}
               </Button>
             </form>
 
