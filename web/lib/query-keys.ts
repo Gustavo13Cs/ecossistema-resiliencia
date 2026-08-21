@@ -7,4 +7,7 @@ export const queryKeys = {
   patientOverview: (sessionUserId: string, patientId: string) => ["patient-overview", sessionUserId, patientId] as const,
   professionalAlerts: (sessionUserId: string) => ["professional-alerts", sessionUserId] as const,
   agenda: (sessionUserId: string, patientId: string, from: string, to: string) => ["agenda", sessionUserId, patientId, from, to] as const,
+  consultationNotes: (sessionUserId: string, patientId: string) => ["consultation-notes", sessionUserId, patientId] as const,
+  dietHistory: (sessionUserId: string, patientId: string) => ["diet-history", sessionUserId, patientId] as const,
+  dashboardSummary: (sessionUserId: string) => ["dashboard-summary", sessionUserId] as const,
 }

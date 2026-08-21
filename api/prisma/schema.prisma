@@ -87,6 +87,8 @@ model User {
   patientConsents         PatientConsent[]        @relation("PatientConsents")
   professionalConsents    PatientConsent[]        @relation("ProfessionalConsents")
   healthCheckIns           HealthCheckIn[]         @relation("PatientHealthCheckIns")
+  patientConsultationNotes  ConsultationNote[]     @relation("PatientConsultationNotes")
+  createdConsultationNotes  ConsultationNote[]     @relation("CreatedConsultationNotes")
 }
 
 model ProfessionalPatientLink {
@@ -657,6 +659,27 @@ model Anamnesis {
   updatedAt   DateTime @updatedAt
 
   @@map("anamneses")
+}
+
+// Tabela 17: Notas de Consulta / Evolução Clínica (Texto Livre do Profissional)
+model ConsultationNote {
+  id          String   @id @default(uuid())
+
+  content     String   @db.Text     // Texto livre da evolução
+  tags        String?               // Ex: "aumento-proteina,retorno-30d" (CSV)
+  nextSteps   String?  @db.Text     // Próximos passos / follow-up
+
+  patientId   String
+  patient     User     @relation("PatientConsultationNotes", fields: [patientId], references: [id], onDelete: Cascade)
+
+  creatorId   String
+  creator     User     @relation("CreatedConsultationNotes", fields: [creatorId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([patientId, createdAt])
+  @@map("consultation_notes")
 }
 
 model SupplementPlan {

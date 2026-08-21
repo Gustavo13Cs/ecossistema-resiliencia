@@ -39,6 +39,13 @@ export class DietPlansController {
     return this.dietPlansService.findActiveByUser(userId, req.user.sub, isProfessional);
   }
 
+  // Histórico completo de dietas do paciente (ativas + inativas)
+  @Roles('NUTRITIONIST', 'ADMIN')
+  @Get('user/:userId/history')
+  findAllByPatient(@Param('userId') userId: string) {
+    return this.dietPlansService.findAllByPatient(userId);
+  }
+
   // Só o dono da refeição (paciente) ou profissional vinculado pode fazer toggle
   @Patch('meal/:mealId/toggle')
   toggleMealStatus(@Request() req, @Param('mealId') mealId: string) {

@@ -183,4 +183,15 @@ export class DietPlansService {
       orderBy: { updatedAt: 'desc' },
     });
   }
+
+  async findAllByPatient(userId: string) {
+    return this.prisma.dietPlan.findMany({
+      where: { userId, isTemplate: false },
+      include: {
+        meals: { include: { items: { include: { food: true } } } },
+        creator: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

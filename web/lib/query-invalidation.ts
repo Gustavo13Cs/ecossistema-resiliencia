@@ -8,6 +8,8 @@ const PATIENT_SCOPED_QUERIES = new Set([
   "diet",
   "patient-overview",
   "agenda",
+  "consultation-notes",
+  "diet-history",
 ])
 
 export function removePatientScopedQueries(
@@ -53,6 +55,18 @@ export async function invalidatePatientDiet(
 ) {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: queryKeys.diet(sessionUserId, patientId) }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.dietHistory(sessionUserId, patientId) }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.patientOverview(sessionUserId, patientId) }),
+  ])
+}
+
+export async function invalidateConsultationNotes(
+  queryClient: QueryClient,
+  sessionUserId: string,
+  patientId: string,
+) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.consultationNotes(sessionUserId, patientId) }),
     queryClient.invalidateQueries({ queryKey: queryKeys.patientOverview(sessionUserId, patientId) }),
   ])
 }
