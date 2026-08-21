@@ -38,7 +38,7 @@ export class MetricsService {
     });
 
     const activeDays = new Set(
-      trackings.map(t => t.completedAt.toISOString().split('T')[0])
+      trackings.map((t) => t.completedAt.toISOString().split('T')[0]),
     ).size;
 
     const percentage = Math.round((activeDays / 7) * 100);
@@ -47,7 +47,7 @@ export class MetricsService {
       percentage,
       activeDays,
       totalLogs: trackings.length,
-      history: trackings, 
+      history: trackings,
     };
   }
 
@@ -55,7 +55,7 @@ export class MetricsService {
     await this.patientAccess.assertCanReadPatient(user, patientId);
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0); 
+    today.setHours(0, 0, 0, 0);
 
     return this.prisma.dailyTracking.findMany({
       where: {

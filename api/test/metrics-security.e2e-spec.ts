@@ -44,10 +44,7 @@ describe('Metrics authorization (e2e)', () => {
   beforeAll(async () => {
     process.env.JWT_SECRET = TEST_SECRET;
     const moduleFixture = await Test.createTestingModule({
-      imports: [
-        PassportModule,
-        JwtModule.register({ secret: TEST_SECRET }),
-      ],
+      imports: [PassportModule, JwtModule.register({ secret: TEST_SECRET })],
       controllers: [MetricsController],
       providers: [
         JwtStrategy,

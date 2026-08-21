@@ -102,10 +102,7 @@ describe('MetricsService authorization', () => {
 
   it('rejects ADMIN before reading metrics', async () => {
     await expect(
-      service.getTodayLogs(
-        { sub: 'admin-1', role: 'ADMIN' },
-        'patient-1',
-      ),
+      service.getTodayLogs({ sub: 'admin-1', role: 'ADMIN' }, 'patient-1'),
     ).rejects.toBeInstanceOf(ForbiddenException);
 
     expect(prisma.professionalPatientLink.findFirst).not.toHaveBeenCalled();

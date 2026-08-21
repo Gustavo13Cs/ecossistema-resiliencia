@@ -16,7 +16,9 @@ describe('PatientAccessService', () => {
   });
 
   it('accepts a clinical professional with an active patient link', async () => {
-    prisma.professionalPatientLink.findFirst.mockResolvedValue({ id: 'link-1' });
+    prisma.professionalPatientLink.findFirst.mockResolvedValue({
+      id: 'link-1',
+    });
 
     await expect(
       service.assertProfessionalLink(
@@ -102,10 +104,7 @@ describe('PatientAccessService', () => {
 
   it('rejects ADMIN as a task author', () => {
     expect(() =>
-      service.assertTaskAuthor(
-        { sub: 'admin-1', role: 'ADMIN' },
-        'admin-1',
-      ),
+      service.assertTaskAuthor({ sub: 'admin-1', role: 'ADMIN' }, 'admin-1'),
     ).toThrow(ForbiddenException);
   });
 
