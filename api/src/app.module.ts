@@ -26,6 +26,7 @@ import { ConsentsModule } from './modules/consents/consents.module';
 import { AgendaModule } from './modules/agenda/agenda.module';
 import { HealthCheckInsModule } from './modules/health-check-ins/health-check-ins.module';
 import { ConsultationNotesModule } from './modules/consultation-notes/consultation-notes.module';
+import { ClientsModule } from './modules/clients/clients.module';
 import { AppController } from '../app.controller';
 
 @Module({
@@ -58,6 +59,7 @@ import { AppController } from '../app.controller';
     AgendaModule,
     HealthCheckInsModule,
     ConsultationNotesModule,
+    ClientsModule,
   ],
   controllers: [AppController],
   providers: [
