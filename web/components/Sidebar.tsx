@@ -41,7 +41,7 @@ export function Sidebar() {
   return (
     <>
       {/* 🖥️ VERSÃO DESKTOP (Clonada da interface do Paciente) */}
-      <aside className="w-64 bg-[#0B1120] min-h-screen text-slate-300 flex-col transition-all duration-300 hidden md:flex fixed top-0 left-0 z-40">
+      <aside className="w-64 bg-[#0B1120] min-h-screen text-slate-300 flex-col transition-all duration-300 hidden md:flex fixed top-0 left-0 z-40 print:hidden">
         
         {/* Logo e Área Escrita */}
         <div className="pt-10 pb-6 px-8 shrink-0">
@@ -98,7 +98,7 @@ export function Sidebar() {
       </aside>
 
       {/* 📱 VERSÃO MOBILE (Mantida com a barra inferior estilo app nativo) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 flex items-center justify-around h-20 px-2 pb-safe shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 flex items-center justify-around h-20 px-2 pb-safe shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] print:hidden">
         {mobileMenuItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname.startsWith(item.href) || (item.href === '/home' && pathname === '/')

@@ -19,12 +19,12 @@ export default function PacienteLayout({ children }: { children: React.ReactNode
   ]
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
-      <main className="flex-1 pb-20 md:pb-0 overflow-y-auto">
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row print:bg-white print:min-h-0">
+      <main className="flex-1 pb-20 md:pb-0 overflow-y-auto print:pb-0 print:overflow-visible">
         {children}
       </main>
 
-      <nav className="md:hidden fixed bottom-0 left-0 w-full overflow-x-auto bg-white border-t border-slate-200 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] z-50 px-2 py-2 safe-area-pb">
+      <nav className="md:hidden fixed bottom-0 left-0 w-full overflow-x-auto bg-white border-t border-slate-200 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] z-50 px-2 py-2 safe-area-pb print:hidden">
         <div className="flex min-w-max items-center gap-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href
@@ -49,7 +49,7 @@ export default function PacienteLayout({ children }: { children: React.ReactNode
         </div>
       </nav>
 
-      <aside className="hidden md:flex flex-col w-64 bg-slate-900 text-slate-300 min-h-screen p-4 border-r border-slate-800">
+      <aside className="hidden md:flex flex-col w-64 bg-slate-900 text-slate-300 min-h-screen p-4 border-r border-slate-800 print:hidden">
         <div className="mb-10 mt-4 px-4">
           <h1 className="text-2xl font-black text-white tracking-tight">Safe<span className="text-blue-500">Move</span></h1>
           <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider font-bold">Área do Paciente</p>

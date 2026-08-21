@@ -123,3 +123,35 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  /* Oculta navegações, menus laterais e barras inferiores automaticamente */
+  aside,
+  nav,
+  header:not(.print-header),
+  footer:not(.print-footer),
+  .no-print,
+  [data-print-hidden="true"] {
+    display: none !important;
+  }
+
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+

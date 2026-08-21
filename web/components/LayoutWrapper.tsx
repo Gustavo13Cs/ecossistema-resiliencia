@@ -6,7 +6,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
 
   return (
-    <main className={`flex-1 flex flex-col w-full min-h-screen transition-all duration-300 ${user ? 'md:ml-64' : ''}`}>
+    <main className={`flex-1 flex flex-col w-full min-h-screen transition-all duration-300 ${user ? 'md:ml-64' : ''} print:ml-0 print:m-0 print:p-0 print:min-h-0`}>
       {children}
     </main>
   )
