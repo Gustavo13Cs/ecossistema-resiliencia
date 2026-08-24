@@ -3,7 +3,7 @@
 import axios from "axios"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useParams, useRouter } from "next/navigation"
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import { toast } from "sonner"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
@@ -56,6 +56,7 @@ export default function ClienteDetailPage() {
   const queryClient = useQueryClient()
   const router = useRouter()
   const lifecycleMutationInFlight = useRef(false)
+  const [isLifecycleOperationActive, setIsLifecycleOperationActive] = useState(false)
   const sessionUserId = user?.sub ?? "anonymous"
   const clientQuery = useQuery({
     queryKey: queryKeys.client(sessionUserId, clientId),
@@ -75,7 +76,7 @@ export default function ClienteDetailPage() {
       return response.data
     },
   })
-  const lifecyclePending = updateClient.isPending || archiveClient.isPending
+  const lifecyclePending = isLifecycleOperationActive || updateClient.isPending || archiveClient.isPending
 
   const invalidateClientRecords = async () => {
     if (!user?.sub) return
@@ -91,11 +92,13 @@ export default function ClienteDetailPage() {
     if (lifecyclePending || lifecycleMutationInFlight.current) return
 
     lifecycleMutationInFlight.current = true
+    setIsLifecycleOperationActive(true)
     try {
       await updateClient.mutateAsync(values)
       await invalidateClientRecords()
     } finally {
       lifecycleMutationInFlight.current = false
+      setIsLifecycleOperationActive(false)
     }
   }
 
@@ -103,6 +106,7 @@ export default function ClienteDetailPage() {
     if (lifecyclePending || lifecycleMutationInFlight.current) return
 
     lifecycleMutationInFlight.current = true
+    setIsLifecycleOperationActive(true)
     try {
       await archiveClient.mutateAsync()
       await invalidateClientRecords()
@@ -112,6 +116,7 @@ export default function ClienteDetailPage() {
       toast.error("Não foi possível arquivar o cliente. Tente novamente.")
     } finally {
       lifecycleMutationInFlight.current = false
+      setIsLifecycleOperationActive(false)
     }
   }
 
