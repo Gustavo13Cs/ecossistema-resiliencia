@@ -1,0 +1,41 @@
+{
+  "title": "Escolha a composição do dashboard SafeMove",
+  "question": "A identidade é a mesma nas três opções. Qual estrutura organiza melhor o trabalho diário sem depender de dados que o produto ainda não possui?",
+  "options": [
+    {
+      "id": "overview",
+      "label": "Visão geral equilibrada",
+      "kicker": "DIREÇÃO ORIGINAL",
+      "lineage": "dashboard clínico contemporâneo",
+      "thesis": "Resumo, ações e registros recentes dividem o primeiro viewport.",
+      "palette": ["#FFFFFF", "#0F172A", "#0F766E", "#E2E8F0"],
+      "materials": ["grade limpa", "cards suaves", "ícones lineares"],
+      "viewport": "Sidebar profissional, ações no topo, resumo e clientes recentes.",
+      "risk": "Depende de agenda e indicadores que só podem entrar quando a API fornecer dados reais.",
+      "comp": ".impeccable/mocks/dashboard-comp-01.png"
+    },
+    {
+      "id": "work-queue",
+      "label": "Fila de trabalho",
+      "lineage": "lista operacional priorizada",
+      "thesis": "Pendências reais lideram e clientes recentes permanecem como contexto secundário.",
+      "palette": ["#FFFFFF", "#0F172A", "#0F766E", "#E2E8F0"],
+      "materials": ["grade limpa", "linhas de status", "ícones lineares"],
+      "viewport": "Uma grande fila ocupa a área principal; cadastro e pacientes recentes ficam à direita.",
+      "risk": "Pode parecer vazia enquanto os recursos que geram pendências ainda estiverem em migração.",
+      "comp": ".impeccable/mocks/dashboard-comp-02.png"
+    },
+    {
+      "id": "client-focus",
+      "label": "Cliente em foco",
+      "lineage": "master-detail profissional",
+      "thesis": "Buscar, selecionar e agir sobre um cliente acontece no mesmo quadro.",
+      "palette": ["#FFFFFF", "#0F172A", "#0F766E", "#E2E8F0"],
+      "materials": ["grade limpa", "painel de detalhe", "ícones lineares"],
+      "viewport": "Lista de pacientes à esquerda, contexto no centro e ações específicas à direita.",
+      "risk": "Aproxima o dashboard do prontuário e pode reduzir a percepção de visão geral.",
+      "comp": ".impeccable/mocks/dashboard-comp-03.png"
+    }
+  ],
+  "followup": true
+}

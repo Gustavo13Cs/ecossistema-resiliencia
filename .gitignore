@@ -1,2 +1,4 @@
 .superpowers/
 .worktrees/
+.impeccable/config.local.json
+.impeccable/questions/
