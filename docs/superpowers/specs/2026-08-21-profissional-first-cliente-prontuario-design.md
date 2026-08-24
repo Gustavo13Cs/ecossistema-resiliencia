@@ -330,7 +330,7 @@ Se um usuário `PATIENT` atual estiver ligado a diferentes profissionais:
 - criação de nova versão;
 - cópia profunda de modelos;
 - seleção de conteúdo para PDF;
-- regras de especialidade.
+- regras de especialidade;
 - geração de eventos de auditoria para ações críticas.
 
 ### 15.2 Integração da API

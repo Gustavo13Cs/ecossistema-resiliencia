@@ -2,26 +2,17 @@
 
 LINK - https://ecossistema-resiliencia.vercel.app/
 
-Uma plataforma multidisciplinar integrada para gestão centralizada de pacientes, conectando **Nutricionistas**, **Personais Trainers**, **Fisioterapeutas** e **Pacientes** em um único ecossistema. Atualmente em MVP (Produto Minimamente Viável), com foco em qualidade, segurança e experiência do usuário.
+O SafeMove é uma ferramenta profissional-first para Nutricionistas, Personal Trainers e Fisioterapeutas. Na Fase 1, cada conta profissional possui uma base privada de prontuários `Client`; fluxos legados de paciente permanecem temporariamente apenas para compatibilidade durante a migração.
 
 ---
 
 ## 🎯 O Problema & A Solução
 
 ### O Cenário
-Profissionais de saúde e bem-estar trabalham em silos. Um paciente que precisa de:
-- **Nutrição** (dieta personalizada)
-- **Treino** (musculação/cardio)
-- **Reabilitação** (fisioterapia)
-
-...acaba tendo 3 prontuários desconectados, sem comunicação entre especialistas.
+Profissionais de saúde e bem-estar precisam administrar clientes, dados clínicos e prescrições sem depender de uma conta ou ação do paciente. A base anterior misturava identidade autenticável e prontuário, o que dificultava a propriedade dos dados e a evolução do produto.
 
 ### Nossa Abordagem
-**Um único hub de dados** onde todos os profissionais veem o paciente de forma holística:
-- Histórico completo em um único lugar
-- Alertas automáticos para comportamentos anômalos (inatividade, platô, overtraining)
-- Compartilhamento seguro de informações com permissões por role
-- Compliance com boas práticas de saúde
+Na Fase 1, cada conta escolhe uma única atuação profissional e administra somente sua própria base de `Client`. Cadastro profissional, CRUD, arquivamento e isolamento por proprietário formam a fundação concluída. Planos versionados, novos modelos reutilizáveis, PDF/impressão/compartilhamento por WhatsApp ou e-mail e a retirada completa dos fluxos de paciente permanecem em fases futuras.
 
 ---
 
@@ -152,15 +143,11 @@ ecossistema-resiliencia/
 
 ## 🗄️ Modelo de Dados (Resumo)
 
-### Usuários & Permissões
-- **User**: Paciente ou Profissional (role-based)
-  - PATIENT: Pode ver suas dietas, treinos, reabilitação
-  - NUTRITIONIST: Cria dietas, vê pacientes, registra anamneses
-  - PERSONAL: Cria planos de treino, alerta pacientes
-  - PHYSIO: Cria planos de reabilitação, avaliações fisioterapêuticas
-  - ADMIN: Gestão geral
-
-- **ProfessionalPatientLink**: Conexão entre profissional e paciente (permite revogar acesso sem deletar dados)
+### Identidade profissional & Prontuários
+- **User**: identidade autenticável. Novos cadastros públicos aceitam uma única atuação profissional: `NUTRITIONIST`, `PERSONAL` ou `PHYSIO`.
+- **Client**: prontuário sem login, privado da conta profissional proprietária. A Fase 1 oferece cadastro, consulta, atualização, arquivamento e restauração.
+- **Isolamento**: a API deriva o proprietário da autenticação e trata recursos de outra conta como não encontrados.
+- **Legados temporários**: `PATIENT`, `ProfessionalPatientLink`, `/membros` e `/paciente` permanecem apenas enquanto consumidores antigos são migrados; não representam o destino do produto profissional-first.
 
 ### Nutrição
 - **DietPlan**: Prescrição nutricional com macros (proteína, carbos, gordura, fibra)
@@ -289,20 +276,18 @@ npm run dev
 
 ## 📋 Funcionalidades Principais (MVP)
 
-### 🔐 Autenticação
-- [x] Registro de usuários (Paciente, Profissional)
-- [x] Login com JWT + Cookies
-- [x] Proteção de rotas por role
-- [x] Logout
-- [ ] Recuperação de senha (planejado)
-- [ ] 2FA (roadmap)
+### 👩‍⚕️ Fundação profissional (Fase 1)
+- [x] Cadastro público exclusivo de Nutricionista, Personal Trainer ou Fisioterapeuta, com uma atuação por conta
+- [x] Base de prontuários `Client` privada por profissional
+- [x] Cadastro, listagem, consulta e edição de clientes
+- [x] Arquivamento e restauração de clientes, sem exclusão pela API
+- [x] Isolamento entre contas profissionais, com recurso alheio tratado como não encontrado
 
-### 👥 Gestão de Pacientes
-- [x] Perfil do paciente com anamnese
-- [x] Ligação profissional-paciente (com permissões)
-- [x] Histórico centralizado
-- [x] Upload de dados antropométricos
-- [ ] Documentos anexados (roadmap)
+### 🔄 Transição e fases seguintes
+- [ ] Migrar dietas, treinos, reabilitações e avaliações para planos versionados vinculados a `Client`
+- [ ] Implementar novos modelos reutilizáveis independentes e cópia profunda
+- [ ] Gerar PDF e apoiar impressão ou compartilhamento manual por WhatsApp/e-mail
+- [ ] Remover os fluxos legados de paciente somente após migração e verificação dos consumidores
 
 ### 🥗 Módulo Nutrição
 - [x] Criação de planos dietéticos
