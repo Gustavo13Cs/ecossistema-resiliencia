@@ -46,6 +46,7 @@ export default function NovoClientePage() {
               </p>
             ) : null}
             <ClientForm
+              mode="create"
               submitLabel="Salvar cliente"
               pending={createClient.isPending}
               onSubmit={handleCreate}

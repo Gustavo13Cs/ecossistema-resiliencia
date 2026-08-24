@@ -14,6 +14,7 @@ describe('Cadastro profissional', () => {
   it('preserva a sessão ADMIN e oferece somente a navegação interna mínima', () => {
     let logoutRequests = 0
     let adminHomeRouteRequests = 0
+    let clinicalRequests = 0
     cy.intercept('GET', '**/auth/me', {
       statusCode: 200,
       body: { sub: 'admin-e2e', role: 'ADMIN', name: 'Admin SafeMove' },
@@ -21,6 +22,10 @@ describe('Cadastro profissional', () => {
     cy.intercept('POST', '**/auth/logout', (request) => {
       logoutRequests += 1
       request.reply({ statusCode: 201 })
+    })
+    cy.intercept('GET', '**/users', (request) => {
+      clinicalRequests += 1
+      request.reply({ statusCode: 200, body: [] })
     })
     cy.intercept(
       {
@@ -34,7 +39,7 @@ describe('Cadastro profissional', () => {
       },
     ).as('adminHomeRoute')
 
-    cy.visit('http://localhost:3001/auth/login')
+    cy.visit('http://localhost:3001/membros')
     cy.location('pathname', { timeout: 20_000 }).should('eq', '/home')
     cy.wait('@adminHomeRoute')
     cy.then(() => expect(adminHomeRouteRequests).to.be.greaterThan(0))
@@ -44,6 +49,7 @@ describe('Cadastro profissional', () => {
       cy.contains('Clientes').should('not.exist')
     })
     cy.then(() => expect(logoutRequests).to.equal(0))
+    cy.then(() => expect(clinicalRequests).to.equal(0))
   })
 
   it('oferece uma atuação obrigatória e nunca envia PATIENT', () => {

@@ -49,6 +49,10 @@ function isNotFoundError(error: unknown) {
   return axios.isAxiosError(error) && error.response?.status === 404
 }
 
+function isConflictError(error: unknown) {
+  return axios.isAxiosError(error) && error.response?.status === 409
+}
+
 export default function ClienteDetailPage() {
   const params = useParams<{ id: string }>()
   const clientId = params.id
@@ -57,6 +61,8 @@ export default function ClienteDetailPage() {
   const router = useRouter()
   const lifecycleMutationInFlight = useRef(false)
   const [isLifecycleOperationActive, setIsLifecycleOperationActive] = useState(false)
+  const [isReloadingLatest, setIsReloadingLatest] = useState(false)
+  const [formRevision, setFormRevision] = useState(0)
   const sessionUserId = user?.sub ?? "anonymous"
   const clientQuery = useQuery({
     queryKey: queryKeys.client(sessionUserId, clientId),
@@ -65,12 +71,13 @@ export default function ClienteDetailPage() {
     retry: false,
   })
   const updateClient = useMutation({
-    mutationFn: async (values: ClientFormValues) => {
-      const expectedUpdatedAt = clientQuery.data?.updatedAt
-      if (!expectedUpdatedAt) {
-        throw new Error("Versão atual do prontuário indisponível")
-      }
-
+    mutationFn: async ({
+      values,
+      expectedUpdatedAt,
+    }: {
+      values: ClientFormValues
+      expectedUpdatedAt: string
+    }) => {
       const response = await api.patch<Client>(`/clients/${clientId}`, {
         ...values,
         expectedUpdatedAt,
@@ -84,7 +91,11 @@ export default function ClienteDetailPage() {
       return response.data
     },
   })
-  const lifecyclePending = isLifecycleOperationActive || updateClient.isPending || archiveClient.isPending
+  const lifecyclePending =
+    isLifecycleOperationActive ||
+    isReloadingLatest ||
+    updateClient.isPending ||
+    archiveClient.isPending
 
   const invalidateClientRecords = async () => {
     if (!user?.sub) return
@@ -96,17 +107,45 @@ export default function ClienteDetailPage() {
     ])
   }
 
-  const handleUpdate = async (values: ClientFormValues) => {
-    if (lifecyclePending || lifecycleMutationInFlight.current) return
+  const handleUpdate = async (
+    values: ClientFormValues,
+    expectedUpdatedAt: string,
+  ) => {
+    if (lifecyclePending || lifecycleMutationInFlight.current) {
+      throw new Error("Já existe uma operação em andamento")
+    }
 
     lifecycleMutationInFlight.current = true
     setIsLifecycleOperationActive(true)
     try {
-      await updateClient.mutateAsync(values)
+      const updatedClient = await updateClient.mutateAsync({
+        values,
+        expectedUpdatedAt,
+      })
       await invalidateClientRecords()
+      return updatedClient
     } finally {
       lifecycleMutationInFlight.current = false
       setIsLifecycleOperationActive(false)
+    }
+  }
+
+  const handleReloadLatest = async () => {
+    if (isReloadingLatest || lifecycleMutationInFlight.current) return
+
+    setIsReloadingLatest(true)
+    try {
+      const result = await clientQuery.refetch()
+      if (result.error || !result.data) {
+        throw result.error ?? new Error("Cliente não encontrado")
+      }
+
+      updateClient.reset()
+      setFormRevision((currentRevision) => currentRevision + 1)
+    } catch {
+      toast.error("Não foi possível carregar a versão mais recente.")
+    } finally {
+      setIsReloadingLatest(false)
     }
   }
 
@@ -165,7 +204,19 @@ export default function ClienteDetailPage() {
             <CardTitle>Dados do cliente</CardTitle>
           </CardHeader>
           <CardContent>
-            {updateClient.error ? (
+            {updateClient.error ? isConflictError(updateClient.error) ? (
+              <div role="alert" className="mb-4 space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <p>O prontuário mudou desde que você abriu esta tela.</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isReloadingLatest}
+                  onClick={handleReloadLatest}
+                >
+                  {isReloadingLatest ? "Carregando..." : "Carregar versão mais recente"}
+                </Button>
+              </div>
+            ) : (
               <p role="alert" className="mb-4 text-sm text-red-600">
                 Não foi possível salvar as alterações. Tente novamente.
               </p>
@@ -176,7 +227,10 @@ export default function ClienteDetailPage() {
               </p>
             ) : null}
             <ClientForm
+              key={`${clientId}:${formRevision}`}
+              mode="update"
               initialValues={clientQuery.data}
+              initialVersion={clientQuery.data.updatedAt}
               submitLabel="Salvar alterações"
               pending={lifecyclePending}
               onSubmit={handleUpdate}

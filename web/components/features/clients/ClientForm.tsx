@@ -7,12 +7,26 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import type { ClientFormValues } from "@/types/client"
 
-type ClientFormProps = {
+type SharedClientFormProps = {
   initialValues?: Partial<ClientFormValues>
   submitLabel: string
   pending: boolean
-  onSubmit: (values: ClientFormValues) => Promise<void>
 }
+
+type ClientFormProps = SharedClientFormProps & (
+  | {
+      mode: "create"
+      onSubmit: (values: ClientFormValues) => Promise<void>
+    }
+  | {
+      mode: "update"
+      initialVersion: string
+      onSubmit: (
+        values: ClientFormValues,
+        snapshotVersion: string,
+      ) => Promise<{ updatedAt: string }>
+    }
+)
 
 type ClientFormState = Record<keyof ClientFormValues, string>
 
@@ -85,8 +99,11 @@ function TextField({
   )
 }
 
-export function ClientForm({ initialValues, submitLabel, pending, onSubmit }: ClientFormProps) {
-  const [values, setValues] = useState<ClientFormState>(() => createInitialState(initialValues))
+export function ClientForm(props: ClientFormProps) {
+  const [values, setValues] = useState<ClientFormState>(() => createInitialState(props.initialValues))
+  const [snapshotVersion, setSnapshotVersion] = useState<string | null>(() =>
+    props.mode === "update" ? props.initialVersion : null,
+  )
 
   const updateField = (field: keyof ClientFormState, value: string) => {
     setValues((currentValues) => ({ ...currentValues, [field]: value }))
@@ -120,14 +137,23 @@ export function ClientForm({ initialValues, submitLabel, pending, onSubmit }: Cl
     }
 
     try {
-      await onSubmit(formValues)
+      if (props.mode === "update") {
+        if (!snapshotVersion) {
+          throw new Error("Versão atual do prontuário indisponível")
+        }
+
+        const updatedClient = await props.onSubmit(formValues, snapshotVersion)
+        setSnapshotVersion(updatedClient.updatedAt)
+      } else {
+        await props.onSubmit(formValues)
+      }
     } catch {
       // The owner of the mutation renders an actionable error state.
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8" aria-busy={pending}>
+    <form onSubmit={handleSubmit} className="space-y-8" aria-busy={props.pending}>
       <section aria-labelledby="dados-principais" className="space-y-4">
         <h2 id="dados-principais" className="text-lg font-semibold text-slate-800">
           Dados principais
@@ -206,8 +232,8 @@ export function ClientForm({ initialValues, submitLabel, pending, onSubmit }: Cl
         </div>
       </section>
 
-      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-        {pending ? "Salvando cliente..." : submitLabel}
+      <Button type="submit" disabled={props.pending} className="w-full sm:w-auto">
+        {props.pending ? "Salvando cliente..." : props.submitLabel}
       </Button>
     </form>
   )

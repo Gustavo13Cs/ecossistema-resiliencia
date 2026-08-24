@@ -1,4 +1,121 @@
 describe("Ciclo de vida de clientes", () => {
+  const clientFixture = (name: string, updatedAt: string) => ({
+    id: "client-snapshot",
+    professionalId: "pro-1",
+    name,
+    email: null,
+    phone: null,
+    birthDate: null,
+    gender: null,
+    goal: null,
+    height: null,
+    initialWeight: null,
+    allergies: null,
+    pathologies: null,
+    typicalSleep: null,
+    stressLevel: null,
+    foodRelationship: null,
+    psychologyHistory: null,
+    exerciseType: null,
+    exerciseFrequency: null,
+    exerciseDuration: null,
+    hasPersonal: null,
+    workActivityLevel: null,
+    professionalNotes: null,
+    privacyNotes: null,
+    status: "ACTIVE",
+    createdAt: "2026-08-24T11:00:00.000Z",
+    updatedAt,
+  })
+
+  it("mantém campos e versão no mesmo snapshot durante refetch e conflito", () => {
+    let clientFetches = 0
+    let updateRequests = 0
+
+    cy.intercept("GET", "**/auth/me", {
+      statusCode: 200,
+      body: { sub: "pro-1", role: "NUTRITIONIST", name: "Dra. Ana" },
+    })
+    cy.intercept("GET", "**/clients/client-snapshot", (request) => {
+      clientFetches += 1
+
+      if (clientFetches === 1) {
+        request.alias = "snapshotInitial"
+        request.reply({ body: clientFixture("Ana inicial", "2026-08-24T12:00:00.000Z") })
+        return
+      }
+
+      if (clientFetches === 2) {
+        request.alias = "snapshotExternalRefetch"
+        request.reply({ body: clientFixture("Ana externa", "2026-08-24T12:00:02.000Z") })
+        return
+      }
+
+      if (clientFetches === 3) {
+        request.alias = "snapshotManualReload"
+        request.reply({ body: clientFixture("Ana mais recente", "2026-08-24T12:00:03.000Z") })
+        return
+      }
+
+      request.alias = "snapshotAfterSaveRefetch"
+      request.reply({ body: clientFixture("Após recarregar", "2026-08-24T12:00:04.000Z") })
+    })
+    cy.intercept("PATCH", "**/clients/client-snapshot", (request) => {
+      updateRequests += 1
+
+      if (updateRequests === 1) {
+        expect(request.body).to.deep.include({
+          name: "Rascunho 1",
+          expectedUpdatedAt: "2026-08-24T12:00:00.000Z",
+        })
+        request.reply({
+          statusCode: 200,
+          body: clientFixture("Rascunho 1", "2026-08-24T12:00:01.000Z"),
+        })
+        return
+      }
+
+      if (updateRequests === 2) {
+        expect(request.body).to.deep.include({
+          name: "Rascunho 2",
+          expectedUpdatedAt: "2026-08-24T12:00:01.000Z",
+        })
+        request.reply({
+          statusCode: 409,
+          body: { message: "O prontuário foi alterado em outra sessão." },
+        })
+        return
+      }
+
+      expect(request.body).to.deep.include({
+        name: "Após recarregar",
+        expectedUpdatedAt: "2026-08-24T12:00:03.000Z",
+      })
+      request.reply({
+        statusCode: 200,
+        body: clientFixture("Após recarregar", "2026-08-24T12:00:04.000Z"),
+      })
+    }).as("snapshotUpdate")
+
+    cy.visit("http://localhost:3001/clientes/client-snapshot")
+    cy.wait("@snapshotInitial")
+    cy.get('[name="name"]').should("have.value", "Ana inicial").clear().type("Rascunho 1")
+    cy.contains("button", "Salvar alterações").click()
+    cy.wait("@snapshotUpdate")
+    cy.wait("@snapshotExternalRefetch")
+    cy.get('[name="name"]').should("have.value", "Rascunho 1").clear().type("Rascunho 2")
+    cy.contains("button", "Salvar alterações").should("not.be.disabled").click()
+    cy.wait("@snapshotUpdate")
+    cy.contains("O prontuário mudou desde que você abriu esta tela.").should("be.visible")
+    cy.contains("button", "Carregar versão mais recente").click()
+    cy.wait("@snapshotManualReload")
+    cy.get('[name="name"]').should("have.value", "Ana mais recente").clear().type("Após recarregar")
+    cy.contains("button", "Salvar alterações").click()
+    cy.wait("@snapshotUpdate")
+    cy.wait("@snapshotAfterSaveRefetch")
+    cy.then(() => expect(updateRequests).to.equal(3))
+  })
+
   it("edita, arquiva e preserva o prontuário sem exclusão", () => {
     let archiveRequests = 0
     let clientFetches = 0
@@ -90,7 +207,7 @@ describe("Ciclo de vida de clientes", () => {
     cy.contains("button", "Arquivar cliente").click()
     cy.contains("button", "Confirmar arquivamento").click()
     cy.wait("@archiveClient")
-    cy.location("pathname").should("eq", "/clientes")
+    cy.location("pathname", { timeout: 20_000 }).should("eq", "/clientes")
     cy.contains("Excluir cliente").should("not.exist")
     cy.then(() => expect(archiveRequests).to.equal(1))
     cy.then(() => expect(deleteRequests).to.equal(0))
@@ -137,14 +254,16 @@ describe("Ciclo de vida de clientes", () => {
     cy.contains("button", "Arquivados").click()
     cy.wait("@archivedClients")
     cy.contains("Bia").should("be.visible")
-    cy.contains("button", "Restaurar cliente").then(($button) => {
-      const button = $button[0]
-      button.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }))
-      button.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }))
-    })
+    cy.contains("button", "Restaurar cliente", { timeout: 20_000 })
+      .should("be.visible")
+      .then(($button) => {
+        const button = $button[0]
+        button.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }))
+        button.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }))
+      })
     cy.wait("@restoreClient")
     cy.wait("@archivedClients")
-    cy.contains("Cliente restaurado com sucesso.").should("be.visible")
+    cy.contains("Cliente restaurado com sucesso.", { timeout: 20_000 }).should("be.visible")
     cy.contains("Excluir cliente").should("not.exist")
     cy.then(() => expect(restoreRequests).to.equal(1))
     cy.then(() => expect(deleteRequests).to.equal(0))

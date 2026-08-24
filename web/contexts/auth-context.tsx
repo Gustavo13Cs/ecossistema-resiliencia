@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const queryClient = useQueryClient()
   const invalidRoleLogoutUserId = useRef<string | null>(null)
+  const isAdminRedirecting = user?.role === 'ADMIN' && pathname !== '/home'
 
   const setAuthenticatedUser = useCallback((nextUser: User) => {
     setUser((currentUser) => {
@@ -99,11 +100,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!user && !isPublicRoute) {
         router.replace("/auth/login")
       } else if (user) {
-        if (isPublicRoute) {
-          router.push(getRedirectPath(user.role))
+        if (user.role === 'ADMIN' && pathname !== '/home') {
+          router.replace('/home')
         }
-        else if (user.role === 'ADMIN' && pathname !== '/home') {
-          router.push('/home')
+        else if (isPublicRoute) {
+          router.push(getRedirectPath(user.role))
         }
         else if (user.role === 'PATIENT' && !pathname.startsWith('/paciente')) {
           router.push('/paciente')
@@ -135,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  if (isLoading || (user && !isAllowedRole(user.role))) {
+  if (isLoading || (user && !isAllowedRole(user.role)) || isAdminRedirecting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
