@@ -1,5 +1,10 @@
+import type { ClientStatus } from "@/types/client"
+
 export const queryKeys = {
   users: (sessionUserId: string) => ["users", sessionUserId] as const,
+  clients: (sessionUserId: string, status: ClientStatus) =>
+    ["clients", sessionUserId, status] as const,
+  client: (sessionUserId: string, clientId: string) => ["client", sessionUserId, clientId] as const,
   patient: (sessionUserId: string, patientId: string) => ["patient", sessionUserId, patientId] as const,
   assessments: (sessionUserId: string, patientId: string) => ["assessments", sessionUserId, patientId] as const,
   anamneses: (sessionUserId: string, patientId: string) => ["anamneses", sessionUserId, patientId] as const,
