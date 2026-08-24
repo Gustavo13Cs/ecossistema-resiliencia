@@ -6,6 +6,7 @@ param(
 $webDir = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $outFile = Join-Path $env:TEMP "safemove-cypress-$PID-out.log"
 $errFile = Join-Path $env:TEMP "safemove-cypress-$PID-err.log"
+$startupDeadline = [System.Diagnostics.Stopwatch]::StartNew()
 $server = Start-Process -FilePath 'cmd.exe' `
   -ArgumentList '/c', 'npm.cmd run dev' `
   -WorkingDirectory $webDir `
@@ -16,12 +17,19 @@ $server = Start-Process -FilePath 'cmd.exe' `
 
 try {
   $ready = $false
-  for ($attempt = 0; $attempt -lt 90; $attempt++) {
+  while ($startupDeadline.Elapsed.TotalSeconds -lt 90) {
+    $remainingSeconds = 90 - $startupDeadline.Elapsed.TotalSeconds
+    $requestTimeoutSeconds = [int][Math]::Floor([Math]::Min(2, $remainingSeconds))
+    if ($requestTimeoutSeconds -lt 1) { break }
+
     try {
-      $response = Invoke-WebRequest -Uri 'http://localhost:3001/auth/login' -UseBasicParsing -TimeoutSec 2
+      $response = Invoke-WebRequest -Uri 'http://localhost:3001/auth/login' -UseBasicParsing -TimeoutSec $requestTimeoutSeconds
       if ($response.StatusCode -ge 200) { $ready = $true; break }
     } catch {}
-    Start-Sleep -Seconds 1
+
+    $remainingMilliseconds = [int][Math]::Floor((90 - $startupDeadline.Elapsed.TotalSeconds) * 1000)
+    if ($remainingMilliseconds -le 0) { break }
+    Start-Sleep -Milliseconds ([Math]::Min(1000, $remainingMilliseconds))
   }
   if (-not $ready) {
     Get-Content $outFile, $errFile -ErrorAction SilentlyContinue

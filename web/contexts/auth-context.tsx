@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { api } from "@/lib/api"
 import { useQueryClient } from "@tanstack/react-query"
@@ -21,9 +21,15 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+const publicRoutes = new Set(["/", "/auth/login", "/auth/register"])
+const professionalRoles = new Set(["NUTRITIONIST", "PERSONAL", "PHYSIO"])
+const allowedRoles = new Set(["PATIENT", ...professionalRoles])
+
+const isAllowedRole = (role?: string) => allowedRoles.has(role ?? "")
+
 const getRedirectPath = (role?: string) => {
   if (role === 'PATIENT') return '/paciente'
-  if (['NUTRITIONIST', 'PERSONAL', 'PHYSIO'].includes(role ?? '')) {
+  if (professionalRoles.has(role ?? '')) {
     return '/clientes'
   }
   return '/auth/login'
@@ -35,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const queryClient = useQueryClient()
+  const invalidRoleLogoutUserId = useRef<string | null>(null)
 
   const setAuthenticatedUser = useCallback((nextUser: User) => {
     setUser((currentUser) => {
@@ -44,8 +51,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return nextUser
     })
   }, [queryClient])
-
-  const publicRoutes = ["/", "/auth/login", "/auth/register"]
 
   // Ao montar o provider (ex: refresh de página), tenta hidratar o usuário
   // a partir do cookie HttpOnly via GET /auth/me.
@@ -69,10 +74,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading) {
-      const isPublicRoute = publicRoutes.includes(pathname)
+      if (user && !isAllowedRole(user.role)) {
+        if (invalidRoleLogoutUserId.current === user.sub) {
+          return
+        }
+
+        invalidRoleLogoutUserId.current = user.sub
+        void (async () => {
+          try {
+            await api.post('/auth/logout')
+          } finally {
+            queryClient.clear()
+            setUser(null)
+            router.replace('/auth/login')
+          }
+        })()
+        return
+      }
+
+      invalidRoleLogoutUserId.current = null
+      const isPublicRoute = publicRoutes.has(pathname)
 
       if (!user && !isPublicRoute) {
-        router.push("/auth/login")
+        router.replace("/auth/login")
       } else if (user) {
         if (isPublicRoute) {
           router.push(getRedirectPath(user.role))
@@ -85,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     }
-  }, [user, isLoading, pathname, router])
+  }, [user, isLoading, pathname, queryClient, router])
 
   // Chamado pelo componente de login APÓS a requisição POST /auth/login ter sido feita com sucesso.
   // O cookie já foi setado pelo servidor — basta buscar os dados do usuário.
@@ -107,7 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  if (isLoading) {
+  if (isLoading || (user && !isAllowedRole(user.role))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>

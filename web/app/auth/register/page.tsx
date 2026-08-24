@@ -70,8 +70,8 @@ export default function RegisterPage() {
           </CardHeader>
           <CardContent className="pt-8">
             <form onSubmit={handleRegister} className="space-y-8">
-              <div className="space-y-3">
-                <Label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Como você quer utilizar a plataforma?</Label>
+              <div className="space-y-3" role="group" aria-labelledby="professional-role-label">
+                <p id="professional-role-label" className="text-sm font-bold text-slate-700 uppercase tracking-wider">Como você quer utilizar a plataforma?</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {roles.map((r) => {
                     const Icon = r.icon
@@ -81,6 +81,7 @@ export default function RegisterPage() {
                       <button
                         type="button"
                         key={r.id}
+                        aria-pressed={isActive}
                         onClick={() => setFormData({ ...formData, role: r.id })}
                         className={`cursor-pointer rounded-xl border-2 p-4 flex flex-col items-center justify-center gap-3 transition-all duration-200 ${
                           isActive 

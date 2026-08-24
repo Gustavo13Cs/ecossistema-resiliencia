@@ -1,4 +1,16 @@
 describe('Cadastro profissional', () => {
+  it('encerra a sessão com papel desconhecido antes de exibir rota protegida', () => {
+    cy.intercept('GET', '**/auth/me', {
+      statusCode: 200,
+      body: { sub: 'unknown-e2e', role: 'ADMIN', name: 'Papel desconhecido' },
+    })
+    cy.intercept('POST', '**/auth/logout', { statusCode: 201 }).as('logout')
+
+    cy.visit('http://localhost:3001/membros')
+    cy.wait('@logout')
+    cy.location('pathname').should('eq', '/auth/login')
+  })
+
   it('oferece uma atuação obrigatória e nunca envia PATIENT', () => {
     cy.intercept('POST', '**/auth/register', (request) => {
       expect(request.body).to.deep.include({
