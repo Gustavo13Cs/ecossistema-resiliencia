@@ -4,16 +4,10 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { useRouter, usePathname } from "next/navigation"
 import { api } from "@/lib/api"
 import { useQueryClient } from "@tanstack/react-query"
-
-type User = {
-  sub: string;
-  role: string;
-  email?: string;
-  name?: string;
-}
+import type { AuthUser } from "@/types/auth"
 
 type AuthContextType = {
-  user: User | null;
+  user: AuthUser | null;
   isLoading: boolean;
   login: () => Promise<void>;
   logout: () => Promise<void>;
@@ -32,7 +26,7 @@ const getRedirectPath = (role?: string) => {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
@@ -40,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const invalidRoleLogoutUserId = useRef<string | null>(null)
   const isAdminRedirecting = user?.role === 'ADMIN' && pathname !== '/home'
 
-  const setAuthenticatedUser = useCallback((nextUser: User) => {
+  const setAuthenticatedUser = useCallback((nextUser: AuthUser) => {
     setUser((currentUser) => {
       if (currentUser?.sub && currentUser.sub !== nextUser.sub) {
         queryClient.clear()
@@ -55,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const hydrateUser = async () => {
       try {
-        const { data } = await api.get<User>('/auth/me')
+        const { data } = await api.get<AuthUser>('/auth/me')
         setAuthenticatedUser(data)
       } catch {
         // Cookie expirado ou ausente — usuário não autenticado
@@ -107,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Chamado pelo componente de login APÓS a requisição POST /auth/login ter sido feita com sucesso.
   // O cookie já foi setado pelo servidor — basta buscar os dados do usuário.
   const login = async () => {
-    const { data } = await api.get<User>('/auth/me')
+    const { data } = await api.get<AuthUser>('/auth/me')
     setAuthenticatedUser(data)
     router.push(getRedirectPath(data.role))
   }
