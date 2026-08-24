@@ -27,7 +27,7 @@ const isAllowedRole = (role?: string) => allowedRoles.has(role ?? "")
 
 const getRedirectPath = (role?: string) => {
   if (role === 'ADMIN') return '/home'
-  return '/clientes'
+  return '/home'
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
