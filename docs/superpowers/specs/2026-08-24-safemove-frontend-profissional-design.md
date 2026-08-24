@@ -2,7 +2,7 @@
 
 **Data:** 24 de agosto de 2026
 
-**Status:** design aprovado em conversa; aguardando revisão deste documento
+**Status:** aprovado pelo usuário em 24 de agosto de 2026
 
 **Superfície inicial:** `web/`
 
