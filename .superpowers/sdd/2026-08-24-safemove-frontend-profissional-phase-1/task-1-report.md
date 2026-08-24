@@ -42,3 +42,31 @@ git diff --check                               # PASS
 - A instalação reportou 17 vulnerabilidades transitivas (`4 moderate`, `12 high`, `1 critical`); nenhuma correção automática foi aplicada, pois o escopo era restaurar gates sem atualizar/remover dependências runtime.
 - O lint legado original continha 33 erros e 2 warnings: `react-hooks/exhaustive-deps` (2), `react-hooks/immutability` (6), `react-hooks/purity` (10), `react-hooks/set-state-in-effect` (5) e `react/no-unescaped-entities` (12). Os cinco overrides são uma ponte de compatibilidade explícita; todo código novo da fundação é avaliado estritamente por essas mesmas regras.
 - Vitest/ESLint precisam ser executados fora do sandbox desta sessão porque esbuild resolve o caminho absoluto do config; isso não é uma limitação do repositório.
+
+## Fix Round 1
+
+### Mudanças
+
+- Adicionados `vite@^6.4.1` e `@vitest/coverage-v8@^3.2.4` em `web/package.json`; o lock agora resolve Vite `6.4.1`, compatível com o peer do `@vitejs/plugin-react@4.3.4` (`^4.2.0 || ^5.0.0 || ^6.0.0`). O provider V8 instalado é `3.2.4` e exige Vitest `3.2.4`.
+- Regenerado `web/package-lock.json` com `npm.cmd install --save-dev --legacy-peer-deps vite@^6.4.1 @vitest/coverage-v8@^3.2.4`. O flag continua necessário apenas para o conflito de runtime preexistente `vaul@0.9.9`/React 19; o conflito novo plugin-react/Vite 7 foi removido.
+- Removido `next-env.d.ts` de `globalIgnores`; o lint agora também avalia esse arquivo.
+
+### Red e verificação
+
+- Antes da instalação, `npm.cmd run test:coverage` falhou como esperado com `MISSING DEPENDENCY Cannot find dependency '@vitest/coverage-v8'` (exit 1).
+- Após a instalação, `npm.cmd run test:coverage` concluiu com `Coverage enabled with v8`, 1 arquivo e 4 testes passando. A cobertura da política foi 95.77% de statements/lines.
+- `npm.cmd test -- professional-workspace.test.ts`: PASS, 4/4.
+- `npm.cmd run lint`: PASS, zero warnings.
+- `npm.cmd run typecheck`: PASS.
+- `git diff --check`: PASS.
+
+### Arquivos
+
+- `web/package.json`
+- `web/package-lock.json`
+- `web/eslint.config.mjs`
+- Este relatório
+
+### Concerns atualizados
+
+- A instalação agora reporta 18 vulnerabilidades transitivas (`4 moderate`, `13 high`, `1 critical`). Nenhum `npm audit fix` foi aplicado, pois isso extrapolaria a correção localizada do tooling.

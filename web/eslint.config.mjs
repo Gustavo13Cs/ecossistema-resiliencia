@@ -19,7 +19,7 @@ const FOUNDATION_REACT_RULES = {
 
 export default defineConfig([
   ...nextVitals,
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
+  globalIgnores([".next/**", "out/**", "build/**"]),
   {
     rules: LEGACY_REACT_COMPATIBILITY_RULES,
   },
