@@ -70,6 +70,35 @@ describe("AuthProvider session lifecycle", () => {
     setUnauthorizedHandler(null)
   })
 
+  it("announces a named loading state while the secure session hydrates", async () => {
+    let resolveSession!: (response: [number, {
+      user: typeof professional
+      csrfToken: string
+    }]) => void
+
+    mock.onGet("/auth/me").reply(() => new Promise((resolve) => {
+      resolveSession = resolve
+    }))
+    renderAuthProvider(queryClient, <SessionProbe />)
+
+    const loadingState = screen.getByRole("status", {
+      name: "Carregando sua área profissional",
+    })
+    expect(loadingState).toHaveAttribute("aria-busy", "true")
+    expect(loadingState).toHaveTextContent("Verificando sua sessão segura.")
+
+    await waitFor(() => {
+      expect(resolveSession).toBeTypeOf("function")
+    })
+    await act(async () => {
+      resolveSession([200, {
+        user: professional,
+        csrfToken: "csrf-from-session",
+      }])
+    })
+    expect(await screen.findByText("pro-1")).toBeInTheDocument()
+  })
+
   it("hydrates the wrapped session user and keeps its CSRF token in memory", async () => {
     mock.onGet("/auth/me").reply(200, {
       user: professional,

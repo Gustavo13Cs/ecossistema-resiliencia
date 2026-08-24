@@ -107,7 +107,28 @@ describe("AppShell", () => {
     },
   )
 
-  it("keeps the mobile menu and account logout operable in keyboard order", async () => {
+  it.each(ROLE_CASES)(
+    "keeps the $role mobile workspace isolated from other professions",
+    async ({ role, ownLinks, foreignLinks }) => {
+      const user = userEvent.setup()
+      renderShell(role)
+
+      await user.click(screen.getByRole("button", { name: "Abrir menu" }))
+
+      const mobileNavigation = within(
+        screen.getByRole("dialog", { name: "Menu de navegação" }),
+      ).getByRole("navigation", { name: "Navegação móvel" })
+
+      ownLinks.forEach((label) => {
+        expect(within(mobileNavigation).getByRole("link", { name: label })).toBeInTheDocument()
+      })
+      foreignLinks.forEach((label) => {
+        expect(within(mobileNavigation).queryByRole("link", { name: label })).not.toBeInTheDocument()
+      })
+    },
+  )
+
+  it("traps mobile focus, makes the background unreachable, and restores the trigger", async () => {
     const user = userEvent.setup()
     renderShell("PERSONAL")
 
@@ -117,22 +138,42 @@ describe("AppShell", () => {
 
     const mobileDialog = screen.getByRole("dialog", { name: "Menu de navegação" })
     const closeButton = within(mobileDialog).getByRole("button", { name: "Fechar menu" })
+    const mobileLogout = within(mobileDialog).getByRole("button", { name: "Sair" })
+    expect(closeButton).toHaveFocus()
+    expect(screen.queryByRole("link", { name: "Buscar cliente" })).not.toBeInTheDocument()
+
+    mobileLogout.focus()
+    await user.tab()
     expect(closeButton).toHaveFocus()
 
-    await user.tab()
-    expect(within(mobileDialog).getByRole("link", { name: "Início" })).toHaveFocus()
+    closeButton.focus()
+    await user.tab({ shift: true })
+    expect(mobileLogout).toHaveFocus()
 
     await user.keyboard("{Escape}")
     expect(mobileMenuButton).toHaveFocus()
+  })
+
+  it("uses an honest account region with keyboard close, focus restoration, and logout", async () => {
+    const user = userEvent.setup()
+    renderShell("PERSONAL")
 
     const accountButton = screen.getByRole("button", { name: "Abrir menu da conta" })
     accountButton.focus()
     await user.keyboard("{Enter}")
 
-    const accountMenu = screen.getByRole("menu", { name: "Conta" })
-    const logoutButton = within(accountMenu).getByRole("menuitem", { name: "Sair" })
+    const accountRegion = screen.getByRole("region", { name: "Conta" })
+    const logoutButton = within(accountRegion).getByRole("button", { name: "Sair" })
     expect(logoutButton).toHaveFocus()
 
+    await user.keyboard("{Escape}")
+    expect(screen.queryByRole("region", { name: "Conta" })).not.toBeInTheDocument()
+    expect(accountButton).toHaveFocus()
+
+    await user.keyboard("{Enter}")
+    const reopenedRegion = screen.getByRole("region", { name: "Conta" })
+    const reopenedLogout = within(reopenedRegion).getByRole("button", { name: "Sair" })
+    expect(reopenedLogout).toHaveFocus()
     await user.keyboard("{Enter}")
     expect(authState.logout).toHaveBeenCalledTimes(1)
   })

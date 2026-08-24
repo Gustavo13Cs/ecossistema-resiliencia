@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
+import { AsyncState } from "@/components/feedback/AsyncState"
 import { api, setCsrfToken, setUnauthorizedHandler } from "@/lib/api"
 import { useQueryClient } from "@tanstack/react-query"
 import type { AuthUser } from "@/types/auth"
@@ -146,8 +147,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   if (isLoading || (user && !isAllowedRole(user.role)) || isAdminRedirecting) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      <div className="flex min-h-screen items-center justify-center bg-[var(--sm-canvas)] px-4 py-8">
+        <div className="w-full max-w-xl">
+          <AsyncState
+            kind="loading"
+            title="Carregando sua área profissional"
+            description="Verificando sua sessão segura."
+          />
+        </div>
       </div>
     )
   }
