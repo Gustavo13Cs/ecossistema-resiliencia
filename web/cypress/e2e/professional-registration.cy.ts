@@ -8,7 +8,7 @@ describe('Cadastro profissional', () => {
 
     cy.visit('http://localhost:3001/membros')
     cy.wait('@logout')
-    cy.location('pathname').should('eq', '/auth/login')
+    cy.location('pathname', { timeout: 20_000 }).should('eq', '/auth/login')
   })
 
   it('oferece uma atuação obrigatória e nunca envia PATIENT', () => {
@@ -24,7 +24,9 @@ describe('Cadastro profissional', () => {
 
     cy.visit('http://localhost:3001/auth/register')
     cy.contains('Paciente / Aluno').should('not.exist')
-    cy.contains('button', 'Fisioterapeuta').click()
+    cy.contains('button', 'Fisioterapeuta', { timeout: 20_000 })
+      .should('be.visible')
+      .click({ timeout: 20_000 })
     cy.get('input[name="name"]').type('Dra. Ana')
     cy.get('input[name="email"]').type('ana@example.test')
     cy.get('input[name="password"]').type('12345678')

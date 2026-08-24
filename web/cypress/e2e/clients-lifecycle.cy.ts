@@ -2,6 +2,7 @@ describe("Ciclo de vida de clientes", () => {
   it("edita, arquiva e preserva o prontuário sem exclusão", () => {
     let archiveRequests = 0
     let clientFetches = 0
+    let clientDetailRouteRequests = 0
     let deleteRequests = 0
     let refetchStarted = false
     let releaseRefetch = () => {}
@@ -15,6 +16,19 @@ describe("Ciclo de vida de clientes", () => {
     cy.intercept("GET", "**/clients?status=ACTIVE", {
       body: [{ id: "client-1", name: "Ana", status: "ACTIVE", email: null, phone: null }],
     }).as("activeClients")
+    cy.intercept(
+      {
+        method: "GET",
+        pathname: "/clientes/client-1",
+        query: { _rsc: "*" },
+      },
+      (request) => {
+        clientDetailRouteRequests += 1
+        request.on("before:response", (response) => {
+          response.setDelay(5_250)
+        })
+      },
+    ).as("clientDetailRoute")
     cy.intercept("GET", "**/clients/client-1", (request) => {
       clientFetches += 1
       if (clientFetches === 1) {
@@ -55,6 +69,9 @@ describe("Ciclo de vida de clientes", () => {
     cy.visit("http://localhost:3001/clientes")
     cy.wait("@activeClients")
     cy.contains("a", "Ana").click()
+    cy.location("pathname", { timeout: 60_000 }).should("eq", "/clientes/client-1")
+    cy.wait("@clientDetailRoute")
+    cy.then(() => expect(clientDetailRouteRequests).to.be.greaterThan(0))
     cy.wait("@clientInitial")
     cy.get('[name="name"]').clear().type("Ana Atualizada")
     cy.contains("button", "Salvar alterações").click()
