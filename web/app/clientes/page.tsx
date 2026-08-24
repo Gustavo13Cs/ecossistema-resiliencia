@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -51,6 +51,10 @@ export default function ClientesPage() {
   const [status, setStatus] = useState<ClientStatus>("ACTIVE")
   const { user } = useAuth()
   const queryClient = useQueryClient()
+  const restoringClientLocks = useRef(new Set<string>())
+  const [restoringClientIds, setRestoringClientIds] = useState<Set<string>>(
+    () => new Set(),
+  )
   const { data: clients = [], error, isPending } = useClients(status)
   const restoreClient = useMutation({
     mutationFn: async (clientId: string) => {
@@ -65,6 +69,11 @@ export default function ClientesPage() {
       return
     }
 
+    if (restoringClientLocks.current.has(clientId)) return
+
+    restoringClientLocks.current.add(clientId)
+    setRestoringClientIds((currentIds) => new Set(currentIds).add(clientId))
+
     try {
       await restoreClient.mutateAsync(clientId)
       await Promise.all([
@@ -75,6 +84,13 @@ export default function ClientesPage() {
       toast.success("Cliente restaurado com sucesso.")
     } catch {
       toast.error("Não foi possível restaurar o cliente. Tente novamente.")
+    } finally {
+      restoringClientLocks.current.delete(clientId)
+      setRestoringClientIds((currentIds) => {
+        const nextIds = new Set(currentIds)
+        nextIds.delete(clientId)
+        return nextIds
+      })
     }
   }
 
@@ -140,7 +156,7 @@ export default function ClientesPage() {
                         key={client.id}
                         client={client}
                         status={status}
-                        restoring={restoreClient.isPending}
+                        restoring={restoringClientIds.has(client.id)}
                         onRestore={handleRestore}
                       />
                     ))}

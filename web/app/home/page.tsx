@@ -28,6 +28,29 @@ interface QuickAction {
 
 export default function HomePage() {
   const { user } = useAuth()
+
+  if (user?.role === 'ADMIN') {
+    return (
+      <div className="min-h-screen bg-slate-50 py-8">
+        <main className="mx-auto w-full max-w-4xl px-6 md:px-12">
+          <Card className="border-slate-200 shadow-sm">
+            <CardContent className="space-y-3 p-8">
+              <h1 className="text-3xl font-bold text-slate-800">Painel administrativo</h1>
+              <p className="text-slate-600">
+                Sessão interna ativa. As áreas clínicas permanecem restritas aos profissionais responsáveis.
+              </p>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    )
+  }
+
+  return <ProfessionalHomePage />
+}
+
+function ProfessionalHomePage() {
+  const { user } = useAuth()
   const router = useRouter()
   const { patients, patientsCount, loading } = useHomeDashboard()
 

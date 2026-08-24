@@ -23,11 +23,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const publicRoutes = new Set(["/", "/auth/login", "/auth/register"])
 const professionalRoles = new Set(["NUTRITIONIST", "PERSONAL", "PHYSIO"])
-const allowedRoles = new Set(["PATIENT", ...professionalRoles])
+const allowedRoles = new Set(["ADMIN", "PATIENT", ...professionalRoles])
 
 const isAllowedRole = (role?: string) => allowedRoles.has(role ?? "")
 
 const getRedirectPath = (role?: string) => {
+  if (role === 'ADMIN') return '/home'
   if (role === 'PATIENT') return '/paciente'
   if (professionalRoles.has(role ?? '')) {
     return '/clientes'
@@ -100,6 +101,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (user) {
         if (isPublicRoute) {
           router.push(getRedirectPath(user.role))
+        }
+        else if (user.role === 'ADMIN' && pathname !== '/home') {
+          router.push('/home')
         }
         else if (user.role === 'PATIENT' && !pathname.startsWith('/paciente')) {
           router.push('/paciente')

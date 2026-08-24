@@ -66,7 +66,15 @@ export default function ClienteDetailPage() {
   })
   const updateClient = useMutation({
     mutationFn: async (values: ClientFormValues) => {
-      const response = await api.patch<Client>(`/clients/${clientId}`, values)
+      const expectedUpdatedAt = clientQuery.data?.updatedAt
+      if (!expectedUpdatedAt) {
+        throw new Error("Versão atual do prontuário indisponível")
+      }
+
+      const response = await api.patch<Client>(`/clients/${clientId}`, {
+        ...values,
+        expectedUpdatedAt,
+      })
       return response.data
     },
   })
@@ -143,7 +151,13 @@ export default function ClienteDetailPage() {
             <h1 className="text-3xl font-bold text-slate-800">{clientQuery.data.name}</h1>
             <p className="mt-1 text-slate-500">Edite e mantenha o prontuário privado deste cliente.</p>
           </div>
-          <ArchiveClientDialog pending={lifecyclePending} onConfirm={handleArchive} />
+          {clientQuery.data.status === "ARCHIVED" ? (
+            <p className="rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-800">
+              Cliente arquivado
+            </p>
+          ) : (
+            <ArchiveClientDialog pending={lifecyclePending} onConfirm={handleArchive} />
+          )}
         </header>
 
         <Card>

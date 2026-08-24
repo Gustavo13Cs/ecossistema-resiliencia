@@ -6,6 +6,9 @@ Em 2026-08-13 a cadeia de migrations foi reconstruída em uma única migration `
 (`20260813000000_baseline`) que descreve o estado completo do banco naquele momento.
 A migration seguinte (`20260813120000_add_agenda_core`) adiciona os 4 novos modelos da
 feature de agenda diária integrada.
+A terceira migration (`20260821190000_add_client_foundation`) cria a base privada de
+`Client` por profissional, com status ativo/arquivado, índice de listagem, unicidade de
+e-mail por proprietário e eventos de auditoria do ciclo de vida.
 
 ## Estratégia de startup automático (docker-compose)
 
@@ -13,7 +16,7 @@ O container da API executa, na ordem, uma lógica que funciona para **todos os c
 
 ```sh
 # Tenta aplicar as migrations normalmente.
-# Em banco NOVO → roda baseline + add_agenda_core → OK
+# Em banco NOVO → roda as 3 migrations em ordem → OK
 # Em banco EXISTENTE com tabelas antigas → falha (tabelas já existem) → vai pro fallback
 npx prisma migrate deploy || (
   # Fallback para banco de produção com tabelas antigas sem histórico Prisma:
@@ -28,9 +31,9 @@ node dist/src/main.js
 
 | Cenário | O que acontece |
 |---|---|
-| **Banco novo** (Docker dev/CI) | `deploy` cria tudo (baseline + add_agenda_core) → OK |
-| **Banco existente** (produção, tabelas já existem) | `deploy` falha no baseline → fallback: resolve + deploy novamente → só `add_agenda_core` roda → OK |
-| **Banco já migrado** (tem os dois no histórico) | `deploy` não tem nada a fazer → sai com 0 → OK |
+| **Banco novo** (Docker dev/CI) | `deploy` cria tudo (baseline + agenda + foundation de clientes) → OK |
+| **Banco existente** (produção, tabelas já existem) | `deploy` falha no baseline → fallback: resolve + deploy novamente → aplica as migrations incrementais pendentes → OK |
+| **Banco já migrado** (tem as três no histórico) | `deploy` não tem nada a fazer → sai com 0 → OK |
 
 ## Banco de testes e2e (porta 5434)
 

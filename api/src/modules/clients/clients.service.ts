@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   Client,
   ClientAuditAction,
@@ -89,14 +93,37 @@ export class ClientsService {
     dto: UpdateClientDto,
   ): Promise<Client> {
     await this.clientAccess.getOwnedClient(user, clientId);
-    const data = this.toUpdateData(dto);
+    const expectedUpdatedAt = new Date(dto.expectedUpdatedAt);
+    const nextUpdatedAt = new Date(
+      Math.max(Date.now(), expectedUpdatedAt.getTime() + 1),
+    );
+    const data = { ...this.toUpdateData(dto), updatedAt: nextUpdatedAt };
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-        const client = await tx.client.update({
-          where: { id: clientId },
+        const result = await tx.client.updateMany({
+          where: {
+            id: clientId,
+            professionalId: user.sub,
+            updatedAt: expectedUpdatedAt,
+          },
           data,
         });
+
+        if (result.count === 0) {
+          throw new ConflictException(
+            'O prontuário foi alterado em outra sessão. Recarregue antes de salvar.',
+          );
+        }
+
+        const client = await tx.client.findFirst({
+          where: { id: clientId, professionalId: user.sub },
+        });
+
+        if (!client) {
+          throw new NotFoundException('Cliente não encontrado');
+        }
+
         await tx.clientAuditEvent.create({
           data: {
             clientId,
@@ -116,13 +143,28 @@ export class ClientsService {
     clientId: string,
     status: ClientStatus,
   ): Promise<Client> {
-    await this.clientAccess.getOwnedClient(user, clientId);
-
     return this.prisma.$transaction(async (tx) => {
-      const client = await tx.client.update({
-        where: { id: clientId },
+      const result = await tx.client.updateMany({
+        where: {
+          id: clientId,
+          professionalId: user.sub,
+          status: { not: status },
+        },
         data: { status },
       });
+
+      const client = await tx.client.findFirst({
+        where: { id: clientId, professionalId: user.sub },
+      });
+
+      if (!client) {
+        throw new NotFoundException('Cliente não encontrado');
+      }
+
+      if (result.count === 0) {
+        return client;
+      }
+
       await tx.clientAuditEvent.create({
         data: {
           clientId,

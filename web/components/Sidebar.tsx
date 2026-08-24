@@ -10,7 +10,7 @@ import {
 } from "lucide-react"
 
 const MENU_ITEMS = [
-  { title: "Início", icon: Home, href: "/home", roles: ["NUTRITIONIST", "PERSONAL", "PHYSIO"], mobileName: "Início" },
+  { title: "Início", icon: Home, href: "/home", roles: ["ADMIN", "NUTRITIONIST", "PERSONAL", "PHYSIO"], mobileName: "Início" },
   { title: "Clientes", icon: Users, href: "/clientes", roles: ["NUTRITIONIST", "PERSONAL", "PHYSIO"], mobileName: "Clientes" },
   { title: "Avaliações", icon: Activity, href: "/avaliacoes", roles: ["NUTRITIONIST", "PERSONAL", "PHYSIO"], mobileName: "Avaliações" },
   { title: "Dietas", icon: ClipboardList, href: "/dietas", roles: ["NUTRITIONIST"], mobileName: "Dietas" },
@@ -31,7 +31,9 @@ export function Sidebar() {
   const mobileMenuItems = permittedMenuItems.slice(0, 4)
 
   // Define o subtítulo dinâmico com base no papel
-  const roleName = (user as any).role === 'NUTRITIONIST' 
+  const roleName = (user as any).role === 'ADMIN'
+    ? 'Administrador'
+    : (user as any).role === 'NUTRITIONIST'
     ? 'Nutricionista' 
     : (user as any).role === 'PERSONAL' 
       ? 'Personal' 
