@@ -11,8 +11,7 @@ import {
 
 const MENU_ITEMS = [
   { title: "Início", icon: Home, href: "/home", roles: ["NUTRITIONIST", "PERSONAL", "PHYSIO"], mobileName: "Início" },
-  { title: "Meus Pacientes", icon: Users, href: "/membros", roles: ["NUTRITIONIST", "PHYSIO"], mobileName: "Pacientes" },
-  { title: "Meus Alunos", icon: Users, href: "/membros", roles: ["PERSONAL"], mobileName: "Alunos" },
+  { title: "Clientes", icon: Users, href: "/clientes", roles: ["NUTRITIONIST", "PERSONAL", "PHYSIO"], mobileName: "Clientes" },
   { title: "Avaliações", icon: Activity, href: "/avaliacoes", roles: ["NUTRITIONIST", "PERSONAL", "PHYSIO"], mobileName: "Avaliações" },
   { title: "Dietas", icon: ClipboardList, href: "/dietas", roles: ["NUTRITIONIST"], mobileName: "Dietas" },
   { title: "Alimentos", icon: Apple, href: "/alimentos", roles: ["NUTRITIONIST"], mobileName: "Alimentos" },
