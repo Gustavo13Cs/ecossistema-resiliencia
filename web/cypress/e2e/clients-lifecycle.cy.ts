@@ -1,5 +1,7 @@
 describe("Ciclo de vida de clientes", () => {
   it("edita, arquiva e preserva o prontuário sem exclusão", () => {
+    let archiveRequests = 0
+    let deleteRequests = 0
     cy.intercept("GET", "**/auth/me", {
       statusCode: 200,
       body: { sub: "pro-1", role: "PERSONAL", name: "Prof. Caio" },
@@ -12,12 +14,21 @@ describe("Ciclo de vida de clientes", () => {
     }).as("client")
     cy.intercept("PATCH", "**/clients/client-1", (request) => {
       expect(request.body).to.deep.include({ name: "Ana Atualizada" })
-      request.reply({ statusCode: 200, body: { id: "client-1", ...request.body, status: "ACTIVE" } })
+      request.reply({
+        delay: 1_000,
+        statusCode: 200,
+        body: { id: "client-1", ...request.body, status: "ACTIVE" },
+      })
     }).as("updateClient")
     cy.intercept("PATCH", "**/clients/client-1/status", (request) => {
+      archiveRequests += 1
       expect(request.body).to.deep.equal({ status: "ARCHIVED" })
       request.reply({ statusCode: 200, body: { id: "client-1", status: "ARCHIVED" } })
     }).as("archiveClient")
+    cy.intercept("DELETE", "**/clients/**", (request) => {
+      deleteRequests += 1
+      request.reply({ statusCode: 500 })
+    }).as("deleteClient")
 
     cy.visit("http://localhost:3001/clientes")
     cy.wait("@activeClients")
@@ -25,14 +36,20 @@ describe("Ciclo de vida de clientes", () => {
     cy.wait("@client")
     cy.get('[name="name"]').clear().type("Ana Atualizada")
     cy.contains("button", "Salvar alterações").click()
+    cy.contains("button", "Arquivar cliente").should("be.disabled").click({ force: true })
+    cy.then(() => expect(archiveRequests).to.equal(0))
+    cy.then(() => expect(deleteRequests).to.equal(0))
     cy.wait("@updateClient")
     cy.contains("button", "Arquivar cliente").click()
     cy.contains("button", "Confirmar arquivamento").click()
     cy.wait("@archiveClient")
     cy.contains("Excluir cliente").should("not.exist")
+    cy.then(() => expect(archiveRequests).to.equal(1))
+    cy.then(() => expect(deleteRequests).to.equal(0))
   })
 
   it("restaura um cliente arquivado sem pedir exclusão", () => {
+    let deleteRequests = 0
     cy.intercept("GET", "**/auth/me", {
       statusCode: 200,
       body: { sub: "pro-1", role: "PHYSIO", name: "Dra. Lia" },
@@ -45,6 +62,10 @@ describe("Ciclo de vida de clientes", () => {
       expect(request.body).to.deep.equal({ status: "ACTIVE" })
       request.reply({ statusCode: 200, body: { id: "client-2", status: "ACTIVE" } })
     }).as("restoreClient")
+    cy.intercept("DELETE", "**/clients/**", (request) => {
+      deleteRequests += 1
+      request.reply({ statusCode: 500 })
+    }).as("deleteClient")
 
     cy.visit("http://localhost:3001/clientes")
     cy.wait("@activeClients")
@@ -54,5 +75,6 @@ describe("Ciclo de vida de clientes", () => {
     cy.contains("button", "Restaurar cliente").click()
     cy.wait("@restoreClient")
     cy.contains("Excluir cliente").should("not.exist")
+    cy.then(() => expect(deleteRequests).to.equal(0))
   })
 })

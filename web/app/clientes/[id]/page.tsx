@@ -3,6 +3,7 @@
 import axios from "axios"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useParams, useRouter } from "next/navigation"
+import { useRef } from "react"
 import { toast } from "sonner"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
@@ -54,6 +55,7 @@ export default function ClienteDetailPage() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const router = useRouter()
+  const lifecycleMutationInFlight = useRef(false)
   const sessionUserId = user?.sub ?? "anonymous"
   const clientQuery = useQuery({
     queryKey: queryKeys.client(sessionUserId, clientId),
@@ -73,6 +75,7 @@ export default function ClienteDetailPage() {
       return response.data
     },
   })
+  const lifecyclePending = updateClient.isPending || archiveClient.isPending
 
   const invalidateClientRecords = async () => {
     if (!user?.sub) return
@@ -85,21 +88,31 @@ export default function ClienteDetailPage() {
   }
 
   const handleUpdate = async (values: ClientFormValues) => {
-    await updateClient.mutateAsync(values)
-    await invalidateClientRecords()
+    if (lifecyclePending || lifecycleMutationInFlight.current) return
+
+    lifecycleMutationInFlight.current = true
+    try {
+      await updateClient.mutateAsync(values)
+      await invalidateClientRecords()
+    } finally {
+      lifecycleMutationInFlight.current = false
+    }
   }
 
-  const handleArchive = () => {
-    void (async () => {
-      try {
-        await archiveClient.mutateAsync()
-        await invalidateClientRecords()
-        toast.success("Cliente arquivado com sucesso.")
-        router.push("/clientes")
-      } catch {
-        toast.error("Não foi possível arquivar o cliente. Tente novamente.")
-      }
-    })()
+  const handleArchive = async () => {
+    if (lifecyclePending || lifecycleMutationInFlight.current) return
+
+    lifecycleMutationInFlight.current = true
+    try {
+      await archiveClient.mutateAsync()
+      await invalidateClientRecords()
+      toast.success("Cliente arquivado com sucesso.")
+      router.push("/clientes")
+    } catch {
+      toast.error("Não foi possível arquivar o cliente. Tente novamente.")
+    } finally {
+      lifecycleMutationInFlight.current = false
+    }
   }
 
   if (clientQuery.isPending) {
@@ -126,7 +139,7 @@ export default function ClienteDetailPage() {
             <h1 className="text-3xl font-bold text-slate-800">{clientQuery.data.name}</h1>
             <p className="mt-1 text-slate-500">Edite e mantenha o prontuário privado deste cliente.</p>
           </div>
-          <ArchiveClientDialog pending={archiveClient.isPending} onConfirm={handleArchive} />
+          <ArchiveClientDialog pending={lifecyclePending} onConfirm={handleArchive} />
         </header>
 
         <Card>
@@ -147,7 +160,7 @@ export default function ClienteDetailPage() {
             <ClientForm
               initialValues={clientQuery.data}
               submitLabel="Salvar alterações"
-              pending={updateClient.isPending}
+              pending={lifecyclePending}
               onSubmit={handleUpdate}
             />
           </CardContent>
