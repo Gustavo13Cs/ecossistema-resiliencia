@@ -49,7 +49,7 @@ export default function ExamesLaboratoriaisPage() {
         {/* CABEÇALHO */}
         <div className="flex items-center justify-between mb-6 bg-white p-6 rounded-2xl shadow-sm border-b-4 border-rose-500">
           <div className="flex items-center gap-4">
-            <Link href={`/membros/${patientId}`}><Button variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="w-5 h-5 text-slate-600" /></Button></Link>
+            <Link href={`/clientes/${patientId}`}><Button variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="w-5 h-5 text-slate-600" /></Button></Link>
             <div>
               <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2"><ActivitySquare className="w-6 h-6 text-rose-600" /> Exames Laboratoriais</h1>
             </div>

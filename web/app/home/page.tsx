@@ -203,7 +203,7 @@ function ProfessionalHomePage() {
   const handleSelectPatient = (patientId: string) => {
     if (!selectedAction) return
     const sub = selectedAction.targetSubPath
-    const destination = sub ? `/membros/${patientId}/${sub}` : `/membros/${patientId}`
+    const destination = sub ? `/clientes/${patientId}/${sub}` : `/clientes/${patientId}`
     setSelectedAction(null)
     router.push(destination)
   }
@@ -228,7 +228,7 @@ function ProfessionalHomePage() {
               Bem-vindo ao seu painel de {areaName}. Todos os {clientLabel.toLowerCase()} estão em dia.
             </p>
           </div>
-          <Link href="/membros" className="relative z-10">
+          <Link href="/clientes" className="relative z-10">
             <Button className="bg-white/20 hover:bg-white/30 text-white border-0 font-semibold px-6 py-5 rounded-xl backdrop-blur-sm transition-all">
               Ver {clientLabel} <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
@@ -237,7 +237,7 @@ function ProfessionalHomePage() {
 
         {/* ESTATÍSTICAS (4 CARDS) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link href="/membros">
+          <Link href="/clientes">
             <Card className="shadow-sm border-slate-100 hover:shadow-md hover:border-slate-200 transition-all cursor-pointer h-full">
               <CardContent className="p-5 flex flex-col justify-between h-full">
                 <div className="flex items-center gap-2 mb-3">
@@ -284,7 +284,7 @@ function ProfessionalHomePage() {
             </CardContent>
           </Card>
 
-          <Link href="/membros">
+          <Link href="/clientes">
             <Card className="shadow-sm border-amber-100 bg-amber-50/30 hover:shadow-md transition-all cursor-pointer h-full">
               <CardContent className="p-5 flex flex-col justify-between h-full">
                 <div className="flex items-center gap-2 mb-3">
@@ -327,7 +327,7 @@ function ProfessionalHomePage() {
                 <h4 className="font-bold text-slate-800">Gerenciar {clientLabel}</h4>
                 <p className="text-sm text-slate-500">Acesse a lista completa de cadastros, prescrições e histórico de avaliações.</p>
               </div>
-              <Link href="/membros" className="shrink-0">
+              <Link href="/clientes" className="shrink-0">
                 <Button className={`${actionBtnBg} text-white font-bold shadow-sm rounded-xl`}>
                   <Users className="w-4 h-4 mr-2" /> Ver Todos os {clientLabel}
                 </Button>
@@ -368,7 +368,7 @@ function ProfessionalHomePage() {
                   <Users className="w-5 h-5 text-amber-500" /> Inativos esta Semana
                 </h2>
                 {patients.length > 0 && (
-                  <Link href="/membros" className="text-xs font-bold text-amber-600 hover:text-amber-700 hover:underline">
+                  <Link href="/clientes" className="text-xs font-bold text-amber-600 hover:text-amber-700 hover:underline">
                     Ver todos
                   </Link>
                 )}
@@ -378,7 +378,7 @@ function ProfessionalHomePage() {
                 {patients.length === 0 ? (
                   <div className="bg-white border border-dashed border-slate-200 rounded-xl p-6 text-center space-y-3">
                     <p className="text-xs font-medium text-slate-500">Nenhum {singleClientLabel.toLowerCase()} cadastrado ainda.</p>
-                    <Link href="/membros">
+                    <Link href="/clientes/novo">
                       <Button size="sm" variant="outline" className="text-xs font-bold border-amber-300 text-amber-700 hover:bg-amber-50">
                         <UserPlus className="w-3.5 h-3.5 mr-1.5" /> Cadastrar {singleClientLabel}
                       </Button>
@@ -388,7 +388,7 @@ function ProfessionalHomePage() {
                   patients.slice(0, 3).map((patient: any) => {
                     const initial = (patient.name || "U").charAt(0).toUpperCase()
                     return (
-                      <Link key={patient.id} href={`/membros/${patient.id}`} className="block">
+                      <Link key={patient.id} href={`/clientes/${patient.id}`} className="block">
                         <div className="bg-white border border-slate-100 shadow-sm rounded-xl p-3 flex items-center justify-between hover:border-amber-300 hover:bg-amber-50/40 transition-all cursor-pointer group">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 font-bold flex items-center justify-center text-xs shadow-inner">
@@ -468,7 +468,7 @@ function ProfessionalHomePage() {
                     <p className="text-sm font-medium text-slate-400">
                       {searchTerm ? `Nenhum ${singleClientLabel.toLowerCase()} encontrado para "${searchTerm}".` : `Nenhum ${singleClientLabel.toLowerCase()} cadastrado.`}
                     </p>
-                    <Link href="/membros" onClick={() => setSelectedAction(null)}>
+                    <Link href="/clientes/novo" onClick={() => setSelectedAction(null)}>
                       <Button size="sm" className={`${actionBtnBg} text-white text-xs font-bold rounded-xl`}>
                         <UserPlus className="w-3.5 h-3.5 mr-1.5" /> Cadastrar Novo {singleClientLabel}
                       </Button>

@@ -62,7 +62,7 @@ export default function TreinosHubPage() {
   )
 
   const handleSelectPatient = (patientId: string) => {
-    router.push(`/membros/${patientId}/novo-treino`)
+    router.push(`/clientes/${patientId}/novo-treino`)
   }
 
   const handleSaveAsTemplate = async (workoutId: string) => {
@@ -194,7 +194,7 @@ export default function TreinosHubPage() {
                             </Button>
                             <Button 
                               variant="outline" size="sm" 
-                              onClick={() => router.push(`/membros/${treino.userId}/novo-treino`)}
+                              onClick={() => router.push(`/clientes/${treino.userId}/novo-treino`)}
                               className="text-blue-600 border-blue-200 hover:bg-blue-50"
                             >
                               <Edit className="w-4 h-4 mr-1" /> Abrir Ficha

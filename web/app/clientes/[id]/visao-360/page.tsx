@@ -116,7 +116,7 @@ export default function Visao360Page() {
           <AlertTriangle className="w-12 h-12 text-rose-400 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-slate-800 mb-2">Erro ao carregar</h2>
           <p className="text-slate-500 text-sm">{error || "Dados não encontrados."}</p>
-          <Link href={`/membros/${patientId}`} className="mt-6 inline-block">
+          <Link href={`/clientes/${patientId}`} className="mt-6 inline-block">
             <Button variant="outline">Voltar à ficha</Button>
           </Link>
         </div>
@@ -138,7 +138,7 @@ export default function Visao360Page() {
       <div className={`bg-white border-b-4 ${accent.border} shadow-sm sticky top-0 z-30`}>
         <div className="w-full px-6 md:px-12 lg:px-20 mx-auto py-5 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
-            <Link href={`/membros/${patientId}`}>
+            <Link href={`/clientes/${patientId}`}>
               <Button variant="outline" size="icon" className="rounded-full shadow-sm">
                 <ArrowLeft className="w-5 h-5 text-slate-600" />
               </Button>

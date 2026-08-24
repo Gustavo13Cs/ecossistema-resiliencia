@@ -65,7 +65,7 @@ export function PainelUTI() {
                 >
                   <Phone className="w-4 h-4 mr-2" /> Cobrar Aluno
                 </Button>
-                <Link href={`/membros/${alert.patient.id}`}>
+                <Link href={`/clientes/${alert.patient.id}`}>
                   <Button className="bg-slate-800 hover:bg-slate-700 text-white">
                     Ajustar Treino <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>

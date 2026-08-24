@@ -50,7 +50,7 @@ export const useSuplementos = (patientId: string) => {
     try {
       await api.post('/supplements', { patientId, ...planInfo, items: items.map(({id, ...rest}) => rest) })
       toast.success("Receituário salvo com sucesso!")
-      router.push(`/membros/${patientId}`)
+      router.push(`/clientes/${patientId}`)
     } catch (e) {
       toast.error("Erro ao salvar receituário.")
     } finally {

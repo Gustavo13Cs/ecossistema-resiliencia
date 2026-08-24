@@ -77,7 +77,7 @@ export const useCalculoEnergetico = (patientId: string) => {
         activityFactor: activityFactor
       })
       toast.success("Cálculo Energético salvo no perfil!")
-      router.push(`/membros/${patientId}`)
+      router.push(`/clientes/${patientId}`)
     } catch (error) {
       toast.error("Erro ao salvar o cálculo.")
     } finally {

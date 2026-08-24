@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { 
   Home, Users, Apple, Dumbbell, Activity, 
-  ClipboardList, Calendar, LogOut, HeartPulse, UserCircle
+  ClipboardList, LogOut, HeartPulse
 } from "lucide-react"
 
 const MENU_ITEMS = [
@@ -17,14 +17,12 @@ const MENU_ITEMS = [
   { title: "Alimentos", icon: Apple, href: "/alimentos", roles: ["NUTRITIONIST"], mobileName: "Alimentos" },
   { title: "Planilhas de Treino", icon: Dumbbell, href: "/treinos", roles: ["PERSONAL"], mobileName: "Treinos" },
   { title: "Reabilitação", icon: HeartPulse, href: "/reabilitacao", roles: ["PHYSIO"], mobileName: "Reabilitação" },
-  { title: "Minha Rotina", icon: Calendar, href: "/minha-rotina", roles: ["PATIENT"], mobileName: "Rotina" },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
   const { user, logout } = useAuth()
 
-  if (pathname.startsWith('/paciente')) return null
   if (!user) return null
 
   const permittedMenuItems = MENU_ITEMS.filter(item => item.roles.includes((user as any).role))
@@ -120,7 +118,7 @@ export function Sidebar() {
 
         <button onClick={logout} className="flex-1 flex flex-col items-center justify-center gap-1 w-full h-full py-2">
            <div className="p-1.5 rounded-full bg-transparent hover:bg-rose-50 transition-colors">
-              <UserCircle className="w-6 h-6 text-slate-400 hover:text-rose-500 transition-colors" />
+              <LogOut className="w-6 h-6 text-slate-400 hover:text-rose-500 transition-colors" />
            </div>
            <span className="text-[10px] font-medium text-slate-500 hover:text-rose-500 transition-colors">
              Sair

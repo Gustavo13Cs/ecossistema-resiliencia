@@ -59,7 +59,7 @@ export default function DietasHubPage() {
   )
 
   const handleSelectPatient = (patientId: string) => {
-    router.push(`/membros/${patientId}/nova-dieta`)
+    router.push(`/clientes/${patientId}/nova-dieta`)
   }
 
   const handleSaveAsTemplate = async (dietId: string) => {
@@ -196,7 +196,7 @@ export default function DietasHubPage() {
                             </Button>
                             <Button 
                               variant="outline" size="sm" 
-                              onClick={() => router.push(`/membros/${dieta.userId}/nova-dieta`)}
+                              onClick={() => router.push(`/clientes/${dieta.userId}/nova-dieta`)}
                               className="text-teal-600 border-teal-200 hover:bg-teal-50"
                             >
                               <Edit className="w-4 h-4 mr-1" /> Abrir Prescrição

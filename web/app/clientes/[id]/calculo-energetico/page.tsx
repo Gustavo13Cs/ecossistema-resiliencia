@@ -32,7 +32,7 @@ export default function CalculoEnergeticoPage() {
         {/* CABEÇALHO */}
         <div className="flex items-center justify-between mb-8 bg-white p-6 rounded-2xl shadow-sm border-b-4 border-indigo-500">
           <div className="flex items-center gap-4">
-            <Link href={`/membros/${params.id}`}>
+            <Link href={`/clientes/${params.id}`}>
               <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100">
                 <ArrowLeft className="w-5 h-5 text-slate-600" />
               </Button>

@@ -19,12 +19,7 @@ import { AnamnesesModule } from './modules/anamneses/anamneses.module';
 import { SupplementsModule } from './modules/supplements/supplements.module';
 import { LabExamsModule } from './modules/lab-exams/lab-exams.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
-import { WorkoutLogsModule } from './modules/workout-logs/workout-logs.module';
-import { MealLogsModule } from './modules/meal-logs/meal-logs.module';
-import { PatientAccessModule } from './common/patient-access/patient-access.module';
-import { ConsentsModule } from './modules/consents/consents.module';
 import { AgendaModule } from './modules/agenda/agenda.module';
-import { HealthCheckInsModule } from './modules/health-check-ins/health-check-ins.module';
 import { ConsultationNotesModule } from './modules/consultation-notes/consultation-notes.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { AppController } from '../app.controller';
@@ -52,12 +47,7 @@ import { AppController } from '../app.controller';
     SupplementsModule,
     LabExamsModule,
     AlertsModule,
-    WorkoutLogsModule,
-    MealLogsModule,
-    PatientAccessModule,
-    ConsentsModule,
     AgendaModule,
-    HealthCheckInsModule,
     ConsultationNotesModule,
     ClientsModule,
   ],

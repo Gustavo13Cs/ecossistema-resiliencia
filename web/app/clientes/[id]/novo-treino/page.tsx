@@ -161,11 +161,11 @@ export default function NovoTreinoPage() {
 
       // Envia para o backend
       await api.post('/workouts', payload)
-      toast.success("Plano de Treino salvo com sucesso!")
-      router.push(`/membros/${params.id}`)
+      toast.success("Plano de Treino salvo com sucesso! 💪")
+      router.push(`/clientes/${params.id}`)
       
-    } catch (error) {
-      toast.error("Erro ao salvar o treino. Verifique os dados.")
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Erro ao salvar treino.")
     } finally {
       setLoading(false)
     }
@@ -179,7 +179,7 @@ export default function NovoTreinoPage() {
         {/* CABEÇALHO */}
         <div className="flex items-center justify-between mb-4 print:hidden">
           <div className="flex items-center gap-4">
-            <Link href={`/membros/${params.id}`}>
+            <Link href={`/clientes/${params.id}`}>
               <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-200">
                 <ArrowLeft className="w-5 h-5 text-slate-600" />
               </Button>

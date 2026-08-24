@@ -43,7 +43,7 @@ export default function AvaliacoesHubPage() {
   )
 
   const handleSelectPatient = (patientId: string) => {
-    router.push(`/membros/${patientId}`)
+    router.push(`/clientes/${patientId}`)
   }
 
   return (
@@ -152,7 +152,7 @@ export default function AvaliacoesHubPage() {
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            onClick={() => router.push(`/membros/${avaliacao.userId}`)}
+                            onClick={() => router.push(`/clientes/${avaliacao.userId}`)}
                             className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
                           >
                             <Activity className="w-4 h-4 mr-1" /> Ver Gráficos

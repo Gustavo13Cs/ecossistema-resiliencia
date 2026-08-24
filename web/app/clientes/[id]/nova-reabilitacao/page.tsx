@@ -146,10 +146,10 @@ export default function NovaReabilitacaoPage() {
       }
 
       await api.post('/rehab-plans', payload)
-      toast.success("Protocolo salvo com sucesso!")
-      router.push(`/membros/${params.id}`)
-    } catch (error) {
-      toast.error("Erro ao salvar o protocolo.")
+      toast.success("Plano de Reabilitação salvo com sucesso! 🩺")
+      router.push(`/clientes/${params.id}`)
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Erro ao salvar reabilitação.")
     } finally {
       setLoading(false)
     }
@@ -162,7 +162,7 @@ export default function NovaReabilitacaoPage() {
         {/* CABEÇALHO */}
         <div className="flex items-center justify-between mb-4 print:hidden">
           <div className="flex items-center gap-4">
-            <Link href={`/membros/${params.id}`}>
+            <Link href={`/clientes/${params.id}`}>
               <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-200">
                 <ArrowLeft className="w-5 h-5 text-slate-600" />
               </Button>

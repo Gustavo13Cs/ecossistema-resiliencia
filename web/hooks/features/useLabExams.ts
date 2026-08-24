@@ -56,7 +56,7 @@ export const useLabExams = (patientId: string) => {
     try {
       await api.post('/lab-exams', { patientId, ...payload })
       toast.success("Exames registrados com sucesso!")
-      router.push(`/membros/${patientId}`)
+      router.push(`/clientes/${patientId}`)
     } catch (e) {
       toast.error("Erro ao salvar exames.")
     } finally {
