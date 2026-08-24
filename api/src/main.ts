@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
+import { createCsrfProtection } from './common/security/csrf-protection';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,13 +18,18 @@ async function bootstrap() {
     }),
   );
 
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') ?? [];
+  const allowedOrigins =
+    process.env.ALLOWED_ORIGINS?.split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean) ?? [];
 
   if (allowedOrigins.length === 0) {
     throw new Error(
       '[Bootstrap] ALLOWED_ORIGINS não configurado. A aplicação não pode subir sem ele.',
     );
   }
+
+  app.use(createCsrfProtection(allowedOrigins));
 
   app.enableCors({
     origin: (origin, callback) => {
@@ -34,7 +40,7 @@ async function bootstrap() {
       }
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
     credentials: true,
   });
 
