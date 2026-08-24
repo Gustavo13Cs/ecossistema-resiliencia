@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import AxiosMockAdapter from "axios-mock-adapter"
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react"
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import type { ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { api, setCsrfToken, setUnauthorizedHandler } from "@/lib/api"
@@ -28,8 +28,15 @@ const professional = {
 }
 
 function SessionProbe() {
-  const { user } = useAuth()
-  return <div>{user?.sub ?? "anonymous"}</div>
+  const { login, user } = useAuth()
+  return (
+    <>
+      <div>{user?.sub ?? "anonymous"}</div>
+      <button type="button" onClick={() => void login()}>
+        Reestabelecer sessão
+      </button>
+    </>
+  )
 }
 
 function renderAuthProvider(queryClient: QueryClient, children: ReactNode) {
@@ -105,5 +112,37 @@ describe("AuthProvider session lifecycle", () => {
       expect(navigation.replace).toHaveBeenCalledTimes(1)
     })
     await api.post("/records", {})
+  })
+
+  it("coalesces concurrent 401 teardown until a valid session is established", async () => {
+    mock.onGet("/auth/me").reply(200, {
+      user: professional,
+      csrfToken: "csrf-from-session",
+    })
+    mock.onGet("/clients").reply(401)
+    renderAuthProvider(queryClient, <SessionProbe />)
+    expect(await screen.findByText("pro-1")).toBeInTheDocument()
+
+    await act(async () => {
+      await Promise.allSettled([api.get("/clients"), api.get("/clients")])
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText("anonymous")).toBeInTheDocument()
+      expect(navigation.replace).toHaveBeenCalledTimes(1)
+    })
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Reestabelecer sessão" }),
+    )
+    expect(await screen.findByText("pro-1")).toBeInTheDocument()
+
+    await act(async () => {
+      await expect(api.get("/clients")).rejects.toBeDefined()
+    })
+
+    await waitFor(() => {
+      expect(navigation.replace).toHaveBeenCalledTimes(2)
+    })
   })
 })

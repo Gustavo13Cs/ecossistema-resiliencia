@@ -17,7 +17,10 @@ import { RegisterDto } from './dto/register.dto';
 import { Throttle } from '@nestjs/throttler';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthUser } from '../../common/types/auth-user';
-import { generateCsrfToken } from '../../common/security/csrf-protection';
+import {
+  generateCsrfToken,
+  isValidCsrfToken,
+} from '../../common/security/csrf-protection';
 import { AUTH_COOKIE_POLICY } from './auth-cookie-options';
 
 @Controller('auth')
@@ -33,8 +36,10 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const { access_token } = await this.authService.login(loginDto);
+    const csrfToken = generateCsrfToken();
 
     res.cookie('access_token', access_token, AUTH_COOKIE_POLICY.set);
+    res.cookie('csrf_token', csrfToken, AUTH_COOKIE_POLICY.set);
 
     return { message: 'Login realizado com sucesso' };
   }
@@ -49,9 +54,16 @@ export class AuthController {
       ...(authenticatedUser.email ? { email: authenticatedUser.email } : {}),
       ...(authenticatedUser.name ? { name: authenticatedUser.name } : {}),
     };
-    const csrfToken = generateCsrfToken();
+    const cookies = req.cookies as Record<string, unknown> | undefined;
+    const existingCsrfToken = cookies?.csrf_token;
+    const hasValidCsrfToken = isValidCsrfToken(existingCsrfToken);
+    const csrfToken = hasValidCsrfToken
+      ? existingCsrfToken
+      : generateCsrfToken();
 
-    res.cookie('csrf_token', csrfToken, AUTH_COOKIE_POLICY.set);
+    if (!hasValidCsrfToken) {
+      res.cookie('csrf_token', csrfToken, AUTH_COOKIE_POLICY.set);
+    }
 
     return { user, csrfToken };
   }

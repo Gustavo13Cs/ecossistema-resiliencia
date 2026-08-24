@@ -51,6 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [queryClient])
 
   const handleUnauthorized = useCallback(() => {
+    if (sessionExpired.current) return
+
     sessionExpired.current = true
     queryClient.clear()
     setCsrfToken(null)

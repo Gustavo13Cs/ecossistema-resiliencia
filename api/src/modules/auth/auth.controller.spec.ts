@@ -18,6 +18,7 @@ describe('AuthController registration contract', () => {
   };
 
   let app: INestApplication;
+  let httpServer: Parameters<typeof request>[0];
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -36,6 +37,7 @@ describe('AuthController registration contract', () => {
       }),
     );
     await app.init();
+    httpServer = app.getHttpServer() as Parameters<typeof request>[0];
   });
 
   beforeEach(() => {
@@ -58,10 +60,7 @@ describe('AuthController registration contract', () => {
         ...(role ? { role } : {}),
       };
 
-      await request(app.getHttpServer())
-        .post('/auth/register')
-        .send(body)
-        .expect(400);
+      await request(httpServer).post('/auth/register').send(body).expect(400);
 
       expect(authService.register).not.toHaveBeenCalled();
     },
@@ -72,7 +71,7 @@ describe('AuthController registration contract', () => {
     async (role) => {
       authService.register.mockResolvedValue({ id: 'pro-1', role });
 
-      await request(app.getHttpServer())
+      await request(httpServer)
         .post('/auth/register')
         .send({
           name: 'Profissional',
@@ -88,22 +87,28 @@ describe('AuthController registration contract', () => {
     },
   );
 
-  it('sets the access token only in an HttpOnly cookie', async () => {
-    const response = await request(app.getHttpServer())
+  it('sets both session tokens in HttpOnly cookies without exposing the JWT', async () => {
+    const response = await request(httpServer)
       .post('/auth/login')
       .send({ email: 'pro@example.test', password: '12345678' })
       .expect(200);
 
-    expect(response.headers['set-cookie'][0]).toContain(
-      'access_token=signed-token',
+    expect(response.headers['set-cookie']).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('access_token=signed-token'),
+        expect.stringMatching(/^csrf_token=[A-Za-z0-9_-]{43};/),
+      ]),
     );
-    expect(response.headers['set-cookie'][0]).toContain('HttpOnly');
+    expect(response.headers['set-cookie']).toHaveLength(2);
+    for (const cookie of response.headers['set-cookie']) {
+      expect(cookie).toContain('HttpOnly');
+    }
     expect(response.body).toEqual({ message: 'Login realizado com sucesso' });
     expect(response.body).not.toHaveProperty('access_token');
   });
 
   it('rejects a cookie-authenticated mutation without a matching CSRF header', async () => {
-    await request(app.getHttpServer())
+    await request(httpServer)
       .post('/auth/logout')
       .set('Origin', 'http://localhost:3001')
       .set('Cookie', ['access_token=signed-token', 'csrf_token=known-token'])
@@ -114,7 +119,8 @@ describe('AuthController registration contract', () => {
     const controller = new AuthController(
       authService as unknown as AuthService,
     );
-    const response = { cookie: jest.fn() } as unknown as Response;
+    const cookie = jest.fn();
+    const response = { cookie } as unknown as Response;
     const body = controller.me(
       {
         user: {
@@ -126,18 +132,63 @@ describe('AuthController registration contract', () => {
       response,
     );
 
-    expect(body).toEqual({
-      user: expect.objectContaining({
-        sub: 'pro-1',
-        role: 'NUTRITIONIST',
-      }),
-      csrfToken: expect.any(String),
+    expect(body.user).toEqual({
+      sub: 'pro-1',
+      role: 'NUTRITIONIST',
     });
+    expect(typeof body.csrfToken).toBe('string');
     expect(JSON.stringify(body)).not.toContain('signed-token');
-    expect(response.cookie).toHaveBeenCalledWith(
+    expect(cookie).toHaveBeenCalledWith(
       'csrf_token',
       expect.any(String),
       expect.objectContaining({ httpOnly: true }),
+    );
+  });
+
+  it('reuses the valid CSRF cookie across subsequent session hydration calls', () => {
+    const controller = new AuthController(
+      authService as unknown as AuthService,
+    );
+    const sessionToken = 'a'.repeat(43);
+    const requestWithSession = {
+      cookies: { csrf_token: sessionToken },
+      user: { sub: 'pro-1', role: 'NUTRITIONIST' },
+    } as unknown as Request;
+    const firstCookie = jest.fn();
+    const secondCookie = jest.fn();
+    const firstResponse = { cookie: firstCookie } as unknown as Response;
+    const secondResponse = { cookie: secondCookie } as unknown as Response;
+
+    const firstBody = controller.me(requestWithSession, firstResponse);
+    const secondBody = controller.me(requestWithSession, secondResponse);
+
+    expect(firstBody.csrfToken).toBe(sessionToken);
+    expect(secondBody.csrfToken).toBe(sessionToken);
+    expect(firstCookie).not.toHaveBeenCalled();
+    expect(secondCookie).not.toHaveBeenCalled();
+  });
+
+  it('replaces a malformed CSRF cookie during session hydration', () => {
+    const controller = new AuthController(
+      authService as unknown as AuthService,
+    );
+    const cookie = jest.fn();
+    const response = { cookie } as unknown as Response;
+
+    const body = controller.me(
+      {
+        cookies: { csrf_token: 'attacker-controlled' },
+        user: { sub: 'pro-1', role: 'NUTRITIONIST' },
+      } as unknown as Request,
+      response,
+    );
+
+    expect(body.csrfToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(body.csrfToken).not.toBe('attacker-controlled');
+    expect(cookie).toHaveBeenCalledWith(
+      'csrf_token',
+      body.csrfToken,
+      AUTH_COOKIE_POLICY.set,
     );
   });
 
@@ -181,16 +232,17 @@ describe('AuthController registration contract', () => {
     const controller = new AuthController(
       authService as unknown as AuthService,
     );
-    const response = { clearCookie: jest.fn() } as unknown as Response;
+    const clearCookie = jest.fn();
+    const response = { clearCookie } as unknown as Response;
 
     controller.logout(response);
 
-    expect(response.clearCookie).toHaveBeenCalledTimes(2);
-    expect(response.clearCookie).toHaveBeenCalledWith(
+    expect(clearCookie).toHaveBeenCalledTimes(2);
+    expect(clearCookie).toHaveBeenCalledWith(
       'access_token',
       AUTH_COOKIE_POLICY.clear,
     );
-    expect(response.clearCookie).toHaveBeenCalledWith(
+    expect(clearCookie).toHaveBeenCalledWith(
       'csrf_token',
       AUTH_COOKIE_POLICY.clear,
     );

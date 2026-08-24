@@ -4,9 +4,14 @@ import { RequestHandler } from 'express';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const PUBLIC_AUTH_MUTATIONS = new Set(['/auth/login', '/auth/register']);
+const CSRF_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 export function generateCsrfToken() {
   return randomBytes(32).toString('base64url');
+}
+
+export function isValidCsrfToken(token: unknown): token is string {
+  return typeof token === 'string' && CSRF_TOKEN_PATTERN.test(token);
 }
 
 export function assertCsrfPair(cookieToken: unknown, headerToken: unknown) {
@@ -42,13 +47,14 @@ export function createCsrfProtection(
     }
 
     if (PUBLIC_AUTH_MUTATIONS.has(request.path) && origin) return next();
-    if (!request.cookies?.access_token) return next();
+    const cookies = request.cookies as Record<string, unknown> | undefined;
+    if (!cookies?.access_token) return next();
 
     if (!origin || !allowedOrigins.includes(origin)) {
       throw new ForbiddenException('Origem obrigatória.');
     }
 
-    assertCsrfPair(request.cookies.csrf_token, request.header('x-csrf-token'));
+    assertCsrfPair(cookies.csrf_token, request.header('x-csrf-token'));
     return next();
   };
 }
