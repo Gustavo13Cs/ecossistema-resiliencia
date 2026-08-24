@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
@@ -10,7 +10,11 @@ import { ClientsService } from './clients.service';
 
 describe('ClientsService', () => {
   const tx = {
-    client: { create: jest.fn(), update: jest.fn(), findMany: jest.fn() },
+    client: {
+      create: jest.fn(),
+      updateMany: jest.fn(),
+      findFirst: jest.fn(),
+    },
     clientAuditEvent: { create: jest.fn() },
   };
   const prisma = {
@@ -99,33 +103,56 @@ describe('ClientsService', () => {
     );
   });
 
-  it('archives an owned client and writes ARCHIVED audit event', async () => {
+  it('atomically archives an owned active client and writes one ARCHIVED audit event', async () => {
     const user = { sub: 'pro-1', role: 'PHYSIO' } as const;
-    access.getOwnedClient.mockResolvedValue({
+    tx.client.updateMany.mockResolvedValue({ count: 1 });
+    tx.client.findFirst.mockResolvedValue({
       id: 'client-1',
       professionalId: 'pro-1',
+      status: 'ARCHIVED',
     });
-    tx.client.update.mockResolvedValue({ id: 'client-1', status: 'ARCHIVED' });
 
     await service.setStatus(user, 'client-1', 'ARCHIVED');
 
-    expect(access.getOwnedClient).toHaveBeenCalledWith(user, 'client-1');
-    expect(tx.client.update).toHaveBeenCalledWith({
-      where: { id: 'client-1' },
+    expect(tx.client.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'client-1',
+        professionalId: 'pro-1',
+        status: { not: 'ARCHIVED' },
+      },
       data: { status: 'ARCHIVED' },
     });
-    expect(access.getOwnedClient.mock.invocationCallOrder[0]).toBeLessThan(
-      tx.client.update.mock.invocationCallOrder[0],
-    );
+    expect(tx.client.findFirst).toHaveBeenCalledWith({
+      where: { id: 'client-1', professionalId: 'pro-1' },
+    });
     expect(tx.clientAuditEvent.create).toHaveBeenCalledWith({
       data: { clientId: 'client-1', professionalId: 'pro-1', action: 'ARCHIVED' },
     });
   });
 
-  it('does not write or audit a status change when ownership fails', async () => {
-    access.getOwnedClient.mockRejectedValue(
-      new ForbiddenException('Cliente não pertence ao profissional'),
-    );
+  it('returns the current state without auditing when status is already the target', async () => {
+    const archivedClient = {
+      id: 'client-1',
+      professionalId: 'pro-1',
+      status: 'ARCHIVED',
+    };
+    tx.client.updateMany.mockResolvedValue({ count: 0 });
+    tx.client.findFirst.mockResolvedValue(archivedClient);
+
+    await expect(
+      service.setStatus(
+        { sub: 'pro-1', role: 'PHYSIO' },
+        'client-1',
+        'ARCHIVED',
+      ),
+    ).resolves.toEqual(archivedClient);
+
+    expect(tx.clientAuditEvent.create).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 and does not audit a cross-tenant status request', async () => {
+    tx.client.updateMany.mockResolvedValue({ count: 0 });
+    tx.client.findFirst.mockResolvedValue(null);
 
     await expect(
       service.setStatus(
@@ -133,10 +160,16 @@ describe('ClientsService', () => {
         'client-1',
         'ARCHIVED',
       ),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+    ).rejects.toBeInstanceOf(NotFoundException);
 
-    expect(prisma.$transaction).not.toHaveBeenCalled();
-    expect(tx.client.update).not.toHaveBeenCalled();
+    expect(tx.client.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'client-1',
+        professionalId: 'pro-2',
+        status: { not: 'ARCHIVED' },
+      },
+      data: { status: 'ARCHIVED' },
+    });
     expect(tx.clientAuditEvent.create).not.toHaveBeenCalled();
   });
 
@@ -159,13 +192,20 @@ describe('ClientsService', () => {
 
   it('maps every mutable client field and audits an owned update', async () => {
     const user = { sub: 'pro-1', role: 'NUTRITIONIST' } as const;
+    const expectedUpdatedAt = '2026-08-24T12:00:00.000Z';
     access.getOwnedClient.mockResolvedValue({
       id: 'client-1',
       professionalId: 'pro-1',
     });
-    tx.client.update.mockResolvedValue({ id: 'client-1', name: 'Ana Maria' });
+    tx.client.updateMany.mockResolvedValue({ count: 1 });
+    tx.client.findFirst.mockResolvedValue({
+      id: 'client-1',
+      professionalId: 'pro-1',
+      name: 'Ana Maria',
+    });
 
     await service.update(user, 'client-1', {
+      expectedUpdatedAt,
       name: ' Ana Maria ',
       email: ' UPDATE@EXAMPLE.COM ',
       phone: ' 11999999999 ',
@@ -190,8 +230,12 @@ describe('ClientsService', () => {
     } as UpdateClientDto);
 
     expect(access.getOwnedClient).toHaveBeenCalledWith(user, 'client-1');
-    expect(tx.client.update).toHaveBeenCalledWith({
-      where: { id: 'client-1' },
+    expect(tx.client.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'client-1',
+        professionalId: 'pro-1',
+        updatedAt: new Date(expectedUpdatedAt),
+      },
       data: {
         name: 'Ana Maria',
         email: 'update@example.com',
@@ -214,19 +258,58 @@ describe('ClientsService', () => {
         workActivityLevel: null,
         professionalNotes: 'Nota clínica',
         privacyNotes: null,
+        updatedAt: expect.any(Date),
       },
     });
     expect(access.getOwnedClient.mock.invocationCallOrder[0]).toBeLessThan(
-      tx.client.update.mock.invocationCallOrder[0],
+      tx.client.updateMany.mock.invocationCallOrder[0],
     );
+    expect(tx.client.findFirst).toHaveBeenCalledWith({
+      where: { id: 'client-1', professionalId: 'pro-1' },
+    });
     expect(tx.clientAuditEvent.create).toHaveBeenCalledWith({
       data: { clientId: 'client-1', professionalId: 'pro-1', action: 'UPDATED' },
     });
   });
 
+  it('returns 409 without UPDATED audit when the expected version is stale', async () => {
+    const user = { sub: 'pro-1', role: 'NUTRITIONIST' } as const;
+    const expectedUpdatedAt = '2026-08-24T12:00:00.000Z';
+    access.getOwnedClient.mockResolvedValue({
+      id: 'client-1',
+      professionalId: 'pro-1',
+    });
+    tx.client.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(
+      service.update(user, 'client-1', {
+        name: 'Versão antiga',
+        expectedUpdatedAt,
+      } as UpdateClientDto),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    expect(tx.client.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'client-1',
+        professionalId: 'pro-1',
+        updatedAt: new Date(expectedUpdatedAt),
+      },
+      data: expect.objectContaining({
+        name: 'Versão antiga',
+        updatedAt: expect.any(Date),
+      }),
+    });
+    expect(tx.client.findFirst).not.toHaveBeenCalled();
+    expect(tx.clientAuditEvent.create).not.toHaveBeenCalled();
+  });
+
   it('restores an owned client and writes RESTORED audit event', async () => {
-    access.getOwnedClient.mockResolvedValue({ id: 'client-1', professionalId: 'pro-1' });
-    tx.client.update.mockResolvedValue({ id: 'client-1', status: 'ACTIVE' });
+    tx.client.updateMany.mockResolvedValue({ count: 1 });
+    tx.client.findFirst.mockResolvedValue({
+      id: 'client-1',
+      professionalId: 'pro-1',
+      status: 'ACTIVE',
+    });
 
     await service.setStatus(
       { sub: 'pro-1', role: 'PHYSIO' },
@@ -278,12 +361,33 @@ describe('Client DTO validation', () => {
     );
   });
 
-  it('skips an omitted update name but rejects null and whitespace names', async () => {
-    const omitted = plainToInstance(UpdateClientDto, {});
-    const nullable = plainToInstance(UpdateClientDto, { name: null });
-    const blank = plainToInstance(UpdateClientDto, { name: '   ' });
+  it('requires a valid expectedUpdatedAt while keeping name optional', async () => {
+    const expectedUpdatedAt = '2026-08-24T12:00:00.000Z';
+    const omittedName = plainToInstance(UpdateClientDto, { expectedUpdatedAt });
+    const missingVersion = plainToInstance(UpdateClientDto, { name: 'Ana' });
+    const invalidVersion = plainToInstance(UpdateClientDto, {
+      expectedUpdatedAt: 'not-a-date',
+    });
+    const nullable = plainToInstance(UpdateClientDto, {
+      expectedUpdatedAt,
+      name: null,
+    });
+    const blank = plainToInstance(UpdateClientDto, {
+      expectedUpdatedAt,
+      name: '   ',
+    });
 
-    await expect(validate(omitted)).resolves.toHaveLength(0);
+    await expect(validate(omittedName)).resolves.toHaveLength(0);
+    await expect(validate(missingVersion)).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ property: 'expectedUpdatedAt' }),
+      ]),
+    );
+    await expect(validate(invalidVersion)).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ property: 'expectedUpdatedAt' }),
+      ]),
+    );
     await expect(validate(nullable)).resolves.toEqual(
       expect.arrayContaining([expect.objectContaining({ property: 'name' })]),
     );

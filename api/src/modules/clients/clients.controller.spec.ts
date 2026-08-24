@@ -137,22 +137,37 @@ describe('ClientsController', () => {
   });
 
   it('passes authenticated ownership to update', async () => {
+    const expectedUpdatedAt = '2026-08-24T12:00:00.000Z';
+
     await request(app.getHttpServer())
       .patch('/clients/client-1')
-      .send({ name: 'Ana Maria' })
+      .send({ name: 'Ana Maria', expectedUpdatedAt })
       .expect(200);
 
     expect(clientsService.update).toHaveBeenCalledWith(
       authenticatedProfessional,
       'client-1',
-      { name: 'Ana Maria' },
+      { name: 'Ana Maria', expectedUpdatedAt },
     );
+  });
+
+  it('rejects an update without expectedUpdatedAt before calling the service', async () => {
+    await request(app.getHttpServer())
+      .patch('/clients/client-1')
+      .send({ name: 'Ana Maria' })
+      .expect(400);
+
+    expect(clientsService.update).not.toHaveBeenCalled();
   });
 
   it('rejects professionalId in an update request body', async () => {
     await request(app.getHttpServer())
       .patch('/clients/client-1')
-      .send({ name: 'Ana Maria', professionalId: 'pro-2' })
+      .send({
+        name: 'Ana Maria',
+        expectedUpdatedAt: '2026-08-24T12:00:00.000Z',
+        professionalId: 'pro-2',
+      })
       .expect(400);
 
     expect(clientsService.update).not.toHaveBeenCalled();

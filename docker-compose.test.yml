@@ -1,7 +1,7 @@
 # docker-compose.test.yml
 #
 # Banco de dados isolado para testes e2e.
-# NAO usa os dados de producao — banco separado na porta 5434.
+# NAO usa os dados de producao â€” banco separado na porta 5434.
 #
 # Uso:
 #   docker compose -f docker-compose.test.yml up -d

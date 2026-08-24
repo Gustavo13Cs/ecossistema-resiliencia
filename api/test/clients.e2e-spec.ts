@@ -29,6 +29,7 @@ type ClientResponse = {
   name: string;
   email: string | null;
   status: string;
+  updatedAt: string;
 };
 
 const toClientResponse = (value: unknown): ClientResponse => {
@@ -42,7 +43,8 @@ const toClientResponse = (value: unknown): ClientResponse => {
     typeof record.professionalId !== 'string' ||
     typeof record.name !== 'string' ||
     (record.email !== null && typeof record.email !== 'string') ||
-    typeof record.status !== 'string'
+    typeof record.status !== 'string' ||
+    typeof record.updatedAt !== 'string'
   ) {
     throw new Error('Resposta de cliente incompleta.');
   }
@@ -53,6 +55,7 @@ const toClientResponse = (value: unknown): ClientResponse => {
     name: record.name,
     email: record.email,
     status: record.status,
+    updatedAt: record.updatedAt,
   };
 };
 
@@ -228,19 +231,67 @@ describe('Clients tenant isolation and lifecycle (e2e)', () => {
       .expect(404);
 
     await request(app.getHttpServer())
-      .patch(`/clients/${createdBody.id}`)
-      .set(asUser(PROFESSIONAL_A, 'NUTRITIONIST'))
-      .send({ professionalId: PROFESSIONAL_B })
-      .expect(400);
+      .patch(`/clients/${createdBody.id}/status`)
+      .set(asUser(PROFESSIONAL_B, 'PERSONAL'))
+      .send({ status: 'ARCHIVED' })
+      .expect(404);
 
     await request(app.getHttpServer())
-      .patch(`/clients/${createdBody.id}/status`)
+      .patch(`/clients/${createdBody.id}`)
       .set(asUser(PROFESSIONAL_A, 'NUTRITIONIST'))
-      .send({ status: 'ARCHIVED' })
-      .expect(200)
-      .expect((response) =>
-        expect(toClientResponse(response.body).status).toBe('ARCHIVED'),
-      );
+      .send({
+        expectedUpdatedAt: createdBody.updatedAt,
+        professionalId: PROFESSIONAL_B,
+      })
+      .expect(400);
+
+    const concurrentUpdates = await Promise.all([
+      request(app.getHttpServer())
+        .patch(`/clients/${createdBody.id}`)
+        .set(asUser(PROFESSIONAL_A, 'NUTRITIONIST'))
+        .send({
+          name: 'Cliente A Atualizado 1',
+          expectedUpdatedAt: createdBody.updatedAt,
+        }),
+      request(app.getHttpServer())
+        .patch(`/clients/${createdBody.id}`)
+        .set(asUser(PROFESSIONAL_A, 'NUTRITIONIST'))
+        .send({
+          name: 'Cliente A Atualizado 2',
+          expectedUpdatedAt: createdBody.updatedAt,
+        }),
+    ]);
+
+    expect(concurrentUpdates.map(({ status }) => status).sort()).toEqual([
+      200, 409,
+    ]);
+    const successfulUpdate = concurrentUpdates.find(
+      ({ status }) => status === 200,
+    );
+    expect(successfulUpdate).toBeDefined();
+    const updatedBody = toClientResponse(successfulUpdate?.body);
+    expect(updatedBody.updatedAt).not.toBe(createdBody.updatedAt);
+    expect(
+      await prisma.clientAuditEvent.count({
+        where: { clientId: createdBody.id, action: 'UPDATED' },
+      }),
+    ).toBe(1);
+
+    const concurrentArchives = await Promise.all([
+      request(app.getHttpServer())
+        .patch(`/clients/${createdBody.id}/status`)
+        .set(asUser(PROFESSIONAL_A, 'NUTRITIONIST'))
+        .send({ status: 'ARCHIVED' }),
+      request(app.getHttpServer())
+        .patch(`/clients/${createdBody.id}/status`)
+        .set(asUser(PROFESSIONAL_A, 'NUTRITIONIST'))
+        .send({ status: 'ARCHIVED' }),
+    ]);
+
+    expect(concurrentArchives.map(({ status }) => status)).toEqual([200, 200]);
+    concurrentArchives.forEach((response) => {
+      expect(toClientResponse(response.body).status).toBe('ARCHIVED');
+    });
 
     expect(
       await prisma.clientAuditEvent.count({
@@ -270,17 +321,6 @@ describe('Clients tenant isolation and lifecycle (e2e)', () => {
       );
 
     await request(app.getHttpServer())
-      .patch(`/clients/${createdBody.id}`)
-      .set(asUser(PROFESSIONAL_A, 'NUTRITIONIST'))
-      .send({ name: 'Cliente A Atualizado' })
-      .expect(200)
-      .expect((response) =>
-        expect(toClientResponse(response.body).name).toBe(
-          'Cliente A Atualizado',
-        ),
-      );
-
-    await request(app.getHttpServer())
       .patch(`/clients/${createdBody.id}/status`)
       .set(asUser(PROFESSIONAL_A, 'NUTRITIONIST'))
       .send({ status: 'ACTIVE' })
@@ -298,7 +338,7 @@ describe('Clients tenant isolation and lifecycle (e2e)', () => {
         expect(body).toEqual([
           expect.objectContaining({
             id: createdBody.id,
-            name: 'Cliente A Atualizado',
+            name: updatedBody.name,
             status: 'ACTIVE',
           }),
         ]),
