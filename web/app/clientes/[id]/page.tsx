@@ -114,7 +114,6 @@ export default function ClienteDetailPage() {
       router.push("/clientes")
     } catch {
       toast.error("Não foi possível arquivar o cliente. Tente novamente.")
-    } finally {
       lifecycleMutationInFlight.current = false
       setIsLifecycleOperationActive(false)
     }

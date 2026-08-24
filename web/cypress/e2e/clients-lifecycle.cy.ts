@@ -3,6 +3,11 @@ describe("Ciclo de vida de clientes", () => {
     let archiveRequests = 0
     let clientFetches = 0
     let deleteRequests = 0
+    let refetchStarted = false
+    let releaseRefetch = () => {}
+    const refetchGate = new Promise<void>((resolve) => {
+      releaseRefetch = resolve
+    })
     cy.intercept("GET", "**/auth/me", {
       statusCode: 200,
       body: { sub: "pro-1", role: "PERSONAL", name: "Prof. Caio" },
@@ -12,11 +17,23 @@ describe("Ciclo de vida de clientes", () => {
     }).as("activeClients")
     cy.intercept("GET", "**/clients/client-1", (request) => {
       clientFetches += 1
-      request.reply({
-        delay: clientFetches === 1 ? 0 : 1_000,
-        body: { id: "client-1", name: "Ana", status: "ACTIVE", email: null, phone: null },
-      })
-    }).as("client")
+      if (clientFetches === 1) {
+        request.alias = "clientInitial"
+        request.reply({ body: { id: "client-1", name: "Ana", status: "ACTIVE", email: null, phone: null } })
+        return
+      }
+
+      if (clientFetches === 2) {
+        request.alias = "clientRefetch"
+        refetchStarted = true
+        return refetchGate.then(() => {
+          request.reply({ body: { id: "client-1", name: "Ana", status: "ACTIVE", email: null, phone: null } })
+        })
+      }
+
+      request.alias = "clientArchiveRefetch"
+      request.reply({ body: { id: "client-1", name: "Ana", status: "ARCHIVED", email: null, phone: null } })
+    })
     cy.intercept("PATCH", "**/clients/client-1", (request) => {
       expect(request.body).to.deep.include({ name: "Ana Atualizada" })
       request.reply({
@@ -38,15 +55,17 @@ describe("Ciclo de vida de clientes", () => {
     cy.visit("http://localhost:3001/clientes")
     cy.wait("@activeClients")
     cy.contains("a", "Ana").click()
-    cy.wait("@client")
+    cy.wait("@clientInitial")
     cy.get('[name="name"]').clear().type("Ana Atualizada")
     cy.contains("button", "Salvar alterações").click()
     cy.contains("button", "Arquivar cliente").should("be.disabled").click({ force: true })
     cy.then(() => expect(archiveRequests).to.equal(0))
     cy.then(() => expect(deleteRequests).to.equal(0))
     cy.wait("@updateClient")
+    cy.wrap(null).should(() => expect(refetchStarted).to.equal(true))
     cy.contains("button", "Arquivar cliente").should("be.disabled")
-    cy.wait("@client")
+    cy.then(() => releaseRefetch())
+    cy.wait("@clientRefetch")
     cy.contains("button", "Arquivar cliente").should("not.be.disabled")
     cy.contains("button", "Arquivar cliente").click()
     cy.contains("button", "Confirmar arquivamento").click()
