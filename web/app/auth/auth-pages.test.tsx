@@ -275,7 +275,7 @@ describe("public professional journey", () => {
     await user.click(screen.getByLabelText("E-mail"))
     await user.paste("ana@example.test")
     await user.click(password)
-    await user.paste("fraca")
+    await user.paste("senhafraca")
     await user.click(screen.getByRole("button", { name: "Criar conta" }))
 
     expect(mockApi.history.post).toHaveLength(0)
@@ -286,5 +286,49 @@ describe("public professional journey", () => {
     expect(password).toHaveAttribute("aria-invalid", "true")
     expect(password).toHaveAttribute("aria-describedby")
     expect(password.getAttribute("aria-describedby")).toContain(error.id)
+  })
+
+  it("rejects seven password code points when an emoji uses a surrogate pair", async () => {
+    const user = userEvent.setup()
+    mockApi.onPost("/auth/register").reply(201)
+    render(<RegisterPage />)
+
+    await user.click(screen.getByLabelText("Nome completo"))
+    await user.paste("Ana Souza")
+    await user.click(screen.getByLabelText("E-mail"))
+    await user.paste("ana@example.test")
+    const password = screen.getByLabelText("Senha")
+    await user.click(password)
+    await user.paste("Aa1xxx😀")
+    await user.click(screen.getByRole("button", { name: "Criar conta" }))
+
+    const error = screen.getByText(
+      "A senha precisa ter no mínimo 8 caracteres.",
+    )
+    expect(error).toBeVisible()
+    expect(password.getAttribute("aria-describedby")).toContain(error.id)
+    expect(mockApi.history.post).toHaveLength(0)
+  })
+
+  it("submits eight password code points when one is an emoji", async () => {
+    const user = userEvent.setup()
+    let submittedBody: Record<string, unknown> | undefined
+    mockApi.onPost("/auth/register").reply((config) => {
+      submittedBody = JSON.parse(config.data as string) as Record<string, unknown>
+      return [201, { id: "professional-1" }]
+    })
+    render(<RegisterPage />)
+
+    await user.click(screen.getByLabelText("Nome completo"))
+    await user.paste("Ana Souza")
+    await user.click(screen.getByLabelText("E-mail"))
+    await user.paste("ana@example.test")
+    await user.click(screen.getByLabelText("Senha"))
+    await user.paste("Aa1xxxx😀")
+    await user.click(screen.getByRole("button", { name: "Criar conta" }))
+
+    await waitFor(() => {
+      expect(submittedBody?.password).toBe("Aa1xxxx😀")
+    })
   })
 })

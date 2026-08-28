@@ -36,7 +36,10 @@ const PROFESSIONAL_ROLES: ReadonlyArray<{
 ]
 
 const PASSWORD_RULES = [
-  { label: "Mínimo de 8 caracteres", test: (value: string) => value.length >= 8 },
+  {
+    label: "Mínimo de 8 caracteres",
+    test: (value: string) => Array.from(value).length >= 8,
+  },
   { label: "Uma letra maiúscula", test: (value: string) => /\p{Lu}/u.test(value) },
   { label: "Uma letra minúscula", test: (value: string) => /\p{Ll}/u.test(value) },
   { label: "Um número", test: (value: string) => /\d/.test(value) },
@@ -116,7 +119,9 @@ export default function RegisterPage() {
     else if (!EMAIL_SHAPE.test(normalizedEmail)) {
       nextErrors.email = "Informe um e-mail válido."
     }
-    if (!PASSWORD_RULES.every((rule) => rule.test(formData.password))) {
+    if (!PASSWORD_RULES[0].test(formData.password)) {
+      nextErrors.password = "A senha precisa ter no mínimo 8 caracteres."
+    } else if (!PASSWORD_RULES.every((rule) => rule.test(formData.password))) {
       nextErrors.password = "A senha precisa atender a todos os requisitos."
     }
 
