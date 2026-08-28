@@ -52,6 +52,25 @@ function countOccurrences(value, fragment) {
   return count
 }
 
+function collectOwnedTemplates(root, visitedTemplates = new Set()) {
+  const ownedTemplates = []
+
+  for (const template of root.querySelectorAll("template")) {
+    if (visitedTemplates.has(template)) {
+      continue
+    }
+    visitedTemplates.add(template)
+
+    if (template.getAttribute(DIRECTION_CONTRACT_ATTRIBUTE) === DIRECTION_CONTRACT_ID) {
+      ownedTemplates.push(template)
+    }
+
+    ownedTemplates.push(...collectOwnedTemplates(template.content, visitedTemplates))
+  }
+
+  return ownedTemplates
+}
+
 function locateOwnedContract(html, artifactName) {
   const dom = new JSDOM(html, { includeNodeLocations: true })
   const { document } = dom.window
@@ -62,9 +81,7 @@ function locateOwnedContract(html, artifactName) {
     bodyLocation?.startTag,
     `${artifactName} does not contain a body element`,
   )
-  const ownedTemplates = [...document.querySelectorAll("template")].filter(
-    (template) => template.getAttribute(DIRECTION_CONTRACT_ATTRIBUTE) === DIRECTION_CONTRACT_ID,
-  )
+  const ownedTemplates = collectOwnedTemplates(document)
   const ownedContractCount = ownedTemplates.length
   assert.ok(
     ownedContractCount > 0,

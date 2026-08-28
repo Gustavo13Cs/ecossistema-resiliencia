@@ -93,6 +93,34 @@ describe("direction contract artifact normalization", () => {
     )
   })
 
+  it("rejects an owned duplicate nested in template content", () => {
+    const nestedDuplicate = OWNED_TEMPLATE.replace(
+      '<template aria-hidden="true" data-safemove-direction-contract="49524f2c">',
+      '<template title=">" data-safemove-direction-contract=49524f2c>',
+    )
+    const source = documentWith(
+      `${OWNED_TEMPLATE}<template>${nestedDuplicate}</template>`,
+    )
+
+    expect(() => normalizeDirectionContractHtml(source, "home.html")).toThrow(
+      "home.html contains 2 owned direction contracts",
+    )
+  })
+
+  it("rejects an owned duplicate recursively nested through template content", () => {
+    const nestedDuplicate = OWNED_TEMPLATE.replace(
+      '<template aria-hidden="true" data-safemove-direction-contract="49524f2c">',
+      "<template data-safemove-direction-contract='49524f2c' title='>'>",
+    )
+    const source = documentWith(
+      `${OWNED_TEMPLATE}<template><template>${nestedDuplicate}</template></template>`,
+    )
+
+    expect(() => normalizeDirectionContractHtml(source, "home.html")).toThrow(
+      "home.html contains 2 owned direction contracts",
+    )
+  })
+
   it.each([
     [
       "before quoted attributes containing a greater-than sign",
