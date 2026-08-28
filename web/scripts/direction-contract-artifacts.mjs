@@ -1,13 +1,14 @@
 import assert from "node:assert/strict"
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import { join, relative } from "node:path"
+import { JSDOM } from "jsdom"
 import {
   DIRECTION_CONTRACT_HTML,
   DIRECTION_CONTRACT_ID,
 } from "../lib/direction-contract.mjs"
 
 const GLOBAL_ERROR_ARTIFACT = "_global-error.html"
-const TEMPLATE_END = "</template>"
+const DIRECTION_CONTRACT_ATTRIBUTE = "data-safemove-direction-contract"
 
 function findHtmlFiles(directory) {
   return readdirSync(directory)
@@ -39,18 +40,31 @@ function getRootLayoutArtifacts(artifactsRoot) {
   return rootLayoutArtifacts
 }
 
-function escapeRegularExpression(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+function countOccurrences(value, fragment) {
+  let count = 0
+  let index = value.indexOf(fragment)
+
+  while (index !== -1) {
+    count += 1
+    index = value.indexOf(fragment, index + fragment.length)
+  }
+
+  return count
 }
 
 function locateOwnedContract(html, artifactName) {
-  const escapedContractId = escapeRegularExpression(DIRECTION_CONTRACT_ID)
-  const ownedIdentityValue = `(?:"${escapedContractId}"|'${escapedContractId}'|${escapedContractId}(?=[\\t\\n\\f\\r />]))`
-  const ownedTemplatePattern = new RegExp(
-    `<template\\b[^>]*\\bdata-safemove-direction-contract\\s*=\\s*${ownedIdentityValue}[^>]*>`,
-    "gi",
+  const dom = new JSDOM(html, { includeNodeLocations: true })
+  const { document } = dom.window
+  const body = document.body
+  const bodyLocation = body && dom.nodeLocation(body)
+
+  assert.ok(
+    bodyLocation?.startTag,
+    `${artifactName} does not contain a body element`,
   )
-  const ownedTemplates = [...html.matchAll(ownedTemplatePattern)]
+  const ownedTemplates = [...document.querySelectorAll("template")].filter(
+    (template) => template.getAttribute(DIRECTION_CONTRACT_ATTRIBUTE) === DIRECTION_CONTRACT_ID,
+  )
   const ownedContractCount = ownedTemplates.length
   assert.ok(
     ownedContractCount > 0,
@@ -62,41 +76,51 @@ function locateOwnedContract(html, artifactName) {
     `${artifactName} contains ${ownedContractCount} owned direction contracts`,
   )
 
-  const templateStart = ownedTemplates[0].index
-  const startTagEnd = templateStart + ownedTemplates[0][0].length - 1
-
-  const templateEndStart = html.indexOf(TEMPLATE_END, startTagEnd + 1)
+  const ownedTemplate = ownedTemplates[0]
+  const templateLocation = dom.nodeLocation(ownedTemplate)
   assert.ok(
-    templateEndStart !== -1,
+    templateLocation?.endTag,
     `${artifactName} has an unterminated owned direction contract`,
   )
-  const templateEnd = templateEndStart + TEMPLATE_END.length
-
-  const bodyMatch = /<body\b[^>]*>/i.exec(html)
-  assert.ok(bodyMatch, `${artifactName} does not contain a body element`)
-  const bodyContentStart = bodyMatch.index + bodyMatch[0].length
-  const bodyEndMatch = /<\/body\s*>/i.exec(html.slice(bodyContentStart))
-  assert.ok(bodyEndMatch, `${artifactName} has an unterminated body element`)
-  const bodyContentEnd = bodyContentStart + bodyEndMatch.index
+  assert.ok(
+    bodyLocation.endTag,
+    `${artifactName} has an unterminated body element`,
+  )
 
   assert.ok(
-    templateStart >= bodyContentStart && templateEnd <= bodyContentEnd,
+    body.contains(ownedTemplate),
     `${artifactName} has the owned direction contract outside body`,
   )
+
+  const templateStart = templateLocation.startOffset
+  const templateEnd = templateLocation.endOffset
   assert.equal(
     html.slice(templateStart, templateEnd),
     DIRECTION_CONTRACT_HTML,
     `${artifactName} does not contain the exact owned direction contract`,
   )
 
-  return { bodyContentStart, templateEnd, templateStart }
+  const canonicalContractCount = countOccurrences(html, DIRECTION_CONTRACT_HTML)
+  assert.equal(
+    canonicalContractCount,
+    1,
+    `${artifactName} contains ${canonicalContractCount} exact canonical direction contract byte sequences`,
+  )
+
+  return {
+    bodyContentStart: bodyLocation.startTag.endOffset,
+    body,
+    ownedTemplate,
+    templateEnd,
+    templateStart,
+  }
 }
 
 export function assertDirectionContractHtml(html, artifactName) {
   const location = locateOwnedContract(html, artifactName)
   assert.equal(
-    location.templateStart,
-    location.bodyContentStart,
+    location.body.firstElementChild,
+    location.ownedTemplate,
     `${artifactName} cannot place the exact direction contract first in body`,
   )
 }

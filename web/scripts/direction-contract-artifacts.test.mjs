@@ -81,6 +81,47 @@ describe("direction contract artifact normalization", () => {
     )
   })
 
+  it("rejects an owned duplicate after a quoted attribute containing a greater-than sign", () => {
+    const quotedGreaterThanDuplicate = OWNED_TEMPLATE.replace(
+      '<template aria-hidden="true" data-safemove-direction-contract="49524f2c">',
+      '<template title=">" data-safemove-direction-contract=49524f2c>',
+    )
+    const source = documentWith(`${OWNED_TEMPLATE}<main>Área profissional</main>${quotedGreaterThanDuplicate}`)
+
+    expect(() => normalizeDirectionContractHtml(source, "home.html")).toThrow(
+      "home.html contains 2 owned direction contracts",
+    )
+  })
+
+  it.each([
+    [
+      "before quoted attributes containing a greater-than sign",
+      '<template data-safemove-direction-contract="49524f2c" title=">">',
+    ],
+    [
+      "after quoted attributes containing a greater-than sign",
+      "<template title='>' data-safemove-direction-contract='49524f2c'>",
+    ],
+    [
+      "with mixed order and valid quote styles",
+      "<template aria-hidden=true data-safemove-direction-contract=49524f2c title='>'>",
+    ],
+    [
+      "regardless of HTML tag and attribute case",
+      "<TEMPLATE TITLE=\">\" DATA-SAFEMOVE-DIRECTION-CONTRACT=49524f2c>",
+    ],
+  ])("rejects an owned duplicate %s", (_description, startTag) => {
+    const semanticDuplicate = OWNED_TEMPLATE.replace(
+      '<template aria-hidden="true" data-safemove-direction-contract="49524f2c">',
+      startTag,
+    )
+    const source = documentWith(`${OWNED_TEMPLATE}<main>Área profissional</main>${semanticDuplicate}`)
+
+    expect(() => normalizeDirectionContractHtml(source, "home.html")).toThrow(
+      "home.html contains 2 owned direction contracts",
+    )
+  })
+
   it("does not treat an unquoted partial identity as owned", () => {
     const bootstrap = '<div hidden=""><!--$--><!--/$--></div>'
     const partialIdentityTemplate = OWNED_TEMPLATE.replace(
@@ -93,6 +134,46 @@ describe("direction contract artifact normalization", () => {
       changed: true,
       html: documentWith(`${OWNED_TEMPLATE}${bootstrap}${partialIdentityTemplate}`),
     })
+  })
+
+  it("does not treat prefixed or suffixed identity values as owned", () => {
+    const bootstrap = '<div hidden=""><!--$--><!--/$--></div>'
+    const foreignTemplates = [
+      OWNED_TEMPLATE.replace(
+        'data-safemove-direction-contract="49524f2c"',
+        'data-safemove-direction-contract="prefix-49524f2c"',
+      ),
+      OWNED_TEMPLATE.replace(
+        'data-safemove-direction-contract="49524f2c"',
+        'data-safemove-direction-contract="49524f2c-suffix"',
+      ),
+    ].join("")
+    const source = documentWith(`${bootstrap}${OWNED_TEMPLATE}${foreignTemplates}`)
+
+    expect(normalizeDirectionContractHtml(source, "home.html")).toEqual({
+      changed: true,
+      html: documentWith(`${OWNED_TEMPLATE}${bootstrap}${foreignTemplates}`),
+    })
+  })
+
+  it("does not treat an identity-looking string in another quoted attribute as owned", () => {
+    const bootstrap = '<div hidden=""><!--$--><!--/$--></div>'
+    const foreignTemplate = "<template title='data-safemove-direction-contract=\"49524f2c\"'>Texto</template>"
+    const source = documentWith(`${bootstrap}${OWNED_TEMPLATE}${foreignTemplate}`)
+
+    expect(normalizeDirectionContractHtml(source, "home.html")).toEqual({
+      changed: true,
+      html: documentWith(`${OWNED_TEMPLATE}${bootstrap}${foreignTemplate}`),
+    })
+  })
+
+  it("rejects duplicated canonical contract bytes outside the owned template", () => {
+    const scriptCopy = `<script>/*${OWNED_TEMPLATE}*/</script>`
+    const source = documentWith(`${OWNED_TEMPLATE}${scriptCopy}`)
+
+    expect(() => normalizeDirectionContractHtml(source, "home.html")).toThrow(
+      "home.html contains 2 exact canonical direction contract byte sequences",
+    )
   })
 
   it("rejects an owned template outside body", () => {
