@@ -1,107 +1,179 @@
 "use client"
 
-import type React from "react"
+import type { FormEvent } from "react"
+import { useState } from "react"
+import axios from "axios"
+import Link from "next/link"
+import { ArrowLeft, LockKeyhole } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
-import { api } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
-import Link from "next/link"
+import { api } from "@/lib/api"
+
+function toAuthMessage(error: unknown) {
+  if (!axios.isAxiosError(error) || !error.response) {
+    return "Não foi possível acessar o SafeMove agora. Tente novamente."
+  }
+
+  if (error.response.status === 401) {
+    return "E-mail ou senha inválidos."
+  }
+
+  if (error.response.status === 429) {
+    return "Muitas tentativas. Aguarde um momento e tente novamente."
+  }
+
+  if (error.response.status >= 500) {
+    return "O SafeMove está indisponível no momento. Tente novamente."
+  }
+
+  return "Não foi possível entrar. Revise os dados e tente novamente."
+}
+
+type LoginFieldErrors = {
+  email?: string
+  password?: string
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({})
+  const [pageError, setPageError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-
   const { login } = useAuth()
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const nextErrors: LoginFieldErrors = {}
+
+    if (!email.trim()) nextErrors.email = "Informe seu e-mail."
+    if (!password) nextErrors.password = "Informe sua senha."
+
+    setFieldErrors(nextErrors)
+    setPageError(null)
+    if (Object.keys(nextErrors).length > 0) return
+
     setIsLoading(true)
-    setError(null)
-
     try {
-      // POST /auth/login seta o cookie HttpOnly no browser automaticamente
-      await api.post("/auth/login", { email, password })
-
-      // Agora busca os dados do usuário via cookie e redireciona
+      await api.post("/auth/login", { email: email.trim(), password })
       await login()
-    } catch (error: any) {
-      if (error.response) {
-        setError(error.response.data?.message || "E-mail ou senha incorretos")
-      } else if (error.request) {
-        setError("Não foi possível conectar ao servidor. Verifique se a API está rodando.")
-        console.error("[Login] Erro de rede:", error.message)
-      } else {
-        setError("Erro inesperado. Tente novamente.")
-        console.error("[Login] Erro:", error.message)
-      }
+    } catch (error: unknown) {
+      setPageError(toAuthMessage(error))
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Formulário de login
   return (
-    <div className="flex min-h-screen w-full items-center justify-center p-6 bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50">
-      <div className="w-full max-w-sm">
-        <Card className="shadow-lg border-0 bg-white/90 backdrop-blur">
-          <CardHeader className="space-y-2 text-center">
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">
-              SafeMove B2B
-            </CardTitle>
-            <CardDescription className="text-base">Bem-vindo de volta! Acesse sua conta corporativa</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin}>
-              <div className="flex flex-col gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">E-mail Corporativo</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="carlos.silva@empresa.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-11"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Senha</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-11"
-                  />
-                </div>
-                {error && <p className="text-sm text-rose-600 bg-rose-50 p-3 rounded-lg border border-rose-100">{error}</p>}
-                
-                <Button
-                  type="submit"
-                  className="w-full h-11 bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white shadow-md"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Entrando..." : "Entrar no Sistema"}
-                </Button>
+    <main className="min-h-screen bg-[var(--sm-canvas)] text-[var(--sm-ink)] lg:grid lg:grid-cols-[minmax(18rem,0.75fr)_minmax(28rem,1.25fr)]">
+      <aside className="hidden border-r border-[var(--sm-border)] bg-[var(--sm-ink)] px-10 py-12 text-[var(--sm-on-brand)] lg:flex lg:flex-col lg:justify-between">
+        <Link href="/" className="text-xl font-bold tracking-[-0.02em]">
+          SafeMove
+        </Link>
+        <div className="max-w-md">
+          <LockKeyhole aria-hidden="true" className="mb-6 size-8 text-teal-300" />
+          <p className="text-3xl font-semibold leading-tight tracking-[-0.03em]">
+            Seu workspace e sua base privada, no mesmo lugar.
+          </p>
+          <p className="mt-5 leading-7 text-slate-300">
+            Acesse o ambiente correspondente à sua atuação profissional.
+          </p>
+        </div>
+        <p className="text-sm text-slate-400">Workspace profissional SafeMove</p>
+      </aside>
+
+      <section className="flex min-h-screen items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
+        <div className="w-full max-w-md">
+          <Link
+            href="/"
+            className="mb-10 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--sm-muted)] transition-colors hover:text-[var(--sm-ink)] lg:hidden"
+          >
+            <ArrowLeft aria-hidden="true" className="size-4" />
+            SafeMove
+          </Link>
+
+          <div className="border border-[var(--sm-border)] bg-[var(--sm-surface)] p-6 shadow-[var(--sm-shadow-elevated)] sm:p-8">
+            <h1 className="text-3xl font-bold tracking-[-0.03em]">
+              Entrar no SafeMove
+            </h1>
+            <p className="mt-3 leading-7 text-[var(--sm-muted)]">
+              Use os dados da sua conta profissional.
+            </p>
+
+            <form className="mt-8 space-y-5" onSubmit={handleLogin} noValidate>
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  aria-invalid={fieldErrors.email ? "true" : undefined}
+                  aria-describedby={fieldErrors.email ? "login-email-error" : undefined}
+                  className="h-11 bg-[var(--sm-surface)]"
+                />
+                {fieldErrors.email ? (
+                  <p id="login-email-error" className="text-sm text-[var(--sm-danger)]">
+                    {fieldErrors.email}
+                  </p>
+                ) : null}
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  aria-invalid={fieldErrors.password ? "true" : undefined}
+                  aria-describedby={fieldErrors.password ? "login-password-error" : undefined}
+                  className="h-11 bg-[var(--sm-surface)]"
+                />
+                {fieldErrors.password ? (
+                  <p id="login-password-error" className="text-sm text-[var(--sm-danger)]">
+                    {fieldErrors.password}
+                  </p>
+                ) : null}
+              </div>
+
+              {pageError ? (
+                <p
+                  role="alert"
+                  aria-label={pageError}
+                  className="border border-red-200 bg-[var(--sm-danger-subtle)] px-4 py-3 text-sm text-[var(--sm-danger)]"
+                >
+                  {pageError}
+                </p>
+              ) : null}
+
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="h-11 w-full bg-[var(--sm-brand)] text-[var(--sm-on-brand)] hover:bg-[var(--sm-brand-hover)]"
+              >
+                {isLoading ? "Entrando…" : "Entrar"}
+              </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-slate-600">
-              Ainda não tem o sistema?{" "}
-              <Link href="/auth/register" className="font-semibold text-teal-600 hover:underline">
-                Cadastre-se gratuitamente
+            <p className="mt-7 text-sm text-[var(--sm-muted)]">
+              Ainda não tem uma conta?{" "}
+              <Link
+                href="/auth/register"
+                className="font-semibold text-[var(--sm-brand)] underline decoration-[var(--sm-border)] decoration-2 hover:text-[var(--sm-brand-hover)]"
+              >
+                Criar conta profissional
               </Link>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
   )
 }
