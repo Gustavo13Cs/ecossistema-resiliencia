@@ -114,6 +114,113 @@ describe("public professional journey", () => {
     expect(await screen.findByRole("alert", { name: message })).toBeVisible()
   })
 
+  it("keeps a malformed login e-mail beside the field and off the network", async () => {
+    const user = userEvent.setup()
+    mockApi.onPost("/auth/login").reply(200)
+    render(<LoginPage />)
+
+    const email = screen.getByLabelText("E-mail")
+    await user.click(email)
+    await user.paste("abc")
+    await user.click(screen.getByLabelText("Senha"))
+    await user.paste("Senha-forte-2026")
+    await user.click(screen.getByRole("button", { name: "Entrar" }))
+
+    const error = screen.getByText("Informe um e-mail válido.")
+    expect(error).toBeVisible()
+    expect(email).toHaveAttribute("aria-invalid", "true")
+    expect(email.getAttribute("aria-describedby")).toContain(error.id)
+    expect(mockApi.history.post).toHaveLength(0)
+  })
+
+  it("keeps a malformed registration e-mail beside the field and off the network", async () => {
+    const user = userEvent.setup()
+    mockApi.onPost("/auth/register").reply(201)
+    render(<RegisterPage />)
+
+    const email = screen.getByLabelText("E-mail")
+    await user.click(screen.getByLabelText("Nome completo"))
+    await user.paste("Ana Souza")
+    await user.click(email)
+    await user.paste("abc")
+    await user.click(screen.getByLabelText("Senha"))
+    await user.paste("Senha-forte-2026")
+    await user.click(screen.getByRole("button", { name: "Criar conta" }))
+
+    const error = screen.getByText("Informe um e-mail válido.")
+    expect(error).toBeVisible()
+    expect(email).toHaveAttribute("aria-invalid", "true")
+    expect(email.getAttribute("aria-describedby")).toContain(error.id)
+    expect(mockApi.history.post).toHaveLength(0)
+  })
+
+  it("clears only the implicated login errors when their values change", async () => {
+    const user = userEvent.setup()
+    mockApi.onPost("/auth/login").reply(401)
+    render(<LoginPage />)
+
+    await user.click(screen.getByRole("button", { name: "Entrar" }))
+    const emailError = screen.getByText("Informe seu e-mail.")
+    const passwordError = screen.getByText("Informe sua senha.")
+
+    await user.type(screen.getByLabelText("E-mail"), "pro@example.test")
+    expect(emailError).not.toBeInTheDocument()
+    expect(passwordError).toBeVisible()
+
+    await user.type(screen.getByLabelText("Senha"), "Senha-forte-2026")
+    await user.click(screen.getByRole("button", { name: "Entrar" }))
+    expect(
+      await screen.findByRole("alert", { name: "E-mail ou senha inválidos." }),
+    ).toBeVisible()
+
+    await user.type(screen.getByLabelText("Senha"), "x")
+    expect(
+      screen.queryByRole("alert", { name: "E-mail ou senha inválidos." }),
+    ).not.toBeInTheDocument()
+  })
+
+  it("clears a stale registration error when the implicated e-mail changes", async () => {
+    const user = userEvent.setup()
+    mockApi.onPost("/auth/register").reply(409, {
+      message: "detail that must not be forwarded",
+    })
+    render(<RegisterPage />)
+
+    await user.click(screen.getByLabelText("Nome completo"))
+    await user.paste("Ana Souza")
+    await user.click(screen.getByLabelText("E-mail"))
+    await user.paste("ana@example.test")
+    await user.click(screen.getByLabelText("Senha"))
+    await user.paste("Senha-forte-2026")
+    await user.click(screen.getByRole("button", { name: "Criar conta" }))
+
+    expect(
+      await screen.findByRole("alert", {
+        name: "Este e-mail já está cadastrado. Entre ou use outro e-mail.",
+      }),
+    ).toBeVisible()
+    expect(screen.queryByText("detail that must not be forwarded")).not.toBeInTheDocument()
+
+    await user.type(screen.getByLabelText("E-mail"), "x")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+
+  it("performs one credential POST and one session hydration on successful login", async () => {
+    const user = userEvent.setup()
+    mockApi.onPost("/auth/login").reply(200)
+    auth.login.mockResolvedValue(undefined)
+    render(<LoginPage />)
+
+    await user.click(screen.getByLabelText("E-mail"))
+    await user.paste("pro@example.test")
+    await user.click(screen.getByLabelText("Senha"))
+    await user.paste("Senha-forte-2026")
+    await user.click(screen.getByRole("button", { name: "Entrar" }))
+
+    await waitFor(() => expect(auth.login).toHaveBeenCalledTimes(1))
+    expect(mockApi.history.post).toHaveLength(1)
+  })
+
   it("offers exactly one professional role before contact fields and submits it", async () => {
     const user = userEvent.setup()
     let submittedBody: Record<string, unknown> | undefined
@@ -143,7 +250,7 @@ describe("public professional journey", () => {
     await user.click(screen.getByLabelText("E-mail"))
     await user.paste("ana@example.test")
     await user.click(screen.getByLabelText("Senha"))
-    await user.paste("Senha-forte-2026")
+    await user.paste("Árvoreforte1")
     await user.click(screen.getByRole("button", { name: "Criar conta" }))
 
     await waitFor(() => {

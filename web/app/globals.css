@@ -12,9 +12,14 @@
   --sm-brand: #0f766e;
   --sm-brand-hover: #115e59;
   --sm-brand-subtle: color-mix(in srgb, var(--sm-brand) 10%, var(--sm-surface));
+  --sm-brand-on-dark: #5eead4;
   --sm-on-brand: #ffffff;
   --sm-danger: #b42318;
   --sm-danger-subtle: color-mix(in srgb, var(--sm-danger) 7%, var(--sm-surface));
+  --sm-danger-border: #fecaca;
+  --sm-inverse-muted: #cbd5e1;
+  --sm-inverse-border: #334155;
+  --sm-subtle-hover: #f1f5f9;
   --sm-focus: #0e7490;
   --sm-overlay: rgb(15 23 42 / 0.45);
   --sm-radius-sm: 0.5rem;

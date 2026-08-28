@@ -16,7 +16,10 @@ export default function LandingPage() {
           aria-label="Navegação principal"
           className="mx-auto flex min-h-16 w-full max-w-[76rem] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
         >
-          <Link href="/" className="text-lg font-bold tracking-[-0.02em]">
+          <Link
+            href="/"
+            className="inline-flex min-h-11 items-center text-lg font-bold tracking-[-0.02em]"
+          >
             SafeMove
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
@@ -116,14 +119,14 @@ export default function LandingPage() {
               <h2 className="text-3xl font-bold tracking-[-0.03em]">
                 Abra seu workspace profissional
               </h2>
-              <p className="mt-3 max-w-[55ch] text-slate-300">
+              <p className="mt-3 max-w-[55ch] text-[var(--sm-inverse-muted)]">
                 Escolha sua atuação e comece a organizar sua base privada de
                 clientes.
               </p>
             </div>
             <Link
               href="/auth/register"
-              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-[var(--sm-radius-sm)] bg-[var(--sm-surface)] px-5 py-3 text-sm font-semibold text-[var(--sm-ink)] transition-colors hover:bg-slate-100"
+              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-[var(--sm-radius-sm)] bg-[var(--sm-surface)] px-5 py-3 text-sm font-semibold text-[var(--sm-ink)] transition-colors hover:bg-[var(--sm-subtle-hover)]"
             >
               Criar conta profissional
               <ArrowRight aria-hidden="true" className="size-4" />
@@ -132,8 +135,8 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="bg-[var(--sm-ink)] px-4 pb-8 text-sm text-slate-400 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-[76rem] border-t border-slate-700 pt-6">
+      <footer className="bg-[var(--sm-ink)] px-4 pb-8 text-sm text-[var(--sm-inverse-muted)] sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-[76rem] border-t border-[var(--sm-inverse-border)] pt-6">
           SafeMove · Workspace profissional
         </div>
       </footer>

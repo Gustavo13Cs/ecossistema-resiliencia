@@ -37,8 +37,8 @@ const PROFESSIONAL_ROLES: ReadonlyArray<{
 
 const PASSWORD_RULES = [
   { label: "Mínimo de 8 caracteres", test: (value: string) => value.length >= 8 },
-  { label: "Uma letra maiúscula", test: (value: string) => /[A-Z]/.test(value) },
-  { label: "Uma letra minúscula", test: (value: string) => /[a-z]/.test(value) },
+  { label: "Uma letra maiúscula", test: (value: string) => /\p{Lu}/u.test(value) },
+  { label: "Uma letra minúscula", test: (value: string) => /\p{Ll}/u.test(value) },
   { label: "Um número", test: (value: string) => /\d/.test(value) },
 ] as const
 
@@ -48,29 +48,54 @@ type RegisterFieldErrors = {
   password?: string
 }
 
-function toRegisterMessage(error: unknown) {
+type RegisterField = keyof RegisterFieldErrors
+
+type RegisterPageError = {
+  message: string
+  fields: ReadonlyArray<RegisterField>
+}
+
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function toRegisterPageError(error: unknown): RegisterPageError {
   if (!axios.isAxiosError(error) || !error.response) {
-    return "Não foi possível acessar o SafeMove agora. Tente novamente."
+    return {
+      message: "Não foi possível acessar o SafeMove agora. Tente novamente.",
+      fields: [],
+    }
+  }
+
+  if (error.response.status === 409) {
+    return {
+      message: "Este e-mail já está cadastrado. Entre ou use outro e-mail.",
+      fields: ["email"],
+    }
   }
 
   if (error.response.status === 429) {
-    return "Muitas tentativas. Aguarde um momento e tente novamente."
+    return {
+      message: "Muitas tentativas. Aguarde um momento e tente novamente.",
+      fields: [],
+    }
   }
 
   if (error.response.status >= 500) {
-    return "O SafeMove está indisponível no momento. Tente novamente."
+    return {
+      message: "O SafeMove está indisponível no momento. Tente novamente.",
+      fields: [],
+    }
   }
 
-  const message = error.response.data as { message?: unknown } | undefined
-  return typeof message?.message === "string"
-    ? message.message
-    : "Não foi possível criar a conta. Revise os dados e tente novamente."
+  return {
+    message: "Não foi possível criar a conta. Revise os dados e tente novamente.",
+    fields: [],
+  }
 }
 
 export default function RegisterPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [pageError, setPageError] = useState<string | null>(null)
+  const [pageError, setPageError] = useState<RegisterPageError | null>(null)
   const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({})
   const [formData, setFormData] = useState({
     role: "NUTRITIONIST" as ProfessionalRole,
@@ -86,7 +111,11 @@ export default function RegisterPage() {
     const nextErrors: RegisterFieldErrors = {}
 
     if (!formData.name.trim()) nextErrors.name = "Informe seu nome completo."
-    if (!formData.email.trim()) nextErrors.email = "Informe seu e-mail."
+    const normalizedEmail = formData.email.trim()
+    if (!normalizedEmail) nextErrors.email = "Informe seu e-mail."
+    else if (!EMAIL_SHAPE.test(normalizedEmail)) {
+      nextErrors.email = "Informe um e-mail válido."
+    }
     if (!PASSWORD_RULES.every((rule) => rule.test(formData.password))) {
       nextErrors.password = "A senha precisa atender a todos os requisitos."
     }
@@ -100,7 +129,7 @@ export default function RegisterPage() {
       await api.post("/auth/register", {
         role: formData.role,
         name: formData.name.trim(),
-        email: formData.email.trim(),
+        email: normalizedEmail,
         phone: formData.phone.trim(),
         companyName: formData.companyName.trim(),
         password: formData.password,
@@ -108,10 +137,23 @@ export default function RegisterPage() {
       toast.success("Conta profissional criada. Entre para continuar.")
       router.push("/auth/login")
     } catch (error: unknown) {
-      setPageError(toRegisterMessage(error))
+      setPageError(toRegisterPageError(error))
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const updateField = (field: RegisterField, value: string) => {
+    setFormData((current) => ({ ...current, [field]: value }))
+    setFieldErrors((current) => {
+      if (!current[field]) return current
+      const next = { ...current }
+      delete next[field]
+      return next
+    })
+    setPageError((current) =>
+      current?.fields.includes(field) ? null : current,
+    )
   }
 
   return (
@@ -159,7 +201,7 @@ export default function RegisterPage() {
                       className={`flex min-h-32 cursor-pointer flex-col justify-between rounded-[var(--sm-radius-md)] border p-4 transition-colors ${
                         isSelected
                           ? "border-[var(--sm-brand)] bg-[var(--sm-brand-subtle)]"
-                          : "border-[var(--sm-border)] bg-[var(--sm-surface)] hover:border-slate-400"
+                          : "border-[var(--sm-border)] bg-[var(--sm-surface)] hover:border-[var(--sm-muted)]"
                       }`}
                     >
                       <input
@@ -193,12 +235,7 @@ export default function RegisterPage() {
                     name="name"
                     autoComplete="name"
                     value={formData.name}
-                    onChange={(event) =>
-                      setFormData((current) => ({
-                        ...current,
-                        name: event.target.value,
-                      }))
-                    }
+                    onChange={(event) => updateField("name", event.target.value)}
                     aria-invalid={fieldErrors.name ? "true" : undefined}
                     aria-describedby={fieldErrors.name ? "register-name-error" : undefined}
                     className="h-11 bg-[var(--sm-surface)]"
@@ -218,12 +255,7 @@ export default function RegisterPage() {
                     type="email"
                     autoComplete="email"
                     value={formData.email}
-                    onChange={(event) =>
-                      setFormData((current) => ({
-                        ...current,
-                        email: event.target.value,
-                      }))
-                    }
+                    onChange={(event) => updateField("email", event.target.value)}
                     aria-invalid={fieldErrors.email ? "true" : undefined}
                     aria-describedby={fieldErrors.email ? "register-email-error" : undefined}
                     className="h-11 bg-[var(--sm-surface)]"
@@ -277,12 +309,7 @@ export default function RegisterPage() {
                     type="password"
                     autoComplete="new-password"
                     value={formData.password}
-                    onChange={(event) =>
-                      setFormData((current) => ({
-                        ...current,
-                        password: event.target.value,
-                      }))
-                    }
+                    onChange={(event) => updateField("password", event.target.value)}
                     aria-invalid={fieldErrors.password ? "true" : undefined}
                     aria-describedby={`password-requirements${
                       fieldErrors.password ? " register-password-error" : ""
@@ -312,10 +339,10 @@ export default function RegisterPage() {
             {pageError ? (
               <p
                 role="alert"
-                aria-label={pageError}
-                className="border border-red-200 bg-[var(--sm-danger-subtle)] px-4 py-3 text-sm text-[var(--sm-danger)]"
+                aria-label={pageError.message}
+                className="border border-[var(--sm-danger-border)] bg-[var(--sm-danger-subtle)] px-4 py-3 text-sm text-[var(--sm-danger)]"
               >
-                {pageError}
+                {pageError.message}
               </p>
             ) : null}
 

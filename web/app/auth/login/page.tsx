@@ -36,11 +36,32 @@ type LoginFieldErrors = {
   password?: string
 }
 
+type LoginField = keyof LoginFieldErrors
+
+type LoginPageError = {
+  message: string
+  fields: ReadonlyArray<LoginField>
+}
+
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function toLoginPageError(error: unknown): LoginPageError {
+  const message = toAuthMessage(error)
+
+  return {
+    message,
+    fields:
+      axios.isAxiosError(error) && error.response?.status === 401
+        ? ["email", "password"]
+        : [],
+  }
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({})
-  const [pageError, setPageError] = useState<string | null>(null)
+  const [pageError, setPageError] = useState<LoginPageError | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
 
@@ -48,7 +69,11 @@ export default function LoginPage() {
     event.preventDefault()
     const nextErrors: LoginFieldErrors = {}
 
-    if (!email.trim()) nextErrors.email = "Informe seu e-mail."
+    const normalizedEmail = email.trim()
+    if (!normalizedEmail) nextErrors.email = "Informe seu e-mail."
+    else if (!EMAIL_SHAPE.test(normalizedEmail)) {
+      nextErrors.email = "Informe um e-mail válido."
+    }
     if (!password) nextErrors.password = "Informe sua senha."
 
     setFieldErrors(nextErrors)
@@ -57,31 +82,54 @@ export default function LoginPage() {
 
     setIsLoading(true)
     try {
-      await api.post("/auth/login", { email: email.trim(), password })
+      await api.post("/auth/login", { email: normalizedEmail, password })
       await login()
     } catch (error: unknown) {
-      setPageError(toAuthMessage(error))
+      setPageError(toLoginPageError(error))
     } finally {
       setIsLoading(false)
     }
   }
 
+  const updateField = (field: LoginField, value: string) => {
+    if (field === "email") setEmail(value)
+    else setPassword(value)
+
+    setFieldErrors((current) => {
+      if (!current[field]) return current
+      const next = { ...current }
+      delete next[field]
+      return next
+    })
+    setPageError((current) =>
+      current?.fields.includes(field) ? null : current,
+    )
+  }
+
   return (
     <main className="min-h-screen bg-[var(--sm-canvas)] text-[var(--sm-ink)] lg:grid lg:grid-cols-[minmax(18rem,0.75fr)_minmax(28rem,1.25fr)]">
       <aside className="hidden border-r border-[var(--sm-border)] bg-[var(--sm-ink)] px-10 py-12 text-[var(--sm-on-brand)] lg:flex lg:flex-col lg:justify-between">
-        <Link href="/" className="text-xl font-bold tracking-[-0.02em]">
+        <Link
+          href="/"
+          className="inline-flex min-h-11 items-center text-xl font-bold tracking-[-0.02em]"
+        >
           SafeMove
         </Link>
         <div className="max-w-md">
-          <LockKeyhole aria-hidden="true" className="mb-6 size-8 text-teal-300" />
+          <LockKeyhole
+            aria-hidden="true"
+            className="mb-6 size-8 text-[var(--sm-brand-on-dark)]"
+          />
           <p className="text-3xl font-semibold leading-tight tracking-[-0.03em]">
             Seu workspace e sua base privada, no mesmo lugar.
           </p>
-          <p className="mt-5 leading-7 text-slate-300">
+          <p className="mt-5 leading-7 text-[var(--sm-inverse-muted)]">
             Acesse o ambiente correspondente à sua atuação profissional.
           </p>
         </div>
-        <p className="text-sm text-slate-400">Workspace profissional SafeMove</p>
+        <p className="text-sm text-[var(--sm-inverse-muted)]">
+          Workspace profissional SafeMove
+        </p>
       </aside>
 
       <section className="flex min-h-screen items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
@@ -111,7 +159,7 @@ export default function LoginPage() {
                   type="email"
                   autoComplete="email"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(event) => updateField("email", event.target.value)}
                   aria-invalid={fieldErrors.email ? "true" : undefined}
                   aria-describedby={fieldErrors.email ? "login-email-error" : undefined}
                   className="h-11 bg-[var(--sm-surface)]"
@@ -131,7 +179,7 @@ export default function LoginPage() {
                   type="password"
                   autoComplete="current-password"
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  onChange={(event) => updateField("password", event.target.value)}
                   aria-invalid={fieldErrors.password ? "true" : undefined}
                   aria-describedby={fieldErrors.password ? "login-password-error" : undefined}
                   className="h-11 bg-[var(--sm-surface)]"
@@ -146,10 +194,10 @@ export default function LoginPage() {
               {pageError ? (
                 <p
                   role="alert"
-                  aria-label={pageError}
-                  className="border border-red-200 bg-[var(--sm-danger-subtle)] px-4 py-3 text-sm text-[var(--sm-danger)]"
+                  aria-label={pageError.message}
+                  className="border border-[var(--sm-danger-border)] bg-[var(--sm-danger-subtle)] px-4 py-3 text-sm text-[var(--sm-danger)]"
                 >
-                  {pageError}
+                  {pageError.message}
                 </p>
               ) : null}
 
