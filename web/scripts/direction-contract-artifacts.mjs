@@ -44,8 +44,10 @@ function escapeRegularExpression(value) {
 }
 
 function locateOwnedContract(html, artifactName) {
+  const escapedContractId = escapeRegularExpression(DIRECTION_CONTRACT_ID)
+  const ownedIdentityValue = `(?:"${escapedContractId}"|'${escapedContractId}'|${escapedContractId}(?=[\\t\\n\\f\\r />]))`
   const ownedTemplatePattern = new RegExp(
-    `<template\\b[^>]*\\bdata-safemove-direction-contract\\s*=\\s*(["'])${escapeRegularExpression(DIRECTION_CONTRACT_ID)}\\1[^>]*>`,
+    `<template\\b[^>]*\\bdata-safemove-direction-contract\\s*=\\s*${ownedIdentityValue}[^>]*>`,
     "gi",
   )
   const ownedTemplates = [...html.matchAll(ownedTemplatePattern)]

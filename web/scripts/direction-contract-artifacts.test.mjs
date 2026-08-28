@@ -69,6 +69,32 @@ describe("direction contract artifact normalization", () => {
     )
   })
 
+  it("rejects a duplicate identity when its value is unquoted", () => {
+    const unquotedDuplicate = OWNED_TEMPLATE.replace(
+      '<template aria-hidden="true" data-safemove-direction-contract="49524f2c">',
+      "<template data-safemove-direction-contract=49524f2c aria-hidden=true>",
+    )
+    const source = documentWith(`${OWNED_TEMPLATE}<main>Área profissional</main>${unquotedDuplicate}`)
+
+    expect(() => normalizeDirectionContractHtml(source, "home.html")).toThrow(
+      "home.html contains 2 owned direction contracts",
+    )
+  })
+
+  it("does not treat an unquoted partial identity as owned", () => {
+    const bootstrap = '<div hidden=""><!--$--><!--/$--></div>'
+    const partialIdentityTemplate = OWNED_TEMPLATE.replace(
+      'data-safemove-direction-contract="49524f2c"',
+      "data-safemove-direction-contract=49524f2c-extra",
+    )
+    const source = documentWith(`${bootstrap}${OWNED_TEMPLATE}${partialIdentityTemplate}`)
+
+    expect(normalizeDirectionContractHtml(source, "home.html")).toEqual({
+      changed: true,
+      html: documentWith(`${OWNED_TEMPLATE}${bootstrap}${partialIdentityTemplate}`),
+    })
+  })
+
   it("rejects an owned template outside body", () => {
     const source = `<!doctype html><html><head>${OWNED_TEMPLATE}</head><body><main>Área profissional</main></body></html>`
 
