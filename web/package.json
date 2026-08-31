@@ -6,7 +6,7 @@
     "build": "next build",
     "dev": "next dev -p 3001",
     "lint": "eslint . --max-warnings=0",
-    "postbuild": "node scripts/ensure-direction-contract-first.mjs && node scripts/assert-direction-contract.mjs",
+    "postbuild": "node scripts/assert-direction-contract.mjs",
     "start": "next start",
     "typecheck": "tsc --noEmit --incremental false",
     "verify:direction-contract": "node scripts/assert-direction-contract.mjs",

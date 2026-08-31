@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs"
+import { readdirSync, readFileSync, statSync } from "node:fs"
 import { join, relative } from "node:path"
 import { JSDOM } from "jsdom"
 import {
@@ -71,6 +71,30 @@ function collectOwnedTemplates(root, visitedTemplates = new Set()) {
   return ownedTemplates
 }
 
+function isWhitespaceTextNode(node) {
+  return node.nodeType === 3 && node.textContent.trim() === ""
+}
+
+function isVerifiedNextReactBoundary(node) {
+  if (
+    node.nodeType !== 1 ||
+    node.tagName !== "DIV" ||
+    node.attributes.length !== 1 ||
+    node.getAttribute("hidden") !== ""
+  ) {
+    return false
+  }
+
+  const children = [...node.childNodes]
+  return (
+    children.length === 2 &&
+    children[0].nodeType === 8 &&
+    children[0].data === "$" &&
+    children[1].nodeType === 8 &&
+    children[1].data === "/$"
+  )
+}
+
 function locateOwnedContract(html, artifactName) {
   const dom = new JSDOM(html, { includeNodeLocations: true })
   const { document } = dom.window
@@ -108,6 +132,11 @@ function locateOwnedContract(html, artifactName) {
     body.contains(ownedTemplate),
     `${artifactName} has the owned direction contract outside body`,
   )
+  assert.equal(
+    ownedTemplate.parentElement,
+    body,
+    `${artifactName} does not place the owned direction contract directly in body`,
+  )
 
   const templateStart = templateLocation.startOffset
   const templateEnd = templateLocation.endOffset
@@ -124,59 +153,20 @@ function locateOwnedContract(html, artifactName) {
     `${artifactName} contains ${canonicalContractCount} exact canonical direction contract byte sequences`,
   )
 
-  return {
-    bodyContentStart: bodyLocation.startTag.endOffset,
-    body,
-    ownedTemplate,
-    templateEnd,
-    templateStart,
+  for (const node of body.childNodes) {
+    if (node === ownedTemplate) {
+      break
+    }
+
+    assert.ok(
+      isWhitespaceTextNode(node) || isVerifiedNextReactBoundary(node),
+      `${artifactName} has unsupported content before the owned direction contract`,
+    )
   }
 }
 
 export function assertDirectionContractHtml(html, artifactName) {
-  const location = locateOwnedContract(html, artifactName)
-  assert.equal(
-    location.body.firstElementChild,
-    location.ownedTemplate,
-    `${artifactName} cannot place the exact direction contract first in body`,
-  )
-}
-
-export function normalizeDirectionContractHtml(html, artifactName) {
-  const location = locateOwnedContract(html, artifactName)
-  if (location.templateStart === location.bodyContentStart) {
-    return { html, changed: false }
-  }
-
-  const withoutContract =
-    html.slice(0, location.templateStart) + html.slice(location.templateEnd)
-  const normalized =
-    withoutContract.slice(0, location.bodyContentStart) +
-    DIRECTION_CONTRACT_HTML +
-    withoutContract.slice(location.bodyContentStart)
-
-  assertDirectionContractHtml(normalized, artifactName)
-  return { html: normalized, changed: true }
-}
-
-export function normalizeDirectionContractArtifacts(artifactsRoot) {
-  const artifacts = getRootLayoutArtifacts(artifactsRoot)
-  const normalizationPlan = artifacts.map((artifactPath) => {
-    const artifactName = toArtifactName(artifactsRoot, artifactPath)
-    const source = readFileSync(artifactPath, "utf8")
-    const result = normalizeDirectionContractHtml(source, artifactName)
-    return { artifactPath, ...result }
-  })
-
-  const changedArtifacts = normalizationPlan.filter((artifact) => artifact.changed)
-  for (const artifact of changedArtifacts) {
-    writeFileSync(artifact.artifactPath, artifact.html, "utf8")
-  }
-
-  return {
-    checkedArtifacts: artifacts.length,
-    updatedArtifacts: changedArtifacts.length,
-  }
+  locateOwnedContract(html, artifactName)
 }
 
 export function assertDirectionContractArtifacts(artifactsRoot) {
