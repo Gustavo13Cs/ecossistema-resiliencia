@@ -7,6 +7,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
+import isLength from "validator/lib/isLength"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -38,7 +39,8 @@ const PROFESSIONAL_ROLES: ReadonlyArray<{
 const PASSWORD_RULES = [
   {
     label: "Mínimo de 8 caracteres",
-    test: (value: string) => Array.from(value).length >= 8,
+    // Pinned to validator@13.15.26 to match the API's class-validator semantics; the backend remains authoritative.
+    test: (value: string) => isLength(value, { min: 8 }),
   },
   { label: "Uma letra maiúscula", test: (value: string) => /\p{Lu}/u.test(value) },
   { label: "Uma letra minúscula", test: (value: string) => /\p{Ll}/u.test(value) },
