@@ -35,8 +35,8 @@ const WORKSPACES = {
   PERSONAL: {
     role: "PERSONAL",
     areaLabel: "Treinamento",
-    clientSingular: "Cliente",
-    clientPlural: "Clientes",
+    clientSingular: "Aluno",
+    clientPlural: "Alunos",
     navigation: [
       ...SHARED_NAVIGATION,
       { id: "workouts", label: "Planilhas", href: "/treinos" },
@@ -45,8 +45,8 @@ const WORKSPACES = {
   PHYSIO: {
     role: "PHYSIO",
     areaLabel: "Fisioterapia",
-    clientSingular: "Cliente",
-    clientPlural: "Clientes",
+    clientSingular: "Paciente",
+    clientPlural: "Pacientes",
     navigation: [
       ...SHARED_NAVIGATION,
       { id: "rehab", label: "Reabilitação", href: "/reabilitacao" },
