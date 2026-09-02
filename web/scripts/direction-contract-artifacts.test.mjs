@@ -23,12 +23,22 @@ const documentWith = (body) =>
   `<!doctype html><html><head><title>SafeMove</title></head><body>${body}</body></html>`
 
 describe("direction contract artifact validation", () => {
-  it("accepts the native Next order when the verified hidden framework boundary precedes the contract", () => {
+  it("accepts the native Next order when one canonical hidden boundary shape precedes the contract", () => {
     const source = documentWith(
       `${NEXT_REACT_STATIC_BOUNDARY}${OWNED_TEMPLATE}<main>Área profissional</main>`,
     )
 
     expect(() => assertDirectionContractHtml(source, "home.html")).not.toThrow()
+  })
+
+  it("rejects two canonical Next/React-shaped boundaries before the contract", () => {
+    const source = documentWith(
+      `${NEXT_REACT_STATIC_BOUNDARY}${NEXT_REACT_STATIC_BOUNDARY}${OWNED_TEMPLATE}<main>Área profissional</main>`,
+    )
+
+    expect(() => assertDirectionContractHtml(source, "home.html")).toThrow(
+      "home.html has more than one canonical Next/React-shaped boundary before the owned direction contract",
+    )
   })
 
   it("accepts the contract as the physical first body element", () => {

@@ -75,7 +75,7 @@ function isWhitespaceTextNode(node) {
   return node.nodeType === 3 && node.textContent.trim() === ""
 }
 
-function isVerifiedNextReactBoundary(node) {
+function hasCanonicalNextReactBoundaryShape(node) {
   if (
     node.nodeType !== 1 ||
     node.tagName !== "DIV" ||
@@ -153,14 +153,24 @@ function locateOwnedContract(html, artifactName) {
     `${artifactName} contains ${canonicalContractCount} exact canonical direction contract byte sequences`,
   )
 
+  let canonicalBoundaryShapeCount = 0
   for (const node of body.childNodes) {
     if (node === ownedTemplate) {
       break
     }
 
+    if (isWhitespaceTextNode(node)) {
+      continue
+    }
+
     assert.ok(
-      isWhitespaceTextNode(node) || isVerifiedNextReactBoundary(node),
+      hasCanonicalNextReactBoundaryShape(node),
       `${artifactName} has unsupported content before the owned direction contract`,
+    )
+    canonicalBoundaryShapeCount += 1
+    assert.ok(
+      canonicalBoundaryShapeCount <= 1,
+      `${artifactName} has more than one canonical Next/React-shaped boundary before the owned direction contract`,
     )
   }
 }
