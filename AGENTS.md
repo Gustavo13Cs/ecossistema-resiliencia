@@ -222,3 +222,27 @@ Estes arquivos **NÃO devem ser alterados sem aprovação do mantenedor**:
 | `agenda`             | Agenda diária / tasks            | ✅ Funcional |
 | `consultation-notes` | Notas de consulta                | ✅ Funcional |
 | `consents`           | Consentimentos de paciente       | ✅ Funcional |
+
+---
+
+## 10. Diretrizes de Validação Visual
+
+Não gere screenshots ou gravações durante cada etapa da implementação.
+
+Priorize:
+- implementação;
+- typecheck;
+- lint;
+- testes;
+- build;
+- Cypress;
+- análise do DOM quando suficiente.
+
+Use inspeção visual no navegador somente quando necessária para validar layout, responsividade ou um problema visual.
+
+Capture evidência visual apenas:
+1. ao concluir uma página/feature;
+2. quando encontrar um bug visual;
+3. na validação final da tarefa.
+
+Evite gerar múltiplas screenshots equivalentes.
