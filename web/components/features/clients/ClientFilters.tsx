@@ -41,8 +41,8 @@ export function ClientFilters({ search, status, workspace, onSearchChange, onSta
               aria-pressed={isActive}
               onClick={() => onStatusChange(filterStatus)}
               className={isActive
-                ? "min-h-10 bg-[var(--sm-surface)] font-bold text-[var(--sm-ink)] shadow-[var(--sm-shadow-rest)] hover:bg-[var(--sm-surface)]"
-                : "min-h-10 text-[var(--sm-muted)] hover:text-[var(--sm-ink)]"}
+                ? "min-h-11 bg-[var(--sm-surface)] font-bold text-[var(--sm-ink)] shadow-[var(--sm-shadow-rest)] hover:bg-[var(--sm-surface)]"
+                : "min-h-11 text-[var(--sm-muted)] hover:text-[var(--sm-ink)]"}
             >
               {label}
             </Button>

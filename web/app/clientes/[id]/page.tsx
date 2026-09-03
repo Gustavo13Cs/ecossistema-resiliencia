@@ -142,6 +142,27 @@ export default function ClienteHubPage() {
     }
   }
 
+  const handleReloadLatest = async () => {
+    if (!user?.sub || lifecyclePending || lifecycleMutationInFlight.current) return
+
+    lifecycleMutationInFlight.current = true
+    setIsReloadingLatest(true)
+    try {
+      await queryClient.refetchQueries(
+        { queryKey: queryKeys.client(user.sub, clientId), exact: true, type: "active" },
+        { throwOnError: true },
+      )
+      updateClient.reset()
+      setFormRevision((currentRevision) => currentRevision + 1)
+      toast.success("Versão mais recente do prontuário carregada.")
+    } catch {
+      toast.error("Não foi possível recarregar a versão mais recente. Tente novamente.")
+    } finally {
+      lifecycleMutationInFlight.current = false
+      setIsReloadingLatest(false)
+    }
+  }
+
   const handleArchive = async () => {
     if (lifecyclePending || lifecycleMutationInFlight.current) return
     lifecycleMutationInFlight.current = true
@@ -965,6 +986,36 @@ export default function ClienteHubPage() {
                 )}
               </CardHeader>
               <CardContent className="pt-6">
+                {updateClient.error ? (
+                  <section
+                    role="alert"
+                    aria-labelledby="client-update-error-title"
+                    className="mb-6 rounded-[var(--sm-radius-sm)] border border-[var(--sm-danger-border)] bg-[var(--sm-danger-subtle)] p-4"
+                  >
+                    <h3 id="client-update-error-title" className="font-bold text-[var(--sm-danger)]">
+                      {isConflictError(updateClient.error)
+                        ? "Este prontuário foi atualizado em outro acesso"
+                        : "Não foi possível salvar o prontuário"}
+                    </h3>
+                    <p className="mt-1 max-w-[65ch] text-sm text-[var(--sm-danger)]">
+                      {isConflictError(updateClient.error)
+                        ? "Revise a versão mais recente antes de editar novamente. Ao recarregar, suas alterações atuais serão substituídas."
+                        : "Seus campos continuam preenchidos. Verifique a conexão e tente salvar novamente."}
+                    </p>
+                    {isConflictError(updateClient.error) ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={lifecyclePending}
+                        onClick={handleReloadLatest}
+                        className="mt-4 min-h-11 border-[var(--sm-danger-border)] bg-[var(--sm-surface)] font-bold text-[var(--sm-danger)] hover:bg-[var(--sm-surface)]"
+                      >
+                        <RefreshCw aria-hidden="true" className={`size-4 ${isReloadingLatest ? "animate-spin" : ""}`} />
+                        {isReloadingLatest ? "Recarregando versão..." : "Recarregar versão mais recente"}
+                      </Button>
+                    ) : null}
+                  </section>
+                ) : null}
                 {professionalRole ? (
                   <ClientForm
                     key={`${clientId}:${formRevision}`}

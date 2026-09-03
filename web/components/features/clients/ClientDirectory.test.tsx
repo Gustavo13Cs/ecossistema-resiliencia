@@ -181,6 +181,41 @@ describe("professional client directory", () => {
     expect(screen.queryByRole("table")).not.toBeInTheDocument()
     expect(screen.getByRole("list", { name: "Pacientes ativos" })).toBeInTheDocument()
     expect(screen.getAllByRole("link", { name: "Abrir prontuário de Ana Souza" })).toHaveLength(1)
+    expect(screen.getByText("Ativo")).toBeVisible()
+  })
+
+  it("keeps filters and lifecycle confirmation controls at least 44px tall", async () => {
+    const user = userEvent.setup()
+    setDesktopViewport(false)
+    const { rerender } = render(
+      <>
+        <ClientFilters
+          search=""
+          status="ACTIVE"
+          workspace={getWorkspaceDefinition("PHYSIO")}
+          onSearchChange={vi.fn()}
+          onStatusChange={vi.fn()}
+        />
+        <ClientList
+          clients={[activeClient]}
+          status="ACTIVE"
+          workspace={getWorkspaceDefinition("PHYSIO")}
+          pendingClientId={null}
+          onChangeStatus={vi.fn()}
+        />
+      </>,
+    )
+
+    expect(screen.getByRole("button", { name: "Ativos" })).toHaveClass("min-h-11")
+    expect(screen.getByRole("button", { name: "Arquivados" })).toHaveClass("min-h-11")
+    const trigger = screen.getByRole("button", { name: "Arquivar paciente Ana Souza" })
+    expect(trigger).toHaveClass("min-h-11")
+
+    await user.click(trigger)
+    expect(screen.getByRole("button", { name: "Cancelar" })).toHaveClass("min-h-11")
+    expect(screen.getByRole("button", { name: "Confirmar arquivamento" })).toHaveClass("min-h-11")
+
+    rerender(<></>)
   })
 
   it("keeps archive explicit behind confirmation and never offers deletion", async () => {

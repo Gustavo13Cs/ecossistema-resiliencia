@@ -47,7 +47,7 @@ function StatusAction({ client, status, workspace, pending, locked, onChangeStat
           size="sm"
           disabled={locked}
           aria-label={`${pending ? pendingAction : action} ${singular} ${client.name}`}
-          className="min-h-10 px-3 font-bold text-[var(--sm-brand)] hover:bg-[var(--sm-brand-subtle)] hover:text-[var(--sm-brand-hover)]"
+          className="min-h-11 px-3 font-bold text-[var(--sm-brand)] hover:bg-[var(--sm-brand-subtle)] hover:text-[var(--sm-brand-hover)]"
         >
           <ActionIcon aria-hidden="true" className="size-4" strokeWidth={1.8} />
           {pending ? `${pendingAction}...` : action}
@@ -63,11 +63,11 @@ function StatusAction({ client, status, workspace, pending, locked, onChangeStat
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={locked}>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel disabled={locked} className="min-h-11">Cancelar</AlertDialogCancel>
           <AlertDialogAction
             disabled={locked}
             onClick={() => void onChangeStatus(client)}
-            className={isArchive ? "bg-[var(--sm-danger)] text-white hover:bg-[var(--sm-danger)]/90" : ""}
+            className={`min-h-11 ${isArchive ? "bg-[var(--sm-danger)] text-white hover:bg-[var(--sm-danger)]/90" : ""}`}
           >
             {isArchive ? "Confirmar arquivamento" : "Confirmar restauração"}
           </AlertDialogAction>
@@ -107,10 +107,15 @@ export function ClientListItem(props: ClientListItemProps) {
           {client.name.trim().charAt(0).toUpperCase() || workspace.clientSingular.charAt(0)}
         </span>
         <div className="min-w-0 flex-1">
-          <Link href={`/clientes/${client.id}`} aria-label={detailLabel} className="group inline-flex max-w-full items-center gap-1 font-bold text-[var(--sm-ink)] no-underline hover:text-[var(--sm-brand)] hover:underline">
-            <span className="line-clamp-2 break-words">{client.name}</span>
-            <ArrowRight aria-hidden="true" className="size-4 shrink-0" strokeWidth={1.8} />
-          </Link>
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+            <Link href={`/clientes/${client.id}`} aria-label={detailLabel} className="group inline-flex min-w-0 max-w-full items-center gap-1 font-bold text-[var(--sm-ink)] no-underline hover:text-[var(--sm-brand)] hover:underline">
+              <span className="line-clamp-2 break-words">{client.name}</span>
+              <ArrowRight aria-hidden="true" className="size-4 shrink-0" strokeWidth={1.8} />
+            </Link>
+            <span className="shrink-0 rounded-full bg-[var(--sm-brand-subtle)] px-2.5 py-1 text-xs font-bold text-[var(--sm-brand)]">
+              {props.status === "ACTIVE" ? "Ativo" : "Arquivado"}
+            </span>
+          </div>
           <p className="mt-1 break-all text-sm text-[var(--sm-muted)]">{contact}</p>
           <p className="mt-3 line-clamp-2 break-words text-sm text-[var(--sm-ink)]">{goal}</p>
           <p className="mt-2 text-xs font-semibold text-[var(--sm-muted)]">Atualizado em {updatedAt}</p>
