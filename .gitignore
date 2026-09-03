@@ -2,3 +2,8 @@
 .worktrees/
 .impeccable/config.local.json
 .impeccable/questions/
+
+# Tool-specific local configs
+.codex/
+.obsidian/
+graphify-out/
