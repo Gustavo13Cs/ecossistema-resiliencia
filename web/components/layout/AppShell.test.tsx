@@ -31,6 +31,7 @@ const ROLE_CASES = [
     role: "NUTRITIONIST",
     roleLabel: "Nutricionista",
     areaLabel: "Área de Nutrição",
+    clientLabel: "Clientes",
     ownLinks: ["Planos alimentares", "Alimentos"],
     foreignLinks: ["Planilhas", "Reabilitação"],
   },
@@ -38,6 +39,7 @@ const ROLE_CASES = [
     role: "PERSONAL",
     roleLabel: "Personal Trainer",
     areaLabel: "Área de Treinamento",
+    clientLabel: "Alunos",
     ownLinks: ["Planilhas"],
     foreignLinks: ["Planos alimentares", "Alimentos", "Reabilitação"],
   },
@@ -45,6 +47,7 @@ const ROLE_CASES = [
     role: "PHYSIO",
     roleLabel: "Fisioterapeuta",
     areaLabel: "Área de Fisioterapia",
+    clientLabel: "Pacientes",
     ownLinks: ["Reabilitação"],
     foreignLinks: ["Planos alimentares", "Alimentos", "Planilhas"],
   },
@@ -79,7 +82,7 @@ describe("AppShell", () => {
 
   it.each(ROLE_CASES)(
     "renders an isolated $role workspace with named landmarks",
-    ({ role, roleLabel, areaLabel, ownLinks, foreignLinks }) => {
+    ({ role, roleLabel, areaLabel, clientLabel, ownLinks, foreignLinks }) => {
       renderShell(role)
 
       const primaryNavigation = screen.getByRole("navigation", {
@@ -97,6 +100,9 @@ describe("AppShell", () => {
       expect(
         screen.getByRole("link", { name: "Buscar cliente" }),
       ).toHaveAttribute("href", "/clientes?focus=search")
+      expect(
+        within(primaryNavigation).getByRole("link", { name: clientLabel }),
+      ).toHaveAttribute("href", "/clientes")
 
       ownLinks.forEach((label) => {
         expect(within(primaryNavigation).getByRole("link", { name: label })).toBeInTheDocument()
@@ -109,7 +115,7 @@ describe("AppShell", () => {
 
   it.each(ROLE_CASES)(
     "keeps the $role mobile workspace isolated from other professions",
-    async ({ role, ownLinks, foreignLinks }) => {
+    async ({ role, clientLabel, ownLinks, foreignLinks }) => {
       const user = userEvent.setup()
       renderShell(role)
 
@@ -118,6 +124,10 @@ describe("AppShell", () => {
       const mobileNavigation = within(
         screen.getByRole("dialog", { name: "Menu de navegação" }),
       ).getByRole("navigation", { name: "Navegação móvel" })
+
+      expect(
+        within(mobileNavigation).getByRole("link", { name: clientLabel }),
+      ).toHaveAttribute("href", "/clientes")
 
       ownLinks.forEach((label) => {
         expect(within(mobileNavigation).getByRole("link", { name: label })).toBeInTheDocument()

@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useRef, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -48,7 +49,9 @@ function ClientRow({ client, status, restoring, onRestore }: ClientRowProps) {
 }
 
 export default function ClientesPage() {
-  const [status, setStatus] = useState<ClientStatus>("ACTIVE")
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const status: ClientStatus = searchParams.get("status") === "ARCHIVED" ? "ARCHIVED" : "ACTIVE"
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const restoringClientLocks = useRef(new Set<string>())
@@ -120,7 +123,7 @@ export default function ClientesPage() {
                 type="button"
                 variant={status === "ACTIVE" ? "default" : "outline"}
                 aria-pressed={status === "ACTIVE"}
-                onClick={() => setStatus("ACTIVE")}
+                onClick={() => router.replace("/clientes?status=ACTIVE")}
               >
                 Ativos
               </Button>
@@ -128,7 +131,7 @@ export default function ClientesPage() {
                 type="button"
                 variant={status === "ARCHIVED" ? "default" : "outline"}
                 aria-pressed={status === "ARCHIVED"}
-                onClick={() => setStatus("ARCHIVED")}
+                onClick={() => router.replace("/clientes?status=ARCHIVED")}
               >
                 Arquivados
               </Button>

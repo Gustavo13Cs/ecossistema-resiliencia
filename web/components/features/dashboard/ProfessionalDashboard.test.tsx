@@ -116,6 +116,9 @@ describe("ProfessionalDashboard", () => {
       expect(
         within(actions).queryByText(/dieta|alimento|reabilita|treino|agenda|avaliação/i),
       ).not.toBeInTheDocument()
+      expect(
+        screen.getByRole("region", { name: new RegExp(`${plural} recentes`, "i") }),
+      ).toBeInTheDocument()
     },
   )
 

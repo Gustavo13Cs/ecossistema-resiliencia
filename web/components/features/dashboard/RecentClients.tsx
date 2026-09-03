@@ -23,7 +23,7 @@ const formatUpdatedAt = (value: string) => {
 export function RecentClients({ clients, workspace }: RecentClientsProps) {
   return (
     <section
-      aria-label="Clientes recentes"
+      aria-label={`${workspace.clientPlural} recentes`}
       className="min-w-0 overflow-hidden rounded-[var(--sm-radius-md)] border border-[var(--sm-border)] bg-[var(--sm-surface)] shadow-[var(--sm-shadow-rest)]"
     >
       <div className="flex flex-col items-start gap-3 border-b border-[var(--sm-border)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6">

@@ -14,45 +14,56 @@ export interface WorkspaceDefinition {
   navigation: readonly WorkspaceNavigationItem[]
 }
 
-const SHARED_NAVIGATION = [
+const getSharedNavigation = (clientPlural: string) => [
   { id: "home", label: "Início", href: "/home" },
-  { id: "clients", label: "Clientes", href: "/clientes" },
+  { id: "clients", label: clientPlural, href: "/clientes" },
   { id: "assessments", label: "Avaliações", href: "/avaliacoes" },
 ] as const satisfies readonly WorkspaceNavigationItem[]
 
+const createWorkspace = (
+  role: ProfessionalRole,
+  areaLabel: string,
+  clientSingular: string,
+  clientPlural: string,
+  specializedNavigation: readonly WorkspaceNavigationItem[],
+): WorkspaceDefinition => ({
+  role,
+  areaLabel,
+  clientSingular,
+  clientPlural,
+  navigation: [...getSharedNavigation(clientPlural), ...specializedNavigation],
+})
+
 const WORKSPACES = {
-  NUTRITIONIST: {
-    role: "NUTRITIONIST",
-    areaLabel: "Nutrição",
-    clientSingular: "Cliente",
-    clientPlural: "Clientes",
-    navigation: [
-      ...SHARED_NAVIGATION,
+  NUTRITIONIST: createWorkspace(
+    "NUTRITIONIST",
+    "Nutrição",
+    "Cliente",
+    "Clientes",
+    [
       { id: "nutrition", label: "Planos alimentares", href: "/dietas" },
       { id: "foods", label: "Alimentos", href: "/alimentos" },
     ],
-  },
-  PERSONAL: {
-    role: "PERSONAL",
-    areaLabel: "Treinamento",
-    clientSingular: "Aluno",
-    clientPlural: "Alunos",
-    navigation: [
-      ...SHARED_NAVIGATION,
+  ),
+  PERSONAL: createWorkspace(
+    "PERSONAL",
+    "Treinamento",
+    "Aluno",
+    "Alunos",
+    [
       { id: "workouts", label: "Planilhas", href: "/treinos" },
     ],
-  },
-  PHYSIO: {
-    role: "PHYSIO",
-    areaLabel: "Fisioterapia",
-    clientSingular: "Paciente",
-    clientPlural: "Pacientes",
-    navigation: [
-      ...SHARED_NAVIGATION,
+  ),
+  PHYSIO: createWorkspace(
+    "PHYSIO",
+    "Fisioterapia",
+    "Paciente",
+    "Pacientes",
+    [
       { id: "rehab", label: "Reabilitação", href: "/reabilitacao" },
     ],
-  },
-} as const satisfies Record<ProfessionalRole, WorkspaceDefinition>
+  ),
+} satisfies Record<ProfessionalRole, WorkspaceDefinition>
 
 const ROLE_ONLY_PREFIXES: ReadonlyArray<[string, readonly ProfessionalRole[]]> = [
   ["/dietas", ["NUTRITIONIST"]],
