@@ -95,7 +95,7 @@ describe("ClientesPage status query", () => {
 
     expect(await screen.findByText("Registro arquivado")).toBeInTheDocument()
     expect(screen.queryByText("Registro ativo")).not.toBeInTheDocument()
-    expect(screen.getByText("Clientes arquivados")).toBeInTheDocument()
+    expect(screen.getByText("Pacientes arquivados")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Arquivados" })).toHaveAttribute("aria-pressed", "true")
     expect(
       queryClient.getQueryCache().find({ queryKey: ["clients", "professional-one", "ARCHIVED"] }),
@@ -115,7 +115,7 @@ describe("ClientesPage status query", () => {
 
     expect(await screen.findByText("Registro ativo")).toBeInTheDocument()
     expect(screen.queryByText("Registro arquivado")).not.toBeInTheDocument()
-    expect(screen.getByText("Clientes ativos")).toBeInTheDocument()
+    expect(screen.getByText("Pacientes ativos")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Ativos" })).toHaveAttribute("aria-pressed", "true")
 
     await user.click(screen.getByRole("button", { name: "Arquivados" }))

@@ -22,11 +22,12 @@ import { Label } from "@/components/ui/label"
 import { AssessmentModal } from "@/components/AssessmentModal"
 import { PhysioAssessmentModal } from "@/components/PhysioAssessmentModal"
 import { ClientForm } from "@/components/features/clients/ClientForm"
+import type { ClientFormPayload } from "@/components/features/clients/client-field-policy"
 import { useAuth } from "@/contexts/auth-context"
 import { useClientRecord } from "@/hooks/features/useClientRecord"
 import { api } from "@/lib/api"
 import { queryKeys } from "@/lib/query-keys"
-import type { Client, ClientFormValues } from "@/types/client"
+import type { Client } from "@/types/client"
 
 function isNotFoundError(error: unknown) {
   return axios.isAxiosError(error) && error.response?.status === 404
@@ -46,6 +47,7 @@ export default function ClienteHubPage() {
   const isNutri = user?.role === 'NUTRITIONIST' || user?.role === 'ADMIN'
   const isPersonal = user?.role === 'PERSONAL' || user?.role === 'ADMIN'
   const isFisio = user?.role === 'PHYSIO' || user?.role === 'ADMIN'
+  const professionalRole = user?.role && user.role !== "ADMIN" ? user.role : null
 
   // Hook unificado que busca tudo do cliente
   const {
@@ -89,7 +91,7 @@ export default function ClienteHubPage() {
       values,
       expectedUpdatedAt,
     }: {
-      values: ClientFormValues
+      values: ClientFormPayload
       expectedUpdatedAt: string
     }) => {
       const response = await api.patch<Client>(`/clients/${clientId}`, {
@@ -122,7 +124,7 @@ export default function ClienteHubPage() {
     ])
   }
 
-  const handleUpdate = async (values: ClientFormValues, expectedUpdatedAt: string) => {
+  const handleUpdate = async (values: ClientFormPayload, expectedUpdatedAt: string) => {
     if (lifecyclePending || lifecycleMutationInFlight.current) {
       throw new Error("Já existe uma operação em andamento")
     }
@@ -963,15 +965,18 @@ export default function ClienteHubPage() {
                 )}
               </CardHeader>
               <CardContent className="pt-6">
-                <ClientForm
-                  key={`${clientId}:${formRevision}`}
-                  mode="update"
-                  initialValues={client}
-                  initialVersion={client.updatedAt || new Date().toISOString()}
-                  submitLabel="Salvar alterações no prontuário"
-                  pending={lifecyclePending}
-                  onSubmit={handleUpdate}
-                />
+                {professionalRole ? (
+                  <ClientForm
+                    key={`${clientId}:${formRevision}`}
+                    mode="update"
+                    role={professionalRole}
+                    initialValues={client}
+                    initialVersion={client.updatedAt || new Date().toISOString()}
+                    submitLabel="Salvar alterações no prontuário"
+                    pending={lifecyclePending}
+                    onSubmit={handleUpdate}
+                  />
+                ) : null}
               </CardContent>
             </Card>
           </TabsContent>
