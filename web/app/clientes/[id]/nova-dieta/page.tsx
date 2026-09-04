@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
+import { AsyncState } from "@/components/feedback/AsyncState"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -22,6 +23,7 @@ import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
+import { useClientRecord, type ClientRecordStatus } from "@/hooks/features/useClientRecord"
 import { useQueryClient } from "@tanstack/react-query"
 import { invalidatePatientDiet } from "@/lib/query-invalidation"
 import {
@@ -31,7 +33,6 @@ import {
   readLegacyDietDraft,
   type LegacyDietDraftReadResult,
 } from "@/lib/legacy-clinical-draft"
-import type { Client } from "@/types/client"
 
 const MacroDistributionChart = dynamic(() => import("@/components/features/diet/MacroDistributionChart"), {
   ssr: false,
@@ -68,6 +69,25 @@ const getAutoDRI = (gender: string | null, age: number) => {
   return { fiber, iron, calcium, sodium };
 };
 
+const CLIENT_GATE_ERRORS: Record<Exclude<ClientRecordStatus, "loading" | "ready">, { title: string; description: string }> = {
+  "not-found": {
+    title: "Cliente não encontrado",
+    description: "O prontuário solicitado não existe ou não está disponível na sua base privada.",
+  },
+  unauthorized: {
+    title: "Cliente indisponível",
+    description: "Sua sessão não tem acesso a este prontuário profissional.",
+  },
+  "network-error": {
+    title: "Sem conexão com o SafeMove",
+    description: "Não foi possível validar o acesso ao prontuário. Verifique a conexão e tente novamente.",
+  },
+  "server-error": {
+    title: "SafeMove temporariamente indisponível",
+    description: "O acesso ao prontuário não pôde ser validado agora. Tente novamente em instantes.",
+  },
+}
+
 export default function NovaDietaPage() {
   const params = useParams()
   const router = useRouter()
@@ -75,6 +95,13 @@ export default function NovaDietaPage() {
   const queryClient = useQueryClient()
   const [loading, setLoading] = useState(false)
   const clientId = params.id as string
+  const isNutritionist = loggedInUser?.role === "NUTRITIONIST"
+  const {
+    client: authorizedClient,
+    status: clientStatus,
+    refetch: refetchClient,
+  } = useClientRecord(isNutritionist ? clientId : undefined)
+  const canUseDietEditor = isNutritionist && clientStatus === "ready" && authorizedClient !== null
   const [legacyDraftState, setLegacyDraftState] = useState<{
     clientId: string
     value: LegacyDietDraftReadResult
@@ -117,36 +144,26 @@ export default function NovaDietaPage() {
   const [loadingTemplates, setLoadingTemplates] = useState(false)
 
 
-  const [patientProfile, setPatientProfile] = useState<Client | null>(null);
-  const [patientAge, setPatientAge] = useState<number>(0);
+  const patientProfile = authorizedClient
+  const patientAge = patientProfile?.birthDate ? calculateAge(patientProfile.birthDate) : 0
 
   const [newFood, setNewFood] = useState({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 })
 
-  useEffect(() => { if (searchTerm.length === 0) fetchFoods(selectedSource) }, [selectedSource])
   useEffect(() => {
+    if (canUseDietEditor && searchTerm.length === 0) void fetchFoods(selectedSource)
+  }, [canUseDietEditor, selectedSource])
+  useEffect(() => {
+    if (!canUseDietEditor) {
+      setLegacyDraftState(undefined)
+      return
+    }
     legacyDraftApplied.current = false
     setLegacyDraftState({ clientId, value: readLegacyDietDraft(clientId) })
-  }, [clientId])
+  }, [canUseDietEditor, clientId])
 
   const loadInitialData = async (loadServerPlan: boolean) => {
-    let defaultDri = { fiber: 30, sodium: 2000, calcium: 1000, iron: 15 };
-    let age = 0;
-    let pData = null;
-
-    if (!loadServerPlan) return
-
-    try {
-      const clientResponse = await api.get<Client>(`/clients/${clientId}`);
-      pData = clientResponse.data;
-      setPatientProfile(pData);
-      
-      if (pData.birthDate) {
-         age = calculateAge(pData.birthDate);
-         setPatientAge(age);
-      }
-      
-      defaultDri = getAutoDRI(pData.gender, age);
-    } catch {}
+    if (!canUseDietEditor || !patientProfile || !loadServerPlan) return
+    const defaultDri = getAutoDRI(patientProfile.gender, patientAge)
 
     try {
       const res = await api.get(`/diet-plans/user/${clientId}/active`)
@@ -154,7 +171,7 @@ export default function NovaDietaPage() {
         setDietInfo({
            title: res.data.title, goal: res.data.goal, notes: res.data.notes || "",
            durationDays: res.data.durationDays || 30,
-           patientWeight: pData?.initialWeight || 80
+           patientWeight: patientProfile.initialWeight || 80
         })
         setTargets({
           kcal: res.data.targetKcal, pro: res.data.proteinG, carb: res.data.carbsG, fat: res.data.fatG,
@@ -169,16 +186,16 @@ export default function NovaDietaPage() {
         })))
       } else {
         setTargets(prev => ({ ...prev, ...defaultDri }));
-        setDietInfo(prev => ({ ...prev, patientWeight: pData?.initialWeight || 80 }));
+        setDietInfo(prev => ({ ...prev, patientWeight: patientProfile.initialWeight || 80 }));
       }
     } catch (error) {}
 
   }
 
   useEffect(() => {
-    if (legacyDraft !== null) return
+    if (!canUseDietEditor || legacyDraft !== null) return
     void loadInitialData(!legacyDraftApplied.current)
-  }, [clientId, legacyDraft])
+  }, [canUseDietEditor, clientId, legacyDraft])
 
   const handleLoadLegacyDraft = () => {
     const consumedDraft = consumeLegacyDietDraft(clientId)
@@ -201,6 +218,7 @@ export default function NovaDietaPage() {
   }
 
   useEffect(() => {
+    if (!canUseDietEditor) return
     const delayDebounceFn = setTimeout(async () => {
       if (searchTerm.length >= 2) {
         setIsSearching(true)
@@ -211,7 +229,7 @@ export default function NovaDietaPage() {
       } else if (searchTerm.length === 0) { fetchFoods(selectedSource) }
     }, 500)
     return () => clearTimeout(delayDebounceFn)
-  }, [searchTerm, selectedSource])
+  }, [canUseDietEditor, searchTerm, selectedSource])
 
   const fetchFoods = async (source = "TODAS") => {
     try {
@@ -384,6 +402,7 @@ export default function NovaDietaPage() {
   const handlePrintList = () => { setPrintMode('list'); setShowShareModal(false); setTimeout(() => window.print(), 300) }
 
   const handleOpenTemplateModal = async () => {
+    if (!canUseDietEditor) return
     setShowTemplateModal(true)
     setLoadingTemplates(true)
     try {
@@ -434,6 +453,7 @@ export default function NovaDietaPage() {
 
 
   const handleSaveDiet = async () => {
+    if (!canUseDietEditor || !patientProfile) return
     setLoading(true)
     try {
       const payload = {
@@ -476,6 +496,42 @@ export default function NovaDietaPage() {
     if (source === 'TBCA') return 'bg-amber-100 text-amber-700'
     if (source === 'MANUAL') return 'bg-purple-100 text-purple-700'
     return 'bg-slate-100 text-slate-700'
+  }
+
+  if (!isNutritionist) {
+    return (
+      <AsyncState
+        kind="error"
+        title="Área de Nutrição indisponível"
+        description="Este fluxo é exclusivo da atuação de Nutrição e não carrega dados de outras áreas profissionais."
+      />
+    )
+  }
+
+  if (clientStatus === "loading") {
+    return (
+      <AsyncState
+        kind="loading"
+        title="Validando acesso ao cliente"
+        description="Confirmando o prontuário autorizado antes de abrir a prescrição."
+      />
+    )
+  }
+
+  if (clientStatus !== "ready" || !patientProfile) {
+    const state = CLIENT_GATE_ERRORS[clientStatus === "ready" ? "server-error" : clientStatus]
+    return (
+      <AsyncState
+        kind="error"
+        title={state.title}
+        description={state.description}
+        action={
+          clientStatus === "network-error" || clientStatus === "server-error"
+            ? <Button type="button" className="min-h-11" onClick={() => void refetchClient()}>Tentar novamente</Button>
+            : undefined
+        }
+      />
+    )
   }
 
   return (

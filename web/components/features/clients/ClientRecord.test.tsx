@@ -92,10 +92,10 @@ afterEach(cleanup)
 
 describe("professional Client record", () => {
   it.each([
-    ["NUTRITIONIST", "Área de Nutrição", "Contexto nutricional", "Alergias e restrições", "Criar plano alimentar"],
-    ["PERSONAL", "Área de Treinamento", "Contexto de treinamento", "Acompanhamento com personal", "Criar planilha"],
-    ["PHYSIO", "Área de Fisioterapia", "Contexto fisioterapêutico", "Tipo de exercício", "Criar plano de reabilitação"],
-  ] as const)("renders only the %s workspace", (role, area, context, ownField, action) => {
+    ["NUTRITIONIST", "Área de Nutrição", "Contexto nutricional", "Alergias e restrições", "Planos alimentares em migração"],
+    ["PERSONAL", "Área de Treinamento", "Contexto de treinamento", "Acompanhamento com personal", "Planilhas de treino em migração"],
+    ["PHYSIO", "Área de Fisioterapia", "Contexto fisioterapêutico", "Tipo de exercício", "Planos de reabilitação em migração"],
+  ] as const)("renders only the %s workspace", (role, area, context, ownField, migrationStatus) => {
     session.role = role as ProfessionalRole
     renderPage()
 
@@ -103,7 +103,8 @@ describe("professional Client record", () => {
     expect(screen.getByRole("heading", { name: area })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: context })).toBeInTheDocument()
     expect(screen.getByLabelText(ownField)).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: action })).toBeInTheDocument()
+    expect(screen.getByRole("status", { name: migrationStatus })).toBeInTheDocument()
+    expect(document.querySelector('a[href*="nova-dieta"], a[href*="novo-treino"], a[href*="nova-reabilitacao"]')).toBeNull()
   })
 
   it("never combines fields or actions from another profession", () => {
@@ -112,8 +113,21 @@ describe("professional Client record", () => {
 
     expect(screen.queryByLabelText("Alergias e restrições")).not.toBeInTheDocument()
     expect(screen.queryByLabelText("Acompanhamento com personal")).not.toBeInTheDocument()
-    expect(screen.queryByRole("link", { name: /plano alimentar|planilha/i })).not.toBeInTheDocument()
+    expect(screen.getByRole("status", { name: "Planos de reabilitação em migração" })).toBeInTheDocument()
+    expect(screen.queryByText("Planos alimentares")).not.toBeInTheDocument()
+    expect(screen.queryByText("Planilhas de treino")).not.toBeInTheDocument()
     expect(screen.queryByText(/histórico de dieta|suplementação|exames laboratoriais/i)).not.toBeInTheDocument()
+  })
+
+  it("does not turn a Client id into a legacy User-domain href", () => {
+    record.client = { ...makeClient(), id: "client-record-123", professionalId: "user-account-987" }
+    session.role = "NUTRITIONIST"
+    renderPage()
+
+    expect(record.client.id).not.toBe(record.client.professionalId)
+    expect(document.querySelector('a[href*="client-record-123/nova-dieta"]')).toBeNull()
+    expect(document.querySelector('a[href*="client-record-123/novo-treino"]')).toBeNull()
+    expect(document.querySelector('a[href*="client-record-123/nova-reabilitacao"]')).toBeNull()
   })
 
   it("does not turn ADMIN into every professional workspace", () => {

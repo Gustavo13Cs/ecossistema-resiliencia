@@ -1,24 +1,20 @@
-import Link from "next/link"
-import { ArrowUpRight, ShieldCheck } from "lucide-react"
-import { canAccessProfessionalPath, getWorkspaceDefinition } from "@/lib/professional-workspace"
+import { Clock3, ShieldCheck } from "lucide-react"
+import { getWorkspaceDefinition } from "@/lib/professional-workspace"
 import type { ProfessionalRole } from "@/types/auth"
 
-const ROLE_ACTIONS = {
-  NUTRITIONIST: { label: "Criar plano alimentar", path: "nova-dieta" },
-  PERSONAL: { label: "Criar planilha", path: "novo-treino" },
-  PHYSIO: { label: "Criar plano de reabilitação", path: "nova-reabilitacao" },
-} as const satisfies Record<ProfessionalRole, { label: string; path: string }>
+const ROLE_DOMAINS = {
+  NUTRITIONIST: "Planos alimentares",
+  PERSONAL: "Planilhas de treino",
+  PHYSIO: "Planos de reabilitação",
+} as const satisfies Record<ProfessionalRole, string>
 
 interface ProfessionalScopePanelProps {
   role: ProfessionalRole
-  clientId: string
 }
 
-export function ProfessionalScopePanel({ role, clientId }: ProfessionalScopePanelProps) {
+export function ProfessionalScopePanel({ role }: ProfessionalScopePanelProps) {
   const workspace = getWorkspaceDefinition(role)
-  const action = ROLE_ACTIONS[role]
-  const href = `/clientes/${clientId}/${action.path}`
-  const canAccess = canAccessProfessionalPath(role, href)
+  const domain = ROLE_DOMAINS[role]
 
   return (
     <aside aria-labelledby="professional-scope-title" className="rounded-[var(--sm-radius-lg)] border border-[var(--sm-brand-border)] bg-[var(--sm-brand-subtle)] p-5 sm:p-6">
@@ -29,15 +25,19 @@ export function ProfessionalScopePanel({ role, clientId }: ProfessionalScopePane
       <p className="mt-2 text-sm leading-6 text-[var(--sm-muted)]">
         Este prontuário mostra apenas o contexto da sua especialidade. Outros domínios profissionais não são carregados.
       </p>
-      {canAccess ? (
-        <Link
-          href={href}
-          className="mt-5 inline-flex min-h-11 w-full items-center justify-between rounded-[var(--sm-radius-sm)] bg-[var(--sm-brand)] px-4 text-sm font-bold text-white transition hover:bg-[var(--sm-brand-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sm-brand)] focus-visible:ring-offset-2"
-        >
-          {action.label}
-          <ArrowUpRight aria-hidden="true" className="size-4" />
-        </Link>
-      ) : null}
+      <div
+        role="status"
+        aria-label={`${domain} em migração`}
+        className="mt-5 rounded-[var(--sm-radius-sm)] border border-[var(--sm-brand-border)] bg-[var(--sm-surface)] p-4"
+      >
+        <div className="flex items-center gap-2 text-sm font-bold text-[var(--sm-ink)]">
+          <Clock3 aria-hidden="true" className="size-4 text-[var(--sm-brand)]" />
+          {domain}
+        </div>
+        <p className="mt-1 text-sm text-[var(--sm-muted)]">
+          Em migração. Esta ação ficará disponível quando o domínio usar o prontuário Client com autorização própria.
+        </p>
+      </div>
       <p className="mt-4 text-xs leading-5 text-[var(--sm-muted)]">
         Históricos clínicos antigos não são presumidos como migrados nesta versão.
       </p>

@@ -6,8 +6,10 @@ import type { ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { api } from "@/lib/api"
 import NovaDietaPage from "./page"
+import type { UserRole } from "@/types/auth"
 
 const navigation = vi.hoisted(() => ({ push: vi.fn() }))
+const session = vi.hoisted(() => ({ role: "NUTRITIONIST" as UserRole }))
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: "client-one" }),
@@ -16,7 +18,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/contexts/auth-context", () => ({
   useAuth: () => ({
-    user: { sub: "professional-one", role: "NUTRITIONIST", name: "Ana Lima" },
+    user: { sub: "professional-one", role: session.role, name: "Ana Lima" },
     isLoading: false,
     login: vi.fn(),
     logout: vi.fn(),
@@ -60,6 +62,7 @@ const renderPage = () => {
 
 beforeEach(() => {
   localStorage.clear()
+  session.role = "NUTRITIONIST"
   navigation.push.mockReset()
   http.reset()
   http.onGet("/clients/client-one").reply(200, {
@@ -115,5 +118,72 @@ describe("diet page legacy draft recovery", () => {
 
     await user.click(screen.getByRole("button", { name: "Remover rascunho ilegível" }))
     await waitFor(() => expect(localStorage.getItem(key)).toBeNull())
+  })
+
+  it("treats a malformed meal item as unreadable without crashing or consuming it", async () => {
+    const malformedDraft = {
+      ...validDraft,
+      meals: [{
+        ...validDraft.meals[0],
+        items: [{ id: "item-one", quantity: 100, measure: "g", food: { id: "food-one" } }],
+      }],
+    }
+    const serialized = JSON.stringify(malformedDraft)
+    localStorage.setItem(key, serialized)
+    const user = userEvent.setup()
+
+    renderPage()
+
+    expect(await screen.findByRole("alertdialog", { name: "Rascunho local ilegível" })).toBeInTheDocument()
+    expect(localStorage.getItem(key)).toBe(serialized)
+    expect(screen.queryByRole("button", { name: "Carregar nesta sessão e remover do navegador" })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Remover rascunho ilegível" }))
+    await waitFor(() => expect(localStorage.getItem(key)).toBeNull())
+  })
+
+  it.each([
+    [401, "Cliente indisponível"],
+    [403, "Cliente indisponível"],
+    [404, "Cliente não encontrado"],
+    [500, "SafeMove temporariamente indisponível"],
+  ] as const)("blocks the editor and all follow-up requests when Client returns %s", async (status, title) => {
+    localStorage.setItem(key, JSON.stringify(validDraft))
+    http.reset()
+    http.onGet("/clients/client-one").reply(status)
+
+    renderPage()
+
+    expect(await screen.findByRole("alert", { name: title })).toBeInTheDocument()
+    expect(http.history.get.map((request) => request.url)).toEqual(["/clients/client-one"])
+    expect(http.history.post).toHaveLength(0)
+    expect(localStorage.getItem(key)).not.toBeNull()
+    expect(screen.queryByRole("button", { name: "Finalizar" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Usar Template" })).not.toBeInTheDocument()
+  })
+
+  it("blocks the editor and follow-up requests after a Client network failure", async () => {
+    localStorage.setItem(key, JSON.stringify(validDraft))
+    http.reset()
+    http.onGet("/clients/client-one").networkError()
+
+    renderPage()
+
+    expect(await screen.findByRole("alert", { name: "Sem conexão com o SafeMove" })).toBeInTheDocument()
+    expect(http.history.get.map((request) => request.url)).toEqual(["/clients/client-one"])
+    expect(http.history.post).toHaveLength(0)
+    expect(localStorage.getItem(key)).not.toBeNull()
+    expect(screen.queryByRole("button", { name: "Finalizar" })).not.toBeInTheDocument()
+  })
+
+  it("does not request Client data or render the editor outside Nutrition", () => {
+    session.role = "PERSONAL"
+
+    renderPage()
+
+    expect(screen.getByRole("alert", { name: "Área de Nutrição indisponível" })).toBeInTheDocument()
+    expect(http.history.get).toHaveLength(0)
+    expect(http.history.post).toHaveLength(0)
+    expect(screen.queryByRole("button", { name: "Finalizar" })).not.toBeInTheDocument()
   })
 })

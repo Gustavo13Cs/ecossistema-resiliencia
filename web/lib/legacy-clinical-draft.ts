@@ -22,7 +22,28 @@ export interface LegacyDietMeal {
   name: string
   time: string
   notes: string
-  items: unknown[]
+  items: LegacyDietMealItem[]
+}
+
+export interface LegacyDietFood {
+  id: string
+  name: string
+  baseAmount: number
+  kcal: number
+  protein: number
+  carbs: number
+  fat: number
+  fiber: number
+  sodium: number
+  calcium: number
+  iron: number
+}
+
+export interface LegacyDietMealItem {
+  id: string
+  quantity: number
+  measure: string
+  food: LegacyDietFood
 }
 
 export interface LegacyDietDraft {
@@ -66,6 +87,23 @@ function isLegacyDietMeal(value: unknown): value is LegacyDietMeal {
     && typeof value.time === "string"
     && typeof value.notes === "string"
     && Array.isArray(value.items)
+    && value.items.every(isLegacyDietMealItem)
+}
+
+function isLegacyDietFood(value: unknown): value is LegacyDietFood {
+  if (!isRecord(value)) return false
+  return typeof value.id === "string"
+    && typeof value.name === "string"
+    && ["baseAmount", "kcal", "protein", "carbs", "fat", "fiber", "sodium", "calcium", "iron"]
+      .every((field) => isFiniteNumber(value[field]))
+}
+
+function isLegacyDietMealItem(value: unknown): value is LegacyDietMealItem {
+  if (!isRecord(value)) return false
+  return typeof value.id === "string"
+    && isFiniteNumber(value.quantity)
+    && typeof value.measure === "string"
+    && isLegacyDietFood(value.food)
 }
 
 function isLegacyDietDraft(value: unknown): value is LegacyDietDraft {

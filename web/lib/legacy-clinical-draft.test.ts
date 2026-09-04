@@ -70,6 +70,25 @@ describe("legacy clinical draft", () => {
     expect(localStorage.getItem("diet_draft_client-one")).toBeNull()
   })
 
+  it("rejects an incomplete meal item without consuming or removing it", () => {
+    const malformedDraft = {
+      ...validDraft,
+      meals: [{
+        ...validDraft.meals[0],
+        items: [{ id: "item-one", quantity: 100, measure: "g", food: { id: "food-one" } }],
+      }],
+    }
+    const serialized = JSON.stringify(malformedDraft)
+    localStorage.setItem("diet_draft_client-one", serialized)
+
+    expect(readLegacyDietDraft("client-one")).toEqual({ status: "unreadable", reason: "invalid" })
+    expect(consumeLegacyDietDraft("client-one")).toEqual({ status: "unreadable", reason: "invalid" })
+    expect(localStorage.getItem("diet_draft_client-one")).toBe(serialized)
+
+    expect(discardLegacyDietDraft("client-one")).toBe(true)
+    expect(localStorage.getItem("diet_draft_client-one")).toBeNull()
+  })
+
   it("fails safely when browser storage is unavailable", () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new DOMException("blocked", "SecurityError")

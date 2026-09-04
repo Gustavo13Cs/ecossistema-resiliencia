@@ -172,7 +172,7 @@ export default function ClienteHubPage() {
           onUpdate={handleUpdate}
           onReloadLatest={handleReloadLatest}
         />
-        <ProfessionalScopePanel role={user.role} clientId={client.id} />
+        <ProfessionalScopePanel role={user.role} />
       </div>
     </div>
   )
