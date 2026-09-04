@@ -1,75 +1,92 @@
 import {
-  Controller, Post, Body, Get, Param,
-  Patch, Delete, Request, ForbiddenException, UseGuards,
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  Patch,
+  Delete,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { DietPlansService } from './diet-plans.service';
 import { CreateDietPlanDto } from './dto/create-diet-plan.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { DOMAIN_ROLES } from '../../common/policies/professional-domain-roles';
+import { AuthUser } from '../../common/types/auth-user';
+
+type AuthenticatedRequest = { user: AuthUser };
 
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(...DOMAIN_ROLES.nutrition)
 @Controller('diet-plans')
 export class DietPlansController {
   constructor(private readonly dietPlansService: DietPlansService) {}
 
-  // Só nutricionistas e admins criam dietas
-  @Roles('NUTRITIONIST', 'ADMIN')
   @Post()
-  create(@Request() req, @Body() createDietDto: CreateDietPlanDto) {
-    return this.dietPlansService.create(createDietDto, req.user.sub);
+  create(
+    @Request() request: AuthenticatedRequest,
+    @Body() createDietDto: CreateDietPlanDto,
+  ) {
+    return this.dietPlansService.create(createDietDto, request.user.sub);
   }
 
   // Lista dietas criadas pelo profissional logado
-  @Roles('NUTRITIONIST', 'ADMIN')
   @Get()
-  findAll(@Request() req) {
-    return this.dietPlansService.findAll(req.user.sub);
+  findAll(@Request() request: AuthenticatedRequest) {
+    return this.dietPlansService.findAll(request.user.sub);
   }
 
-  // Paciente só vê a própria dieta; profissional vê de qualquer paciente vinculado
   @Get('user/:userId/active')
-  findActiveByUser(@Request() req, @Param('userId') userId: string) {
-    const isProfessional = ['NUTRITIONIST', 'ADMIN'].includes(req.user.role);
-
-    if (!isProfessional && req.user.sub !== userId) {
-      throw new ForbiddenException('Acesso negado');
-    }
-
-    return this.dietPlansService.findActiveByUser(userId, req.user.sub, isProfessional);
+  findActiveByUser(
+    @Request() request: AuthenticatedRequest,
+    @Param('userId') userId: string,
+  ) {
+    return this.dietPlansService.findActiveByUser(
+      userId,
+      request.user.sub,
+      true,
+    );
   }
 
   // Histórico completo de dietas do paciente (ativas + inativas)
-  @Roles('NUTRITIONIST', 'ADMIN')
   @Get('user/:userId/history')
   findAllByPatient(@Param('userId') userId: string) {
     return this.dietPlansService.findAllByPatient(userId);
   }
 
-  // Só o dono da refeição (paciente) ou profissional vinculado pode fazer toggle
   @Patch('meal/:mealId/toggle')
-  toggleMealStatus(@Request() req, @Param('mealId') mealId: string) {
-    return this.dietPlansService.toggleMealStatus(mealId, req.user.sub, req.user.role);
+  toggleMealStatus(
+    @Request() request: AuthenticatedRequest,
+    @Param('mealId') mealId: string,
+  ) {
+    return this.dietPlansService.toggleMealStatus(
+      mealId,
+      request.user.sub,
+      request.user.role,
+    );
   }
 
   // Só o criador da dieta pode deletar
-  @Roles('NUTRITIONIST', 'ADMIN')
   @Delete(':id')
-  remove(@Request() req, @Param('id') id: string) {
-    return this.dietPlansService.remove(id, req.user.sub);
+  remove(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
+    return this.dietPlansService.remove(id, request.user.sub);
   }
 
   // Salvar um plano existente como template reutilizável
-  @Roles('NUTRITIONIST', 'ADMIN')
   @Patch(':id/save-as-template')
-  saveAsTemplate(@Request() req, @Param('id') id: string) {
-    return this.dietPlansService.saveAsTemplate(id, req.user.sub);
+  saveAsTemplate(
+    @Request() request: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    return this.dietPlansService.saveAsTemplate(id, request.user.sub);
   }
 
   // Listar todos os templates do profissional logado (com refeições completas para pré-preencher)
-  @Roles('NUTRITIONIST', 'ADMIN')
   @Get('templates')
-  listTemplates(@Request() req) {
-    return this.dietPlansService.listTemplates(req.user.sub);
+  listTemplates(@Request() request: AuthenticatedRequest) {
+    return this.dietPlansService.listTemplates(request.user.sub);
   }
 }

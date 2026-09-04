@@ -1,11 +1,25 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards,Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { AssessmentsService } from './assessments.service';
 import { CreateAssessmentDto } from './dto/create-assessment.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { DOMAIN_ROLES } from '../../common/policies/professional-domain-roles';
+import { AuthUser } from '../../common/types/auth-user';
 
-@UseGuards(JwtAuthGuard, RolesGuard) 
+type AuthenticatedRequest = { user: AuthUser };
+
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(...DOMAIN_ROLES.sharedAssessment)
 @Controller('assessments')
 export class AssessmentsController {
   constructor(private readonly assessmentsService: AssessmentsService) {}
@@ -26,7 +40,7 @@ export class AssessmentsController {
   }
 
   @Get()
-  findAll(@Request() req) {
-    return this.assessmentsService.findAll(req.user.sub);
+  findAll(@Request() request: AuthenticatedRequest) {
+    return this.assessmentsService.findAll(request.user.sub);
   }
 }
