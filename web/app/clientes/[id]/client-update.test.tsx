@@ -64,24 +64,15 @@ const makeClient = (overrides: Partial<Client> = {}): Client => ({
 
 const record = vi.hoisted(() => ({
   client: null as Client | null,
+  refetch: vi.fn(),
 }))
 
 vi.mock("@/hooks/features/useClientRecord", () => ({
   useClientRecord: () => ({
     client: record.client,
-    activeDiet: null,
-    dietHistory: [],
-    activeWorkout: null,
-    activeRehab: null,
-    activeSupplement: null,
-    assessments: [],
-    physioAssessments: [],
-    anamneses: [],
-    consultationNotes: [],
-    labExams: [],
-    loading: false,
-    clientError: null,
-    refetchAll: vi.fn(),
+    status: "ready",
+    error: null,
+    refetch: record.refetch,
   }),
 }))
 
@@ -97,14 +88,11 @@ const renderPage = () => {
   return { queryClient, ...render(<ClienteHubPage />, { wrapper }) }
 }
 
-const openRecordForm = async () => {
-  const user = userEvent.setup()
-  await user.click(screen.getByRole("tab", { name: /Dados & Prontuário/i }))
-  return user
-}
+const openRecordForm = async () => userEvent.setup()
 
 beforeEach(() => {
   record.client = makeClient()
+  record.refetch.mockReset()
   router.push.mockReset()
   http.reset()
 })
@@ -129,7 +117,7 @@ describe("client update recovery", () => {
 
   it("distinguishes a 409 conflict and reloads the latest version only after explicit recovery", async () => {
     http.onPatch("/clients/client-one").reply(409)
-    const { queryClient } = renderPage()
+    renderPage()
     const user = await openRecordForm()
     const name = screen.getByLabelText("Nome completo")
 
@@ -141,11 +129,12 @@ describe("client update recovery", () => {
     expect(conflict).toHaveTextContent("suas alterações atuais serão substituídas")
     expect(name).toHaveValue("Alteração ainda não salva")
 
-    vi.spyOn(queryClient, "refetchQueries").mockImplementation(async () => {
+    record.refetch.mockImplementation(async () => {
       record.client = makeClient({
         name: "Versão mais recente",
         updatedAt: "2026-09-03T13:00:00.000Z",
       })
+      return { data: record.client }
     })
 
     await user.click(screen.getByRole("button", { name: "Recarregar versão mais recente" }))

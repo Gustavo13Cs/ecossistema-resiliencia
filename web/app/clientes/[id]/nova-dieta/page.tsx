@@ -1,8 +1,17 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, Plus, Search, Trash2, Edit2, CheckCircle2, Target, Printer, Share2, ShoppingCart, Smartphone, Database, Info, Loader2, X, Bookmark } from "lucide-react"
@@ -15,6 +24,14 @@ import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
 import { useQueryClient } from "@tanstack/react-query"
 import { invalidatePatientDiet } from "@/lib/query-invalidation"
+import {
+  consumeLegacyDietDraft,
+  discardLegacyDietDraft,
+  isUnreadableLegacyDietDraft,
+  readLegacyDietDraft,
+  type LegacyDietDraftReadResult,
+} from "@/lib/legacy-clinical-draft"
+import type { Client } from "@/types/client"
 
 const MacroDistributionChart = dynamic(() => import("@/components/features/diet/MacroDistributionChart"), {
   ssr: false,
@@ -32,7 +49,7 @@ const calculateAge = (birthDate: string) => {
   return age;
 };
 
-const getAutoDRI = (gender: string, age: number) => {
+const getAutoDRI = (gender: string | null, age: number) => {
   const isMale = gender === 'M' || gender?.toUpperCase() === 'MASCULINO';
   const isFemale = gender === 'F' || gender?.toUpperCase() === 'FEMININO';
 
@@ -57,7 +74,13 @@ export default function NovaDietaPage() {
   const { user: loggedInUser } = useAuth()
   const queryClient = useQueryClient()
   const [loading, setLoading] = useState(false)
-  const [isRestored, setIsRestored] = useState(false)
+  const clientId = params.id as string
+  const [legacyDraftState, setLegacyDraftState] = useState<{
+    clientId: string
+    value: LegacyDietDraftReadResult
+  } | undefined>(undefined)
+  const legacyDraftApplied = useRef(false)
+  const legacyDraft = legacyDraftState?.clientId === clientId ? legacyDraftState.value : undefined
 
   const [dietInfo, setDietInfo] = useState({ title: "Fase 1 - Adapta├º├úo", goal: "Emagrecimento", notes: "", durationDays: 30, patientWeight: 80 })
   const [targets, setTargets] = useState({ 
@@ -94,22 +117,27 @@ export default function NovaDietaPage() {
   const [loadingTemplates, setLoadingTemplates] = useState(false)
 
 
-  const [patientProfile, setPatientProfile] = useState<any>(null);
+  const [patientProfile, setPatientProfile] = useState<Client | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
   const [newFood, setNewFood] = useState({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 })
 
   useEffect(() => { if (searchTerm.length === 0) fetchFoods(selectedSource) }, [selectedSource])
-  useEffect(() => { loadInitialData() }, [])
+  useEffect(() => {
+    legacyDraftApplied.current = false
+    setLegacyDraftState({ clientId, value: readLegacyDietDraft(clientId) })
+  }, [clientId])
 
-  const loadInitialData = async () => {
+  const loadInitialData = async (loadServerPlan: boolean) => {
     let defaultDri = { fiber: 30, sodium: 2000, calcium: 1000, iron: 15 };
     let age = 0;
     let pData = null;
 
+    if (!loadServerPlan) return
+
     try {
-      const userRes = await api.get(`/users/${params.id}`);
-      pData = userRes.data;
+      const clientResponse = await api.get<Client>(`/clients/${clientId}`);
+      pData = clientResponse.data;
       setPatientProfile(pData);
       
       if (pData.birthDate) {
@@ -118,28 +146,10 @@ export default function NovaDietaPage() {
       }
       
       defaultDri = getAutoDRI(pData.gender, age);
-    } catch (e) { console.error("Erro ao buscar perfil biol├│gico", e) }
-
-    const draftKey = `diet_draft_${params.id}`
-    const savedDraft = localStorage.getItem(draftKey)
-    if (savedDraft) {
-      try {
-        const parsed = JSON.parse(savedDraft)
-        setDietInfo({ ...parsed.dietInfo, patientWeight: pData?.initialWeight || parsed.dietInfo.patientWeight || 80 });
-        setTargets({
-          ...parsed.targets,
-          fiber: parsed.targets.fiber || defaultDri.fiber,
-          sodium: parsed.targets.sodium || defaultDri.sodium,
-          calcium: parsed.targets.calcium || defaultDri.calcium,
-          iron: parsed.targets.iron || defaultDri.iron
-        });
-        setMeals(parsed.meals); setIsRestored(true);
-        return;
-      } catch (error) {}
-    }
+    } catch {}
 
     try {
-      const res = await api.get(`/diet-plans/user/${params.id}/active`)
+      const res = await api.get(`/diet-plans/user/${clientId}/active`)
       if (res.data) {
         setDietInfo({
            title: res.data.title, goal: res.data.goal, notes: res.data.notes || "",
@@ -163,13 +173,32 @@ export default function NovaDietaPage() {
       }
     } catch (error) {}
 
-    setIsRestored(true)
   }
 
   useEffect(() => {
-    if (!isRestored) return 
-    localStorage.setItem(`diet_draft_${params.id}`, JSON.stringify({ dietInfo, targets, meals }))
-  }, [dietInfo, targets, meals, isRestored, params.id])
+    if (legacyDraft !== null) return
+    void loadInitialData(!legacyDraftApplied.current)
+  }, [clientId, legacyDraft])
+
+  const handleLoadLegacyDraft = () => {
+    const consumedDraft = consumeLegacyDietDraft(clientId)
+    if (!consumedDraft || isUnreadableLegacyDietDraft(consumedDraft)) {
+      setLegacyDraftState({ clientId, value: consumedDraft })
+      return
+    }
+    legacyDraftApplied.current = true
+    setDietInfo(consumedDraft.dietInfo)
+    setTargets(consumedDraft.targets)
+    setMeals(consumedDraft.meals)
+    setLegacyDraftState({ clientId, value: null })
+  }
+
+  const handleDiscardLegacyDraft = () => {
+    if (discardLegacyDietDraft(clientId)) {
+      legacyDraftApplied.current = false
+      setLegacyDraftState({ clientId, value: null })
+    }
+  }
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
@@ -435,7 +464,7 @@ export default function NovaDietaPage() {
       if (loggedInUser?.sub) {
         await invalidatePatientDiet(queryClient, loggedInUser.sub, params.id as string)
       }
-      localStorage.removeItem(`diet_draft_${params.id}`)
+      discardLegacyDietDraft(clientId)
       toast.success("Dieta salva com sucesso!")
       router.push(`/clientes/${params.id}`) 
     } catch (error) { toast.error("Erro ao salvar a dieta.") } finally { setLoading(false) }
@@ -451,6 +480,34 @@ export default function NovaDietaPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 print:bg-white print:py-0">
+      <AlertDialog open={legacyDraft !== undefined && legacyDraft !== null}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {legacyDraft && isUnreadableLegacyDietDraft(legacyDraft)
+                ? "Rascunho local ilegível"
+                : "Rascunho clínico encontrado"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {legacyDraft && isUnreadableLegacyDietDraft(legacyDraft)
+                ? "O rascunho antigo não pode ser lido com segurança. Confirme a remoção para continuar sem aplicá-lo."
+                : "Existe um rascunho clínico antigo neste navegador. Escolha se deseja usá-lo somente nesta sessão ou descartá-lo."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            {legacyDraft && !isUnreadableLegacyDietDraft(legacyDraft) ? (
+              <AlertDialogAction className="min-h-11" onClick={handleLoadLegacyDraft}>
+                Carregar nesta sessão e remover do navegador
+              </AlertDialogAction>
+            ) : null}
+            <AlertDialogAction className="min-h-11" onClick={handleDiscardLegacyDraft}>
+              {legacyDraft && isUnreadableLegacyDietDraft(legacyDraft)
+                ? "Remover rascunho ilegível"
+                : "Descartar rascunho local"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       
       <div className={`w-full px-6 md:px-12 lg:px-20 mx-auto space-y-6 print:px-0 print:max-w-4xl print:space-y-0 ${printMode === 'list' ? 'print:hidden' : 'print:block'}`}>
         
@@ -608,7 +665,7 @@ export default function NovaDietaPage() {
                              </div>
                           </div>
                           
-                          <Button variant="ghost" className="text-slate-300 hover:text-rose-500 hover:bg-rose-50 h-8 w-8 p-0 shrink-0 print:hidden self-end md:self-center" onClick={() => removeFoodFromMeal(meal.id, item.id)}><Trash2 className="w-4 h-4" /></Button>
+                          <Button variant="ghost" className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 h-8 w-8 p-0 shrink-0 print:hidden self-end md:self-center" onClick={() => removeFoodFromMeal(meal.id, item.id)}><Trash2 className="w-4 h-4" /></Button>
                         </div>
                       ))}
                     </div>
@@ -622,7 +679,7 @@ export default function NovaDietaPage() {
               )
             })}
             
-            <Button onClick={addMeal} className="w-full h-14 border-dashed bg-white text-slate-600 hover:text-teal-600 hover:border-teal-300 hover:bg-teal-50 print:hidden transition-all"><Plus className="w-5 h-5 mr-2" /> Adicionar Nova Refei├º├úo</Button>
+            <Button onClick={addMeal} className="w-full h-14 border-dashed bg-white text-teal-700 hover:text-teal-800 hover:border-teal-300 hover:bg-teal-50 print:hidden transition-all"><Plus className="w-5 h-5 mr-2" /> Adicionar Nova Refei├º├úo</Button>
 
             {/* ­ƒîƒ NOVA SE├ç├âO: AN├üLISE DE NUTRIENTES DO CARD├üPIO */}
             <Card className="bg-white mt-8 print:break-before-page border-0 shadow-lg ring-1 ring-slate-200/50">
@@ -680,19 +737,19 @@ export default function NovaDietaPage() {
                        
                        {/* Legendas do Gr├ífico */}
                        <div className="grid grid-cols-2 gap-3 mt-2 w-full">
-                          <div className="border-l-4 border-rose-500 bg-slate-50 p-2.5 rounded-r-lg text-xs">
+                          <div className="rounded-lg border border-rose-200 bg-slate-50 p-2.5 text-xs">
                              <p className="font-bold text-slate-700">Prote├¡nas</p>
                              <p className="text-slate-500">{macroPieData[0].value.toFixed(1)} Kcal - {((macroPieData[0].value/(currentTotals.kcal||1))*100).toFixed(1)}%</p>
                           </div>
-                          <div className="border-l-4 border-sky-500 bg-slate-50 p-2.5 rounded-r-lg text-xs">
+                          <div className="rounded-lg border border-sky-200 bg-slate-50 p-2.5 text-xs">
                              <p className="font-bold text-slate-700">Carboidratos</p>
                              <p className="text-slate-500">{macroPieData[1].value.toFixed(1)} Kcal - {((macroPieData[1].value/(currentTotals.kcal||1))*100).toFixed(1)}%</p>
                           </div>
-                          <div className="border-l-4 border-amber-500 bg-slate-50 p-2.5 rounded-r-lg text-xs">
+                          <div className="rounded-lg border border-amber-200 bg-slate-50 p-2.5 text-xs">
                              <p className="font-bold text-slate-700">Lip├¡dios</p>
                              <p className="text-slate-500">{macroPieData[2].value.toFixed(1)} Kcal - {((macroPieData[2].value/(currentTotals.kcal||1))*100).toFixed(1)}%</p>
                           </div>
-                          <div className="border-l-4 border-teal-500 bg-slate-50 p-2.5 rounded-r-lg text-xs">
+                          <div className="rounded-lg border border-teal-200 bg-slate-50 p-2.5 text-xs">
                              <p className="font-bold text-slate-700">Total Kcal</p>
                              <p className="text-slate-500 font-bold">{currentTotals.kcal.toFixed(0)} Kcal</p>
                           </div>
@@ -940,7 +997,7 @@ export default function NovaDietaPage() {
                 </h2>
                 <p className="text-sm text-slate-500">Selecione um template para pr├®-preencher o formul├írio.</p>
               </div>
-              <button onClick={() => setShowTemplateModal(false)} className="p-1.5 rounded-full hover:bg-amber-100 text-slate-500">
+              <button onClick={() => setShowTemplateModal(false)} className="p-1.5 rounded-full text-amber-700 hover:bg-amber-100">
                 <X className="w-4 h-4" />
               </button>
             </div>
