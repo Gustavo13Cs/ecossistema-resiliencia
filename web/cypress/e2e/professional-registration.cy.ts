@@ -1,12 +1,15 @@
-describe('Cadastro profissional', () => {
+describe('Cadastro profissional (mocked)', () => {
   it('encerra a sessão com papel desconhecido antes de exibir rota protegida', () => {
     cy.intercept('GET', '**/auth/me', {
       statusCode: 200,
-      body: { sub: 'unknown-e2e', role: 'UNKNOWN', name: 'Papel desconhecido' },
+      body: {
+        user: { sub: 'unknown-e2e', role: 'UNKNOWN', name: 'Papel desconhecido' },
+        csrfToken: 'csrf-e2e',
+      },
     })
     cy.intercept('POST', '**/auth/logout', { statusCode: 201 }).as('logout')
 
-    cy.visit('http://localhost:3001/membros')
+    cy.visit('http://localhost:3001/clientes')
     cy.wait('@logout')
     cy.location('pathname', { timeout: 20_000 }).should('eq', '/auth/login')
   })
@@ -17,13 +20,16 @@ describe('Cadastro profissional', () => {
     let clinicalRequests = 0
     cy.intercept('GET', '**/auth/me', {
       statusCode: 200,
-      body: { sub: 'admin-e2e', role: 'ADMIN', name: 'Admin SafeMove' },
+      body: {
+        user: { sub: 'admin-e2e', role: 'ADMIN', name: 'Admin SafeMove' },
+        csrfToken: 'csrf-e2e',
+      },
     })
     cy.intercept('POST', '**/auth/logout', (request) => {
       logoutRequests += 1
       request.reply({ statusCode: 201 })
     })
-    cy.intercept('GET', '**/users', (request) => {
+    cy.intercept('GET', '**/clients*', (request) => {
       clinicalRequests += 1
       request.reply({ statusCode: 200, body: [] })
     })
@@ -39,15 +45,13 @@ describe('Cadastro profissional', () => {
       },
     ).as('adminHomeRoute')
 
-    cy.visit('http://localhost:3001/membros')
+    cy.visit('http://localhost:3001/clientes')
     cy.location('pathname', { timeout: 20_000 }).should('eq', '/home')
     cy.wait('@adminHomeRoute')
     cy.then(() => expect(adminHomeRouteRequests).to.be.greaterThan(0))
-    cy.contains('Área do Administrador', { timeout: 20_000 }).should('be.visible')
-    cy.get('aside').within(() => {
-      cy.contains('Início').should('be.visible')
-      cy.contains('Clientes').should('not.exist')
-    })
+    cy.contains('Painel administrativo', { timeout: 20_000 }).should('be.visible')
+    cy.get('aside').should('not.exist')
+    cy.contains('Clientes').should('not.exist')
     cy.then(() => expect(logoutRequests).to.equal(0))
     cy.then(() => expect(clinicalRequests).to.equal(0))
   })
@@ -65,12 +69,12 @@ describe('Cadastro profissional', () => {
 
     cy.visit('http://localhost:3001/auth/register')
     cy.contains('Paciente / Aluno').should('not.exist')
-    cy.contains('button', 'Fisioterapeuta', { timeout: 20_000 })
+    cy.get('input[name="role"][value="PHYSIO"]', { timeout: 20_000 })
       .should('be.visible')
-      .click({ timeout: 20_000 })
+      .check()
     cy.get('input[name="name"]').type('Dra. Ana')
     cy.get('input[name="email"]').type('ana@example.test')
-    cy.get('input[name="password"]').type('12345678')
+    cy.get('input[name="password"]').type('Segura123')
     cy.contains('button', 'Criar conta').click()
     cy.wait('@register')
   })

@@ -482,7 +482,7 @@ export default function Visao360Page() {
                     </div>
                   )}
                   {latestLabExam.notes && (
-                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-100 text-sm text-slate-600">
+                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-100 text-sm text-amber-900">
                       <span className="font-bold text-amber-700">Obs: </span>{latestLabExam.notes}
                     </div>
                   )}

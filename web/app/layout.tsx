@@ -1,16 +1,19 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/contexts/auth-context'
-import { Sidebar } from '@/components/Sidebar'
-import { LayoutWrapper } from '@/components/LayoutWrapper' 
+import { DirectionContract } from '@/components/design/DirectionContract'
+import { LayoutWrapper } from '@/components/LayoutWrapper'
 import { Toaster } from 'sonner'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-safemove',
+})
 
 export const metadata = {
-  title: 'SafeMove - Plataforma Multidisciplinar',
-  description: 'Gestão integrada para Nutricionistas, Personais e Fisioterapeutas.',
+  title: 'SafeMove | Workspace profissional',
+  description: 'Gestão privada de clientes para profissionais de saúde e movimento.',
 }
 
 export default function RootLayout({
@@ -20,15 +23,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className={inter.className}>
+      <body className={`${inter.variable} font-sans`}>
+        <DirectionContract />
         <QueryProvider>
           <AuthProvider>
-            <div className="flex min-h-screen bg-slate-50">
-              <Sidebar />
-              <LayoutWrapper>
-                {children}
-              </LayoutWrapper>
-            </div>
+            <LayoutWrapper>{children}</LayoutWrapper>
             <Toaster position="top-right" richColors />
           </AuthProvider>
         </QueryProvider>

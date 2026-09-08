@@ -38,7 +38,7 @@ export default function FisioPacientePage() {
       {/* LOADING */}
       {loading ? (
         <div className="bg-white p-10 rounded-2xl border border-slate-100 text-center shadow-sm">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border border-slate-200 border-t-[var(--sm-brand)] mx-auto mb-4"></div>
           <p className="text-slate-500 font-medium">A carregar o seu protocolo...</p>
         </div>
       ) : !rehabPlan && !error ? (
@@ -53,7 +53,7 @@ export default function FisioPacientePage() {
         
         /* DADOS REAIS */
         <div className="space-y-6">
-          <div className="bg-gradient-to-r from-purple-600 to-fuchsia-600 rounded-2xl p-6 text-white shadow-md">
+          <div className="bg-[var(--sm-brand)] rounded-2xl p-6 text-[var(--sm-on-brand)] shadow-md">
             <h2 className="text-2xl font-bold">{rehabPlan.title}</h2>
             <p className="opacity-90 mt-1">{rehabPlan.goal}</p>
             {rehabPlan.notes && (
@@ -70,8 +70,8 @@ export default function FisioPacientePage() {
             {rehabPlan.sessions?.map((session) => (
               <div key={session.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                 
-                <div className="bg-purple-50 px-5 py-4 border-b border-purple-100 flex justify-between items-center">
-                  <h3 className="font-black text-purple-900 text-lg">{session.name}</h3>
+                <div className="bg-[var(--sm-brand-subtle)] px-5 py-4 border-b border-[var(--sm-border)] flex justify-between items-center">
+                  <h3 className="font-black text-[var(--sm-ink)] text-lg">{session.name}</h3>
                   {session.focus && (
                     <span className="text-xs font-bold text-purple-700 uppercase tracking-wider">
                       {session.focus}

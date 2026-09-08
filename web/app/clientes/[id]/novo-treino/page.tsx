@@ -336,7 +336,7 @@ export default function NovoTreinoPage() {
                         </div>
                         
                         <div className="col-span-1 flex justify-end print:hidden">
-                          <Button variant="ghost" size="icon" className="text-slate-300 hover:text-rose-500 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeExercise(split.id, ex.id)}>
+                          <Button variant="ghost" size="icon" className="text-rose-700 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeExercise(split.id, ex.id)}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
@@ -353,7 +353,7 @@ export default function NovoTreinoPage() {
               </Card>
             ))}
             
-            <Button onClick={addSplit} className="w-full h-14 border-2 border-dashed border-slate-300 bg-white text-slate-600 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 print:hidden transition-all font-bold text-lg">
+            <Button onClick={addSplit} className="w-full h-14 border-2 border-dashed border-blue-300 bg-white text-blue-800 hover:border-blue-400 hover:bg-blue-50 print:hidden transition-all font-bold text-lg">
               <Plus className="w-5 h-5 mr-2" /> Criar Nova Ficha (Treino)
             </Button>
             

@@ -8,12 +8,12 @@
 
 ## Current Task
 
-✅ Modernização profissional-first do frontend concluída e validada.
+✅ Modernização profissional-first pronta para integração pelo PR #6.
 
 - Worktree: `.worktrees/safemove-professional-frontend-phase-1`
 - Branch: `codex/safemove-professional-frontend-phase-1`
-- Últimos commits: E2E real (`cc3227d`) e segurança/acabamento final (`47093b2`)
-- Gates finais: Cypress real 10/10, builds API/Web, testes unitários e detector Impeccable
+- Integração: `main` sincronizada, conflito documental resolvido e artefatos locais removidos do Git
+- Gates integrados: API 168/168 e E2E 8/8; web 152/152, lint, typecheck, build, Cypress CI 7/7 e Cypress real 10/10
 
 ---
 
@@ -36,6 +36,7 @@ _Nenhum impedimento._
 
 ## Notes
 
+- Rotas clínicas legadas fora do novo prontuário ainda exigem migração de ownership por tenant
 - Consultar `AGENTS.md` na raiz para orientação geral
 - Consultar `docs/TASKS.md` para o backlog de tarefas
 - Marcar tarefas como 🔄 em TASKS.md ao iniciar trabalho

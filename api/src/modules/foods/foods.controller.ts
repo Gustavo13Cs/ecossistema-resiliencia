@@ -1,11 +1,23 @@
-import { Controller, Get, Post, Body, UseGuards, Query, Param, Delete, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Query,
+  Param,
+  Delete,
+  Put,
+} from '@nestjs/common';
 import { FoodsService } from './foods.service';
 import { CreateFoodDto } from './dto/create-food.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { DOMAIN_ROLES } from '../../common/policies/professional-domain-roles';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(...DOMAIN_ROLES.nutrition)
 @Controller('foods')
 export class FoodsController {
   constructor(private readonly foodsService: FoodsService) {}
@@ -26,7 +38,10 @@ export class FoodsController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateFoodDto: Partial<CreateFoodDto>) {
+  update(
+    @Param('id') id: string,
+    @Body() updateFoodDto: Partial<CreateFoodDto>,
+  ) {
     return this.foodsService.update(id, updateFoodDto);
   }
 
@@ -37,10 +52,14 @@ export class FoodsController {
 
   @Get(':id/preference')
   async getPreference(
-    @Param('id') foodId: string, 
+    @Param('id') foodId: string,
     @Query('nutritionistId') nutritionistId: string,
-    @Query('quantity') quantity: string 
+    @Query('quantity') quantity: string,
   ) {
-    return this.foodsService.getPreference(foodId, nutritionistId, Number(quantity));
+    return this.foodsService.getPreference(
+      foodId,
+      nutritionistId,
+      Number(quantity),
+    );
   }
 }

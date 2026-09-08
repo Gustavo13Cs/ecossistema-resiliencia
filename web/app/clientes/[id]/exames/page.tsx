@@ -47,7 +47,7 @@ export default function ExamesLaboratoriaisPage() {
       <div className="w-full px-6 md:px-12 lg:px-20 mx-auto max-w-5xl space-y-6">
         
         {/* CABEÇALHO */}
-        <div className="flex items-center justify-between mb-6 bg-white p-6 rounded-2xl shadow-sm border-b-4 border-rose-500">
+        <div className="flex items-center justify-between mb-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-4">
             <Link href={`/clientes/${patientId}`}><Button variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="w-5 h-5 text-slate-600" /></Button></Link>
             <div>
@@ -136,7 +136,7 @@ export default function ExamesLaboratoriaisPage() {
                           <Input placeholder="Ex: mg/dL" value={marker.unit} onChange={e => updateMarker(marker.id, 'unit', e.target.value)} className="bg-slate-50 text-slate-600" />
                         </div>
                         <div className="col-span-1 flex justify-end md:justify-center pt-6 md:pt-0">
-                          <Button variant="ghost" size="icon" onClick={() => handleRemoveMarker(marker.id)} className="text-slate-400 hover:text-rose-500 hover:bg-rose-50"><Trash2 className="w-5 h-5"/></Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleRemoveMarker(marker.id)} className="text-rose-700 hover:bg-rose-50"><Trash2 className="w-5 h-5"/></Button>
                         </div>
                      </div>
                    ))}

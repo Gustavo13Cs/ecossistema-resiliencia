@@ -177,7 +177,7 @@ export default function AlimentosHubPage() {
                     key={s} 
                     variant={selectedSource === s ? "default" : "outline"} 
                     onClick={() => setSelectedSource(s)} 
-                    className={`rounded-full px-5 ${selectedSource === s ? 'bg-emerald-600 hover:bg-emerald-700 shadow-sm' : 'text-slate-600'}`}
+                    className={`rounded-full px-5 ${selectedSource === s ? 'bg-[var(--sm-brand)] text-[var(--sm-on-brand)] hover:bg-[var(--sm-brand-hover)] shadow-sm' : 'text-[var(--sm-muted)]'}`}
                   >
                     {s === "TODAS" ? "Tudo" : s === "MANUAL" ? "Meus Alimentos" : s}
                   </Button>
@@ -251,10 +251,10 @@ export default function AlimentosHubPage() {
                           {/* Só permite editar ou apagar se for um alimento criado pelo utilizador (MANUAL) */}
                           {food.source === 'MANUAL' ? (
                             <div className="flex justify-end gap-2">
-                              <Button variant="outline" size="icon" onClick={() => handleOpenEdit(food)} className="h-8 w-8 text-slate-500 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50">
+                              <Button variant="outline" size="icon" onClick={() => handleOpenEdit(food)} className="h-8 w-8 text-emerald-700 hover:border-emerald-200 hover:bg-emerald-50">
                                 <Edit2 className="w-4 h-4" />
                               </Button>
-                              <Button variant="outline" size="icon" onClick={() => handleDeleteFood(food.id, food.name)} className="h-8 w-8 text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50">
+                              <Button variant="outline" size="icon" onClick={() => handleDeleteFood(food.id, food.name)} className="h-8 w-8 text-rose-700 hover:border-rose-200 hover:bg-rose-50">
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>

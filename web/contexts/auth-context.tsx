@@ -2,21 +2,21 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { api } from "@/lib/api"
+import { AsyncState } from "@/components/feedback/AsyncState"
+import { api, setCsrfToken, setUnauthorizedHandler } from "@/lib/api"
 import { useQueryClient } from "@tanstack/react-query"
-
-type User = {
-  sub: string;
-  role: string;
-  email?: string;
-  name?: string;
-}
+import type { AuthUser } from "@/types/auth"
 
 type AuthContextType = {
-  user: User | null;
+  user: AuthUser | null;
   isLoading: boolean;
   login: () => Promise<void>;
   logout: () => Promise<void>;
+}
+
+type AuthSessionResponse = {
+  user: AuthUser
+  csrfToken: string
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -28,19 +28,21 @@ const isAllowedRole = (role?: string) => allowedRoles.has(role ?? "")
 
 const getRedirectPath = (role?: string) => {
   if (role === 'ADMIN') return '/home'
-  return '/clientes'
+  return '/home'
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
   const queryClient = useQueryClient()
   const invalidRoleLogoutUserId = useRef<string | null>(null)
+  const sessionExpired = useRef(false)
   const isAdminRedirecting = user?.role === 'ADMIN' && pathname !== '/home'
 
-  const setAuthenticatedUser = useCallback((nextUser: User) => {
+  const setAuthenticatedUser = useCallback((nextUser: AuthUser) => {
+    sessionExpired.current = false
     setUser((currentUser) => {
       if (currentUser?.sub && currentUser.sub !== nextUser.sub) {
         queryClient.clear()
@@ -49,17 +51,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
   }, [queryClient])
 
+  const handleUnauthorized = useCallback(() => {
+    if (sessionExpired.current) return
+
+    sessionExpired.current = true
+    queryClient.clear()
+    setCsrfToken(null)
+    setUser(null)
+    router.replace("/auth/login?reason=session-expired")
+  }, [queryClient, router])
+
+  useEffect(() => {
+    setUnauthorizedHandler(handleUnauthorized)
+    return () => setUnauthorizedHandler(null)
+  }, [handleUnauthorized])
+
   // Ao montar o provider (ex: refresh de página), tenta hidratar o usuário
   // a partir do cookie HttpOnly via GET /auth/me.
   // O browser envia o cookie automaticamente — sem precisar de localStorage.
   useEffect(() => {
     const hydrateUser = async () => {
       try {
-        const { data } = await api.get<User>('/auth/me')
-        setAuthenticatedUser(data)
+        const { data } = await api.get<AuthSessionResponse>('/auth/me')
+        setCsrfToken(data.csrfToken)
+        setAuthenticatedUser(data.user)
       } catch {
         // Cookie expirado ou ausente — usuário não autenticado
         queryClient.clear()
+        setCsrfToken(null)
         setUser(null)
       } finally {
         setIsLoading(false)
@@ -92,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       invalidRoleLogoutUserId.current = null
       const isPublicRoute = publicRoutes.has(pathname)
 
-      if (!user && !isPublicRoute) {
+      if (!user && !isPublicRoute && !sessionExpired.current) {
         router.replace("/auth/login")
       } else if (user) {
         if (user.role === 'ADMIN' && pathname !== '/home') {
@@ -107,9 +126,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Chamado pelo componente de login APÓS a requisição POST /auth/login ter sido feita com sucesso.
   // O cookie já foi setado pelo servidor — basta buscar os dados do usuário.
   const login = async () => {
-    const { data } = await api.get<User>('/auth/me')
-    setAuthenticatedUser(data)
-    router.push(getRedirectPath(data.role))
+    const { data } = await api.get<AuthSessionResponse>('/auth/me')
+    setCsrfToken(data.csrfToken)
+    setAuthenticatedUser(data.user)
+    router.push(getRedirectPath(data.user.role))
   }
 
   // Chama o endpoint de logout no servidor para limpar o cookie HttpOnly.
@@ -119,6 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await api.post('/auth/logout')
     } finally {
       queryClient.clear()
+      setCsrfToken(null)
       setUser(null)
       router.push("/auth/login")
     }
@@ -126,8 +147,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   if (isLoading || (user && !isAllowedRole(user.role)) || isAdminRedirecting) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      <div className="flex min-h-screen items-center justify-center bg-[var(--sm-canvas)] px-4 py-8">
+        <div className="w-full max-w-xl">
+          <AsyncState
+            kind="loading"
+            title="Carregando sua área profissional"
+            description="Verificando sua sessão segura."
+          />
+        </div>
       </div>
     )
   }

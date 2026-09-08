@@ -27,7 +27,7 @@ const overviewFor = (name: string) => ({
   recentTimeline: [],
 })
 
-describe("Cache de navegação", () => {
+describe("Cache de navegação (mocked)", () => {
   beforeEach(() => {
     cy.viewport(1280, 900)
     cy.intercept("GET", "**/auth/me", { body: professional })
