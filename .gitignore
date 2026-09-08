@@ -3,6 +3,8 @@
 .impeccable/config.local.json
 .impeccable/questions/
 .impeccable/review/
+web/cypress/screenshots/
+web/cypress/videos/
 
 # Tool-specific local configs
 .codex/
