@@ -29,8 +29,6 @@ async function bootstrap() {
     );
   }
 
-  app.use(createCsrfProtection(allowedOrigins));
-
   app.enableCors({
     origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {
@@ -43,6 +41,8 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
     credentials: true,
   });
+
+  app.use(createCsrfProtection(allowedOrigins));
 
   await app.listen(3000);
   console.log('🚀 API do Ecossistema rodando na porta 3000');

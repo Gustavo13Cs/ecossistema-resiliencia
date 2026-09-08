@@ -8,6 +8,7 @@ import {
   Req,
   Res,
   UseGuards,
+  Header,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Public } from '../../common/decorators/public.decorator';
@@ -46,6 +47,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
+  @Header('Cache-Control', 'no-store')
   me(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const authenticatedUser = req.user as AuthUser;
     const user: AuthUser = {
