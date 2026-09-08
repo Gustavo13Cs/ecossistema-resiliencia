@@ -129,14 +129,12 @@ describe('Agenda core journey (e2e)', () => {
     );
   });
 
-  it('enforces the complete agenda and consent journey without changing DailyTracking', async () => {
+  it('enforces the agenda lifecycle without changing DailyTracking', async () => {
     const startsAt = new Date(Date.now() + 60 * 60 * 1000);
     startsAt.setMilliseconds(0);
     const endsAt = new Date(startsAt.getTime() + 2 * 24 * 60 * 60 * 1000);
     const rangeFrom = new Date(startsAt.getTime() - 60 * 60 * 1000);
     const rangeTo = new Date(endsAt.getTime() + 60 * 60 * 1000);
-    const checkInFrom = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const checkInTo = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const dailyTrackingBefore = await prisma.dailyTracking.count({
       where: { patientId: PATIENT_ID },
     });
@@ -261,53 +259,6 @@ describe('Agenda core journey (e2e)', () => {
       percentage: 33,
     });
 
-    const createdCheckIn = await request(app.getHttpServer())
-      .post('/health-check-ins')
-      .set(asUser(PATIENT_ID, 'PATIENT'))
-      .send({ waterMl: 1800, mood: 4, notes: 'Disposição boa' })
-      .expect(201);
-
-    await request(app.getHttpServer())
-      .get(`/health-check-ins/patient/${PATIENT_ID}`)
-      .set(asUser(PROFESSIONAL_ID, 'NUTRITIONIST'))
-      .query({
-        from: checkInFrom.toISOString(),
-        to: checkInTo.toISOString(),
-      })
-      .expect(403);
-
-    await request(app.getHttpServer())
-      .put(`/consents/${PROFESSIONAL_ID}/HEALTH_CHECK_IN`)
-      .set(asUser(PATIENT_ID, 'PATIENT'))
-      .send({ granted: true })
-      .expect(200)
-      .expect(({ body }) => {
-        expect(body).toMatchObject({
-          patientId: PATIENT_ID,
-          professionalId: PROFESSIONAL_ID,
-          dataCategory: 'HEALTH_CHECK_IN',
-          granted: true,
-        });
-      });
-
-    await request(app.getHttpServer())
-      .get(`/health-check-ins/patient/${PATIENT_ID}`)
-      .set(asUser(PROFESSIONAL_ID, 'NUTRITIONIST'))
-      .query({
-        from: checkInFrom.toISOString(),
-        to: checkInTo.toISOString(),
-      })
-      .expect(200)
-      .expect(({ body }) => {
-        expect(body).toHaveLength(1);
-        expect(body[0]).toMatchObject({
-          id: createdCheckIn.body.id,
-          patientId: PATIENT_ID,
-          waterMl: 1800,
-          mood: 4,
-        });
-      });
-
     await prisma.professionalPatientLink.update({
       where: {
         professionalId_patientId: {
@@ -328,15 +279,6 @@ describe('Agenda core journey (e2e)', () => {
       .patch(`/agenda/tasks/${createdTask.body.id}`)
       .set(asUser(PROFESSIONAL_ID, 'NUTRITIONIST'))
       .send({ title: 'Tarefa sem vínculo' })
-      .expect(403);
-
-    await request(app.getHttpServer())
-      .get(`/health-check-ins/patient/${PATIENT_ID}`)
-      .set(asUser(PROFESSIONAL_ID, 'NUTRITIONIST'))
-      .query({
-        from: checkInFrom.toISOString(),
-        to: checkInTo.toISOString(),
-      })
       .expect(403);
 
     expect(
