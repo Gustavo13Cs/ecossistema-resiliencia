@@ -13,7 +13,7 @@
 - Worktree: `.worktrees/safemove-professional-frontend-phase-1`
 - Branch: `codex/safemove-professional-frontend-phase-1`
 - Integração: `main` sincronizada, conflito documental resolvido e artefatos locais removidos do Git
-- Gates integrados: API 168/168 e E2E 8/8, web 151/151, lint, typecheck, builds e Cypress real 10/10
+- Gates integrados: API 168/168 e E2E 8/8; web 152/152, lint, typecheck, build, Cypress CI 7/7 e Cypress real 10/10
 
 ---
 

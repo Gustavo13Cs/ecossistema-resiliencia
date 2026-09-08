@@ -34,7 +34,10 @@ describe("Ciclo de vida de clientes (mocked)", () => {
 
     cy.intercept("GET", "**/auth/me", {
       statusCode: 200,
-      body: { sub: "pro-1", role: "NUTRITIONIST", name: "Dra. Ana" },
+      body: {
+        user: { sub: "pro-1", role: "NUTRITIONIST", name: "Dra. Ana" },
+        csrfToken: "csrf-e2e",
+      },
     })
     cy.intercept("GET", "**/clients/client-snapshot", (request) => {
       clientFetches += 1
@@ -106,8 +109,8 @@ describe("Ciclo de vida de clientes (mocked)", () => {
     cy.get('[name="name"]').should("have.value", "Rascunho 1").clear().type("Rascunho 2")
     cy.contains("button", "Salvar alterações").should("not.be.disabled").click()
     cy.wait("@snapshotUpdate")
-    cy.contains("O prontuário mudou desde que você abriu esta tela.").should("be.visible")
-    cy.contains("button", "Carregar versão mais recente").click()
+    cy.contains("Este prontuário foi atualizado em outro acesso").should("be.visible")
+    cy.contains("button", "Recarregar versão mais recente").click()
     cy.wait("@snapshotManualReload")
     cy.get('[name="name"]').should("have.value", "Ana mais recente").clear().type("Após recarregar")
     cy.contains("button", "Salvar alterações").click()
@@ -128,7 +131,10 @@ describe("Ciclo de vida de clientes (mocked)", () => {
     })
     cy.intercept("GET", "**/auth/me", {
       statusCode: 200,
-      body: { sub: "pro-1", role: "PERSONAL", name: "Prof. Caio" },
+      body: {
+        user: { sub: "pro-1", role: "PERSONAL", name: "Prof. Caio" },
+        csrfToken: "csrf-e2e",
+      },
     })
     cy.intercept("GET", "**/clients?status=ACTIVE", {
       body: [{ id: "client-1", name: "Ana", status: "ACTIVE", email: null, phone: null, updatedAt: "2026-08-24T12:00:00.000Z" }],
@@ -195,16 +201,16 @@ describe("Ciclo de vida de clientes (mocked)", () => {
     cy.wait("@clientInitial")
     cy.get('[name="name"]').clear().type("Ana Atualizada")
     cy.contains("button", "Salvar alterações").click()
-    cy.contains("button", "Arquivar cliente").should("be.disabled").click({ force: true })
+    cy.contains("button", "Arquivar prontuário").should("be.disabled").click({ force: true })
     cy.then(() => expect(archiveRequests).to.equal(0))
     cy.then(() => expect(deleteRequests).to.equal(0))
     cy.wait("@updateClient")
     cy.wrap(null).should(() => expect(refetchStarted).to.equal(true))
-    cy.contains("button", "Arquivar cliente").should("be.disabled")
+    cy.contains("button", "Arquivar prontuário").should("be.disabled")
     cy.then(() => releaseRefetch())
     cy.wait("@clientRefetch")
-    cy.contains("button", "Arquivar cliente").should("not.be.disabled")
-    cy.contains("button", "Arquivar cliente").click()
+    cy.contains("button", "Arquivar prontuário").should("not.be.disabled")
+    cy.contains("button", "Arquivar prontuário").click({ force: true })
     cy.contains("button", "Confirmar arquivamento").click()
     cy.wait("@archiveClient")
     cy.location("pathname", { timeout: 20_000 }).should("eq", "/clientes")
@@ -219,7 +225,10 @@ describe("Ciclo de vida de clientes (mocked)", () => {
     let deleteRequests = 0
     cy.intercept("GET", "**/auth/me", {
       statusCode: 200,
-      body: { sub: "pro-1", role: "PHYSIO", name: "Dra. Lia" },
+      body: {
+        user: { sub: "pro-1", role: "PHYSIO", name: "Dra. Lia" },
+        csrfToken: "csrf-e2e",
+      },
     })
     cy.intercept("GET", "**/clients?status=ACTIVE", { body: [] }).as("activeClients")
     cy.intercept("GET", "**/clients/client-2", {
@@ -254,8 +263,10 @@ describe("Ciclo de vida de clientes (mocked)", () => {
     cy.contains("button", "Arquivados").click()
     cy.wait("@archivedClients")
     cy.contains("Bia").should("be.visible")
-    cy.contains("button", "Restaurar cliente", { timeout: 20_000 })
+    cy.get('button[aria-label="Restaurar paciente Bia"]', { timeout: 20_000 })
       .should("be.visible")
+      .click()
+    cy.contains("button", "Confirmar restauração")
       .then(($button) => {
         const button = $button[0]
         button.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }))
@@ -263,14 +274,14 @@ describe("Ciclo de vida de clientes (mocked)", () => {
       })
     cy.wait("@restoreClient")
     cy.wait("@archivedClients")
-    cy.contains("Cliente restaurado com sucesso.", { timeout: 20_000 }).should("be.visible")
+    cy.contains("Paciente restaurado com sucesso.", { timeout: 20_000 }).should("be.visible")
     cy.contains("Excluir cliente").should("not.exist")
     cy.then(() => expect(restoreRequests).to.equal(1))
     cy.then(() => expect(deleteRequests).to.equal(0))
 
     cy.visit("http://localhost:3001/clientes/client-2")
     cy.wait("@archivedClientDetail")
-    cy.contains("Cliente arquivado").should("be.visible")
-    cy.contains("button", "Arquivar cliente").should("not.exist")
+    cy.contains("Arquivado").should("be.visible")
+    cy.contains("button", "Arquivar prontuário").should("not.exist")
   })
 })

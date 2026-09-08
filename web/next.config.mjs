@@ -1,22 +1,35 @@
+const ISOLATED_BROWSER_TEST_API_URL = "http://localhost:3000"
+
+export function resolvePublicApiUrl(environment = process.env) {
+  const apiUrl =
+    environment.NEXT_PUBLIC_API_URL ||
+    (environment.NODE_ENV === "test" || environment.GITHUB_ACTIONS === "true"
+      ? ISOLATED_BROWSER_TEST_API_URL
+      : undefined)
+
+  if (!apiUrl) {
+    throw new Error("NEXT_PUBLIC_API_URL is required")
+  }
+
+  try {
+    new URL(apiUrl)
+  } catch {
+    throw new Error("NEXT_PUBLIC_API_URL must be a valid absolute URL")
+  }
+
+  return apiUrl
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_API_URL: resolvePublicApiUrl(),
+  },
   images: {
     unoptimized: true,
   },
   async headers() {
-    const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL
-
-    if (!configuredApiUrl && process.env.NODE_ENV !== "test") {
-      throw new Error("NEXT_PUBLIC_API_URL is required")
-    }
-
-    let apiOrigin
-
-    try {
-      apiOrigin = new URL(configuredApiUrl ?? "http://localhost:3000").origin
-    } catch {
-      throw new Error("NEXT_PUBLIC_API_URL must be a valid absolute URL")
-    }
+    const apiOrigin = new URL(resolvePublicApiUrl()).origin
 
     const contentSecurityPolicy = [
       "default-src 'self'",

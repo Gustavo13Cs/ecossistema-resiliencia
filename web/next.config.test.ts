@@ -51,10 +51,28 @@ describe("Next.js response security headers", () => {
   it("rejects a production build without an explicit public API URL", async () => {
     vi.stubEnv("NODE_ENV", "production")
     vi.stubEnv("NEXT_PUBLIC_API_URL", "")
+    vi.stubEnv("GITHUB_ACTIONS", "")
 
     expect(nextConfig.headers).toBeTypeOf("function")
     await expect(nextConfig.headers!()).rejects.toThrow(
       "NEXT_PUBLIC_API_URL is required",
+    )
+  })
+
+  it("uses a loopback API origin only for the isolated GitHub Actions browser build", async () => {
+    vi.stubEnv("NODE_ENV", "production")
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "")
+    vi.stubEnv("GITHUB_ACTIONS", "true")
+
+    expect(nextConfig.headers).toBeTypeOf("function")
+
+    const routes = await nextConfig.headers!()
+    const contentSecurityPolicy = routes
+      .find((route) => route.source === "/(.*)")
+      ?.headers.find((header) => header.key === "Content-Security-Policy")?.value
+
+    expect(contentSecurityPolicy).toContain(
+      "connect-src 'self' http://localhost:3000",
     )
   })
 })

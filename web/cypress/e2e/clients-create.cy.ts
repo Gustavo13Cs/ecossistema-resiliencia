@@ -3,7 +3,10 @@ describe('Diretório de clientes (mocked)', () => {
     let newClientRouteRequests = 0
     cy.intercept('GET', '**/auth/me', {
       statusCode: 200,
-      body: { sub: 'pro-1', role: 'NUTRITIONIST', name: 'Dra. Ana' },
+      body: {
+        user: { sub: 'pro-1', role: 'NUTRITIONIST', name: 'Dra. Ana' },
+        csrfToken: 'csrf-e2e',
+      },
     })
     cy.intercept(
       {
