@@ -184,7 +184,7 @@ export default function TreinosHubPage() {
                               variant="outline" size="sm"
                               onClick={() => handleSaveAsTemplate(treino.id)}
                               disabled={savingTemplateId === treino.id || treino.isTemplate}
-                              className={treino.isTemplate ? "text-amber-600 border-amber-200 bg-amber-50" : "text-slate-500 border-slate-200 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-300"}
+                              className="text-amber-800 border-amber-200 hover:bg-amber-50 hover:border-amber-300"
                             >
                               {treino.isTemplate
                                 ? <><BookmarkCheck className="w-4 h-4 mr-1" /> Template</>

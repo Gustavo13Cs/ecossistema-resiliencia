@@ -83,7 +83,7 @@ export default function NovaAnamnesePage() {
       <div className="w-full px-6 md:px-12 lg:px-20 mx-auto max-w-5xl space-y-6">
         
         {/* CABEÇALHO */}
-        <div className="flex items-center justify-between mb-8 bg-white p-6 rounded-2xl shadow-sm border-b-4 border-teal-500">
+        <div className="flex items-center justify-between mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-4">
             <Link href={`/clientes/${params.id}`}>
               <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100">

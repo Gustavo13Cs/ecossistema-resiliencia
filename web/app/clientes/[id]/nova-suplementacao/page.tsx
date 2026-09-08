@@ -23,7 +23,7 @@ export default function NovaSuplementacaoPage() {
       {/* 🌟 MODO TELA (INTERAÇÃO DO NUTRICIONISTA) */}
       <div className="w-full px-6 md:px-12 lg:px-20 mx-auto max-w-5xl space-y-6 print:hidden">
         
-        <div className="flex items-center justify-between mb-8 bg-white p-6 rounded-2xl shadow-sm border-b-4 border-amber-500">
+        <div className="flex items-center justify-between mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-4">
             <Link href={`/clientes/${params.id}`}><Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100"><ArrowLeft className="w-5 h-5 text-slate-600" /></Button></Link>
             <div>
@@ -73,7 +73,7 @@ export default function NovaSuplementacaoPage() {
             </Card>
           ))}
           
-          <Button onClick={addItem} className="w-full h-14 border-2 border-dashed border-slate-300 bg-white text-slate-600 hover:text-amber-700 hover:border-amber-400 hover:bg-amber-50 transition-all font-bold text-lg">
+          <Button onClick={addItem} className="w-full h-14 border-2 border-dashed border-amber-300 bg-white text-amber-800 hover:border-amber-400 hover:bg-amber-50 transition-all font-bold text-lg">
             <Plus className="w-5 h-5 mr-2" /> Adicionar Nova Fórmula ou Suplemento
           </Button>
 

@@ -35,7 +35,7 @@ export function PainelUTI() {
   }
 
   const getAlertColor = (severity: string) => {
-    return severity === 'HIGH' ? 'border-l-rose-500 bg-rose-50/30' : 'border-l-amber-500 bg-amber-50/30'
+    return severity === 'HIGH' ? 'border-rose-200 bg-rose-50/30' : 'border-amber-200 bg-amber-50/30'
   }
 
   return (
@@ -47,7 +47,7 @@ export function PainelUTI() {
 
       <div className="grid gap-3">
         {alerts.map((alert) => (
-          <Card key={alert.id} className={`border-0 border-l-4 shadow-sm ${getAlertColor(alert.severity)}`}>
+          <Card key={alert.id} className={`border shadow-sm ${getAlertColor(alert.severity)}`}>
             <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-start gap-3">
                 <div className="mt-1">{getAlertIcon(alert.type)}</div>

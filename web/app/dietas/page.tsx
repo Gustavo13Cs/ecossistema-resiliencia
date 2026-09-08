@@ -186,7 +186,7 @@ export default function DietasHubPage() {
                               variant="outline" size="sm"
                               onClick={() => handleSaveAsTemplate(dieta.id)}
                               disabled={savingTemplateId === dieta.id || dieta.isTemplate}
-                              className={dieta.isTemplate ? "text-amber-600 border-amber-200 bg-amber-50" : "text-slate-500 border-slate-200 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-300"}
+                              className="text-amber-800 border-amber-200 hover:bg-amber-50 hover:border-amber-300"
                             >
                               {dieta.isTemplate
                                 ? <><BookmarkCheck className="w-4 h-4 mr-1" /> Template</>  
