@@ -8,12 +8,12 @@
 
 ## Current Task
 
-🔄 Integração da modernização profissional-first pelo PR #6.
+✅ Modernização profissional-first pronta para integração pelo PR #6.
 
 - Worktree: `.worktrees/safemove-professional-frontend-phase-1`
 - Branch: `codex/safemove-professional-frontend-phase-1`
-- Escopo: sincronizar `main`, remover artefatos locais do Git, repetir gates e publicar
-- Estado: conflito documental resolvido; validação integrada pendente
+- Integração: `main` sincronizada, conflito documental resolvido e artefatos locais removidos do Git
+- Gates integrados: API 168/168, web 151/151, lint, typecheck, builds e Cypress real 10/10
 
 ---
 
