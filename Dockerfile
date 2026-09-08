@@ -23,4 +23,4 @@ COPY --from=builder /usr/src/app/package*.json ./
 COPY --from=builder /usr/src/app/prisma.config.ts ./prisma.config.ts
 
 EXPOSE 3000
-CMD ["node", "dist/src/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy || (npx prisma migrate resolve --applied 20260813000000_baseline && npx prisma migrate deploy) && node dist/src/main.js"]

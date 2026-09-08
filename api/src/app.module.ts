@@ -29,7 +29,7 @@ import { AppController } from '../app.controller';
     ThrottlerModule.forRoot([
       {
         ttl: 60_000,
-        limit: 20,
+        limit: 60,
       },
     ]),
     ScheduleModule.forRoot(),

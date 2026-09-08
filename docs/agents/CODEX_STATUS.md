@@ -8,12 +8,7 @@
 
 ## Current Task
 
-✅ Modernização profissional-first pronta para integração pelo PR #6.
-
-- Worktree: `.worktrees/safemove-professional-frontend-phase-1`
-- Branch: `codex/safemove-professional-frontend-phase-1`
-- Integração: `main` sincronizada, conflito documental resolvido e artefatos locais removidos do Git
-- Gates integrados: API 168/168 e E2E 8/8; web 152/152, lint, typecheck, build, Cypress CI 7/7 e Cypress real 10/10
+_Nenhuma tarefa em andamento._
 
 ---
 
@@ -25,6 +20,7 @@
 | 2026-09-04 | Diretório responsivo e cadastro de prontuário orientado por profissão | `codex/safemove-professional-frontend-phase-1` |
 | 2026-09-04 | Prontuário modular por profissão e remoção segura de rascunhos clínicos locais | `codex/safemove-professional-frontend-phase-1` |
 | 2026-09-08 | E2E real, isolamento profissional, headers de segurança e acabamento visual final | `codex/safemove-professional-frontend-phase-1` |
+| 2026-09-08 | Diagnóstico P2021: aplicou migration `add_client_foundation` no Supabase, criou teste e2e do backfill | `codex/fix-production-client-data` |
 
 ---
 
