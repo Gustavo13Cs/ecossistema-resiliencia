@@ -1,4 +1,4 @@
-describe("Ciclo de vida de clientes", () => {
+describe("Ciclo de vida de clientes (mocked)", () => {
   const clientFixture = (name: string, updatedAt: string) => ({
     id: "client-snapshot",
     professionalId: "pro-1",

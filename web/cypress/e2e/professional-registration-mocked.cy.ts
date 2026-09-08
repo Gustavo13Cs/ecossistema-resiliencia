@@ -1,4 +1,4 @@
-describe('Cadastro profissional', () => {
+describe('Cadastro profissional (mocked)', () => {
   it('encerra a sessão com papel desconhecido antes de exibir rota protegida', () => {
     cy.intercept('GET', '**/auth/me', {
       statusCode: 200,

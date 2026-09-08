@@ -1,4 +1,4 @@
-describe('Diretório de clientes', () => {
+describe('Diretório de clientes (mocked)', () => {
   it('lista clientes ativos e cria um prontuário sem dados de autenticação ou propriedade', () => {
     let newClientRouteRequests = 0
     cy.intercept('GET', '**/auth/me', {

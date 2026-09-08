@@ -1,17 +1,24 @@
-// ***********************************************************
-// This example support/e2e.ts is processed and
-// loaded automatically before your test files.
-//
-// This is a great place to put global configuration and
-// behavior that modifies Cypress.
-//
-// You can change the location of this file or turn off
-// automatically serving support files with the
-// 'supportFile' configuration option.
-//
-// You can read more here:
-// https://on.cypress.io/configuration
-// ***********************************************************
+import "@testing-library/cypress/add-commands"
+import "cypress-axe"
+import "cypress-real-events/support"
+import "./commands"
+import type { E2ERole } from "./commands"
 
-// Import commands.js using ES2015 syntax:
-import './commands'
+const emailByRole: Record<E2ERole, string> = {
+  NUTRITIONIST: "nutri.phase1@e2e.test",
+  PERSONAL: "personal.phase1@e2e.test",
+  PHYSIO: "physio.phase1@e2e.test",
+}
+
+Cypress.Commands.add("loginAs", (role: E2ERole) => {
+  cy.session(["professional-phase1", role], () => {
+    cy.visit("/auth/login")
+    cy.findByLabelText("E-mail").type(emailByRole[role])
+    cy.findByLabelText("Senha").type("SafeMove-E2E-2026!", { log: false })
+    cy.findByRole("button", { name: "Entrar" }).click()
+    cy.location("pathname", { timeout: 20_000 }).should("eq", "/home")
+  })
+
+  cy.visit("/home")
+  cy.location("pathname", { timeout: 20_000 }).should("eq", "/home")
+})
