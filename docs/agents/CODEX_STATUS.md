@@ -1,10 +1,43 @@
-# Codex — status
+# Codex Agent — Status
 
-- Em andamento: Task 8, autorização de domínios profissionais na API.
-- Task 7 aprovada nos commits `136f314..8855095`: prontuário `Client` isolado por profissão, remoção da persistência clínica legada e três gaps da revisão independente corrigidos.
+> Este arquivo é atualizado pelo agente OpenAI Codex para registrar progresso,
+> tarefas concluídas e impedimentos. Outros agentes devem consultar este arquivo
+> antes de iniciar trabalho para evitar conflitos.
+
+---
+
+## Current Task
+
+🔄 Integração da modernização profissional-first pelo PR #6.
+
 - Worktree: `.worktrees/safemove-professional-frontend-phase-1`
 - Branch: `codex/safemove-professional-frontend-phase-1`
-- Gates finais do fix round: 148/148 testes frontend, typecheck, lint, detector Impeccable limpo, build de produção e contrato de direção 12/12 aprovados.
-- Próximo gate: política imutável de papéis por domínio, guards JWT/Roles em todos os controllers clínicos e E2E de 403 por profissão.
-- Nenhuma captura de tela ou execução Cypress foi feita na Task 7, conforme a diretriz de validação visual; Task 9 mantém a responsabilidade pelo E2E real determinístico.
-- Rotas clínicas antigas fora do novo prontuário ainda usam identidade `User` e permanecem explicitamente fora da afirmação de migração até as próximas etapas.
+- Escopo: sincronizar `main`, remover artefatos locais do Git, repetir gates e publicar
+- Estado: conflito documental resolvido; validação integrada pendente
+
+---
+
+## Completed
+
+| Data | Tarefa | Branch |
+|------|--------|--------|
+| 2026-09-03 | Dashboard profissional com dados reais, terminologia por profissão e filtro de arquivados | `codex/safemove-professional-frontend-phase-1` |
+| 2026-09-04 | Diretório responsivo e cadastro de prontuário orientado por profissão | `codex/safemove-professional-frontend-phase-1` |
+| 2026-09-04 | Prontuário modular por profissão e remoção segura de rascunhos clínicos locais | `codex/safemove-professional-frontend-phase-1` |
+| 2026-09-08 | E2E real, isolamento profissional, headers de segurança e acabamento visual final | `codex/safemove-professional-frontend-phase-1` |
+
+---
+
+## Blocked
+
+_Nenhum impedimento._
+
+---
+
+## Notes
+
+- Rotas clínicas legadas fora do novo prontuário ainda exigem migração de ownership por tenant
+- Consultar `AGENTS.md` na raiz para orientação geral
+- Consultar `docs/TASKS.md` para o backlog de tarefas
+- Marcar tarefas como 🔄 em TASKS.md ao iniciar trabalho
+- Usar branches no formato `agent/codex/<feature-name>`
