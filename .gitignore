@@ -2,8 +2,14 @@
 .worktrees/
 .impeccable/config.local.json
 .impeccable/questions/
+.impeccable/review/
 
 # Tool-specific local configs
 .codex/
 .obsidian/
 graphify-out/
+.graphify*
+GRAPH_REPORT.md
+graph.html
+graph.json
+last_query_stamp
