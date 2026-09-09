@@ -18,21 +18,9 @@ services:
       - "sh"
       - "-c"
       - |
-        # Estratégia robusta para todos os cenários:
-        #
-        # Banco NOVO (Docker dev/CI): deploy roda baseline + add_agenda_core → OK
-        #
-        # Banco EXISTENTE com tabelas antigas (produção sem histórico Prisma):
-        #   deploy tenta o baseline mas as tabelas já existem → falha
-        #   então: resolvemos o baseline como "já aplicado" e fazemos deploy novamente
-        #   → só add_agenda_core é executada → OK
-        #
-        # Banco JÁ MIGRADO (tem baseline + add_agenda_core no histórico):
-        #   deploy não tem nada a fazer → sai com 0 → OK
-        npx prisma migrate deploy || (
-          npx prisma migrate resolve --applied 20260813000000_baseline &&
-          npx prisma migrate deploy
-        )
+        # Falha de migration interrompe o serviço. Nunca marque automaticamente
+        # uma migration como aplicada, pois isso mascara divergência de schema.
+        npx prisma migrate deploy &&
         node dist/src/main.js
 
   web:

@@ -63,4 +63,39 @@ describe("API session interceptors", () => {
       expect(handler).not.toHaveBeenCalled()
     },
   )
+
+  it("refreshes a stale CSRF token and retries the unsafe request once", async () => {
+    setCsrfToken("stale-csrf")
+    let clientAttempts = 0
+
+    mock.onPost("/clients").reply((config) => {
+      clientAttempts += 1
+      if (clientAttempts === 1) {
+        expect(config.headers?.["X-CSRF-Token"]).toBe("stale-csrf")
+        return [403, { message: "Token CSRF inválido." }]
+      }
+
+      expect(config.headers?.["X-CSRF-Token"]).toBe("fresh-csrf")
+      return [201, { id: "c1" }]
+    })
+    mock.onGet("/auth/me").reply(200, {
+      user: { sub: "pro-1", role: "NUTRITIONIST" },
+      csrfToken: "fresh-csrf",
+    })
+
+    await expect(api.post("/clients", { name: "Ana" })).resolves.toMatchObject({
+      status: 201,
+    })
+    expect(clientAttempts).toBe(2)
+    expect(mock.history.get.filter(({ url }) => url === "/auth/me")).toHaveLength(1)
+  })
+
+  it("does not retry an authorization 403 that is unrelated to CSRF", async () => {
+    mock.onPost("/clients").reply(403, { message: "Acesso negado" })
+
+    await expect(api.post("/clients", { name: "Ana" })).rejects.toBeDefined()
+
+    expect(mock.history.post).toHaveLength(1)
+    expect(mock.history.get).toHaveLength(0)
+  })
 })

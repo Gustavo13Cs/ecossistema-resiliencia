@@ -44,17 +44,32 @@ export class DietPlansController {
     @Request() request: AuthenticatedRequest,
     @Param('userId') userId: string,
   ) {
-    return this.dietPlansService.findActiveByUser(
-      userId,
-      request.user.sub,
-      true,
-    );
+    return this.dietPlansService.findActiveByUser(userId, request.user.sub);
   }
 
   // Histórico completo de dietas do paciente (ativas + inativas)
   @Get('user/:userId/history')
-  findAllByPatient(@Param('userId') userId: string) {
-    return this.dietPlansService.findAllByPatient(userId);
+  findAllByPatient(
+    @Request() request: AuthenticatedRequest,
+    @Param('userId') userId: string,
+  ) {
+    return this.dietPlansService.findAllByPatient(userId, request.user.sub);
+  }
+
+  @Get('client/:clientId/active')
+  findActiveByClient(
+    @Request() request: AuthenticatedRequest,
+    @Param('clientId') clientId: string,
+  ) {
+    return this.dietPlansService.findActiveByClient(clientId, request.user.sub);
+  }
+
+  @Get('client/:clientId/history')
+  findAllByClient(
+    @Request() request: AuthenticatedRequest,
+    @Param('clientId') clientId: string,
+  ) {
+    return this.dietPlansService.findAllByClient(clientId, request.user.sub);
   }
 
   @Patch('meal/:mealId/toggle')
@@ -62,11 +77,7 @@ export class DietPlansController {
     @Request() request: AuthenticatedRequest,
     @Param('mealId') mealId: string,
   ) {
-    return this.dietPlansService.toggleMealStatus(
-      mealId,
-      request.user.sub,
-      request.user.role,
-    );
+    return this.dietPlansService.toggleMealStatus(mealId, request.user.sub);
   }
 
   // Só o criador da dieta pode deletar

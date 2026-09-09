@@ -166,7 +166,7 @@ export default function NovaDietaPage() {
     const defaultDri = getAutoDRI(patientProfile.gender, patientAge)
 
     try {
-      const res = await api.get(`/diet-plans/user/${clientId}/active`)
+      const res = await api.get(`/diet-plans/client/${clientId}/active`)
       if (res.data) {
         setDietInfo({
            title: res.data.title, goal: res.data.goal, notes: res.data.notes || "",
@@ -188,7 +188,9 @@ export default function NovaDietaPage() {
         setTargets(prev => ({ ...prev, ...defaultDri }));
         setDietInfo(prev => ({ ...prev, patientWeight: patientProfile.initialWeight || 80 }));
       }
-    } catch (error) {}
+    } catch {
+      toast.error("Não foi possível carregar a prescrição deste cliente.")
+    }
 
   }
 
@@ -299,9 +301,9 @@ export default function NovaDietaPage() {
     if (itemJaNaTela) {
       savedMeasure = itemJaNaTela.measure
     } 
-    else if ((loggedInUser as any)?.id) {
+    else if (loggedInUser?.sub) {
       try {
-        const prefRes = await api.get(`/foods/${food.id}/preference?nutritionistId=${(loggedInUser as any).id}&quantity=${safeQty}`)
+        const prefRes = await api.get(`/foods/${food.id}/preference?nutritionistId=${loggedInUser.sub}&quantity=${safeQty}`)
         if (prefRes.data && prefRes.data.measure) {
           savedMeasure = prefRes.data.measure
         }
@@ -469,7 +471,7 @@ export default function NovaDietaPage() {
         calciumMg: targets.calcium,
         ironMg: targets.iron,
 
-        userId: params.id, 
+        clientId,
         notes: dietInfo.notes,
         meals: meals.map(m => ({ 
           name: m.name, time: m.time, notes: m.notes, 
@@ -860,7 +862,7 @@ export default function NovaDietaPage() {
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl z-50 overflow-hidden print:hidden">
             <div className="bg-teal-600 p-6 text-white text-center">
               <Share2 className="w-10 h-10 mx-auto mb-2 text-teal-200" />
-              <h2 className="text-2xl font-bold">Compartilhar com Paciente</h2>
+              <h2 className="text-2xl font-bold">Compartilhar com cliente</h2>
             </div>
             <div className="p-6 space-y-6">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-between">
@@ -989,7 +991,7 @@ export default function NovaDietaPage() {
                  <Info className="w-4 h-4" />
                  DRIs personalizados para: {patientProfile?.gender === 'M' ? 'Homem' : patientProfile?.gender === 'F' ? 'Mulher' : 'N├úo informado'} ÔÇó {patientAge > 0 ? `${patientAge} anos` : '--'} ÔÇó {patientProfile?.initialWeight || dietInfo.patientWeight} kg
                </div>
-               <p className="text-slate-500 text-xs text-center max-w-md">As metas (DRI) foram calculadas automaticamente com base no perfil biol├│gico e idade do paciente.</p>
+               <p className="text-slate-500 text-xs text-center max-w-md">As metas (DRI) foram calculadas automaticamente com base no perfil biológico e idade do cliente.</p>
              </div>
 
              <div className="p-6">

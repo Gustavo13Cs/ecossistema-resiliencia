@@ -8,7 +8,11 @@
 
 ## Current Task
 
-_Nenhuma tarefa em andamento._
+- Corrigir produção professional-first: sessão/CSRF, normalização de login,
+  backfill de `Client` e migração segura de dietas legadas para prontuários.
+- Branch: `codex/fix-production-professional-data`
+- Validação prevista: testes unitários, integração PostgreSQL, builds, Cypress e
+  verificação real em Vercel + Render + Supabase.
 
 ---
 

@@ -1,4 +1,12 @@
-import { IsString, IsNumber, IsOptional, IsArray, ValidateNested, Min } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateMealItemDto {
@@ -44,7 +52,7 @@ export class CreateDietPlanDto {
 
   @IsOptional() @IsNumber() tmb?: number;
   @IsOptional() @IsNumber() get?: number;
-  
+
   @IsNumber() targetKcal!: number;
   @IsNumber() proteinG!: number;
   @IsNumber() fatG!: number;
@@ -56,8 +64,15 @@ export class CreateDietPlanDto {
 
   @IsOptional() @IsString() notes?: string;
 
+  @ValidateIf((dto: CreateDietPlanDto) => !dto.userId)
   @IsString()
-  userId!: string; 
+  clientId?: string;
+
+  // Compatibilidade temporária com versões anteriores do frontend. O service
+  // sempre resolve este ID para um Client pertencente ao profissional atual.
+  @ValidateIf((dto: CreateDietPlanDto) => !dto.clientId)
+  @IsString()
+  userId?: string;
 
   @IsOptional()
   @IsNumber()

@@ -69,7 +69,7 @@ export default function LoginPage() {
     event.preventDefault()
     const nextErrors: LoginFieldErrors = {}
 
-    const normalizedEmail = email.trim()
+    const normalizedEmail = email.trim().toLowerCase()
     if (!normalizedEmail) nextErrors.email = "Informe seu e-mail."
     else if (!EMAIL_SHAPE.test(normalizedEmail)) {
       nextErrors.email = "Informe um e-mail válido."

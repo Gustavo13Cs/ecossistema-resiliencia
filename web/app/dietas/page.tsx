@@ -6,18 +6,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { api } from "@/lib/api"
-import { Apple, Plus, Search, FileText, ArrowRight, X, Clock, Edit, Trash2, CheckCircle2, Bookmark, BookmarkCheck } from "lucide-react"
-import Link from "next/link"
+import { Apple, Plus, Search, FileText, ArrowRight, X, Clock, Edit, Trash2, Bookmark, BookmarkCheck } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { ConsistencyBadge } from "@/components/ConsistencyBadge"
-import { useUsers } from "@/hooks/features/useUsers"
+import { useClients } from "@/hooks/features/useClients"
+
+type DietPlanListItem = {
+  id: string
+  clientId: string | null
+  title: string
+  goal: string
+  createdAt: string
+  isTemplate: boolean
+  client: { id: string; name: string } | null
+  user: { name: string } | null
+}
 
 export default function DietasHubPage() {
   const router = useRouter()
-  const [prescriptions, setPrescriptions] = useState<any[]>([])
-  const { users: patients, loading: usersLoading } = useUsers()
+  const [prescriptions, setPrescriptions] = useState<DietPlanListItem[]>([])
+  const clientsQuery = useClients("ACTIVE")
+  const clients = clientsQuery.data ?? []
   const [loadingPrescriptions, setLoadingPrescriptions] = useState(true)
+  const [prescriptionsError, setPrescriptionsError] = useState(false)
   const [showSelectModal, setShowSelectModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [dietToDelete, setDietToDelete] = useState<{id: string, name: string} | null>(null)
@@ -29,17 +40,19 @@ export default function DietasHubPage() {
 
   const fetchDashboardData = async () => {
     setLoadingPrescriptions(true)
+    setPrescriptionsError(false)
     try {
-      const dietsRes = await api.get("/diet-plans")
+      const dietsRes = await api.get<DietPlanListItem[]>("/diet-plans")
       setPrescriptions(dietsRes.data || [])
-    } catch (error) {
+    } catch {
       setPrescriptions([])
+      setPrescriptionsError(true)
     } finally {
       setLoadingPrescriptions(false)
     }
   }
 
-  const loading = usersLoading || loadingPrescriptions
+  const loading = clientsQuery.isPending || loadingPrescriptions
 
   const executeDelete = async () => {
     if (!dietToDelete) return
@@ -54,12 +67,12 @@ export default function DietasHubPage() {
     }
   }
 
-  const filteredPatients = patients.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredClients = clients.filter((client) =>
+    client.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleSelectPatient = (patientId: string) => {
-    router.push(`/clientes/${patientId}/nova-dieta`)
+  const handleSelectClient = (clientId: string) => {
+    router.push(`/clientes/${clientId}/nova-dieta`)
   }
 
   const handleSaveAsTemplate = async (dietId: string) => {
@@ -86,7 +99,7 @@ export default function DietasHubPage() {
               <Apple className="w-8 h-8 text-teal-500" /> Central de Dietas
             </h1>
             <p className="text-slate-500 mt-1">
-              Faça a gestão dos planos alimentares e crie novas prescrições para os seus pacientes.
+              Faça a gestão dos planos alimentares e crie novas prescrições para os seus clientes.
             </p>
           </div>
 
@@ -121,7 +134,7 @@ export default function DietasHubPage() {
             <CardContent>
               <p className="text-sm text-slate-600 font-medium mt-1 mb-3">Precisa fazer um ajuste rápido?</p>
               <Button onClick={() => setShowSelectModal(true)} variant="outline" className="w-full border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100">
-                Selecionar Paciente para Editar
+                Selecionar Cliente para Editar
               </Button>
             </CardContent>
           </Card>
@@ -139,7 +152,7 @@ export default function DietasHubPage() {
               <Table>
                 <TableHeader className="bg-white">
                   <TableRow>
-                    <TableHead className="py-4 px-6">Paciente</TableHead>
+                    <TableHead className="py-4 px-6">Cliente</TableHead>
                     <TableHead className="px-6">Data da Prescrição</TableHead>
                     <TableHead className="px-6">Fase / Objetivo</TableHead>
                     <TableHead className="text-right px-6">Ações</TableHead>
@@ -150,6 +163,15 @@ export default function DietasHubPage() {
                     <TableRow>
                       <TableCell colSpan={4} className="text-center py-12 text-slate-500 animate-pulse">
                         A carregar histórico...
+                      </TableCell>
+                    </TableRow>
+                  ) : prescriptionsError ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-12 text-slate-500">
+                        <p className="font-semibold text-slate-700">Não foi possível carregar as prescrições.</p>
+                        <Button variant="outline" className="mt-4" onClick={() => void fetchDashboardData()}>
+                          Tentar novamente
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ) : prescriptions.length === 0 ? (
@@ -166,9 +188,8 @@ export default function DietasHubPage() {
                         <TableCell className="py-4 px-6">
                           <div className="flex items-center gap-3">
                             <span className="font-semibold text-slate-700">
-                              {dieta.user?.name || "Paciente Removido"}
+                              {dieta.client?.name || dieta.user?.name || "Cliente indisponível"}
                             </span>
-                            {dieta.userId && <ConsistencyBadge patientId={dieta.userId} />}
                           </div>
                         </TableCell>
                         <TableCell className="text-slate-500 px-6">
@@ -196,14 +217,15 @@ export default function DietasHubPage() {
                             </Button>
                             <Button 
                               variant="outline" size="sm" 
-                              onClick={() => router.push(`/clientes/${dieta.userId}/nova-dieta`)}
+                              onClick={() => dieta.clientId && router.push(`/clientes/${dieta.clientId}/nova-dieta`)}
+                              disabled={!dieta.clientId}
                               className="text-teal-600 border-teal-200 hover:bg-teal-50"
                             >
                               <Edit className="w-4 h-4 mr-1" /> Abrir Prescrição
                             </Button>
                             <Button 
                               variant="outline" size="icon" 
-                              onClick={() => setDietToDelete({ id: dieta.id, name: dieta.user?.name || "Paciente" })}
+                              onClick={() => setDietToDelete({ id: dieta.id, name: dieta.client?.name || dieta.user?.name || "Cliente" })}
                               className="text-rose-500 border-rose-200 hover:bg-rose-50 h-9 w-9"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -220,7 +242,7 @@ export default function DietasHubPage() {
         </Card>
       </div>
 
-      {/* 🌟 MODAL INTELIGENTE: SELECIONAR PACIENTE PARA A DIETA */}
+      {/* Seleção do cliente para a prescrição */}
       {showSelectModal && (
         <>
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40" onClick={() => setShowSelectModal(false)}></div>
@@ -228,7 +250,7 @@ export default function DietasHubPage() {
             <div className="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
               <div>
                 <h2 className="text-lg font-bold text-slate-800">Para quem é esta dieta?</h2>
-                <p className="text-sm text-slate-500">Selecione o paciente na sua lista.</p>
+                <p className="text-sm text-slate-500">Selecione um cliente da sua base privada.</p>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setShowSelectModal(false)} className="h-8 w-8 rounded-full">
                 <X className="w-4 h-4" />
@@ -248,22 +270,23 @@ export default function DietasHubPage() {
               </div>
 
               <div className="max-h-64 overflow-y-auto space-y-2 custom-scrollbar pr-2 mt-4">
-                {filteredPatients.length === 0 ? (
-                  <p className="text-center text-slate-400 py-4">Nenhum paciente encontrado.</p>
+                {clientsQuery.isError ? (
+                  <p className="text-center text-rose-600 py-4">Não foi possível carregar seus clientes.</p>
+                ) : filteredClients.length === 0 ? (
+                  <p className="text-center text-slate-400 py-4">Nenhum cliente encontrado.</p>
                 ) : (
-                  filteredPatients.map(patient => (
+                  filteredClients.map((client) => (
                     <div 
-                      key={patient.id}
-                      onClick={() => handleSelectPatient(patient.id)}
+                      key={client.id}
+                      onClick={() => handleSelectClient(client.id)}
                       className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-teal-300 hover:bg-teal-50 cursor-pointer transition-all group"
                     >
                       <div>
-                        <p className="font-bold text-slate-700 group-hover:text-teal-800">{patient.name}</p>
-                        <p className="text-xs text-slate-400">{patient.goal || "Sem objetivo mapeado"}</p>
+                        <p className="font-bold text-slate-700 group-hover:text-teal-800">{client.name}</p>
+                        <p className="text-xs text-slate-400">{client.goal || "Sem objetivo mapeado"}</p>
                       </div>
                       
                       <div className="flex items-center gap-4">
-                        <ConsistencyBadge patientId={patient.id} />
                         <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-teal-600" />
                       </div>
                     </div>

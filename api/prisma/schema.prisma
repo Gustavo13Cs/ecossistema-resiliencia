@@ -160,6 +160,7 @@ model Client {
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
   auditEvents        ClientAuditEvent[]
+  diets              DietPlan[]         @relation("ClientDiets")
 
   @@unique([professionalId, email])
   @@index([professionalId, status, createdAt])
@@ -176,6 +177,7 @@ model ClientAuditEvent {
   createdAt      DateTime          @default(now())
 
   @@index([professionalId, clientId, createdAt])
+  @@index([clientId])
   @@map("client_audit_events")
 }
 
@@ -238,8 +240,11 @@ model DietPlan {
   
   notes       String? @db.Text 
 
-  userId      String   
-  user        User     @relation("UserDiets", fields: [userId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?    @relation("UserDiets", fields: [userId], references: [id], onDelete: Cascade)
+
+  clientId    String?
+  client      Client?  @relation("ClientDiets", fields: [clientId], references: [id], onDelete: Restrict)
   
   creatorId   String   
   creator     User     @relation("CreatedDiets", fields: [creatorId], references: [id])
@@ -251,6 +256,8 @@ model DietPlan {
   
   meals       Meal[]   @relation("DietMeals")
 
+  @@index([creatorId, clientId, isActive])
+  @@index([clientId])
   @@map("diet_plans")
 }
 

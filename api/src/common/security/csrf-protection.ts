@@ -4,6 +4,7 @@ import { RequestHandler } from 'express';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const PUBLIC_AUTH_MUTATIONS = new Set(['/auth/login', '/auth/register']);
+const TRUSTED_SESSION_TEARDOWNS = new Set(['/auth/logout']);
 const CSRF_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 export function generateCsrfToken() {
@@ -47,6 +48,13 @@ export function createCsrfProtection(
     }
 
     if (PUBLIC_AUTH_MUTATIONS.has(request.path) && origin) return next();
+    if (
+      TRUSTED_SESSION_TEARDOWNS.has(request.path) &&
+      origin &&
+      allowedOrigins.includes(origin)
+    ) {
+      return next();
+    }
     const cookies = request.cookies as Record<string, unknown> | undefined;
     if (!cookies?.access_token) return next();
 

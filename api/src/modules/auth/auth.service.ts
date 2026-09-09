@@ -9,6 +9,8 @@ import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
+const normalizeEmail = (email: string) => email.trim().toLowerCase();
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -17,15 +19,19 @@ export class AuthService {
   ) {}
 
   async login(loginDto: LoginDto) {
+    const email = normalizeEmail(loginDto.email);
     const user = await this.prisma.user.findUnique({
-      where: { email: loginDto.email },
+      where: { email },
     });
 
     if (!user) {
       throw new UnauthorizedException('E-mail ou senha incorretos');
     }
 
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('E-mail ou senha incorretos');
     }
@@ -43,8 +49,9 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
+    const email = normalizeEmail(registerDto.email);
     const existing = await this.prisma.user.findUnique({
-      where: { email: registerDto.email },
+      where: { email },
     });
 
     if (existing) {
@@ -55,11 +62,11 @@ export class AuthService {
 
     const newUser = await this.prisma.user.create({
       data: {
-        name: registerDto.name,
-        email: registerDto.email,
+        name: registerDto.name.trim(),
+        email,
         password: hashedPassword,
-        phone: registerDto.phone,
-        companyName: registerDto.companyName,
+        phone: registerDto.phone?.trim() || undefined,
+        companyName: registerDto.companyName?.trim() || undefined,
         role: registerDto.role,
       },
       select: {

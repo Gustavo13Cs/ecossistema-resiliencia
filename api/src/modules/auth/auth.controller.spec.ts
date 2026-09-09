@@ -107,12 +107,12 @@ describe('AuthController registration contract', () => {
     expect(response.body).not.toHaveProperty('access_token');
   });
 
-  it('rejects a cookie-authenticated mutation without a matching CSRF header', async () => {
+  it('allows a trusted browser to clear a cookie-authenticated session with a stale CSRF token', async () => {
     await request(httpServer)
       .post('/auth/logout')
       .set('Origin', 'http://localhost:3001')
       .set('Cookie', ['access_token=signed-token', 'csrf_token=known-token'])
-      .expect(403);
+      .expect(200);
   });
 
   it('returns the authenticated user plus a CSRF token without exposing the JWT', () => {

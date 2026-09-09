@@ -142,4 +142,20 @@ describe('CSRF protection', () => {
 
     expect(next).toHaveBeenCalledTimes(1);
   });
+
+  it('allows a trusted browser origin to clear a stale authenticated session', () => {
+    protection(
+      requestFor({
+        path: '/auth/logout',
+        origin: ALLOWED_ORIGIN,
+        accessToken: 'signed-token',
+        cookieToken: 'stale-token',
+        headerToken: 'different-token',
+      }),
+      response,
+      next,
+    );
+
+    expect(next).toHaveBeenCalledTimes(1);
+  });
 });

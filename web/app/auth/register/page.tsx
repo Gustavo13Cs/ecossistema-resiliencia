@@ -116,7 +116,7 @@ export default function RegisterPage() {
     const nextErrors: RegisterFieldErrors = {}
 
     if (!formData.name.trim()) nextErrors.name = "Informe seu nome completo."
-    const normalizedEmail = formData.email.trim()
+    const normalizedEmail = formData.email.trim().toLowerCase()
     if (!normalizedEmail) nextErrors.email = "Informe seu e-mail."
     else if (!EMAIL_SHAPE.test(normalizedEmail)) {
       nextErrors.email = "Informe um e-mail válido."
