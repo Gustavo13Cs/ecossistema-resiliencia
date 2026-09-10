@@ -36,7 +36,7 @@ import {
 
 const MacroDistributionChart = dynamic(() => import("@/components/features/diet/MacroDistributionChart"), {
   ssr: false,
-  loading: () => <div className="h-48 w-full max-w-[250px] animate-pulse rounded-xl bg-slate-100" aria-label="Carregando gr├ífico" />,
+  loading: () => <div className="h-48 w-full max-w-[250px] animate-pulse rounded-xl bg-slate-100" aria-label="Carregando gráfico" />,
 })
 
 
@@ -109,7 +109,7 @@ export default function NovaDietaPage() {
   const legacyDraftApplied = useRef(false)
   const legacyDraft = legacyDraftState?.clientId === clientId ? legacyDraftState.value : undefined
 
-  const [dietInfo, setDietInfo] = useState({ title: "Fase 1 - Adapta├º├úo", goal: "Emagrecimento", notes: "", durationDays: 30, patientWeight: 80 })
+  const [dietInfo, setDietInfo] = useState({ title: "Fase 1 - Adaptação", goal: "Emagrecimento", notes: "", durationDays: 30, patientWeight: 80 })
   const [targets, setTargets] = useState({ 
   kcal: 2000, 
   pro: 150, 
@@ -122,7 +122,7 @@ export default function NovaDietaPage() {
   })
 
   const [meals, setMeals] = useState([
-    { id: `m${Date.now()}`, name: "Caf├® da Manh├ú", time: "08:00", notes: "", items: [] as any[] }
+    { id: `m${Date.now()}`, name: "Café da Manhã", time: "08:00", notes: "", items: [] as any[] }
   ])
 
   const [activeMealId, setActiveMealId] = useState<string | null>(null)
@@ -259,9 +259,9 @@ export default function NovaDietaPage() {
   }, [meals])
 
   const macroPieData = useMemo(() => [
-    { name: 'Prote├¡nas', value: currentTotals.pro * 4, color: '#f43f5e' },
+    { name: 'Proteínas', value: currentTotals.pro * 4, color: '#f43f5e' },
     { name: 'Carboidratos', value: currentTotals.carb * 4, color: '#0ea5e9' },
-    { name: 'Lip├¡dios', value: currentTotals.fat * 9, color: '#f59e0b' },
+    { name: 'Lipídios', value: currentTotals.fat * 9, color: '#f59e0b' },
   ], [currentTotals])
 
   const getMealTotals = (items: any[]) => {
@@ -285,7 +285,7 @@ export default function NovaDietaPage() {
     return Object.entries(list).map(([name, qty]) => ({ name, qty })).sort((a,b) => b.qty - a.qty)
   }, [meals, shoppingDays])
 
-  const addMeal = () => setMeals([...meals, { id: `m${Date.now()}`, name: "Nova Refei├º├úo", time: "12:00", notes: "", items: [] }])
+  const addMeal = () => setMeals([...meals, { id: `m${Date.now()}`, name: "Nova Refeição", time: "12:00", notes: "", items: [] }])
   const removeMeal = (id: string) => setMeals(meals.filter(m => m.id !== id))
   
   const addFoodToMeal = async (food: any, quantity: number | string = amountToAdd) => {
@@ -390,12 +390,12 @@ export default function NovaDietaPage() {
   }
 
   const handleWhatsAppShare = () => {
-    let text = "Ol├í! A sua nova prescri├º├úo diet├®tica est├í pronta. ­ƒìÄ\n\n"
-    text += `*­ƒôï Fase:* ${dietInfo.title}\n`
-    text += `*­ƒÄ» Objetivo:* ${dietInfo.goal}\n\n`
-    text += `­ƒøÆ *Lista de Compras (${shoppingDays} dias):*\n`
-    shoppingList.forEach(item => { text += `ÔÇó ${item.name}: ${formatQty(item.qty)}\n` })
-    text += "\nLembre-se de verificar o PDF da dieta que enviarei logo abaixo! ­ƒÆ¬"
+    let text = "Olá! A sua nova prescri├º├úo diet├®tica está pronta. 🍎\n\n"
+    text += `*📋 Fase:* ${dietInfo.title}\n`
+    text += `*🎯 Objetivo:* ${dietInfo.goal}\n\n`
+    text += `🛒 *Lista de Compras (${shoppingDays} dias):*\n`
+    shoppingList.forEach(item => { text += `• ${item.name}: ${formatQty(item.qty)}\n` })
+    text += "\nLembre-se de verificar o PDF da dieta que enviarei logo abaixo! 💪"
     
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
   }
@@ -450,7 +450,7 @@ export default function NovaDietaPage() {
       }))
     )
     setShowTemplateModal(false)
-    toast.success(`Template "${template.title}" aplicado! Ajuste conforme necess├írio.`)
+    toast.success(`Template "${template.title}" aplicado! Ajuste conforme necessário.`)
   }
 
 
@@ -573,7 +573,7 @@ export default function NovaDietaPage() {
           <div className="flex items-center gap-4">
             <Link href={`/clientes/${params.id}`}><Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-200"><ArrowLeft className="w-5 h-5 text-slate-600" /></Button></Link>
             <div>
-              <div className="flex items-center gap-3"><h1 className="text-3xl font-bold text-slate-800">Prescri├º├úo Diet├®tica</h1></div>
+              <div className="flex items-center gap-3"><h1 className="text-3xl font-bold text-slate-800">Prescrição Dietética</h1></div>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -663,7 +663,7 @@ export default function NovaDietaPage() {
           <div className="lg:col-span-9 space-y-6 print:w-full">
             <div className="hidden print:block mb-8 border-b-2 border-teal-600 pb-6">
               <h1 className="text-3xl font-bold text-slate-800 uppercase tracking-tight">Plano Alimentar Prescrito</h1>
-              <h2 className="text-xl text-slate-600 mt-2 font-medium">{dietInfo.title} ÔÇó Foco: {dietInfo.goal} ({dietInfo.durationDays} dias)</h2>
+              <h2 className="text-xl text-slate-600 mt-2 font-medium">{dietInfo.title} • Foco: {dietInfo.goal} ({dietInfo.durationDays} dias)</h2>
             </div>
 
             {meals.map((meal, index) => {
@@ -729,20 +729,20 @@ export default function NovaDietaPage() {
                     </div>
                     <div className="p-4 bg-slate-50/30 flex flex-col gap-3 print:hidden border-t border-slate-100">
                       <Button variant="outline" className="w-full border-dashed text-teal-600 bg-white" onClick={() => setActiveMealId(meal.id)}><Search className="w-4 h-4 mr-2" /> Buscar e Adicionar Alimento</Button>
-                      <textarea value={meal.notes || ""} onChange={(e) => { const n = [...meals]; n[index].notes = e.target.value; setMeals(n) }} placeholder='Observa├º├Áes ou modo de preparo desta refei├º├úo...' className="w-full min-h-[60px] p-3 text-sm border rounded-lg resize-none focus:ring-1 focus:ring-teal-500 outline-none" />
+                      <textarea value={meal.notes || ""} onChange={(e) => { const n = [...meals]; n[index].notes = e.target.value; setMeals(n) }} placeholder='Observações ou modo de preparo desta refeição...' className="w-full min-h-[60px] p-3 text-sm border rounded-lg resize-none focus:ring-1 focus:ring-teal-500 outline-none" />
                     </div>
-                    {meal.notes && <div className="hidden print:block p-3 mx-4 mb-4 mt-2 bg-slate-50 text-slate-600 text-sm rounded border border-slate-200 italic">­ƒôî {meal.notes}</div>}
+                    {meal.notes && <div className="hidden print:block p-3 mx-4 mb-4 mt-2 bg-slate-50 text-slate-600 text-sm rounded border border-slate-200 italic">📌 {meal.notes}</div>}
                   </CardContent>
                 </Card>
               )
             })}
             
-            <Button onClick={addMeal} className="w-full h-14 border-dashed bg-white text-teal-700 hover:text-teal-800 hover:border-teal-300 hover:bg-teal-50 print:hidden transition-all"><Plus className="w-5 h-5 mr-2" /> Adicionar Nova Refei├º├úo</Button>
+            <Button onClick={addMeal} className="w-full h-14 border-dashed bg-white text-teal-700 hover:text-teal-800 hover:border-teal-300 hover:bg-teal-50 print:hidden transition-all"><Plus className="w-5 h-5 mr-2" /> Adicionar Nova Refeição</Button>
 
-            {/* ­ƒîƒ NOVA SE├ç├âO: AN├üLISE DE NUTRIENTES DO CARD├üPIO */}
+            {/* ­ƒîƒ NOVA SE├ç├âO: ANÁLISE DE NUTRIENTES DO CARD├üPIO */}
             <Card className="bg-white mt-8 print:break-before-page border-0 shadow-lg ring-1 ring-slate-200/50">
               <CardHeader className="border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between py-5 bg-slate-50/50">
-                <CardTitle className="text-xl font-black text-slate-800">An├ílise de nutrientes do card├ípio</CardTitle>
+                <CardTitle className="text-xl font-black text-slate-800">Análise de nutrientes do cardápio</CardTitle>
                 <Button onClick={() => setShowDriModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-6 h-9 text-xs font-bold shadow-md mt-4 md:mt-0">
                   Ver todos os nutrientes
                 </Button>
@@ -750,21 +750,21 @@ export default function NovaDietaPage() {
               <CardContent className="p-6">
                  <div className="grid lg:grid-cols-2 gap-10 items-center">
                     
-                    {/* Tabela Esquerda (Prescrito vs Te├│rico) */}
+                    {/* Tabela Esquerda (Prescrito vs Teórico) */}
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm text-left">
                         <thead className="text-slate-500 border-b-2 border-slate-100">
                           <tr>
-                            <th className="pb-3 font-semibold">Par├ómetro</th>
+                            <th className="pb-3 font-semibold">Parâmetro</th>
                             <th className="pb-3 font-semibold">Prescrito</th>
-                            <th className="pb-3 font-semibold">Te├│rico</th>
-                            <th className="pb-3 font-semibold">Diferen├ºa</th>
+                            <th className="pb-3 font-semibold">Teórico</th>
+                            <th className="pb-3 font-semibold">Diferença</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
                           {[
-                            { label: 'Prote├¡nas totais', current: currentTotals.pro, target: targets.pro, unit: 'g' },
-                            { label: 'Lip├¡dios totais', current: currentTotals.fat, target: targets.fat, unit: 'g' },
+                            { label: 'Proteínas totais', current: currentTotals.pro, target: targets.pro, unit: 'g' },
+                            { label: 'Lipídios totais', current: currentTotals.fat, target: targets.fat, unit: 'g' },
                             { label: 'Carboidratos totais', current: currentTotals.carb, target: targets.carb, unit: 'g' },
                             { label: 'Fibras totais', current: currentTotals.fiber, target: targets.fiber, unit: 'g', isFiber: true },
                             { label: 'Calorias totais', current: currentTotals.kcal, target: targets.kcal, unit: ' Kcal', isKcal: true },
@@ -796,7 +796,7 @@ export default function NovaDietaPage() {
                        {/* Legendas do Gr├ífico */}
                        <div className="grid grid-cols-2 gap-3 mt-2 w-full">
                           <div className="rounded-lg border border-rose-200 bg-slate-50 p-2.5 text-xs">
-                             <p className="font-bold text-slate-700">Prote├¡nas</p>
+                             <p className="font-bold text-slate-700">Proteínas</p>
                              <p className="text-slate-500">{macroPieData[0].value.toFixed(1)} Kcal - {((macroPieData[0].value/(currentTotals.kcal||1))*100).toFixed(1)}%</p>
                           </div>
                           <div className="rounded-lg border border-sky-200 bg-slate-50 p-2.5 text-xs">
@@ -804,7 +804,7 @@ export default function NovaDietaPage() {
                              <p className="text-slate-500">{macroPieData[1].value.toFixed(1)} Kcal - {((macroPieData[1].value/(currentTotals.kcal||1))*100).toFixed(1)}%</p>
                           </div>
                           <div className="rounded-lg border border-amber-200 bg-slate-50 p-2.5 text-xs">
-                             <p className="font-bold text-slate-700">Lip├¡dios</p>
+                             <p className="font-bold text-slate-700">Lipídios</p>
                              <p className="text-slate-500">{macroPieData[2].value.toFixed(1)} Kcal - {((macroPieData[2].value/(currentTotals.kcal||1))*100).toFixed(1)}%</p>
                           </div>
                           <div className="rounded-lg border border-teal-200 bg-slate-50 p-2.5 text-xs">
@@ -818,9 +818,9 @@ export default function NovaDietaPage() {
             </Card>
             
             <Card className="bg-teal-900 text-white mt-12 print:hidden">
-              <CardHeader className="pb-2"><CardTitle className="text-lg flex items-center gap-2"><Info className="w-5 h-5 text-teal-300" /> Orienta├º├Áes Gerais da Dieta</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-lg flex items-center gap-2"><Info className="w-5 h-5 text-teal-300" /> Orientações Gerais da Dieta</CardTitle></CardHeader>
               <CardContent>
-                <textarea value={dietInfo.notes || ""} onChange={(e) => setDietInfo({...dietInfo, notes: e.target.value})} placeholder="Orienta├º├Áes sobre hidrata├º├úo, sono, ch├ís, etc..." className="w-full min-h-[100px] p-4 bg-teal-950/40 rounded-xl text-sm placeholder:text-teal-500/50 border-0 focus:ring-1 focus:ring-teal-400 outline-none" />
+                <textarea value={dietInfo.notes || ""} onChange={(e) => setDietInfo({...dietInfo, notes: e.target.value})} placeholder="Orientações sobre hidratação, sono, chás, etc..." className="w-full min-h-[100px] p-4 bg-teal-950/40 rounded-xl text-sm placeholder:text-teal-500/50 border-0 focus:ring-1 focus:ring-teal-400 outline-none" />
               </CardContent>
             </Card>
           </div>
@@ -830,7 +830,7 @@ export default function NovaDietaPage() {
       <div className={`hidden ${printMode === 'list' ? 'print:block' : ''} w-full max-w-4xl mx-auto bg-white`}>
         <div className="border-b-4 border-teal-600 pb-6 mb-8 mt-10">
           <h1 className="text-4xl font-black text-slate-800 uppercase tracking-tight">Lista de Compras</h1>
-          <h2 className="text-xl text-slate-600 mt-2 font-medium">Plano: {dietInfo.title} ÔÇó Quantidade para {shoppingDays} dias</h2>
+          <h2 className="text-xl text-slate-600 mt-2 font-medium">Plano: {dietInfo.title} • Quantidade para {shoppingDays} dias</h2>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
@@ -848,11 +848,11 @@ export default function NovaDietaPage() {
         </div>
 
         {shoppingList.length === 0 && (
-          <p className="text-slate-500 italic text-center py-10">Nenhum item adicionado ├á dieta ainda.</p>
+          <p className="text-slate-500 italic text-center py-10">Nenhum item adicionado à dieta ainda.</p>
         )}
         
         <div className="mt-16 pt-6 border-t border-slate-200 text-center text-sm text-slate-400 font-medium">
-          Documento gerado digitalmente ÔÇó Foco no Objetivo: {dietInfo.goal}
+          Documento gerado digitalmente • Foco no Objetivo: {dietInfo.goal}
         </div>
       </div>
 
@@ -931,15 +931,15 @@ export default function NovaDietaPage() {
                       <p className="text-xs font-bold mb-4 text-slate-500 uppercase tracking-wider">Micronutrientes e Fibras (Opcional)</p>
                       <div className="grid grid-cols-4 gap-4">
                         <div><Label className="text-slate-600">Fibras (g)</Label><Input type="number" value={newFood.fiber || ""} onChange={e => setNewFood({...newFood, fiber: Number(e.target.value)})} /></div>
-                        <div><Label className="text-slate-600">S├│dio (mg)</Label><Input type="number" value={newFood.sodium || ""} onChange={e => setNewFood({...newFood, sodium: Number(e.target.value)})} /></div>
-                        <div><Label className="text-slate-600">C├ílcio (mg)</Label><Input type="number" value={newFood.calcium || ""} onChange={e => setNewFood({...newFood, calcium: Number(e.target.value)})} /></div>
+                        <div><Label className="text-slate-600">Sódio (mg)</Label><Input type="number" value={newFood.sodium || ""} onChange={e => setNewFood({...newFood, sodium: Number(e.target.value)})} /></div>
+                        <div><Label className="text-slate-600">Cálcio (mg)</Label><Input type="number" value={newFood.calcium || ""} onChange={e => setNewFood({...newFood, calcium: Number(e.target.value)})} /></div>
                         <div><Label className="text-slate-600">Ferro (mg)</Label><Input type="number" value={newFood.iron || ""} onChange={e => setNewFood({...newFood, iron: Number(e.target.value)})} /></div>
                       </div>
                     </div>
                   </div>
 
                   <Button onClick={handleSaveManualFood} className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white font-bold text-lg shadow-md">
-                    {editingFoodId ? "Salvar Altera├º├Áes" : "Cadastrar no Banco"}
+                    {editingFoodId ? "Salvar Alterações" : "Cadastrar no Banco"}
                   </Button>
                 </div>
               ) : (
@@ -982,21 +982,21 @@ export default function NovaDietaPage() {
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 print:hidden" onClick={() => setShowDriModal(false)}></div>
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl z-50 print:hidden animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
              <div className="sticky top-0 bg-white border-b border-slate-100 p-6 flex justify-between items-center z-10 shadow-sm">
-               <h2 className="text-xl font-bold text-slate-800">Somat├│rio de nutrientes <span className="text-slate-400 font-medium">Todo o card├ípio</span></h2>
+               <h2 className="text-xl font-bold text-slate-800">Somatório de nutrientes <span className="text-slate-400 font-medium">Todo o cardápio</span></h2>
                <Button variant="ghost" size="icon" className="rounded-full bg-slate-100 hover:bg-rose-100 hover:text-rose-600" onClick={() => setShowDriModal(false)}><X className="w-5 h-5"/></Button>
              </div>
              
              <div className="p-6 pb-0 flex flex-col items-center">
                <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-700 px-4 py-2 rounded-full text-xs font-bold mb-2">
                  <Info className="w-4 h-4" />
-                 DRIs personalizados para: {patientProfile?.gender === 'M' ? 'Homem' : patientProfile?.gender === 'F' ? 'Mulher' : 'N├úo informado'} ÔÇó {patientAge > 0 ? `${patientAge} anos` : '--'} ÔÇó {patientProfile?.initialWeight || dietInfo.patientWeight} kg
+                 DRIs personalizados para: {patientProfile?.gender === 'M' ? 'Homem' : patientProfile?.gender === 'F' ? 'Mulher' : 'Não informado'} • {patientAge > 0 ? `${patientAge} anos` : '--'} • {patientProfile?.initialWeight || dietInfo.patientWeight} kg
                </div>
                <p className="text-slate-500 text-xs text-center max-w-md">As metas (DRI) foram calculadas automaticamente com base no perfil biológico e idade do cliente.</p>
              </div>
 
              <div className="p-6">
                <div className="flex items-center justify-center gap-8 mb-8 text-sm font-semibold bg-slate-50 py-3 rounded-lg border border-slate-100">
-                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-teal-500"></div> Dentro do recomendado (┬▒ 20%)</div>
+                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-teal-500"></div> Dentro do recomendado (± 20%)</div>
                   <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-amber-500"></div> Fora do recomendado</div>
                </div>
                
@@ -1006,14 +1006,14 @@ export default function NovaDietaPage() {
                      <th className="pb-3 px-2 font-semibold">Micronutrientes</th>
                      <th className="pb-3 px-2 font-semibold text-center">Valor atual</th>
                      <th className="pb-3 px-2 font-semibold text-center">DRI (Meta)</th>
-                     <th className="pb-3 px-2 font-semibold text-right">Adequa├º├úo</th>
+                     <th className="pb-3 px-2 font-semibold text-right">Adequação</th>
                    </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-100">
                    {[
-                     { name: 'C├ílcio', current: currentTotals.calcium, target: targets.calcium, unit: 'mg' },
+                     { name: 'Cálcio', current: currentTotals.calcium, target: targets.calcium, unit: 'mg' },
                      { name: 'Ferro', current: currentTotals.iron, target: targets.iron, unit: 'mg' },
-                     { name: 'S├│dio', current: currentTotals.sodium, target: targets.sodium, unit: 'mg' },
+                     { name: 'Sódio', current: currentTotals.sodium, target: targets.sodium, unit: 'mg' },
                      { name: 'Fibras', current: currentTotals.fiber, target: targets.fiber, unit: 'g' },
                    ].map(n => {
                       const percent = n.target > 0 ? (n.current / n.target) * 100 : 0
@@ -1043,7 +1043,7 @@ export default function NovaDietaPage() {
         </>
       )}
 
-      {/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ MODAL DE TEMPLATES ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */}
+      {/* ======== MODAL DE TEMPLATES ======== */}
       {showTemplateModal && (
         <>
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40" onClick={() => setShowTemplateModal(false)} />
@@ -1053,7 +1053,7 @@ export default function NovaDietaPage() {
                 <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                   <Bookmark className="w-5 h-5 text-amber-600" /> Usar Template de Dieta
                 </h2>
-                <p className="text-sm text-slate-500">Selecione um template para pr├®-preencher o formul├írio.</p>
+                <p className="text-sm text-slate-500">Selecione um template para pré-preencher o formulário.</p>
               </div>
               <button onClick={() => setShowTemplateModal(false)} className="p-1.5 rounded-full text-amber-700 hover:bg-amber-100">
                 <X className="w-4 h-4" />
@@ -1084,11 +1084,11 @@ export default function NovaDietaPage() {
                       <div className="flex gap-3 mt-2 text-[10px] font-bold text-slate-500">
                         <span className="bg-teal-50 text-teal-700 px-2 py-0.5 rounded">{t.targetKcal} kcal</span>
                         <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded">P: {t.proteinG}g</span>
-                        <span className="bg-slate-50 px-2 py-0.5 rounded">{(t.meals || []).length} refei├º├Áes</span>
+                        <span className="bg-slate-50 px-2 py-0.5 rounded">{(t.meals || []).length} refeições</span>
                       </div>
                     </div>
                     <span className="text-xs font-bold text-amber-600 bg-amber-100 px-3 py-1 rounded-full ml-3 shrink-0 mt-1">
-                      Usar ÔåÆ
+                      Usar →
                     </span>
                   </div>
                 ))
