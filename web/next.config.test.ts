@@ -7,7 +7,7 @@ describe("Next.js response security headers", () => {
     vi.unstubAllEnvs()
   })
 
-  it("protects every route and permits connections only to the configured API origin", async () => {
+  it("protects every route and keeps browser API traffic same-origin", async () => {
     vi.stubEnv("NEXT_PUBLIC_API_URL", "https://api.safemove.example/v1")
 
     expect(nextConfig.headers).toBeTypeOf("function")
@@ -33,17 +33,24 @@ describe("Next.js response security headers", () => {
 
     expect(contentSecurityPolicy).toContain("default-src 'self'")
     expect(contentSecurityPolicy).toContain("frame-ancestors 'none'")
-    expect(contentSecurityPolicy).toContain(
-      "connect-src 'self' https://api.safemove.example",
-    )
-    expect(contentSecurityPolicy).not.toContain("https://api.safemove.example/v1")
+    expect(contentSecurityPolicy).toContain("connect-src 'self'")
+    expect(contentSecurityPolicy).not.toContain("https://api.safemove.example")
+    expect(nextConfig.env?.NEXT_PUBLIC_API_URL).toBe("/api")
+
+    expect(nextConfig.rewrites).toBeTypeOf("function")
+    await expect(nextConfig.rewrites!()).resolves.toEqual([
+      {
+        source: "/api/:path*",
+        destination: "https://api.safemove.example/v1/:path*",
+      },
+    ])
   })
 
   it("rejects an invalid public API URL instead of weakening connect-src", async () => {
     vi.stubEnv("NEXT_PUBLIC_API_URL", "not a URL")
 
-    expect(nextConfig.headers).toBeTypeOf("function")
-    await expect(nextConfig.headers!()).rejects.toThrow(
+    expect(nextConfig.rewrites).toBeTypeOf("function")
+    await expect(nextConfig.rewrites!()).rejects.toThrow(
       "NEXT_PUBLIC_API_URL must be a valid absolute URL",
     )
   })
@@ -53,26 +60,24 @@ describe("Next.js response security headers", () => {
     vi.stubEnv("NEXT_PUBLIC_API_URL", "")
     vi.stubEnv("GITHUB_ACTIONS", "")
 
-    expect(nextConfig.headers).toBeTypeOf("function")
-    await expect(nextConfig.headers!()).rejects.toThrow(
+    expect(nextConfig.rewrites).toBeTypeOf("function")
+    await expect(nextConfig.rewrites!()).rejects.toThrow(
       "NEXT_PUBLIC_API_URL is required",
     )
   })
 
-  it("uses a loopback API origin only for the isolated GitHub Actions browser build", async () => {
+  it("uses a loopback proxy target only for the isolated GitHub Actions browser build", async () => {
     vi.stubEnv("NODE_ENV", "production")
     vi.stubEnv("NEXT_PUBLIC_API_URL", "")
     vi.stubEnv("GITHUB_ACTIONS", "true")
 
     expect(nextConfig.headers).toBeTypeOf("function")
 
-    const routes = await nextConfig.headers!()
-    const contentSecurityPolicy = routes
-      .find((route) => route.source === "/(.*)")
-      ?.headers.find((header) => header.key === "Content-Security-Policy")?.value
-
-    expect(contentSecurityPolicy).toContain(
-      "connect-src 'self' http://localhost:3000",
-    )
+    await expect(nextConfig.rewrites!()).resolves.toEqual([
+      {
+        source: "/api/:path*",
+        destination: "http://localhost:3000/:path*",
+      },
+    ])
   })
 })
