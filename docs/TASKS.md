@@ -28,7 +28,7 @@
 | 2.1 | Design system (tokens, cores, tipografia) | 🔄 | Codex |
 | 2.2 | Navegação profissional no Sidebar (filtrar por role) | 🔄 | Codex |
 | 2.3 | Dashboard por atuação profissional | 🔄 | Codex |
-| 2.4 | Migrar dietas de User para Client | 🔄 | Codex |
+| 2.4 | Migrar dietas de User para Client | ✅ | Codex |
 | 2.5 | Migrar treinos de User para Client | ⏳ | — |
 | 2.6 | Migrar avaliações de User para Client | ⏳ | — |
 | 2.7 | Migrar reabilitação de User para Client | ⏳ | — |

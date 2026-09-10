@@ -8,11 +8,7 @@
 
 ## Current Task
 
-- Corrigir produção professional-first: sessão/CSRF, normalização de login,
-  backfill de `Client` e migração segura de dietas legadas para prontuários.
-- Branch: `codex/fix-production-professional-data`
-- Validação prevista: testes unitários, integração PostgreSQL, builds, Cypress e
-  verificação real em Vercel + Render + Supabase.
+_Nenhuma tarefa em andamento._
 
 ---
 
@@ -25,6 +21,7 @@
 | 2026-09-04 | Prontuário modular por profissão e remoção segura de rascunhos clínicos locais | `codex/safemove-professional-frontend-phase-1` |
 | 2026-09-08 | E2E real, isolamento profissional, headers de segurança e acabamento visual final | `codex/safemove-professional-frontend-phase-1` |
 | 2026-09-08 | Diagnóstico P2021: aplicou migration `add_client_foundation` no Supabase, criou teste e2e do backfill | `codex/fix-production-client-data` |
+| 2026-09-10 | Produção professional-first corrigida: dados e dietas migrados para Client, sessão same-origin segura e E2E real aprovado | `codex/fix-production-professional-data` |
 
 ---
 
