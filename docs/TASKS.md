@@ -30,7 +30,7 @@
 | 2.3 | Dashboard por atuação profissional | 🔄 | Codex |
 | 2.4 | Migrar dietas de User para Client | ✅ | Codex |
 | 2.5 | Migrar treinos de User para Client | ⏳ | — |
-| 2.6 | Migrar avaliações de User para Client | ⏳ | — |
+| 2.6 | Migrar avaliações de User para Client | 🔄 | Codex |
 | 2.7 | Migrar reabilitação de User para Client | ⏳ | — |
 | 2.8 | Migrar anamnese de User para Client | ⏳ | — |
 | 2.9 | Migrar suplementos de User para Client | ⏳ | — |

@@ -8,7 +8,8 @@
 
 ## Current Task
 
-_Nenhuma tarefa em andamento._
+- Em andamento: migrar o fluxo de avaliações para prontuários `Client`, com isolamento por profissional e teste de regressão do seletor.
+- Branch: `codex/fix-assessments-client-flow`
 
 ---
 

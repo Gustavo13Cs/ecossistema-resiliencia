@@ -68,6 +68,9 @@ async function main() {
   const password = await bcrypt.hash(E2E.password, 12);
 
   await prisma.$transaction(async (transaction) => {
+    await transaction.physicalAssessment.deleteMany({
+      where: { client: { professionalId: { in: professionalIds } } },
+    });
     await transaction.clientAuditEvent.deleteMany({
       where: { professionalId: { in: professionalIds } },
     });

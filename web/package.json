@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "e2e": "cypress run --browser electron --spec cypress/e2e/clients-create.cy.ts,cypress/e2e/clients-lifecycle.cy.ts,cypress/e2e/direction-contract-hydration.cy.ts,cypress/e2e/professional-registration.cy.ts",
-    "e2e:real": "cypress run --browser electron --spec cypress/e2e/professional-phase1-real.cy.ts"
+    "e2e:real": "cypress run --browser electron --spec cypress/e2e/professional-phase1-real.cy.ts,cypress/e2e/assessments-client-real.cy.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
