@@ -9,6 +9,9 @@ import { ClientOverviewSection } from "@/components/features/clients/ClientOverv
 import { ClientRecordHeader } from "@/components/features/clients/ClientRecordHeader"
 import { ProfessionalScopePanel } from "@/components/features/clients/ProfessionalScopePanel"
 import type { ClientFormPayload } from "@/components/features/clients/client-field-policy"
+import { NutritionistQuickActions } from "@/components/features/clients/NutritionistQuickActions"
+import { BodyCompositionChart } from "@/components/features/clients/BodyCompositionChart"
+import { AssessmentModal } from "@/components/AssessmentModal"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
 import { useClientRecord, type ClientRecordStatus } from "@/hooks/features/useClientRecord"
@@ -51,6 +54,7 @@ export default function ClienteHubPage() {
   const [lifecycleActive, setLifecycleActive] = useState(false)
   const [reloadingLatest, setReloadingLatest] = useState(false)
   const [formRevision, setFormRevision] = useState(0)
+  const [showAssessmentModal, setShowAssessmentModal] = useState(false)
 
   const updateClient = useMutation({
     mutationFn: async ({ values, expectedUpdatedAt }: { values: ClientFormPayload; expectedUpdatedAt: string }) => {
@@ -161,7 +165,12 @@ export default function ClienteHubPage() {
   return (
     <div className="mx-auto w-full max-w-[1380px] space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <ClientRecordHeader client={client} workspace={workspace} pending={pending} onArchive={handleArchive} />
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+      
+      {user.role === "NUTRITIONIST" && (
+        <NutritionistQuickActions clientId={clientId} />
+      )}
+
+      <div className={`grid items-start gap-6 ${user.role === "NUTRITIONIST" ? "xl:grid-cols-[380px_minmax(0,1fr)]" : "xl:grid-cols-[minmax(0,1fr)_320px]"}`}>
         <ClientOverviewSection
           client={client}
           role={user.role}
@@ -172,8 +181,26 @@ export default function ClienteHubPage() {
           onUpdate={handleUpdate}
           onReloadLatest={handleReloadLatest}
         />
-        <ProfessionalScopePanel role={user.role} />
+        {user.role === "NUTRITIONIST" ? (
+          <BodyCompositionChart clientId={clientId} onNewAssessment={() => setShowAssessmentModal(true)} />
+        ) : (
+          <ProfessionalScopePanel role={user.role} />
+        )}
       </div>
+
+      {showAssessmentModal && (
+        <AssessmentModal
+          isOpen={showAssessmentModal}
+          clientId={clientId}
+          onClose={() => setShowAssessmentModal(false)}
+          onSuccess={() => {
+            setShowAssessmentModal(false)
+            if (user.sub) {
+              void queryClient.invalidateQueries({ queryKey: queryKeys.assessments(user.sub, clientId) })
+            }
+          }}
+        />
+      )}
     </div>
   )
 }
