@@ -170,23 +170,36 @@ export default function ClienteHubPage() {
         <NutritionistQuickActions clientId={clientId} />
       )}
 
-      <div className={`grid items-start gap-6 ${user.role === "NUTRITIONIST" ? "xl:grid-cols-[380px_minmax(0,1fr)]" : "xl:grid-cols-[minmax(0,1fr)_320px]"}`}>
-        <ClientOverviewSection
-          client={client}
-          role={user.role}
-          formRevision={formRevision}
-          pending={pending}
-          updateError={updateClient.error}
-          reloadingLatest={reloadingLatest}
-          onUpdate={handleUpdate}
-          onReloadLatest={handleReloadLatest}
-        />
-        {user.role === "NUTRITIONIST" ? (
+      {user.role === "NUTRITIONIST" ? (
+        <div className="space-y-6">
           <BodyCompositionChart clientId={clientId} onNewAssessment={() => setShowAssessmentModal(true)} />
-        ) : (
+          <ClientOverviewSection
+            client={client}
+            role={user.role}
+            formRevision={formRevision}
+            pending={pending}
+            updateError={updateClient.error}
+            reloadingLatest={reloadingLatest}
+            onUpdate={handleUpdate}
+            onReloadLatest={handleReloadLatest}
+          />
           <ProfessionalScopePanel role={user.role} />
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <ClientOverviewSection
+            client={client}
+            role={user.role}
+            formRevision={formRevision}
+            pending={pending}
+            updateError={updateClient.error}
+            reloadingLatest={reloadingLatest}
+            onUpdate={handleUpdate}
+            onReloadLatest={handleReloadLatest}
+          />
+          <ProfessionalScopePanel role={user.role} />
+        </div>
+      )}
 
       {showAssessmentModal && (
         <AssessmentModal

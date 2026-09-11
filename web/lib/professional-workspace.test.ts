@@ -16,6 +16,8 @@ describe("professional workspace policy", () => {
     expect(canAccessProfessionalPath("PERSONAL", "/clientes/c1/nova-dieta")).toBe(false)
     expect(canAccessProfessionalPath("NUTRITIONIST", "/clientes/c1/novo-treino")).toBe(false)
     expect(canAccessProfessionalPath("PHYSIO", "/clientes/c1/nova-reabilitacao")).toBe(true)
+    expect(canAccessProfessionalPath("NUTRITIONIST", "/clientes/c1/nova-anamnese")).toBe(true)
+    expect(canAccessProfessionalPath("PERSONAL", "/clientes/c1/nova-anamnese")).toBe(false)
     expect(canAccessProfessionalPath("ADMIN", "/clientes")).toBe(false)
   })
 })

@@ -25,11 +25,11 @@ export const useCalculoEnergetico = (patientId: string) => {
   useEffect(() => {
     const fetchPatient = async () => {
       try {
-        const res = await api.get(`/users/${patientId}`)
+        const res = await api.get(`/clients/${patientId}`)
         setPatient(res.data)
         if (res.data.activityFactor) setActivityFactor(res.data.activityFactor)
       } catch (error) {
-        toast.error("Erro ao carregar paciente.")
+        toast.error("Erro ao carregar prontuário do cliente.")
       }
     }
     if (patientId) fetchPatient()
@@ -71,12 +71,25 @@ export const useCalculoEnergetico = (patientId: string) => {
   const handleSaveCalculation = async () => {
     setLoading(true)
     try {
-      await api.patch(`/users/${patientId}`, {
-        tmb: calculations.tmb,
-        get: calculations.get,
-        activityFactor: activityFactor
-      })
-      toast.success("Cálculo Energético salvo no perfil!")
+      if (patient?.updatedAt) {
+        const calculationSummary = `[Cálculo Energético - ${new Date().toLocaleDateString('pt-BR')}] TMB: ${calculations.tmb} kcal/dia | GET: ${calculations.get} kcal/dia (Fórmula: ${formula.toUpperCase()}, FA: ${activityFactor})`
+        const existingNotes = patient.professionalNotes?.trim() || ""
+        const professionalNotes = existingNotes
+          ? `${calculationSummary}\n\n${existingNotes}`
+          : calculationSummary
+
+        await api.patch(`/clients/${patientId}`, {
+          expectedUpdatedAt: patient.updatedAt,
+          professionalNotes,
+        })
+      } else {
+        await api.patch(`/users/${patientId}`, {
+          tmb: calculations.tmb,
+          get: calculations.get,
+          activityFactor: activityFactor,
+        })
+      }
+      toast.success("Cálculo Energético salvo no prontuário!")
       router.push(`/clientes/${patientId}`)
     } catch (error) {
       toast.error("Erro ao salvar o cálculo.")
