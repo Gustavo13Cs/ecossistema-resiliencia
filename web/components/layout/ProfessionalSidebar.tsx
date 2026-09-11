@@ -4,12 +4,20 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   Apple,
+  BarChart3,
+  Calendar,
+  CalendarClock,
   ClipboardCheck,
   Dumbbell,
+  FlaskConical,
   HeartPulse,
-  Home,
+  LayoutDashboard,
+  Layers,
   NotebookTabs,
+  Target,
+  TrendingUp,
   Users,
+  UtensilsCrossed,
   type LucideIcon,
 } from "lucide-react"
 import {
@@ -19,12 +27,20 @@ import {
 } from "@/lib/professional-workspace"
 import type { AuthUser, ProfessionalRole } from "@/types/auth"
 
-const NAVIGATION_ICONS: Record<WorkspaceNavigationItem["id"], LucideIcon> = {
-  home: Home,
+const NAVIGATION_ICONS: Record<string, LucideIcon> = {
+  home: LayoutDashboard,
+  agenda: Calendar,
   clients: Users,
   assessments: ClipboardCheck,
+  evolution: TrendingUp,
   nutrition: NotebookTabs,
   foods: Apple,
+  recipes: UtensilsCrossed,
+  "meal-templates": Layers,
+  goals: Target,
+  "follow-ups": CalendarClock,
+  "lab-exams": FlaskConical,
+  reports: BarChart3,
   workouts: Dumbbell,
   rehab: HeartPulse,
 }
@@ -71,28 +87,38 @@ export function ProfessionalSidebar({
 
       <nav
         aria-label="Navegação principal"
-        className="flex-1 space-y-1 overflow-y-auto px-4 py-6"
+        className="flex-1 space-y-0.5 overflow-y-auto px-4 py-4"
       >
-        {navigation.map((item) => {
-          const Icon = NAVIGATION_ICONS[item.id]
+        {navigation.map((item, index) => {
+          const Icon = NAVIGATION_ICONS[item.id] || LayoutDashboard
           const isActive = item.href === "/home"
             ? pathname === item.href
             : pathname === item.href || pathname.startsWith(`${item.href}/`)
 
+          const showSectionHeader = Boolean(
+            item.section && (index === 0 || navigation[index - 1].section !== item.section)
+          )
+
           return (
-            <Link
-              key={item.id}
-              href={item.href}
-              aria-current={isActive ? "page" : undefined}
-              className={`flex min-h-11 items-center gap-3 rounded-[var(--sm-radius-sm)] px-3.5 py-2.5 text-sm font-semibold no-underline transition-colors ${
-                isActive
-                  ? "bg-[var(--sm-brand-subtle)] text-[var(--sm-brand)]"
-                  : "text-[var(--sm-muted)] hover:bg-[var(--sm-canvas)] hover:text-[var(--sm-ink)]"
-              }`}
-            >
-              <Icon aria-hidden="true" className="size-[1.125rem] shrink-0" strokeWidth={1.8} />
-              <span>{item.label}</span>
-            </Link>
+            <div key={item.id}>
+              {showSectionHeader && (
+                <p className="mb-1 mt-4 px-3.5 text-[11px] font-black uppercase tracking-[0.14em] text-[var(--sm-muted)]">
+                  {item.section}
+                </p>
+              )}
+              <Link
+                href={item.href}
+                aria-current={isActive ? "page" : undefined}
+                className={`flex min-h-10 items-center gap-3 rounded-[var(--sm-radius-sm)] px-3.5 py-2 text-sm font-semibold no-underline transition-colors ${
+                  isActive
+                    ? "bg-[var(--sm-brand-subtle)] text-[var(--sm-brand)]"
+                    : "text-[var(--sm-muted)] hover:bg-[var(--sm-canvas)] hover:text-[var(--sm-ink)]"
+                }`}
+              >
+                <Icon aria-hidden="true" className="size-[1.125rem] shrink-0" strokeWidth={1.8} />
+                <span>{item.label}</span>
+              </Link>
+            </div>
           )
         })}
       </nav>

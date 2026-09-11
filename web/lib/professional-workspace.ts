@@ -1,9 +1,10 @@
 import type { ProfessionalRole, UserRole } from "@/types/auth"
 
 export interface WorkspaceNavigationItem {
-  id: "home" | "clients" | "assessments" | "nutrition" | "foods" | "workouts" | "rehab"
+  id: string
   label: string
   href: string
+  section?: string
 }
 
 export interface WorkspaceDefinition {
@@ -15,7 +16,7 @@ export interface WorkspaceDefinition {
 }
 
 const getSharedNavigation = (clientPlural: string) => [
-  { id: "home", label: "Início", href: "/home" },
+  { id: "home", label: "Visão geral", href: "/home" },
   { id: "clients", label: clientPlural, href: "/clientes" },
   { id: "assessments", label: "Avaliações", href: "/avaliacoes" },
 ] as const satisfies readonly WorkspaceNavigationItem[]
@@ -35,16 +36,27 @@ const createWorkspace = (
 })
 
 const WORKSPACES = {
-  NUTRITIONIST: createWorkspace(
-    "NUTRITIONIST",
-    "Nutrição",
-    "Cliente",
-    "Clientes",
-    [
-      { id: "nutrition", label: "Planos alimentares", href: "/dietas" },
-      { id: "foods", label: "Alimentos", href: "/alimentos" },
+  NUTRITIONIST: {
+    role: "NUTRITIONIST",
+    areaLabel: "Nutrição",
+    clientSingular: "Cliente",
+    clientPlural: "Clientes",
+    navigation: [
+      { id: "home", label: "Visão geral", href: "/home" },
+      { id: "agenda", label: "Agenda", href: "/agenda", section: "ATENDIMENTO" },
+      { id: "clients", label: "Clientes", href: "/clientes", section: "ATENDIMENTO" },
+      { id: "assessments", label: "Avaliações", href: "/avaliacoes", section: "ATENDIMENTO" },
+      { id: "evolution", label: "Evolução", href: "/evolucao", section: "ATENDIMENTO" },
+      { id: "nutrition", label: "Planos alimentares", href: "/dietas", section: "NUTRIÇÃO" },
+      { id: "foods", label: "Alimentos", href: "/alimentos", section: "NUTRIÇÃO" },
+      { id: "recipes", label: "Receitas", href: "/receitas", section: "NUTRIÇÃO" },
+      { id: "meal-templates", label: "Modelos de planos", href: "/modelos-planos", section: "NUTRIÇÃO" },
+      { id: "goals", label: "Metas", href: "/metas", section: "ACOMPANHAMENTO" },
+      { id: "follow-ups", label: "Retornos", href: "/retornos", section: "ACOMPANHAMENTO" },
+      { id: "lab-exams", label: "Exames", href: "/exames", section: "ACOMPANHAMENTO" },
+      { id: "reports", label: "Relatórios", href: "/relatorios", section: "GESTÃO" },
     ],
-  ),
+  },
   PERSONAL: createWorkspace(
     "PERSONAL",
     "Treinamento",
@@ -68,6 +80,13 @@ const WORKSPACES = {
 const ROLE_ONLY_PREFIXES: ReadonlyArray<[string, readonly ProfessionalRole[]]> = [
   ["/dietas", ["NUTRITIONIST"]],
   ["/alimentos", ["NUTRITIONIST"]],
+  ["/receitas", ["NUTRITIONIST"]],
+  ["/modelos-planos", ["NUTRITIONIST"]],
+  ["/metas", ["NUTRITIONIST"]],
+  ["/retornos", ["NUTRITIONIST"]],
+  ["/evolucao", ["NUTRITIONIST"]],
+  ["/exames", ["NUTRITIONIST"]],
+  ["/relatorios", ["NUTRITIONIST"]],
   ["/treinos", ["PERSONAL"]],
   ["/reabilitacao", ["PHYSIO"]],
   ["/clientes/:id/nova-dieta", ["NUTRITIONIST"]],
@@ -79,7 +98,7 @@ const ROLE_ONLY_PREFIXES: ReadonlyArray<[string, readonly ProfessionalRole[]]> =
   ["/clientes/:id/nova-reabilitacao", ["PHYSIO"]],
 ]
 
-const PROFESSIONAL_PATHS = new Set(["/home", "/clientes", "/avaliacoes"])
+const PROFESSIONAL_PATHS = new Set(["/home", "/clientes", "/avaliacoes", "/agenda"])
 
 const matchesPathPrefix = (pathname: string, pattern: string) => {
   const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")

@@ -73,26 +73,36 @@ export function MobileNavigation({ user, role, roleLabel }: MobileNavigationProp
             </DialogClose>
           </div>
 
-          <nav aria-label="Navegação móvel" className="flex-1 space-y-1 overflow-y-auto p-4">
-            {navigation.map((item) => {
+          <nav aria-label="Navegação móvel" className="flex-1 space-y-0.5 overflow-y-auto p-4">
+            {navigation.map((item, index) => {
               const isActive = item.href === "/home"
                 ? pathname === item.href
                 : pathname === item.href || pathname.startsWith(`${item.href}/`)
 
+              const showSectionHeader = Boolean(
+                item.section && (index === 0 || navigation[index - 1].section !== item.section)
+              )
+
               return (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  aria-current={isActive ? "page" : undefined}
-                  onClick={() => setIsOpen(false)}
-                  className={`flex min-h-12 items-center rounded-[var(--sm-radius-sm)] px-4 text-sm font-semibold no-underline ${
-                    isActive
-                      ? "bg-[var(--sm-brand-subtle)] text-[var(--sm-brand)]"
-                      : "text-[var(--sm-muted)] hover:bg-[var(--sm-canvas)] hover:text-[var(--sm-ink)]"
-                  }`}
-                >
-                  {item.label}
-                </Link>
+                <div key={item.id}>
+                  {showSectionHeader && (
+                    <p className="mb-1 mt-4 px-4 text-[11px] font-black uppercase tracking-[0.14em] text-[var(--sm-muted)]">
+                      {item.section}
+                    </p>
+                  )}
+                  <Link
+                    href={item.href}
+                    aria-current={isActive ? "page" : undefined}
+                    onClick={() => setIsOpen(false)}
+                    className={`flex min-h-11 items-center rounded-[var(--sm-radius-sm)] px-4 text-sm font-semibold no-underline ${
+                      isActive
+                        ? "bg-[var(--sm-brand-subtle)] text-[var(--sm-brand)]"
+                        : "text-[var(--sm-muted)] hover:bg-[var(--sm-canvas)] hover:text-[var(--sm-ink)]"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </div>
               )
             })}
           </nav>
