@@ -1,49 +1,65 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
+import { AssessmentModal } from "@/components/AssessmentModal"
 import { api } from "@/lib/api"
 import { Activity, Plus, Search, TrendingUp, ArrowRight, X, Scale } from "lucide-react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useUsers } from "@/hooks/features/useUsers"
+import { useClients } from "@/hooks/features/useClients"
+
+type AssessmentListItem = {
+  id: string
+  clientId: string | null
+  userId: string | null
+  date: string
+  weight: number | null
+  bodyFat: number | null
+  client: { id: string; name: string } | null
+}
 
 export default function AvaliacoesHubPage() {
   const router = useRouter()
-  const [assessments, setAssessments] = useState<any[]>([])
-  const { users: patients, loading: usersLoading } = useUsers()
+  const [assessments, setAssessments] = useState<AssessmentListItem[]>([])
+  const clientsQuery = useClients("ACTIVE")
+  const clients = clientsQuery.data ?? []
   const [loadingAssessments, setLoadingAssessments] = useState(true)
+  const [assessmentsError, setAssessmentsError] = useState(false)
   
   const [showSelectModal, setShowSelectModal] = useState(false)
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
 
-  useEffect(() => {
-    fetchDashboardData()
-  }, [])
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     setLoadingAssessments(true)
+    setAssessmentsError(false)
     try {
-      const assessmentsRes = await api.get("/assessments")
+      const assessmentsRes = await api.get<AssessmentListItem[]>("/assessments")
       setAssessments(assessmentsRes.data || [])
-    } catch (error) {
+    } catch {
       setAssessments([])
+      setAssessmentsError(true)
     } finally {
       setLoadingAssessments(false)
     }
-  }
+  }, [])
 
-  const loading = usersLoading || loadingAssessments
+  useEffect(() => {
+    void fetchDashboardData()
+  }, [fetchDashboardData])
 
-  const filteredPatients = patients.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const loading = clientsQuery.isPending || loadingAssessments
+
+  const filteredClients = clients.filter((client) =>
+    client.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleSelectPatient = (patientId: string) => {
-    router.push(`/clientes/${patientId}`)
+  const handleSelectClient = (clientId: string) => {
+    setShowSelectModal(false)
+    setSelectedClientId(clientId)
   }
 
   return (
@@ -57,7 +73,7 @@ export default function AvaliacoesHubPage() {
               <TrendingUp className="w-8 h-8 text-indigo-500" /> Central de Avaliações
             </h1>
             <p className="text-slate-500 mt-1">
-              Acompanhe a evolução da composição corporal e antropometria dos seus pacientes.
+              Acompanhe a evolução da composição corporal e antropometria dos seus clientes.
             </p>
           </div>
 
@@ -91,9 +107,9 @@ export default function AvaliacoesHubPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-slate-600 font-medium mt-1 mb-3">O paciente já chegou ao consultório?</p>
+              <p className="text-sm text-slate-600 font-medium mt-1 mb-3">O cliente já chegou ao consultório?</p>
               <Button onClick={() => setShowSelectModal(true)} variant="outline" className="w-full border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100">
-                Selecionar Paciente para Medir
+                Selecionar Cliente para Medir
               </Button>
             </CardContent>
           </Card>
@@ -111,7 +127,7 @@ export default function AvaliacoesHubPage() {
               <Table>
                 <TableHeader className="bg-white">
                   <TableRow>
-                    <TableHead className="py-4 px-6">Paciente</TableHead>
+                    <TableHead className="py-4 px-6">Cliente</TableHead>
                     <TableHead className="px-6">Data da Medição</TableHead>
                     <TableHead className="px-6">Peso Registado</TableHead>
                     <TableHead className="px-6">% Gordura</TableHead>
@@ -125,6 +141,12 @@ export default function AvaliacoesHubPage() {
                         A carregar histórico...
                       </TableCell>
                     </TableRow>
+                  ) : assessmentsError ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-12 text-rose-600">
+                        Não foi possível carregar o histórico de avaliações.
+                      </TableCell>
+                    </TableRow>
                   ) : assessments.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-12 text-slate-500">
@@ -134,25 +156,26 @@ export default function AvaliacoesHubPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    assessments.map((avaliacao) => (
-                      <TableRow key={avaliacao.id} className="hover:bg-slate-50 transition-colors">
+                    assessments.map((assessment) => (
+                      <TableRow key={assessment.id} className="hover:bg-slate-50 transition-colors">
                         <TableCell className="font-semibold text-slate-700 py-4 px-6">
-                          {avaliacao.user?.name || "Paciente Removido"}
+                          {assessment.client?.name || "Cliente indisponível"}
                         </TableCell>
                         <TableCell className="text-slate-500 px-6">
-                          {new Date(avaliacao.date).toLocaleDateString('pt-PT')}
+                          {new Date(assessment.date).toLocaleDateString('pt-PT')}
                         </TableCell>
                         <TableCell className="text-slate-700 font-bold px-6">
-                          {avaliacao.weight} kg
+                          {assessment.weight ?? '-'}{assessment.weight !== null ? ' kg' : ''}
                         </TableCell>
                         <TableCell className="text-slate-500 px-6">
-                          {avaliacao.bodyFat ? `${avaliacao.bodyFat}%` : '-'}
+                          {assessment.bodyFat !== null ? `${assessment.bodyFat}%` : '-'}
                         </TableCell>
                         <TableCell className="text-right px-6">
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            onClick={() => router.push(`/clientes/${avaliacao.userId}`)}
+                            onClick={() => assessment.clientId && router.push(`/clientes/${assessment.clientId}`)}
+                            disabled={!assessment.clientId}
                             className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
                           >
                             <Activity className="w-4 h-4 mr-1" /> Ver Gráficos
@@ -168,17 +191,17 @@ export default function AvaliacoesHubPage() {
         </Card>
       </div>
 
-      {/* MODAL INTELIGENTE: SELECIONAR PACIENTE PARA AVALIAÇÃO */}
+      {/* Seleção do cliente para a avaliação */}
       {showSelectModal && (
         <>
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40" onClick={() => setShowSelectModal(false)}></div>
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div aria-hidden="true" className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40" onClick={() => setShowSelectModal(false)}></div>
+          <div role="dialog" aria-modal="true" aria-labelledby="assessment-client-picker-title" className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
               <div>
-                <h2 className="text-lg font-bold text-slate-800">Quem vamos avaliar hoje?</h2>
-                <p className="text-sm text-slate-500">Selecione o paciente para abrir o prontuário.</p>
+                <h2 id="assessment-client-picker-title" className="text-lg font-bold text-slate-800">Quem vamos avaliar hoje?</h2>
+                <p className="text-sm text-slate-500">Selecione um cliente da sua base privada.</p>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setShowSelectModal(false)} className="h-8 w-8 rounded-full">
+              <Button aria-label="Fechar seleção de cliente" variant="ghost" size="icon" onClick={() => setShowSelectModal(false)} className="h-8 w-8 rounded-full">
                 <X className="w-4 h-4" />
               </Button>
             </div>
@@ -187,6 +210,7 @@ export default function AvaliacoesHubPage() {
               <div className="relative">
                 <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <Input 
+                  aria-label="Buscar cliente pelo nome"
                   placeholder="Buscar pelo nome..." 
                   className="pl-10 h-12 bg-slate-50 focus-visible:ring-indigo-500"
                   value={searchTerm}
@@ -196,21 +220,24 @@ export default function AvaliacoesHubPage() {
               </div>
 
               <div className="max-h-64 overflow-y-auto space-y-2 custom-scrollbar pr-2 mt-4">
-                {filteredPatients.length === 0 ? (
-                  <p className="text-center text-slate-400 py-4">Nenhum paciente encontrado.</p>
+                {clientsQuery.isError ? (
+                  <p className="text-center text-rose-600 py-4">Não foi possível carregar seus clientes.</p>
+                ) : filteredClients.length === 0 ? (
+                  <p className="text-center text-slate-400 py-4">Nenhum cliente encontrado.</p>
                 ) : (
-                  filteredPatients.map(patient => (
-                    <div 
-                      key={patient.id}
-                      onClick={() => handleSelectPatient(patient.id)}
-                      className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer transition-all group"
+                  filteredClients.map((client) => (
+                    <button
+                      type="button"
+                      key={client.id}
+                      onClick={() => handleSelectClient(client.id)}
+                      className="flex w-full items-center justify-between p-3 text-left rounded-xl border border-slate-100 hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer transition-all group"
                     >
                       <div>
-                        <p className="font-bold text-slate-700 group-hover:text-indigo-800">{patient.name}</p>
-                        <p className="text-xs text-slate-400">Peso inicial: {patient.initialWeight || '--'} kg</p>
+                        <p className="font-bold text-slate-700 group-hover:text-indigo-800">{client.name}</p>
+                        <p className="text-xs text-slate-400">Peso inicial: {client.initialWeight ?? '--'} kg</p>
                       </div>
                       <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-600" />
-                    </div>
+                    </button>
                   ))
                 )}
               </div>
@@ -218,6 +245,13 @@ export default function AvaliacoesHubPage() {
           </div>
         </>
       )}
+
+      <AssessmentModal
+        isOpen={Boolean(selectedClientId)}
+        clientId={selectedClientId ?? ""}
+        onClose={() => setSelectedClientId(null)}
+        onSuccess={() => void fetchDashboardData()}
+      />
 
     </div>
   )

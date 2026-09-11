@@ -1,7 +1,20 @@
-import { IsString, IsNumber, IsOptional, IsDateString } from 'class-validator';
+import {
+  IsDateString,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateIf,
+} from 'class-validator';
 
 export class CreateAssessmentDto {
-  @IsString() userId!: string;
+  @ValidateIf((dto: CreateAssessmentDto) => !dto.userId)
+  @IsString()
+  clientId?: string;
+
+  // Compatibilidade temporária com avaliações vinculadas ao antigo User.
+  @ValidateIf((dto: CreateAssessmentDto) => !dto.clientId)
+  @IsString()
+  userId?: string;
   @IsOptional() @IsDateString() date?: string;
   @IsOptional() @IsNumber() weight?: number;
   @IsOptional() @IsNumber() bodyFat?: number;

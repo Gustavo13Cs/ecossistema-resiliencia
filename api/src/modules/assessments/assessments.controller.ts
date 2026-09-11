@@ -25,18 +25,35 @@ export class AssessmentsController {
   constructor(private readonly assessmentsService: AssessmentsService) {}
 
   @Post()
-  create(@Body() createAssessmentDto: CreateAssessmentDto) {
-    return this.assessmentsService.create(createAssessmentDto);
+  create(
+    @Request() request: AuthenticatedRequest,
+    @Body() createAssessmentDto: CreateAssessmentDto,
+  ) {
+    return this.assessmentsService.create(
+      createAssessmentDto,
+      request.user.sub,
+    );
   }
 
   @Get('user/:userId')
-  findByUser(@Param('userId') userId: string) {
-    return this.assessmentsService.findByUser(userId);
+  findByUser(
+    @Request() request: AuthenticatedRequest,
+    @Param('userId') userId: string,
+  ) {
+    return this.assessmentsService.findByUser(userId, request.user.sub);
+  }
+
+  @Get('client/:clientId')
+  findByClient(
+    @Request() request: AuthenticatedRequest,
+    @Param('clientId') clientId: string,
+  ) {
+    return this.assessmentsService.findByClient(clientId, request.user.sub);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.assessmentsService.remove(id);
+  remove(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
+    return this.assessmentsService.remove(id, request.user.sub);
   }
 
   @Get()

@@ -13,11 +13,11 @@ import { useAuth } from "@/contexts/auth-context" // 🌟 Importamos o contexto 
 interface AssessmentModalProps {
   isOpen: boolean
   onClose: () => void
-  patientId: string
+  clientId: string
   onSuccess: () => void
 }
 
-export function AssessmentModal({ isOpen, onClose, patientId, onSuccess }: AssessmentModalProps) {
+export function AssessmentModal({ isOpen, onClose, clientId, onSuccess }: AssessmentModalProps) {
   // 🌟 Descobre quem está a usar o modal
   const { user: loggedInUser } = useAuth()
   const isNutri = loggedInUser?.role === 'NUTRITIONIST'
@@ -48,7 +48,7 @@ export function AssessmentModal({ isOpen, onClose, patientId, onSuccess }: Asses
 
   const handleSave = async () => {
     setLoading(true)
-    const payload: Record<string, any> = { userId: patientId }
+    const payload: Record<string, string | number> = { clientId }
     
     Object.keys(formData).forEach(key => {
       if (formData[key] !== "") {
@@ -70,19 +70,19 @@ export function AssessmentModal({ isOpen, onClose, patientId, onSuccess }: Asses
 
   return (
     <>
-      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50" onClick={onClose}></div>
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div aria-hidden="true" className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50" onClick={onClose}></div>
+      <div role="dialog" aria-modal="true" aria-labelledby="new-assessment-title" className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* CABEÇALHO DINÂMICO */}
         <div className={`${themeColor} p-5 text-white flex justify-between items-center`}>
           <div>
-            <h2 className="text-xl font-bold flex items-center gap-2">
+            <h2 id="new-assessment-title" className="text-xl font-bold flex items-center gap-2">
               <Activity className="w-5 h-5" /> 
               {isPersonal ? "Nova Avaliação Física" : "Nova Avaliação Corporal"}
             </h2>
             <p className="opacity-90 text-sm">Preencha apenas os dados recolhidos hoje.</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className={`text-white ${hoverColor} rounded-full`}>
+          <Button aria-label="Fechar nova avaliação" variant="ghost" size="icon" onClick={onClose} className={`text-white ${hoverColor} rounded-full`}>
             <X className="w-5 h-5" />
           </Button>
         </div>
@@ -103,7 +103,7 @@ export function AssessmentModal({ isOpen, onClose, patientId, onSuccess }: Asses
             {/* ABA 1: MEDIDAS GLOBAIS */}
             <TabsContent value="globais" className="space-y-4 animate-in fade-in duration-300">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1.5"><Label className="font-bold text-slate-700">Peso (kg) <span className="text-rose-500">*</span></Label><Input type="number" step="0.1" value={formData.weight} onChange={e => handleChange('weight', e.target.value)} className="bg-white font-bold" autoFocus /></div>
+                <div className="space-y-1.5"><Label htmlFor="assessment-weight" className="font-bold text-slate-700">Peso (kg) <span className="text-rose-500">*</span></Label><Input id="assessment-weight" type="number" step="0.1" value={formData.weight} onChange={e => handleChange('weight', e.target.value)} className="bg-white font-bold" autoFocus /></div>
                 <div className="space-y-1.5"><Label className="font-bold text-slate-700">% Gordura</Label><Input type="number" step="0.1" value={formData.bodyFat} onChange={e => handleChange('bodyFat', e.target.value)} className="bg-white" /></div>
                 <div className="space-y-1.5"><Label className="font-bold text-slate-700">Músculo (kg ou %)</Label><Input type="number" step="0.1" value={formData.muscleMass} onChange={e => handleChange('muscleMass', e.target.value)} className="bg-white" /></div>
               </div>
