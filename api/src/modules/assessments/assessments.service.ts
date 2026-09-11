@@ -24,9 +24,9 @@ export class AssessmentsService {
     return this.prisma.physicalAssessment.create({
       data: {
         ...values,
-        date: date ? new Date(date) : undefined,
+        ...(date ? { date: new Date(date) } : {}),
         clientId: target.clientId,
-        userId: target.userId ?? undefined,
+        userId: target.userId,
       },
     });
   }
