@@ -8,69 +8,69 @@ datasource db {
 
 // Tabela 1: Usuários (Pacientes e Profissionais)
 model User {
-  id          String       @id @default(uuid())
-  name        String
-  email       String       @unique
-  password    String
-  role        Role         @default(PATIENT)
-  
+  id       String @id @default(uuid())
+  name     String
+  email    String @unique
+  password String
+  role     Role   @default(PATIENT)
+
   phone       String?
-  birthDate   DateTime?    
+  birthDate   DateTime?
   goal        String?
-  companyName String?      
-  profession  String?      // Fisio, Nutri, Personal (ou especialidade)
-  
+  companyName String?
+  profession  String? // Fisio, Nutri, Personal (ou especialidade)
+
   gender        String?
   height        Float?
-  initialWeight Float?   
+  initialWeight Float?
 
-  tmb               Float?   // Taxa de Metabolismo Basal
-  get               Float?   // Gasto Energético Total
-  activityFactor    Float?   // Fator de Atividade escolhido
+  tmb            Float? // Taxa de Metabolismo Basal
+  get            Float? // Gasto Energético Total
+  activityFactor Float? // Fator de Atividade escolhido
 
-  allergies     String?
-  pathologies   String?    
+  allergies   String?
+  pathologies String?
 
   // ESTILO DE VIDA
-  typicalSleep         String?
-  stressLevel          Int?
-  foodRelationship     String?
-  psychologyHistory    String?
+  typicalSleep      String?
+  stressLevel       Int?
+  foodRelationship  String?
+  psychologyHistory String?
 
   // ATIVIDADE FÍSICA
-  exerciseType         String?
-  exerciseFrequency    String?    
-  exerciseDuration     String?
-  hasPersonal          String?    
-  workActivityLevel    String?    
+  exerciseType      String?
+  exerciseFrequency String?
+  exerciseDuration  String?
+  hasPersonal       String?
+  workActivityLevel String?
 
   // OBSERVAÇÕES DO PROFISSIONAL (Privado)
-  nutritionistNotes    String? @db.Text
+  nutritionistNotes String? @db.Text
 
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  workouts         Workout[] @relation("UserWorkouts")
-  createdWorkouts  Workout[] @relation("CreatedWorkouts")
+  workouts          Workout[]          @relation("UserWorkouts")
+  createdWorkouts   Workout[]          @relation("CreatedWorkouts")
   physioAssessments PhysioAssessment[] @relation("UserPhysioAssessments")
   rehabs            RehabPlan[]        @relation("UserRehabs")
   createdRehabs     RehabPlan[]        @relation("CreatedRehabs")
-  
-  diets         DietPlan[]   @relation("UserDiets") 
-  
-  createdDiets  DietPlan[]   @relation("CreatedDiets")
 
-  assessments   PhysicalAssessment[] @relation("UserAssessments")
+  diets DietPlan[] @relation("UserDiets")
+
+  createdDiets DietPlan[] @relation("CreatedDiets")
+
+  assessments PhysicalAssessment[] @relation("UserAssessments")
 
   trackings DailyTracking[]
-  
-  patients      ProfessionalPatientLink[] @relation("ProfessionalLink")
-  professionals ProfessionalPatientLink[] @relation("PatientLink")
-  ownedClients      Client[]           @relation("ProfessionalClients")
-  clientAuditEvents ClientAuditEvent[] @relation("ProfessionalClientAuditEvents")
 
-  patientAnamneses Anamnesis[] @relation("PatientAnamneses")
-  createdAnamneses Anamnesis[] @relation("CreatedAnamneses")
+  patients          ProfessionalPatientLink[] @relation("ProfessionalLink")
+  professionals     ProfessionalPatientLink[] @relation("PatientLink")
+  ownedClients      Client[]                  @relation("ProfessionalClients")
+  clientAuditEvents ClientAuditEvent[]        @relation("ProfessionalClientAuditEvents")
+
+  patientAnamneses   Anamnesis[]      @relation("PatientAnamneses")
+  createdAnamneses   Anamnesis[]      @relation("CreatedAnamneses")
   patientSupplements SupplementPlan[] @relation("PatientSupplements")
   createdSupplements SupplementPlan[] @relation("CreatedSupplements")
 
@@ -83,29 +83,29 @@ model User {
   workoutLogs WorkoutLog[] @relation("PatientWorkoutLogs")
   mealLogs    MealLog[]    @relation("PatientMealLogs")
 
-  patientAgendaTasks      AgendaTask[]           @relation("PatientAgendaTasks")
-  professionalAgendaTasks AgendaTask[]           @relation("ProfessionalAgendaTasks")
-  agendaOccurrences       AgendaTaskOccurrence[] @relation("PatientAgendaOccurrences")
-  patientConsents         PatientConsent[]        @relation("PatientConsents")
-  professionalConsents    PatientConsent[]        @relation("ProfessionalConsents")
-  healthCheckIns           HealthCheckIn[]         @relation("PatientHealthCheckIns")
-  patientConsultationNotes  ConsultationNote[]     @relation("PatientConsultationNotes")
-  createdConsultationNotes  ConsultationNote[]     @relation("CreatedConsultationNotes")
+  patientAgendaTasks       AgendaTask[]           @relation("PatientAgendaTasks")
+  professionalAgendaTasks  AgendaTask[]           @relation("ProfessionalAgendaTasks")
+  agendaOccurrences        AgendaTaskOccurrence[] @relation("PatientAgendaOccurrences")
+  patientConsents          PatientConsent[]       @relation("PatientConsents")
+  professionalConsents     PatientConsent[]       @relation("ProfessionalConsents")
+  healthCheckIns           HealthCheckIn[]        @relation("PatientHealthCheckIns")
+  patientConsultationNotes ConsultationNote[]     @relation("PatientConsultationNotes")
+  createdConsultationNotes ConsultationNote[]     @relation("CreatedConsultationNotes")
 }
 
 model ProfessionalPatientLink {
-  id             String   @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   professionalId String
-  professional   User     @relation("ProfessionalLink", fields: [professionalId], references: [id], onDelete: Cascade)
-  
-  patientId      String
-  patient        User     @relation("PatientLink", fields: [patientId], references: [id], onDelete: Cascade)
-  
-  isActive       Boolean  @default(true) // Permite inativar um paciente sem apagar os dados
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  professional   User   @relation("ProfessionalLink", fields: [professionalId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   User   @relation("PatientLink", fields: [patientId], references: [id], onDelete: Cascade)
+
+  isActive Boolean @default(true) // Permite inativar um paciente sem apagar os dados
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([professionalId, patientId]) // O mesmo nutri não se liga 2x ao mesmo paciente
   @@map("professional_patient_links")
@@ -132,35 +132,36 @@ enum ClientAuditAction {
 }
 
 model Client {
-  id                 String       @id @default(uuid())
-  professionalId     String
-  professional       User         @relation("ProfessionalClients", fields: [professionalId], references: [id], onDelete: Restrict)
-  name               String
-  email              String?
-  phone              String?
-  birthDate          DateTime?
-  gender             String?
-  goal               String?
-  height             Float?
-  initialWeight      Float?
-  allergies          String?
-  pathologies        String?
-  typicalSleep       String?
-  stressLevel        Int?
-  foodRelationship   String?
-  psychologyHistory  String?
-  exerciseType       String?
-  exerciseFrequency  String?
-  exerciseDuration   String?
-  hasPersonal        String?
-  workActivityLevel  String?
-  professionalNotes  String?      @db.Text
-  privacyNotes       String?      @db.Text
-  status             ClientStatus @default(ACTIVE)
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-  auditEvents        ClientAuditEvent[]
-  diets              DietPlan[]         @relation("ClientDiets")
+  id                String               @id @default(uuid())
+  professionalId    String
+  professional      User                 @relation("ProfessionalClients", fields: [professionalId], references: [id], onDelete: Restrict)
+  name              String
+  email             String?
+  phone             String?
+  birthDate         DateTime?
+  gender            String?
+  goal              String?
+  height            Float?
+  initialWeight     Float?
+  allergies         String?
+  pathologies       String?
+  typicalSleep      String?
+  stressLevel       Int?
+  foodRelationship  String?
+  psychologyHistory String?
+  exerciseType      String?
+  exerciseFrequency String?
+  exerciseDuration  String?
+  hasPersonal       String?
+  workActivityLevel String?
+  professionalNotes String?              @db.Text
+  privacyNotes      String?              @db.Text
+  status            ClientStatus         @default(ACTIVE)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  auditEvents       ClientAuditEvent[]
+  diets             DietPlan[]           @relation("ClientDiets")
+  assessments       PhysicalAssessment[] @relation("ClientAssessments")
 
   @@unique([professionalId, email])
   @@index([professionalId, status, createdAt])
@@ -220,41 +221,41 @@ enum ConsentCategory {
 
 // Tabela 3: O Planeamento Nutricional
 model DietPlan {
-  id          String   @id @default(uuid())
-  title       String   
-  goal        String   
+  id    String @id @default(uuid())
+  title String
+  goal  String
 
-  durationDays Int     @default(30)
-  
-  tmb         Float?
-  get         Float?
-  targetKcal  Float    
-  
-  proteinG    Float    
-  fatG        Float    
-  carbsG      Float    
-  fiberG      Float?
-  sodiumMg    Float?
-  calciumMg   Float?
-  ironMg      Float?
-  
-  notes       String? @db.Text 
+  durationDays Int @default(30)
 
-  userId      String?
-  user        User?    @relation("UserDiets", fields: [userId], references: [id], onDelete: Cascade)
+  tmb        Float?
+  get        Float?
+  targetKcal Float
 
-  clientId    String?
-  client      Client?  @relation("ClientDiets", fields: [clientId], references: [id], onDelete: Restrict)
-  
-  creatorId   String   
-  creator     User     @relation("CreatedDiets", fields: [creatorId], references: [id])
+  proteinG  Float
+  fatG      Float
+  carbsG    Float
+  fiberG    Float?
+  sodiumMg  Float?
+  calciumMg Float?
+  ironMg    Float?
 
-  isActive    Boolean  @default(true) 
-  isTemplate  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  meals       Meal[]   @relation("DietMeals")
+  notes String? @db.Text
+
+  userId String?
+  user   User?   @relation("UserDiets", fields: [userId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  client   Client? @relation("ClientDiets", fields: [clientId], references: [id], onDelete: Restrict)
+
+  creatorId String
+  creator   User   @relation("CreatedDiets", fields: [creatorId], references: [id])
+
+  isActive   Boolean  @default(true)
+  isTemplate Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  meals Meal[] @relation("DietMeals")
 
   @@index([creatorId, clientId, isActive])
   @@index([clientId])
@@ -263,128 +264,130 @@ model DietPlan {
 
 // 4. Tabela de Alimentos
 model Food {
-  id          String   @id @default(uuid())
-  name        String
-  baseUnit    String   @default("100g")
-  baseAmount  Float    @default(100)
-  
-  // 📊 Macronutrientes Principais
-  kcal        Float
-  protein     Float
-  carbs       Float
-  fat         Float
+  id         String @id @default(uuid())
+  name       String
+  baseUnit   String @default("100g")
+  baseAmount Float  @default(100)
 
-  source      String   @default("MANUAL") 
-  fiber       Float    @default(0)        
-  sodium      Float    @default(0)        
-  calcium     Float    @default(0)        
-  iron        Float    @default(0)        
+  // 📊 Macronutrientes Principais
+  kcal    Float
+  protein Float
+  carbs   Float
+  fat     Float
+
+  source  String @default("MANUAL")
+  fiber   Float  @default(0)
+  sodium  Float  @default(0)
+  calcium Float  @default(0)
+  iron    Float  @default(0)
 
   // 🔗 Relação
-  mealItems   MealItem[] 
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  mealItems MealItem[]
 
-  @@map("foods") 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("foods")
 }
-
 
 // 5. Refeições do Plano (Ex: Café da Manhã)
 model Meal {
-  id          String     @id @default(uuid())
-  name        String     // Ex: "Café da Manhã", "Pré-Treino"
-  time        String?    // Ex: "08:30"
-  notes       String?    // Ex: "Consumir 30 min antes do treino"
-  
+  id    String  @id @default(uuid())
+  name  String // Ex: "Café da Manhã", "Pré-Treino"
+  time  String? // Ex: "08:30"
+  notes String? // Ex: "Consumir 30 min antes do treino"
+
   // Ligação com a Dieta do Aluno
-  dietPlanId  String
-  dietPlan    DietPlan   @relation("DietMeals", fields: [dietPlanId], references: [id], onDelete: Cascade)
-  
+  dietPlanId String
+  dietPlan   DietPlan @relation("DietMeals", fields: [dietPlanId], references: [id], onDelete: Cascade)
+
   // Os alimentos que estão dentro desta refeição
-  items       MealItem[] @relation("MealToItems")
-  isConsumed  Boolean    @default(false)
-  logs        MealLog[]
-  
+  items      MealItem[] @relation("MealToItems")
+  isConsumed Boolean    @default(false)
+  logs       MealLog[]
+
   @@map("meals")
 }
 
 // 6. O Alimento exato na quantidade exata para o Aluno
 model MealItem {
-  id          String     @id @default(uuid())
-  quantity    Float      // Ex: 150 (Quantidade receitada)
-  measure     String     // Ex: "g", "colheres de sopa", "unidade"
-  notes       String?    // Ex: "Substitutos: Batata doce ou Mandioca"
-  
+  id       String  @id @default(uuid())
+  quantity Float // Ex: 150 (Quantidade receitada)
+  measure  String // Ex: "g", "colheres de sopa", "unidade"
+  notes    String? // Ex: "Substitutos: Batata doce ou Mandioca"
+
   // Em qual refeição isto está?
-  mealId      String
-  meal        Meal       @relation("MealToItems", fields: [mealId], references: [id], onDelete: Cascade)
-  
+  mealId String
+  meal   Meal   @relation("MealToItems", fields: [mealId], references: [id], onDelete: Cascade)
+
   // Qual é o alimento da tabela TACO?
-  foodId      String
-  food        Food       @relation(fields: [foodId], references: [id])
-  
+  foodId String
+  food   Food   @relation(fields: [foodId], references: [id])
+
   @@map("meal_items")
 }
 
 // Tabela 7: Avaliações Físicas / Antropometria
 model PhysicalAssessment {
-  id          String   @id @default(uuid())
-  date        DateTime @default(now())
-  
+  id   String   @id @default(uuid())
+  date DateTime @default(now())
+
   // ⚖️ Medidas Globais
-  weight      Float?
-  bodyFat     Float?   
-  muscleMass  Float?
-  
+  weight     Float?
+  bodyFat    Float?
+  muscleMass Float?
+
   // 📏 Circunferências (cm)
-  waist       Float?   // Cintura
-  abdomen     Float?   // Abdômen
-  hips        Float?   // Quadril
-  thorax      Float?   // Tórax
-  armLeft     Float?
-  armRight    Float?
-  thighLeft   Float?
-  thighRight  Float?
-  calfLeft    Float?
-  calfRight   Float?
+  waist      Float? // Cintura
+  abdomen    Float? // Abdômen
+  hips       Float? // Quadril
+  thorax     Float? // Tórax
+  armLeft    Float?
+  armRight   Float?
+  thighLeft  Float?
+  thighRight Float?
+  calfLeft   Float?
+  calfRight  Float?
 
   // 🧪 Dobras Cutâneas (mm) - Protocolo 7 Dobras
-  skinfoldTriceps      Float?
-  skinfoldSubscapular  Float?
-  skinfoldChest        Float?
-  skinfoldAxillary     Float?
-  skinfoldSuprailiac   Float?
-  skinfoldAbdominal    Float?
-  skinfoldThigh        Float?
+  skinfoldTriceps     Float?
+  skinfoldSubscapular Float?
+  skinfoldChest       Float?
+  skinfoldAxillary    Float?
+  skinfoldSuprailiac  Float?
+  skinfoldAbdominal   Float?
+  skinfoldThigh       Float?
 
   // ⚡ Performance / Força
-  benchPress1RM  Float?
-  squat1RM       Float?
-  deadlift1RM    Float?
-  vo2Max         Float?
-  
-  notes       String?  @db.Text
+  benchPress1RM Float?
+  squat1RM      Float?
+  deadlift1RM   Float?
+  vo2Max        Float?
 
-  userId      String
-  user        User     @relation("UserAssessments", fields: [userId], references: [id], onDelete: Cascade)
+  notes String? @db.Text
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  userId   String?
+  user     User?   @relation("UserAssessments", fields: [userId], references: [id], onDelete: Cascade)
+  clientId String?
+  client   Client? @relation("ClientAssessments", fields: [clientId], references: [id], onDelete: Restrict)
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId, date])
   @@map("physical_assessments")
 }
 
 // Tabela 8: Memória de Medidas Caseiras (Dicionário do Nutri)
 model FoodPreference {
-  id              String   @id @default(uuid())
-  
-  nutritionistId  String   
-  foodId          String   
-  quantity        Float    @default(0) 
-  measure         String   
-  
-  updatedAt       DateTime @updatedAt
+  id String @id @default(uuid())
+
+  nutritionistId String
+  foodId         String
+  quantity       Float  @default(0)
+  measure        String
+
+  updatedAt DateTime @updatedAt
 
   @@unique([nutritionistId, foodId, quantity])
   @@map("food_preferences")
@@ -396,58 +399,58 @@ model FoodPreference {
 
 // Tabela 9: O Plano de Treino Geral (Ex: Mesociclo 1)
 model Workout {
-  id            String   @id @default(uuid())
-  title         String   // Ex: "Fase de Adaptação"
-  goal          String?  // Ex: "Hipertrofia"
-  durationWeeks Int?     // Ex: 4
-  notes         String?  @db.Text
+  id            String  @id @default(uuid())
+  title         String // Ex: "Fase de Adaptação"
+  goal          String? // Ex: "Hipertrofia"
+  durationWeeks Int? // Ex: 4
+  notes         String? @db.Text
 
   // 🔗 Relações
-  userId        String   // O Aluno
-  user          User     @relation("UserWorkouts", fields: [userId], references: [id], onDelete: Cascade)
-  
-  creatorId     String   // O Personal Trainer
-  creator       User     @relation("CreatedWorkouts", fields: [creatorId], references: [id])
+  userId String // O Aluno
+  user   User   @relation("UserWorkouts", fields: [userId], references: [id], onDelete: Cascade)
 
-  isActive      Boolean  @default(true)
-  isTemplate    Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  creatorId String // O Personal Trainer
+  creator   User   @relation("CreatedWorkouts", fields: [creatorId], references: [id])
 
-  splits        WorkoutSplit[] @relation("WorkoutToSplits")
-  logs          WorkoutLog[]
+  isActive   Boolean  @default(true)
+  isTemplate Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  splits WorkoutSplit[] @relation("WorkoutToSplits")
+  logs   WorkoutLog[]
 
   @@map("workouts")
 }
 
 // Tabela 10: As Fichas do Treino (Ex: Treino A, Treino B)
 model WorkoutSplit {
-  id          String   @id @default(uuid())
-  name        String   // Ex: "Treino A"
-  focus       String?  // Ex: "Peito e Tríceps"
-  
-  workoutId   String
-  workout     Workout  @relation("WorkoutToSplits", fields: [workoutId], references: [id], onDelete: Cascade)
+  id    String  @id @default(uuid())
+  name  String // Ex: "Treino A"
+  focus String? // Ex: "Peito e Tríceps"
 
-  exercises   WorkoutExercise[] @relation("SplitToExercises")
-  logs        WorkoutLog[]
+  workoutId String
+  workout   Workout @relation("WorkoutToSplits", fields: [workoutId], references: [id], onDelete: Cascade)
+
+  exercises WorkoutExercise[] @relation("SplitToExercises")
+  logs      WorkoutLog[]
 
   @@map("workout_splits")
 }
 
 // Tabela 11: Os Exercícios dentro da Ficha
 model WorkoutExercise {
-  id          String   @id @default(uuid())
-  name        String   // Ex: "Supino Reto"
-  sets        String   // Ex: "4"
-  reps        String   // Ex: "10-12"
-  rest        String?  // Ex: "60s"
-  notes       String?  // Ex: "Ponto zero na descida"
+  id    String  @id @default(uuid())
+  name  String // Ex: "Supino Reto"
+  sets  String // Ex: "4"
+  reps  String // Ex: "10-12"
+  rest  String? // Ex: "60s"
+  notes String? // Ex: "Ponto zero na descida"
 
-  splitId     String
-  split       WorkoutSplit @relation("SplitToExercises", fields: [splitId], references: [id], onDelete: Cascade)
+  splitId String
+  split   WorkoutSplit @relation("SplitToExercises", fields: [splitId], references: [id], onDelete: Cascade)
 
-  logSets     WorkoutLogSet[]
+  logSets WorkoutLogSet[]
 
   @@map("workout_exercises")
 }
@@ -458,77 +461,77 @@ model WorkoutExercise {
 
 // Tabela 12: Avaliação Fisioterapêutica / Postural
 model PhysioAssessment {
-  id              String   @id @default(uuid())
-  date            DateTime @default(now())
+  id   String   @id @default(uuid())
+  date DateTime @default(now())
 
-  chiefComplaint  String?  @db.Text // Queixa Principal (QP)
+  chiefComplaint   String? @db.Text // Queixa Principal (QP)
   historyOfIllness String? @db.Text // História da Moléstia Atual (HMA)
-  painLevel       Int?     // Escala de Dor (EVA) de 0 a 10
+  painLevel        Int? // Escala de Dor (EVA) de 0 a 10
 
   posturalAnalysis String? @db.Text // Análise Postural
-  palpation       String?  @db.Text // Palpação
-  jointMobility   String?  @db.Text // Amplitude de Movimento (ADM)
-  orthopedicTests String?  @db.Text // Testes Especiais (Ex: Lachman, Gaveta)
-  
-  treatmentPlan   String?  @db.Text // Conduta / Plano de Tratamento
+  palpation        String? @db.Text // Palpação
+  jointMobility    String? @db.Text // Amplitude de Movimento (ADM)
+  orthopedicTests  String? @db.Text // Testes Especiais (Ex: Lachman, Gaveta)
 
-  userId          String
-  user            User     @relation("UserPhysioAssessments", fields: [userId], references: [id], onDelete: Cascade)
+  treatmentPlan String? @db.Text // Conduta / Plano de Tratamento
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  userId String
+  user   User   @relation("UserPhysioAssessments", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("physio_assessments")
 }
 
 // Tabela 13: Plano de Reabilitação (O "Treino" da Fisio)
 model RehabPlan {
-  id            String   @id @default(uuid())
-  title         String   // Ex: "Pós-Operatório LCA"
-  goal          String?  // Ex: "Controle de dor e edema"
+  id            String  @id @default(uuid())
+  title         String // Ex: "Pós-Operatório LCA"
+  goal          String? // Ex: "Controle de dor e edema"
   durationWeeks Int?
-  notes         String?  @db.Text // Orientações para casa
+  notes         String? @db.Text // Orientações para casa
 
-  userId        String
-  user          User     @relation("UserRehabs", fields: [userId], references: [id], onDelete: Cascade)
-  
-  creatorId     String
-  creator       User     @relation("CreatedRehabs", fields: [creatorId], references: [id])
+  userId String
+  user   User   @relation("UserRehabs", fields: [userId], references: [id], onDelete: Cascade)
 
-  isActive      Boolean  @default(true)
-  isTemplate    Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  creatorId String
+  creator   User   @relation("CreatedRehabs", fields: [creatorId], references: [id])
 
-  sessions      RehabSession[] @relation("PlanToSessions")
+  isActive   Boolean  @default(true)
+  isTemplate Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sessions RehabSession[] @relation("PlanToSessions")
 
   @@map("rehab_plans")
 }
 
 // Tabela 14: Fases ou Sessões da Reabilitação
 model RehabSession {
-  id          String   @id @default(uuid())
-  name        String   // Ex: "Fase 1 - Analgésica" ou "Sessão 1 a 5"
-  focus       String?  // Ex: "Eletroterapia + Cinesioterapia"
+  id    String  @id @default(uuid())
+  name  String // Ex: "Fase 1 - Analgésica" ou "Sessão 1 a 5"
+  focus String? // Ex: "Eletroterapia + Cinesioterapia"
 
   rehabPlanId String
   rehabPlan   RehabPlan @relation("PlanToSessions", fields: [rehabPlanId], references: [id], onDelete: Cascade)
 
-  exercises   RehabExercise[] @relation("SessionToExercises")
+  exercises RehabExercise[] @relation("SessionToExercises")
 
   @@map("rehab_sessions")
 }
 
 // Tabela 15: Terapias e Exercícios
 model RehabExercise {
-  id          String   @id @default(uuid())
-  name        String   // Ex: "TENS", "Alongamento Isquiotibiais", "Ponte"
-  sets        String?  // Ex: "20 min" ou "3"
-  reps        String?  // Ex: "Contínuo" ou "15"
-  notes       String?  @db.Text // Ex: "Frequência 100Hz" ou "Até o limite da dor"
+  id    String  @id @default(uuid())
+  name  String // Ex: "TENS", "Alongamento Isquiotibiais", "Ponte"
+  sets  String? // Ex: "20 min" ou "3"
+  reps  String? // Ex: "Contínuo" ou "15"
+  notes String? @db.Text // Ex: "Frequência 100Hz" ou "Até o limite da dor"
 
-  sessionId   String
-  session     RehabSession @relation("SessionToExercises", fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String
+  session   RehabSession @relation("SessionToExercises", fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("rehab_exercises")
 }
@@ -539,22 +542,22 @@ model RehabExercise {
 
 // Log de uma sessão de treino completa
 model WorkoutLog {
-  id          String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  workoutId   String
-  workout     Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  workoutId String
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
 
-  splitId     String
-  split       WorkoutSplit @relation(fields: [splitId], references: [id])
+  splitId String
+  split   WorkoutSplit @relation(fields: [splitId], references: [id])
 
-  patientId   String
-  patient     User     @relation("PatientWorkoutLogs", fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String
+  patient   User   @relation("PatientWorkoutLogs", fields: [patientId], references: [id], onDelete: Cascade)
 
-  pse         Int?     // Percepção Subjetiva de Esforço (1-10)
-  notes       String?  @db.Text
+  pse   Int? // Percepção Subjetiva de Esforço (1-10)
+  notes String? @db.Text
 
-  executedAt  DateTime @default(now())
-  sets        WorkoutLogSet[]
+  executedAt DateTime        @default(now())
+  sets       WorkoutLogSet[]
 
   @@index([patientId, executedAt])
   @@map("workout_logs")
@@ -562,54 +565,54 @@ model WorkoutLog {
 
 // Cada série real executada por exercício
 model WorkoutLogSet {
-  id          String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  logId       String
-  log         WorkoutLog      @relation(fields: [logId], references: [id], onDelete: Cascade)
+  logId String
+  log   WorkoutLog @relation(fields: [logId], references: [id], onDelete: Cascade)
 
-  exerciseId  String
-  exercise    WorkoutExercise @relation(fields: [exerciseId], references: [id])
+  exerciseId String
+  exercise   WorkoutExercise @relation(fields: [exerciseId], references: [id])
 
-  setNumber   Int      // Número da série (1, 2, 3...)
-  repsActual  Int      // Reps realmente feitas
-  weightKg    Float?   // Peso usado (null = bodyweight)
+  setNumber  Int // Número da série (1, 2, 3...)
+  repsActual Int // Reps realmente feitas
+  weightKg   Float? // Peso usado (null = bodyweight)
 
   @@map("workout_log_sets")
 }
 
 enum MealLogStatus {
-  FOLLOWED    // Seguiu o plano
+  FOLLOWED // Seguiu o plano
   SUBSTITUTED // Substituiu algum alimento
-  SKIPPED     // Pulou a refeição
+  SKIPPED // Pulou a refeição
 }
 
 // Log de adesão a uma refeição
 model MealLog {
-  id        String         @id @default(uuid())
+  id String @id @default(uuid())
 
-  mealId    String
-  meal      Meal           @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  mealId String
+  meal   Meal   @relation(fields: [mealId], references: [id], onDelete: Cascade)
 
   patientId String
-  patient   User           @relation("PatientMealLogs", fields: [patientId], references: [id], onDelete: Cascade)
+  patient   User   @relation("PatientMealLogs", fields: [patientId], references: [id], onDelete: Cascade)
 
-  status    MealLogStatus  // FOLLOWED | SUBSTITUTED | SKIPPED
-  notes     String?        @db.Text
+  status MealLogStatus // FOLLOWED | SUBSTITUTED | SKIPPED
+  notes  String?       @db.Text
 
-  loggedAt  DateTime       @default(now())
+  loggedAt DateTime @default(now())
 
   @@index([patientId, loggedAt])
   @@map("meal_logs")
 }
 
 model DailyTracking {
-  id          String   @id @default(uuid())
-  patientId   String
-  patient     User     @relation(fields: [patientId], references: [id])
-  
-  type        String   // Vai guardar "MEAL" ou "WORKOUT"
-  itemName    String   // Ex: "Café da Manhã" ou "Treino A" (Salvamos o nome direto pra poupar processamento na hora de mostrar pro Nutri)
-  
+  id        String @id @default(uuid())
+  patientId String
+  patient   User   @relation(fields: [patientId], references: [id])
+
+  type     String // Vai guardar "MEAL" ou "WORKOUT"
+  itemName String // Ex: "Café da Manhã" ou "Treino A" (Salvamos o nome direto pra poupar processamento na hora de mostrar pro Nutri)
+
   completedAt DateTime @default(now())
 
   // Um index para deixar a busca do Nutricionista ultra rápida quando ele filtrar por mês/semana
@@ -618,23 +621,23 @@ model DailyTracking {
 
 // Tabela 16: Anamnese Geral (Documento Intocável)
 model AgendaTask {
-  id             String             @id @default(uuid())
+  id             String                 @id @default(uuid())
   patientId      String
-  patient        User               @relation("PatientAgendaTasks", fields: [patientId], references: [id], onDelete: Cascade)
+  patient        User                   @relation("PatientAgendaTasks", fields: [patientId], references: [id], onDelete: Cascade)
   professionalId String
-  professional   User               @relation("ProfessionalAgendaTasks", fields: [professionalId], references: [id], onDelete: Cascade)
+  professional   User                   @relation("ProfessionalAgendaTasks", fields: [professionalId], references: [id], onDelete: Cascade)
   title          String
   category       AgendaTaskCategory
-  instructions   String?            @db.Text
-  priority       AgendaTaskPriority @default(NORMAL)
+  instructions   String?                @db.Text
+  priority       AgendaTaskPriority     @default(NORMAL)
   startsAt       DateTime
   endsAt         DateTime?
   timeZone       String
   recurrenceRule String?
-  status         AgendaTaskStatus   @default(ACTIVE)
+  status         AgendaTaskStatus       @default(ACTIVE)
   occurrences    AgendaTaskOccurrence[]
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
 
   @@index([patientId, status])
   @@index([professionalId, status])
@@ -695,123 +698,123 @@ model HealthCheckIn {
 }
 
 model Anamnesis {
-  id          String   @id @default(uuid())
+  id String @id @default(uuid())
 
   // Aba 1: Histórico Clínico
-  clinicalHistory   String?  @db.Text
-  medications       String?  @db.Text
-  pathologies       String?  @db.Text
+  clinicalHistory String? @db.Text
+  medications     String? @db.Text
+  pathologies     String? @db.Text
 
   // Aba 2: Hábitos Intestinais e Urinários
-  bowelMovement     String?
-  bristolScale      Int?
-  urineColor        String?
+  bowelMovement String?
+  bristolScale  Int?
+  urineColor    String?
 
   // Aba 3: Sintomas e Queixas
-  symptoms          String?  @db.Text
+  symptoms String? @db.Text
 
   // Aba 4: Histórico Familiar
-  familyHistory     String?  @db.Text
+  familyHistory String? @db.Text
 
   // Aba 5: Hábitos de Vida
   waterIntake       Float?
-  alcoholAndSmoking String?  @db.Text
+  alcoholAndSmoking String? @db.Text
 
   // Relações
-  patientId   String
-  patient     User     @relation("PatientAnamneses", fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String
+  patient   User   @relation("PatientAnamneses", fields: [patientId], references: [id], onDelete: Cascade)
 
-  creatorId   String
-  creator     User     @relation("CreatedAnamneses", fields: [creatorId], references: [id])
+  creatorId String
+  creator   User   @relation("CreatedAnamneses", fields: [creatorId], references: [id])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("anamneses")
 }
 
 // Tabela 17: Notas de Consulta / Evolução Clínica (Texto Livre do Profissional)
 model ConsultationNote {
-  id          String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  content     String   @db.Text     // Texto livre da evolução
-  tags        String?               // Ex: "aumento-proteina,retorno-30d" (CSV)
-  nextSteps   String?  @db.Text     // Próximos passos / follow-up
+  content   String  @db.Text // Texto livre da evolução
+  tags      String? // Ex: "aumento-proteina,retorno-30d" (CSV)
+  nextSteps String? @db.Text // Próximos passos / follow-up
 
-  patientId   String
-  patient     User     @relation("PatientConsultationNotes", fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String
+  patient   User   @relation("PatientConsultationNotes", fields: [patientId], references: [id], onDelete: Cascade)
 
-  creatorId   String
-  creator     User     @relation("CreatedConsultationNotes", fields: [creatorId], references: [id])
+  creatorId String
+  creator   User   @relation("CreatedConsultationNotes", fields: [creatorId], references: [id])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([patientId, createdAt])
   @@map("consultation_notes")
 }
 
 model SupplementPlan {
-  id          String   @id @default(uuid())
-  title       String   // ex: Receituário Nutricional
-  notes       String?  @db.Text
-  
-  patientId   String
-  patient     User     @relation("PatientSupplements", fields: [patientId], references: [id], onDelete: Cascade)
-  
-  creatorId   String
-  creator     User     @relation("CreatedSupplements", fields: [creatorId], references: [id])
-  
-  items       SupplementItem[]
+  id    String  @id @default(uuid())
+  title String // ex: Receituário Nutricional
+  notes String? @db.Text
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  patientId String
+  patient   User   @relation("PatientSupplements", fields: [patientId], references: [id], onDelete: Cascade)
+
+  creatorId String
+  creator   User   @relation("CreatedSupplements", fields: [creatorId], references: [id])
+
+  items SupplementItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("supplement_plans")
 }
 
 model SupplementItem {
-  id               String   @id @default(uuid())
-  name             String   // ex: Fórmula 1 - Hipertrofia
-  composition      String?  @db.Text // ex: Creatina 5g, Beta-alanina 2g
-  dosage           String?  // ex: 1 dose
-  instructions     String?  @db.Text // ex: Tomar 30 min antes do treino
+  id           String  @id @default(uuid())
+  name         String // ex: Fórmula 1 - Hipertrofia
+  composition  String? @db.Text // ex: Creatina 5g, Beta-alanina 2g
+  dosage       String? // ex: 1 dose
+  instructions String? @db.Text // ex: Tomar 30 min antes do treino
 
-  planId           String
-  plan             SupplementPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  planId String
+  plan   SupplementPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@map("supplement_items")
 }
 
 // Tabela Pai: O Exame (Data da coleta)
 model LabExam {
-  id          String      @id @default(uuid())
-  date        DateTime    // Data da coleta do sangue
-  notes       String?     @db.Text
-  
-  patientId   String
-  patient     User        @relation("PatientLabExams", fields: [patientId], references: [id], onDelete: Cascade)
-  
-  creatorId   String
-  creator     User        @relation("CreatedLabExams", fields: [creatorId], references: [id])
-  
-  markers     LabMarker[]
+  id    String   @id @default(uuid())
+  date  DateTime // Data da coleta do sangue
+  notes String?  @db.Text
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  patientId String
+  patient   User   @relation("PatientLabExams", fields: [patientId], references: [id], onDelete: Cascade)
+
+  creatorId String
+  creator   User   @relation("CreatedLabExams", fields: [creatorId], references: [id])
+
+  markers LabMarker[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("lab_exams")
 }
 
 // Tabela Filha: O Marcador individual dentro daquele exame
 model LabMarker {
-  id          String      @id @default(uuid())
-  name        String      // ex: "Glicemia de Jejum"
-  value       Float       // ex: 85.5
-  unit        String      // ex: "mg/dL"
-  
-  examId      String
-  exam        LabExam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  id    String @id @default(uuid())
+  name  String // ex: "Glicemia de Jejum"
+  value Float // ex: 85.5
+  unit  String // ex: "mg/dL"
+
+  examId String
+  exam   LabExam @relation(fields: [examId], references: [id], onDelete: Cascade)
 
   @@map("lab_markers")
 }
@@ -829,18 +832,18 @@ enum AlertSeverity {
 }
 
 model PatientAlert {
-  id             String        @id @default(uuid())
-  type           AlertType
-  severity       AlertSeverity
-  message        String        // Ex: "Nenhum treino registrado há 6 dias."
-  
-  patientId      String
-  patient        User          @relation("PatientAlerts", fields: [patientId], references: [id], onDelete: Cascade)
-  
-  professionalId String
-  professional   User          @relation("ProfessionalAlerts", fields: [professionalId], references: [id], onDelete: Cascade)
+  id       String        @id @default(uuid())
+  type     AlertType
+  severity AlertSeverity
+  message  String // Ex: "Nenhum treino registrado há 6 dias."
 
-  createdAt      DateTime      @default(now())
+  patientId String
+  patient   User   @relation("PatientAlerts", fields: [patientId], references: [id], onDelete: Cascade)
+
+  professionalId String
+  professional   User   @relation("ProfessionalAlerts", fields: [professionalId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 
   @@index([professionalId])
   @@map("patient_alerts")
