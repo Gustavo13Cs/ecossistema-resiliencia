@@ -26,7 +26,7 @@ export class AssessmentsService {
         ...values,
         date: date ? new Date(date) : undefined,
         clientId: target.clientId,
-        userId: target.userId,
+        userId: target.userId ?? undefined,
       },
     });
   }
