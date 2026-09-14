@@ -1,7 +1,7 @@
 # Design: Agenda Profissional Client-first
 
 **Data:** 14 de setembro de 2026
-**Status:** Aguardando revisão do documento pelo mantenedor
+**Status:** Aprovado pelo mantenedor para implementação
 **Produto:** SafeMove
 **Escopo:** primeira vertical operacional de agendamentos do profissional
 
