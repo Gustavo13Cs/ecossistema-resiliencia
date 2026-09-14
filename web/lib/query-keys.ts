@@ -1,4 +1,5 @@
 import type { ClientStatus } from "@/types/client"
+import type { AppointmentStatus } from "@/types/appointment"
 
 export const queryKeys = {
   users: (sessionUserId: string) => ["users", sessionUserId] as const,
@@ -12,7 +13,16 @@ export const queryKeys = {
   patientOverview: (sessionUserId: string, patientId: string) => ["patient-overview", sessionUserId, patientId] as const,
   professionalAlerts: (sessionUserId: string) => ["professional-alerts", sessionUserId] as const,
   agenda: (sessionUserId: string, patientId: string, from: string, to: string) => ["agenda", sessionUserId, patientId, from, to] as const,
+  appointmentsRoot: (sessionUserId: string) => ["appointments", sessionUserId] as const,
+  appointments: (
+    sessionUserId: string,
+    from: string,
+    to: string,
+    clientId?: string,
+    status?: AppointmentStatus,
+  ) => ["appointments", sessionUserId, from, to, clientId ?? "all", status ?? "all"] as const,
   consultationNotes: (sessionUserId: string, patientId: string) => ["consultation-notes", sessionUserId, patientId] as const,
   dietHistory: (sessionUserId: string, patientId: string) => ["diet-history", sessionUserId, patientId] as const,
   dashboardSummary: (sessionUserId: string) => ["dashboard-summary", sessionUserId] as const,
+  evolution: (sessionUserId: string) => ["evolution", sessionUserId] as const,
 }

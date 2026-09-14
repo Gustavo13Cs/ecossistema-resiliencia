@@ -56,9 +56,9 @@ export type CreateAppointmentInput = {
   startsAt: string;
   endsAt: string;
   timeZone: string;
-  location?: string;
-  meetingUrl?: string;
-  notes?: string;
+  location?: string | null;
+  meetingUrl?: string | null;
+  notes?: string | null;
 };
 
 export type AppointmentRangeQuery = {
@@ -686,7 +686,7 @@ export class AppointmentsService {
     }
   }
 
-  private normalizeOptionalString(value?: string): string | null {
+  private normalizeOptionalString(value?: string | null): string | null {
     return value?.trim() || null;
   }
 }
