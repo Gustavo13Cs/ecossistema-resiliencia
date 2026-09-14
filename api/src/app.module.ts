@@ -23,6 +23,7 @@ import { AgendaModule } from './modules/agenda/agenda.module';
 import { ConsultationNotesModule } from './modules/consultation-notes/consultation-notes.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { AppController } from '../app.controller';
+import { AppointmentsModule } from './modules/appointments/appointments.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { AppController } from '../app.controller';
     AgendaModule,
     ConsultationNotesModule,
     ClientsModule,
+    AppointmentsModule,
   ],
   controllers: [AppController],
   providers: [

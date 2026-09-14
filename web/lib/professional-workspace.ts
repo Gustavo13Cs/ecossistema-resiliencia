@@ -17,8 +17,9 @@ export interface WorkspaceDefinition {
 
 const getSharedNavigation = (clientPlural: string) => [
   { id: "home", label: "Visão geral", href: "/home" },
-  { id: "clients", label: clientPlural, href: "/clientes" },
-  { id: "assessments", label: "Avaliações", href: "/avaliacoes" },
+  { id: "agenda", label: "Agenda", href: "/agenda", section: "ATENDIMENTO" },
+  { id: "clients", label: clientPlural, href: "/clientes", section: "ATENDIMENTO" },
+  { id: "assessments", label: "Avaliações", href: "/avaliacoes", section: "ATENDIMENTO" },
 ] as const satisfies readonly WorkspaceNavigationItem[]
 
 const createWorkspace = (

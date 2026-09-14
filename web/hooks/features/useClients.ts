@@ -6,7 +6,10 @@ import { api } from "@/lib/api"
 import { queryKeys } from "@/lib/query-keys"
 import type { Client, ClientStatus } from "@/types/client"
 
-export function useClients(status: ClientStatus) {
+export function useClients(
+  status: ClientStatus,
+  options: { enabled?: boolean } = {},
+) {
   const { user } = useAuth()
   const sessionUserId = user?.sub ?? "anonymous"
 
@@ -16,6 +19,6 @@ export function useClients(status: ClientStatus) {
       const response = await api.get<Client[]>("/clients", { params: { status } })
       return response.data ?? []
     },
-    enabled: Boolean(user?.sub),
+    enabled: Boolean(user?.sub && options.enabled !== false),
   })
 }

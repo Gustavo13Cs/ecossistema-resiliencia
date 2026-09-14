@@ -2,6 +2,18 @@ import { describe, expect, it } from "vitest"
 import { canAccessProfessionalPath, getNavigationForRole } from "./professional-workspace"
 
 describe("professional workspace policy", () => {
+  it.each(["NUTRITIONIST", "PERSONAL", "PHYSIO"] as const)(
+    "shares the professional Agenda with %s",
+    (role) => {
+      expect(getNavigationForRole(role)).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: "agenda", href: "/agenda" }),
+        ]),
+      )
+      expect(canAccessProfessionalPath(role, "/agenda")).toBe(true)
+    },
+  )
+
   it.each([
     ["NUTRITIONIST", ["Planos alimentares", "Alimentos"], ["Planilhas", "Reabilitação"]],
     ["PERSONAL", ["Planilhas"], ["Planos alimentares", "Alimentos", "Reabilitação"]],

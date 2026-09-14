@@ -68,6 +68,8 @@ model User {
   professionals     ProfessionalPatientLink[] @relation("PatientLink")
   ownedClients      Client[]                  @relation("ProfessionalClients")
   clientAuditEvents ClientAuditEvent[]        @relation("ProfessionalClientAuditEvents")
+  appointments      Appointment[]             @relation("ProfessionalAppointments")
+  appointmentEvents AppointmentEvent[]        @relation("ProfessionalAppointmentEvents")
 
   patientAnamneses   Anamnesis[]      @relation("PatientAnamneses")
   createdAnamneses   Anamnesis[]      @relation("CreatedAnamneses")
@@ -131,6 +133,37 @@ enum ClientAuditAction {
   RESTORED
 }
 
+enum AppointmentKind {
+  FIRST_VISIT
+  FOLLOW_UP
+  ASSESSMENT
+  SESSION
+  OTHER
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum AppointmentModality {
+  IN_PERSON
+  ONLINE
+}
+
+enum AppointmentEventType {
+  CREATED
+  UPDATED
+  RESCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
 model Client {
   id                String               @id @default(uuid())
   professionalId    String
@@ -162,6 +195,7 @@ model Client {
   auditEvents       ClientAuditEvent[]
   diets             DietPlan[]           @relation("ClientDiets")
   assessments       PhysicalAssessment[] @relation("ClientAssessments")
+  appointments      Appointment[]        @relation("ClientAppointments")
 
   @@unique([professionalId, email])
   @@index([professionalId, status, createdAt])
@@ -180,6 +214,53 @@ model ClientAuditEvent {
   @@index([professionalId, clientId, createdAt])
   @@index([clientId])
   @@map("client_audit_events")
+}
+
+model Appointment {
+  id                 String              @id @default(uuid())
+  professionalId     String
+  professional       User                @relation("ProfessionalAppointments", fields: [professionalId], references: [id], onDelete: Restrict)
+  clientId           String
+  client             Client              @relation("ClientAppointments", fields: [clientId], references: [id], onDelete: Restrict)
+  kind               AppointmentKind
+  status             AppointmentStatus   @default(SCHEDULED)
+  modality           AppointmentModality
+  startsAt           DateTime
+  endsAt             DateTime
+  timeZone           String
+  location           String?
+  meetingUrl         String?
+  notes              String?             @db.Text
+  cancellationReason String?
+  cancelledAt        DateTime?
+  events             AppointmentEvent[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([professionalId, startsAt])
+  @@index([professionalId, status, startsAt])
+  @@index([clientId, startsAt])
+  @@map("appointments")
+}
+
+model AppointmentEvent {
+  id               String               @id @default(uuid())
+  appointmentId    String
+  appointment      Appointment          @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  professionalId   String
+  professional     User                 @relation("ProfessionalAppointmentEvents", fields: [professionalId], references: [id], onDelete: Restrict)
+  type             AppointmentEventType
+  previousStatus   AppointmentStatus?
+  nextStatus       AppointmentStatus?
+  previousStartsAt DateTime?
+  previousEndsAt   DateTime?
+  nextStartsAt     DateTime?
+  nextEndsAt       DateTime?
+  createdAt        DateTime             @default(now())
+
+  @@index([appointmentId, createdAt])
+  @@index([professionalId, createdAt])
+  @@map("appointment_events")
 }
 
 enum AgendaTaskCategory {
