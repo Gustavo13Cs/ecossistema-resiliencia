@@ -8,7 +8,19 @@ describe("Agenda profissional (mocked UI contract)", () => {
     phone: null,
     updatedAt: "2026-09-14T12:00:00.000Z",
   }
-  const createdEvent = {
+  const createdEvent: {
+    id: string
+    appointmentId: string
+    professionalId: string
+    type: string
+    previousStatus: string | null
+    nextStatus: string | null
+    previousStartsAt: string | null
+    previousEndsAt: string | null
+    nextStartsAt: string
+    nextEndsAt: string
+    createdAt: string
+  } = {
     id: "event-1",
     appointmentId: "appointment-1",
     professionalId: "professional-1",
