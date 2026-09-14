@@ -8,8 +8,8 @@
 
 ## Current Task
 
-- Em andamento: migrar o fluxo de avaliações para prontuários `Client`, com isolamento por profissional e teste de regressão do seletor.
-- Branch: `codex/fix-assessments-client-flow`
+- Em andamento: implementar a Agenda Profissional de atendimentos vinculada a `Client`, com calendário diário, semanal e mensal, isolamento por profissional e estados operacionais reais.
+- Branch: `agent/codex/professional-agenda-phase-1`
 
 ---
 
@@ -23,6 +23,7 @@
 | 2026-09-08 | E2E real, isolamento profissional, headers de segurança e acabamento visual final | `codex/safemove-professional-frontend-phase-1` |
 | 2026-09-08 | Diagnóstico P2021: aplicou migration `add_client_foundation` no Supabase, criou teste e2e do backfill | `codex/fix-production-client-data` |
 | 2026-09-10 | Produção professional-first corrigida: dados e dietas migrados para Client, sessão same-origin segura e E2E real aprovado | `codex/fix-production-professional-data` |
+| 2026-09-14 | Avaliações migradas para prontuários Client e integradas em `main` | `codex/fix-assessments-client-flow` |
 
 ---
 
