@@ -22,7 +22,10 @@ import { WeekAgenda } from "@/components/features/appointments/WeekAgenda"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
-import { useAppointments } from "@/hooks/features/useAppointments"
+import {
+  isAppointmentConflict,
+  useAppointments,
+} from "@/hooks/features/useAppointments"
 import { useClients } from "@/hooks/features/useClients"
 import { getDateKeyInTimeZone } from "@/lib/appointment-display"
 import { getAppointmentPeriod } from "@/lib/appointment-period"
@@ -36,6 +39,10 @@ import type {
 } from "@/types/appointment"
 
 const dateKey = (date: Date) => format(date, "yyyy-MM-dd")
+const AGENDA_TOAST_OPTIONS = {
+  position: "top-center" as const,
+  style: { width: "min(18rem, calc(100vw - 2rem))" },
+}
 
 function getPeriodLabel(view: AgendaView, selectedDate: string) {
   const selected = parseISO(selectedDate)
@@ -123,7 +130,10 @@ export default function AgendaPage() {
         current?.id === details.id ? details : current,
       )
     } catch {
-      toast.error("Não foi possível carregar o histórico deste atendimento.")
+      toast.error(
+        "Não foi possível carregar o histórico deste atendimento.",
+        AGENDA_TOAST_OPTIONS,
+      )
     }
   }
 
@@ -146,11 +156,11 @@ export default function AgendaPage() {
     if (editingAppointment && "expectedUpdatedAt" in command) {
       const updated = await agenda.updateAppointment(editingAppointment.id, command)
       setSelectedAppointment(updated)
-      toast.success("Atendimento atualizado com sucesso.")
+      toast.success("Atendimento atualizado com sucesso.", AGENDA_TOAST_OPTIONS)
     } else if (!("expectedUpdatedAt" in command)) {
       const created = await agenda.createAppointment(command)
       setSelectedAppointment(created)
-      toast.success("Atendimento agendado com sucesso.")
+      toast.success("Atendimento agendado com sucesso.", AGENDA_TOAST_OPTIONS)
     }
     setDialogOpen(false)
     setEditingAppointment(null)
@@ -173,18 +183,12 @@ export default function AgendaPage() {
           : { expectedUpdatedAt: selectedAppointment.updatedAt },
       )
       setSelectedAppointment(updated)
-      toast.success(
-        transition === "confirm"
-          ? "Confirmação registrada."
-          : transition === "complete"
-            ? "Atendimento concluído."
-            : transition === "no-show"
-              ? "Falta registrada."
-              : "Atendimento cancelado.",
-      )
-    } catch {
-      if (!agenda.conflict) {
-        toast.error("Não foi possível atualizar este atendimento.")
+    } catch (error) {
+      if (!isAppointmentConflict(error)) {
+        toast.error(
+          "Não foi possível atualizar este atendimento.",
+          AGENDA_TOAST_OPTIONS,
+        )
       }
     }
   }

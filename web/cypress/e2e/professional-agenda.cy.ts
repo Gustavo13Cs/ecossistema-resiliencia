@@ -102,6 +102,7 @@ describe("Agenda profissional (mocked UI contract)", () => {
   })
 
   it("navigates the calendar, opens history and records confirmation", () => {
+    cy.viewport(1280, 720)
     cy.visit("/agenda")
     cy.wait(["@clients", "@appointments"])
     cy.findByRole("heading", { name: "Agenda" }).should("be.visible")
@@ -113,13 +114,38 @@ describe("Agenda profissional (mocked UI contract)", () => {
     cy.contains("Atendimento criado").should("be.visible")
     cy.findByRole("button", { name: "Confirmar" }).click()
     cy.wait("@confirmAppointment")
-    cy.contains("Confirmação registrada").should("be.visible")
+    cy.findByRole("region", { name: "Histórico" })
+      .contains("Confirmação registrada")
+      .should("be.visible")
+    cy.findByRole("status").contains("Confirmado").should("be.visible")
+    cy.findByRole("button", { name: "Cancelar" }).should("be.visible")
+    cy.findByRole("button", { name: "Close" }).should("be.visible")
+    cy.window().then((window) => {
+      cy.get('[data-slot="sheet-content"]').should(($sheet) => {
+        const sheetRect = $sheet[0].getBoundingClientRect()
+
+        expect($sheet[0].scrollWidth, "sheet horizontal overflow").to.be.at.most(
+          $sheet[0].clientWidth,
+        )
+        expect(sheetRect.left, "sheet left edge").to.be.at.least(0)
+        expect(sheetRect.right, "sheet right edge").to.be.at.most(
+          window.innerWidth,
+        )
+      })
+      cy.findByRole("button", { name: "Cancelar" }).should(($button) => {
+        const buttonRect = $button[0].getBoundingClientRect()
+
+        expect(buttonRect.right, "cancel action right edge").to.be.at.most(
+          window.innerWidth,
+        )
+      })
+    })
     cy.screenshot("agenda-profissional-desktop-final")
 
     cy.findByRole("button", { name: "Close" }).click()
     cy.viewport(390, 844)
     cy.findByRole("button", { name: "Semana" }).click()
-    cy.findByRole("button", { name: /Ter/ }).should("be.visible")
+    cy.findByRole("button", { name: /terça 15/i }).should("be.visible")
     cy.screenshot("agenda-profissional-mobile-final")
   })
 })
