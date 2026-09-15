@@ -36,7 +36,7 @@
 | 2.9 | Migrar suplementos de User para Client | ⏳ | — |
 | 2.10 | Migrar exames lab de User para Client | ⏳ | — |
 | 2.11 | Remover fluxos legados de paciente (ProfessionalPatientLink, /membros, /paciente) | ⏳ | — |
-| 2.12 | Agenda profissional de atendimentos vinculada a Client | 🔄 | Codex |
+| 2.12 | Agenda profissional de atendimentos vinculada a Client | ✅ | Codex |
 
 ---
 

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { api } from "@/lib/api"
 import type { Appointment, AppointmentPeriod } from "@/types/appointment"
 import type { AuthUser } from "@/types/auth"
-import { useAppointments } from "./useAppointments"
+import { isAppointmentConflict, useAppointments } from "./useAppointments"
 
 const authState = vi.hoisted(() => ({ user: null as AuthUser | null }))
 
@@ -75,6 +75,19 @@ afterEach(() => {
 })
 
 describe("useAppointments", () => {
+  it("identifies a 409 response before React publishes the conflict state", async () => {
+    http.onPost("/appointments/conflict-probe").reply(409, {
+      message: "A agenda mudou",
+    })
+
+    const error = await api.post("/appointments/conflict-probe").catch(
+      (requestError: unknown) => requestError,
+    )
+
+    expect(isAppointmentConflict(error)).toBe(true)
+    expect(isAppointmentConflict(new Error("Falha inesperada"))).toBe(false)
+  })
+
   it("requests the period and isolates the cache by professional and filters", async () => {
     http.onGet("/appointments").reply(200, [appointment])
     const { queryClient, result } = renderAppointmentsHook()

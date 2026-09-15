@@ -8,8 +8,7 @@
 
 ## Current Task
 
-- Em andamento: implementar a Agenda Profissional de atendimentos vinculada a `Client`, com calendário diário, semanal e mensal, isolamento por profissional e estados operacionais reais.
-- Branch: `agent/codex/professional-agenda-phase-1`
+- Nenhuma tarefa em andamento.
 
 ---
 
@@ -24,6 +23,7 @@
 | 2026-09-08 | Diagnóstico P2021: aplicou migration `add_client_foundation` no Supabase, criou teste e2e do backfill | `codex/fix-production-client-data` |
 | 2026-09-10 | Produção professional-first corrigida: dados e dietas migrados para Client, sessão same-origin segura e E2E real aprovado | `codex/fix-production-professional-data` |
 | 2026-09-14 | Avaliações migradas para prontuários Client e integradas em `main` | `codex/fix-assessments-client-flow` |
+| 2026-09-14 | Agenda profissional vinculada a Client: calendário dia/semana/mês, lifecycle auditável, conflitos, ownership e E2E real | `agent/codex/professional-agenda-phase-1` |
 
 ---
 
@@ -35,6 +35,7 @@ _Nenhum impedimento._
 
 ## Notes
 
+- Agenda validada com 182 testes web, build Next, Cypress desktop/mobile, migration PostgreSQL e E2E HTTP real de ownership/lifecycle
 - Rotas clínicas legadas fora do novo prontuário ainda exigem migração de ownership por tenant
 - Consultar `AGENTS.md` na raiz para orientação geral
 - Consultar `docs/TASKS.md` para o backlog de tarefas

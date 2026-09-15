@@ -3,6 +3,7 @@ const PUBLIC_API_PATH = "/api"
 
 export function resolvePublicApiUrl(environment = process.env) {
   const apiUrl =
+    environment.INTERNAL_API_URL ||
     environment.NEXT_PUBLIC_API_URL ||
     (environment.NODE_ENV === "test" || environment.GITHUB_ACTIONS === "true"
       ? ISOLATED_BROWSER_TEST_API_URL
@@ -30,17 +31,25 @@ const nextConfig = {
     unoptimized: true,
   },
   async headers() {
+    const isDev = process.env.NODE_ENV === "development"
+    const scriptSrc = isDev
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+      : "script-src 'self' 'unsafe-inline'"
+    const connectSrc = isDev
+      ? "connect-src 'self' ws: wss: http: https:"
+      : "connect-src 'self'"
+
     const contentSecurityPolicy = [
       "default-src 'self'",
       "base-uri 'self'",
       "form-action 'self'",
       "frame-ancestors 'none'",
       "object-src 'none'",
-      "script-src 'self' 'unsafe-inline'",
+      scriptSrc,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self' data:",
-      "connect-src 'self'",
+      connectSrc,
       "worker-src 'self' blob:",
       "manifest-src 'self'",
     ].join("; ")

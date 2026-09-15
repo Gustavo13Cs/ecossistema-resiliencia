@@ -41,9 +41,13 @@ function classifyAppointmentsError(
   return "server-error"
 }
 
+export function isAppointmentConflict(error: unknown): boolean {
+  return axios.isAxiosError(error) && error.response?.status === 409
+}
+
 function safeConflictMessage(error: unknown): string | null {
-  if (!axios.isAxiosError(error) || error.response?.status !== 409) return null
-  const message = (error.response.data as { message?: unknown } | undefined)
+  if (!isAppointmentConflict(error) || !axios.isAxiosError(error)) return null
+  const message = (error.response?.data as { message?: unknown } | undefined)
     ?.message
   if (typeof message !== "string") return "A agenda mudou. Atualize e tente novamente."
   const normalized = message.trim()

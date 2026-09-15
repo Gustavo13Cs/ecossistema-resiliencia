@@ -107,7 +107,9 @@ export function AppointmentDetails({
       <SheetContent className="w-full overflow-y-auto border-[var(--sm-border)] sm:max-w-xl">
         <SheetHeader className="border-b border-[var(--sm-border)] px-5 pb-5 pt-6">
           <div className="pr-8">
-            <AppointmentStatusBadge status={appointment.status} />
+            <div role="status" aria-live="polite">
+              <AppointmentStatusBadge status={appointment.status} />
+            </div>
             <SheetTitle className="mt-3 text-2xl font-extrabold tracking-[-0.03em] text-[var(--sm-ink)]">
               {appointment.client.name}
             </SheetTitle>
