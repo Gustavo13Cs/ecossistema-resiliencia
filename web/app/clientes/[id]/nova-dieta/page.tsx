@@ -408,8 +408,11 @@ export default function NovaDietaPage() {
     setShowTemplateModal(true)
     setLoadingTemplates(true)
     try {
-      const res = await api.get('/diet-plans/templates')
-      setTemplates(res.data || [])
+      const [customRes, sysRes] = await Promise.all([
+        api.get('/diet-plans/templates'),
+        api.get('/diet-plans/system-templates'),
+      ])
+      setTemplates([...(sysRes.data || []), ...(customRes.data || [])])
     } catch {
       toast.error("Erro ao carregar templates.")
     } finally {
@@ -417,20 +420,24 @@ export default function NovaDietaPage() {
     }
   }
 
-  const applyTemplate = (template: any) => {
+  const applyTemplate = (template: any, customTargetKcal?: number) => {
+    const baseKcal = template.targetKcal || 2000
+    const desiredKcal = customTargetKcal && customTargetKcal > 0 ? customTargetKcal : baseKcal
+    const scaleFactor = desiredKcal / baseKcal
+
     setDietInfo({
-      title: template.title,
+      title: `${template.title} (Adaptado)`,
       goal: template.goal,
       notes: template.notes || "",
       durationDays: template.durationDays || 30,
       patientWeight: patientProfile?.initialWeight || 80,
     })
     setTargets({
-      kcal: template.targetKcal,
-      pro: template.proteinG,
-      carb: template.carbsG,
-      fat: template.fatG,
-      fiber: template.fiberG || 30,
+      kcal: desiredKcal,
+      pro: Math.round(template.proteinG * scaleFactor),
+      carb: Math.round(template.carbsG * scaleFactor),
+      fat: Math.round(template.fatG * scaleFactor),
+      fiber: template.fiberG ? Math.round(template.fiberG * scaleFactor) : 30,
       sodium: template.sodiumMg || 2000,
       calcium: template.calciumMg || 1000,
       iron: template.ironMg || 15,
@@ -441,16 +448,36 @@ export default function NovaDietaPage() {
         name: m.name,
         time: m.time || "",
         notes: m.notes || "",
-        items: (m.items || []).map((i: any) => ({
-          id: `i${Date.now()}_${Math.random()}`,
-          quantity: i.quantity,
-          measure: i.measure || "",
-          food: i.food,
-        }))
+        items: (m.items || []).map((i: any) => {
+          let scaledQty = i.quantity * scaleFactor
+          const measureLower = (i.measure || "").toLowerCase()
+          if (measureLower === "g" || measureLower === "ml") {
+            scaledQty = Math.max(5, Math.round(scaledQty / 5) * 5)
+          } else {
+            scaledQty = Math.max(0.5, Math.round(scaledQty * 2) / 2)
+          }
+
+          return {
+            id: `i${Date.now()}_${Math.random()}`,
+            quantity: scaledQty,
+            measure: i.measure || "g",
+            food: i.food || {
+              id: i.foodId || "food-custom",
+              name: i.name || "Alimento",
+              kcal: 100,
+              protein: 5,
+              carbs: 10,
+              fat: 2,
+              baseAmount: 100,
+            },
+          }
+        }),
       }))
     )
     setShowTemplateModal(false)
-    toast.success(`Template "${template.title}" aplicado! Ajuste conforme necessário.`)
+    toast.success(
+      `Modelo "${template.title}" aplicado com sucesso! Porções recalculadas para ${desiredKcal} kcal.`
+    )
   }
 
 

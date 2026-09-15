@@ -62,6 +62,7 @@
 | 4.4 | Seed de dados realistas para desenvolvimento | ⏳ | — |
 | 4.5 | Documentação de API (Swagger/OpenAPI) | ⏳ | — |
 | 4.6 | Monitoramento de performance (bundle size, query time) | ⏳ | — |
+| 4.7 | Endurecer Data API, grants e RLS defensivo no Supabase | 🔄 | Codex |
 
 ---
 

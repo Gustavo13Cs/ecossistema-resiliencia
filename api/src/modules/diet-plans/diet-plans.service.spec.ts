@@ -24,6 +24,7 @@ describe('DietPlansService professional ownership', () => {
     dietPlan: {
       updateMany: jest.fn<Promise<{ count: number }>, [unknown]>(),
       create: jest.fn<Promise<{ id: string }>, [unknown]>(),
+      update: jest.fn(),
       findUnique: jest.fn(),
       findFirst: jest.fn(),
       findMany: jest.fn(),
@@ -109,5 +110,171 @@ describe('DietPlansService professional ownership', () => {
       service.toggleMealStatus('meal-1', PROFESSIONAL_ID),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(prisma.meal.update).not.toHaveBeenCalled();
+  });
+
+  it('creates a custom template with isTemplate=true', async () => {
+    const templateDto = {
+      title: 'Modelo Hipertrofia V1',
+      goal: 'Ganho de Massa',
+      targetKcal: 2500,
+      proteinG: 180,
+      fatG: 70,
+      carbsG: 280,
+      meals: [],
+    };
+
+    await service.createTemplate(templateDto, PROFESSIONAL_ID);
+
+    expect(prisma.dietPlan.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          title: 'Modelo Hipertrofia V1',
+          creatorId: PROFESSIONAL_ID,
+          isTemplate: true,
+          isActive: true,
+        }),
+      }),
+    );
+  });
+
+  it('duplicates a template incrementing the version title', async () => {
+    prisma.dietPlan.findUnique.mockResolvedValue({
+      id: 'tpl-1',
+      title: 'Low Carb V1',
+      goal: 'Definição',
+      targetKcal: 1800,
+      proteinG: 140,
+      fatG: 60,
+      carbsG: 120,
+      creatorId: PROFESSIONAL_ID,
+      meals: [],
+    });
+
+    await service.duplicateTemplate('tpl-1', PROFESSIONAL_ID);
+
+    expect(prisma.dietPlan.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          title: 'Low Carb V2',
+          creatorId: PROFESSIONAL_ID,
+          isTemplate: true,
+        }),
+      }),
+    );
+  });
+
+  it('toggles archive status of a template', async () => {
+    prisma.dietPlan.findUnique.mockResolvedValue({
+      id: 'tpl-1',
+      isActive: true,
+      creatorId: PROFESSIONAL_ID,
+    });
+    prisma.dietPlan.update.mockResolvedValue({
+      id: 'tpl-1',
+      isActive: false,
+    });
+
+    await service.toggleArchiveTemplate('tpl-1', PROFESSIONAL_ID);
+
+    expect(prisma.dietPlan.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'tpl-1' },
+        data: { isActive: false },
+      }),
+    );
+  });
+
+  it('imports a template to an owned client with auto-scaling of portions and macros', async () => {
+    prisma.dietPlan.findUnique.mockResolvedValue({
+      id: 'tpl-base',
+      title: 'Base Normocalórica',
+      goal: 'Manutenção',
+      targetKcal: 2000,
+      proteinG: 150,
+      carbsG: 200,
+      fatG: 60,
+      fiberG: 30,
+      durationDays: 30,
+      creatorId: PROFESSIONAL_ID,
+      meals: [
+        {
+          name: 'Almoço',
+          time: '12:00',
+          notes: null,
+          items: [
+            {
+              quantity: 100,
+              measure: 'g',
+              foodId: 'food-frango',
+              notes: 'Grelhado',
+            },
+            {
+              quantity: 2,
+              measure: 'unidades',
+              foodId: 'food-ovo',
+              notes: null,
+            },
+          ],
+        },
+      ],
+    });
+
+    await service.importTemplateToClient(
+      'tpl-base',
+      {
+        clientId: CLIENT_ID,
+        targetKcal: 1600, // 0.8x scale
+        title: 'Plano Adaptado para João',
+      },
+      PROFESSIONAL_ID,
+    );
+
+    // Deve desativar planos ativos anteriores do cliente
+    expect(prisma.dietPlan.updateMany).toHaveBeenCalledWith({
+      where: { clientId: CLIENT_ID, creatorId: PROFESSIONAL_ID, isActive: true },
+      data: { isActive: false },
+    });
+
+    // Deve criar o novo plano com os macros recalculados na proporção de 0.8x
+    const createCall = capturedDietCreateArgs as {
+      data: {
+        title: string;
+        targetKcal: number;
+        proteinG: number;
+        carbsG: number;
+        fatG: number;
+        fiberG: number;
+        clientId: string;
+        isTemplate: boolean;
+        isActive: boolean;
+        meals: {
+          create: Array<{
+            name: string;
+            items: {
+              create: Array<{
+                quantity: number;
+                measure: string;
+              }>;
+            };
+          }>;
+        };
+      };
+    };
+
+    expect(createCall.data.title).toBe('Plano Adaptado para João');
+    expect(createCall.data.targetKcal).toBe(1600);
+    expect(createCall.data.proteinG).toBe(120); // 150 * 0.8 = 120
+    expect(createCall.data.carbsG).toBe(160); // 200 * 0.8 = 160
+    expect(createCall.data.fatG).toBe(48); // 60 * 0.8 = 48
+    expect(createCall.data.fiberG).toBe(24); // 30 * 0.8 = 24
+    expect(createCall.data.clientId).toBe(CLIENT_ID);
+    expect(createCall.data.isTemplate).toBe(false);
+    expect(createCall.data.isActive).toBe(true);
+
+    // Verifica auto-scaling das porções:
+    // 100g * 0.8 = 80g
+    expect(createCall.data.meals.create[0].items.create[0].quantity).toBe(80);
+    // 2 unidades * 0.8 = 1.6 -> arredondado para 1.5 unidades
+    expect(createCall.data.meals.create[0].items.create[1].quantity).toBe(1.5);
   });
 });
