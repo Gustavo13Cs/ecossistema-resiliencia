@@ -8,7 +8,11 @@
 
 ## Current Task
 
-- Nenhuma tarefa em andamento.
+- Especificação e futura implementação do endurecimento da Data API, grants e RLS
+  defensivo no Supabase.
+- Status: design aprovado conceitualmente; especificação aguardando revisão do
+  mantenedor antes do plano de implementação.
+- Branch: `codex/BancodeReceitas`.
 
 ---
 
