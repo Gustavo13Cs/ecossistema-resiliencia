@@ -10,8 +10,8 @@
 
 - Especificação e futura implementação do endurecimento da Data API, grants e RLS
   defensivo no Supabase.
-- Status: design aprovado conceitualmente; especificação aguardando revisão do
-  mantenedor antes do plano de implementação.
+- Status: especificação aprovada e plano detalhado pronto; aguardando escolha do
+  modo de execução antes de qualquer mudança no banco.
 - Branch: `codex/BancodeReceitas`.
 
 ---

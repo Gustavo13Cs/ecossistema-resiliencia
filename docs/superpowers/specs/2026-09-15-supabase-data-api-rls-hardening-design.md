@@ -1,7 +1,7 @@
 # Design: Endurecimento da Data API e RLS Defensivo
 
 - **Data:** 15 de setembro de 2026
-- **Status:** aprovado conceitualmente; aguardando revisão desta especificação
+- **Status:** aprovado pelo mantenedor para implementação
 - **Produto:** SafeMove
 - **Escopo:** reduzir a superfície pública do PostgreSQL hospedado no Supabase sem alterar o fluxo de autenticação NestJS/Prisma
 
