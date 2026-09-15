@@ -16,6 +16,7 @@ _Nenhuma tarefa em andamento._
 
 | Data | Tarefa | Branch |
 |------|--------|--------|
+| 2026-09-15 | Implementação do módulo de Modelos de Planos Alimentares (templates pré-configurados SafeMove, auto-scaling de porções e macros, versionamento, arquivamento e importação para prontuário) | `main` |
 | 2026-09-08 | Corrigir 500/429 em `/clients`: throttler 20→60, Dockerfile com migrate deploy, backfill de dados legados | `codex/fix-production-client-data` |
 
 ---
