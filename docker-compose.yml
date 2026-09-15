@@ -28,14 +28,18 @@ services:
       context: ./web
       dockerfile: Dockerfile
     ports:
-      # Corrigido: Mapeando a 3001 do PC para a 3001 do container (onde o Next tá rodando)
       - "3001:3001" 
     env_file:
       - ./web/.env.local
+    environment:
+      - NODE_ENV=development
+      - INTERNAL_API_URL=http://api:3000
+      - WATCHPACK_POLLING=true
     volumes:
-      - ./web:/usr/src/app/web
-      # Blinda o node_modules do frontend também
-      - /usr/src/app/web/node_modules 
+      - ./web:/usr/src/app
+      # Blinda o node_modules e .next do container para não ser esmagado pelo Windows
+      - /usr/src/app/node_modules
+      - /usr/src/app/.next
     depends_on:
       - api
-
+    command: ["npm", "run", "dev"]

@@ -61,6 +61,23 @@ describe("Next.js response security headers", () => {
     vi.stubEnv("GITHUB_ACTIONS", "")
 
     expect(nextConfig.rewrites).toBeTypeOf("function")
+  })
+
+  it("rejects an invalid public API URL instead of weakening connect-src", async () => {
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "not a URL")
+
+    expect(nextConfig.rewrites).toBeTypeOf("function")
+    await expect(nextConfig.rewrites!()).rejects.toThrow(
+      "NEXT_PUBLIC_API_URL must be a valid absolute URL",
+    )
+  })
+
+  it("rejects a production build without an explicit public API URL", async () => {
+    vi.stubEnv("NODE_ENV", "production")
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "")
+    vi.stubEnv("GITHUB_ACTIONS", "")
+
+    expect(nextConfig.rewrites).toBeTypeOf("function")
     await expect(nextConfig.rewrites!()).rejects.toThrow(
       "NEXT_PUBLIC_API_URL is required",
     )
@@ -79,5 +96,29 @@ describe("Next.js response security headers", () => {
         destination: "http://localhost:3000/:path*",
       },
     ])
+  })
+
+  it("prioritizes INTERNAL_API_URL over NEXT_PUBLIC_API_URL for server-side proxy rewrites in docker", async () => {
+    vi.stubEnv("INTERNAL_API_URL", "http://api:3000")
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:3000")
+
+    await expect(nextConfig.rewrites!()).resolves.toEqual([
+      {
+        source: "/api/:path*",
+        destination: "http://api:3000/:path*",
+      },
+    ])
+  })
+
+  it("includes unsafe-eval and websocket in connect-src during development mode", async () => {
+    vi.stubEnv("NODE_ENV", "development")
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:3000")
+
+    const routes = await nextConfig.headers!()
+    const catchAll = routes.find((route) => route.source === "/(.*)")
+    const csp = catchAll?.headers.find((header) => header.key === "Content-Security-Policy")?.value
+
+    expect(csp).toContain("'unsafe-eval'")
+    expect(csp).toContain("ws:")
   })
 })
