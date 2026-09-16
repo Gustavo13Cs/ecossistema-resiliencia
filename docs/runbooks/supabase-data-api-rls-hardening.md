@@ -4,6 +4,9 @@
 
 Este procedimento protege o projeto `zmjcxysenzrqycktckip` contra acesso direto
 pela Data API. Ele não substitui o ownership por `professionalId` na API NestJS.
+As 33 tabelas enumeradas pela migration são tabelas de aplicação;
+`consultation_notes` e `_prisma_migrations` permanecem fora desse conjunto. Não
+corrigir esse drift nesta fase.
 
 ## Preflight obrigatório
 
@@ -11,9 +14,12 @@ pela Data API. Ele não substitui o ownership por `professionalId` na API NestJS
 2. Confirmar que o projeto remoto é `zmjcxysenzrqycktckip`.
 3. Executar `npx.cmd prisma migrate status` em `api` sem imprimir variáveis.
 4. Confirmar que a conexão resolve para `postgres` com `BYPASSRLS`.
-5. Confirmar zero privilégios efetivos para `anon`, `authenticated` e
-   `service_role` sobre tabelas públicas.
-6. Rodar o gate local completo antes de qualquer escrita remota.
+5. Confirmar zero privilégios efetivos atuais para `anon`, `authenticated` e
+   `service_role` sobre tabelas, sequences e functions públicas.
+6. Confirmar que as default ACLs do `postgres` revogam privilégios futuros sobre
+   tabelas, sequences e functions para as três roles e que a default ACL global
+   revoga `EXECUTE` em novas functions de `PUBLIC`.
+7. Rodar o gate local completo antes de qualquer escrita remota.
 
 ## Implantação
 
@@ -27,19 +33,29 @@ pela Data API. Ele não substitui o ownership por `professionalId` na API NestJS
 ## Verificação
 
 1. Confirmar nove migrations aplicadas em `_prisma_migrations`.
-2. Consultar `pg_class` e confirmar RLS nas 33 tabelas enumeradas pela migration.
+2. Consultar `pg_class` e confirmar RLS nas 33 tabelas de aplicação enumeradas
+   pela migration, sem incluir `consultation_notes` ou `_prisma_migrations`.
 3. Consultar `pg_policies` e confirmar 33 policies
    `deny_data_api_access`, todas `RESTRICTIVE`, `ALL`, `PUBLIC`, `false`.
-4. Confirmar zero tabelas alcançáveis pelas três roles da Data API.
-5. Confirmar que REST e GraphQL não atendem consultas com chave publicável.
-6. Validar sessão, clientes, agenda, dietas e avaliações pela API NestJS.
-7. Rodar o Supabase Security Advisor e registrar somente nomes e contagens.
+4. Confirmar zero privilégios efetivos atuais das três roles da Data API sobre
+   tabelas, sequences e functions públicas.
+5. Confirmar as default ACLs para tabelas, sequences e functions das três roles
+   e a default ACL global que revoga `PUBLIC EXECUTE` para futuras functions.
+6. Validar no ambiente seguro objetos futuros de cada tipo (tabela, sequence e
+   function) e confirmar que não recebem privilégios das três roles nem execução
+   pública pela `PUBLIC` global.
+7. Confirmar que REST e GraphQL não atendem consultas com chave publicável.
+8. Validar sessão, clientes, agenda, dietas e avaliações pela API NestJS.
+9. Rodar o Supabase Security Advisor e registrar somente nomes e contagens.
 
 ## Falha
 
 - Interromper a implantação no primeiro gate inconsistente.
 - Nunca conceder privilégios amplos para recuperar funcionamento.
-- A Data API pode ser reativada se uma dependência legítima for descoberta.
+- A Data API só pode ser reativada se uma dependência legítima for descoberta,
+  após nova aprovação humana explícita e registro do caso de uso.
+- Nunca restaurar automaticamente grants públicos; toda reversão exige migration
+  forward-only revisada.
 - Migration aplicada não é editada nem removida; correções usam nova migration.
 - Se a API NestJS falhar, comparar o papel efetivo do banco com o preflight e
   criar uma correção forward-only antes de retomar.
