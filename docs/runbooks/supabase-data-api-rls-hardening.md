@@ -15,7 +15,8 @@ corrigir esse drift nesta fase.
 3. Executar `npx.cmd prisma migrate status` em `api` sem imprimir variáveis.
 4. Confirmar que a conexão resolve para `postgres` com `BYPASSRLS`.
 5. Confirmar zero privilégios efetivos atuais para `anon`, `authenticated` e
-   `service_role` sobre tabelas, sequences e functions públicas.
+   `service_role` sobre tabelas, sequences e functions públicas, e zero
+   `PUBLIC EXECUTE` sobre functions existentes.
 6. Confirmar que as default ACLs do `postgres` revogam privilégios futuros sobre
    tabelas, sequences e functions para as três roles e que a default ACL global
    revoga `EXECUTE` em novas functions de `PUBLIC`.
@@ -38,7 +39,8 @@ corrigir esse drift nesta fase.
 3. Consultar `pg_policies` e confirmar 33 policies
    `deny_data_api_access`, todas `RESTRICTIVE`, `ALL`, `PUBLIC`, `false`.
 4. Confirmar zero privilégios efetivos atuais das três roles da Data API sobre
-   tabelas, sequences e functions públicas.
+   tabelas, sequences e functions públicas, e zero `PUBLIC EXECUTE` sobre
+   functions existentes.
 5. Confirmar as default ACLs para tabelas, sequences e functions das três roles
    e a default ACL global que revoga `PUBLIC EXECUTE` para futuras functions.
 6. Validar no ambiente seguro objetos futuros de cada tipo (tabela, sequence e
