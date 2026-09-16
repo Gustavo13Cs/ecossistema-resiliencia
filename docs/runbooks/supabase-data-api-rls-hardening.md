@@ -14,12 +14,16 @@ corrigir esse drift nesta fase.
 2. Confirmar que o projeto remoto é `zmjcxysenzrqycktckip`.
 3. Executar `npx.cmd prisma migrate status` em `api` sem imprimir variáveis.
 4. Confirmar que a conexão resolve para `postgres` com `BYPASSRLS`.
-5. Confirmar zero privilégios efetivos atuais para `anon`, `authenticated` e
-   `service_role` sobre tabelas, sequences e functions públicas, e zero
-   `PUBLIC EXECUTE` sobre functions existentes.
-6. Confirmar que as default ACLs do `postgres` revogam privilégios futuros sobre
-   tabelas, sequences e functions para as três roles e que a default ACL global
-   revoga `EXECUTE` em novas functions de `PUBLIC`.
+5. Inventariar, sem exigir que o estado anterior já esteja endurecido, os
+   privilégios efetivos atuais de `anon`, `authenticated` e `service_role` sobre
+   tabelas, sequences e functions públicas, além de `PUBLIC EXECUTE` sobre
+   functions existentes. Registrar somente contagens por tipo e role. Grants
+   encontrados compõem o baseline que a migration deve remover; projeto, roles,
+   schema ou categorias de objeto inesperados interrompem o deploy.
+6. Inventariar, também sem exigir zero antes da migration, as default ACLs do
+   `postgres` para tabelas, sequences e functions das três roles e a default ACL
+   global de `PUBLIC EXECUTE` para functions. Registrar as contagens anteriores;
+   o alvo zero é obrigatório na verificação pós-deploy.
 7. Rodar o gate local completo antes de qualquer escrita remota.
 
 ## Implantação
@@ -43,9 +47,11 @@ corrigir esse drift nesta fase.
    functions existentes.
 5. Confirmar as default ACLs para tabelas, sequences e functions das três roles
    e a default ACL global que revoga `PUBLIC EXECUTE` para futuras functions.
-6. Validar no ambiente seguro objetos futuros de cada tipo (tabela, sequence e
-   function) e confirmar que não recebem privilégios das três roles nem execução
-   pública pela `PUBLIC` global.
+6. Usar o E2E isolado `api/test/database-security.e2e-spec.ts` como prova de
+   objetos futuros: depois da migration, ele cria tabela, sequence e functions e
+   confirma que não recebem privilégios das três roles nem execução pública pela
+   `PUBLIC` global. Em produção, não criar DDL temporário somente para esse teste;
+   confirmar as default ACLs no catálogo e vincular o resultado ao gate E2E local.
 7. Confirmar que REST e GraphQL não atendem consultas com chave publicável.
 8. Validar sessão, clientes, agenda, dietas e avaliações pela API NestJS.
 9. Rodar o Supabase Security Advisor e registrar somente nomes e contagens.
