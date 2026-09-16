@@ -8,9 +8,10 @@
 
 ## Current Task
 
-- Especificação e futura implementação do endurecimento da Data API, grants e RLS defensivo no Supabase.
-- Status: especificação aprovada e plano detalhado pronto; aguardando escolha do modo de execução antes de qualquer mudança no banco.
-- Branch: `codex/BancodeReceitas`.
+- Implementação do endurecimento da Data API, grants e RLS defensivo no Supabase.
+- Status: em andamento via desenvolvimento orientado por subagentes, com implementação e revisão independentes por tarefa.
+- Branch de trabalho: `agent/codex/supabase-rls-hardening`.
+- Produção permanece inalterada até os gates locais passarem e o mantenedor confirmar explicitamente o deploy.
 
 ---
 
