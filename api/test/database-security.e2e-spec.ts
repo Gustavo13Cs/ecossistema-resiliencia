@@ -112,7 +112,30 @@ describe('Database defensive RLS hardening (e2e)', () => {
       TO anon, authenticated, service_role;
       GRANT EXECUTE ON FUNCTION public.rls_hardening_existing_function()
       TO anon, authenticated, service_role, PUBLIC;
+
+      ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+      GRANT ALL PRIVILEGES ON TABLES TO anon, authenticated, service_role;
+      ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+      GRANT ALL PRIVILEGES ON SEQUENCES TO anon, authenticated, service_role;
+      ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+      GRANT EXECUTE ON FUNCTIONS TO anon, authenticated, service_role;
     `);
+
+    const seededDefaultAcl = await pool.query<{ object_type: string }>(
+      `select d.defaclobjtype as object_type
+       from pg_default_acl d
+       join pg_namespace n on n.oid = d.defaclnamespace
+       cross join lateral aclexplode(d.defaclacl) as acl
+       join pg_roles grantee on grantee.oid = acl.grantee
+       where d.defaclrole = (select oid from pg_roles where rolname = 'postgres')
+         and n.nspname = 'public'
+         and grantee.rolname = any($1::text[])
+       group by d.defaclobjtype`,
+      [DATA_API_ROLES],
+    );
+    expect(new Set(seededDefaultAcl.rows.map((row) => row.object_type))).toEqual(
+      new Set(['r', 'S', 'f']),
+    );
 
     await pool.query(readFileSync(MIGRATION_PATH, 'utf8'));
 
