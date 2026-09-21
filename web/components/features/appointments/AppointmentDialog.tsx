@@ -70,6 +70,7 @@ function initialState(
   appointment: Appointment | null,
   selectedDate: string,
   timeZone: string,
+  defaultClientId?: string,
 ): AppointmentFormState {
   if (appointment) {
     return {
@@ -84,7 +85,7 @@ function initialState(
     }
   }
   return {
-    clientId: "",
+    clientId: defaultClientId ?? "",
     kind: "FOLLOW_UP",
     modality: "IN_PERSON",
     startsAt: `${selectedDate}T09:00`,
@@ -104,6 +105,7 @@ export function AppointmentDialog({
   clientSingular,
   conflict,
   isSubmitting,
+  defaultClientId,
   onOpenChange,
   onSubmit,
 }: {
@@ -115,21 +117,22 @@ export function AppointmentDialog({
   clientSingular: string
   conflict: string | null
   isSubmitting: boolean
+  defaultClientId?: string
   onOpenChange: (open: boolean) => void
   onSubmit: (
     command: CreateAppointmentCommand | UpdateAppointmentCommand,
   ) => Promise<void>
 }) {
   const [form, setForm] = useState(() =>
-    initialState(appointment, selectedDate, timeZone),
+    initialState(appointment, selectedDate, timeZone, defaultClientId),
   )
   const [formError, setFormError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return
-    setForm(initialState(appointment, selectedDate, timeZone))
+    setForm(initialState(appointment, selectedDate, timeZone, defaultClientId))
     setFormError(null)
-  }, [appointment, open, selectedDate, timeZone])
+  }, [appointment, open, selectedDate, timeZone, defaultClientId])
 
   const availableClients = useMemo(() => {
     if (!appointment || clients.some((client) => client.id === appointment.clientId)) {
