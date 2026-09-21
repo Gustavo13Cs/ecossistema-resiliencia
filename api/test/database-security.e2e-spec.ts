@@ -9,6 +9,10 @@ const MIGRATION_PATH = resolve(
   __dirname,
   '../prisma/migrations/20260915133000_harden_supabase_data_api_rls/migration.sql',
 );
+const RECIPE_MIGRATION_PATH = resolve(
+  __dirname,
+  '../prisma/migrations/20260921193053_add_versioned_recipe_bank/migration.sql',
+);
 
 const APPLICATION_TABLES = [
   'User',
@@ -50,6 +54,11 @@ const APPLICATION_TABLES = [
 ] as const;
 
 const DATA_API_ROLES = ['anon', 'authenticated', 'service_role'] as const;
+const RECIPE_TABLES = [
+  'recipes',
+  'recipe_versions',
+  'recipe_ingredients',
+] as const;
 const EXISTING_TABLE_FIXTURE = 'rls_hardening_existing_table';
 const FUTURE_TABLE_FIXTURE = 'rls_hardening_future_table';
 const EXISTING_SEQUENCE_FIXTURE = 'rls_hardening_existing_sequence';
@@ -136,11 +145,43 @@ describe('Database defensive RLS hardening (e2e)', () => {
        group by d.defaclobjtype`,
       [DATA_API_ROLES],
     );
-    expect(new Set(seededDefaultAcl.rows.map((row) => row.object_type))).toEqual(
-      new Set(['r', 'S', 'f']),
-    );
+    expect(
+      new Set(seededDefaultAcl.rows.map((row) => row.object_type)),
+    ).toEqual(new Set(['r', 'S', 'f']));
 
     await pool.query(readFileSync(MIGRATION_PATH, 'utf8'));
+
+    await pool.query(`
+      GRANT ALL PRIVILEGES ON TABLE
+        public.recipes,
+        public.recipe_versions,
+        public.recipe_ingredients
+      TO anon, authenticated, service_role;
+    `);
+    const seededRecipePrivileges = await pool.query<{
+      privilege_count: string;
+    }>(
+      `select count(*)::text as privilege_count
+       from pg_roles r
+       cross join unnest($1::text[]) as table_name
+       where r.rolname = any($2::text[])
+         and has_table_privilege(
+           r.rolname,
+           format('%I.%I', 'public', table_name),
+           'SELECT'
+         )`,
+      [RECIPE_TABLES, DATA_API_ROLES],
+    );
+    expect(seededRecipePrivileges.rows[0]?.privilege_count).toBe(
+      String(RECIPE_TABLES.length * DATA_API_ROLES.length),
+    );
+    await pool.query(
+      extractMigrationBlock(
+        readFileSync(RECIPE_MIGRATION_PATH, 'utf8'),
+        '-- recipe-data-api-revoke:start',
+        '-- recipe-data-api-revoke:end',
+      ),
+    );
 
     await pool.query(`
       CREATE TABLE public.rls_hardening_future_table (id integer);
@@ -165,6 +206,11 @@ describe('Database defensive RLS hardening (e2e)', () => {
     `);
 
     for (const role of createdFixtureRoles) {
+      await pool.query(`REVOKE ALL PRIVILEGES ON TABLE
+        public.recipes,
+        public.recipe_versions,
+        public.recipe_ingredients
+        FROM ${role}`);
       await pool.query(
         `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
          REVOKE ALL PRIVILEGES ON TABLES FROM ${role}`,
@@ -184,7 +230,10 @@ describe('Database defensive RLS hardening (e2e)', () => {
   });
 
   it('enables RLS on every physical application table', async () => {
-    const result = await pool.query<{ table_name: string; rls_enabled: boolean }>(
+    const result = await pool.query<{
+      table_name: string;
+      rls_enabled: boolean;
+    }>(
       `select c.relname as table_name, c.relrowsecurity as rls_enabled
        from pg_class c
        join pg_namespace n on n.oid = c.relnamespace
@@ -219,9 +268,7 @@ describe('Database defensive RLS hardening (e2e)', () => {
       [APPLICATION_TABLES],
     );
 
-    expect(result.rows.map((row) => row.tablename)).toEqual(
-      APPLICATION_TABLES,
-    );
+    expect(result.rows.map((row) => row.tablename)).toEqual(APPLICATION_TABLES);
     for (const policy of result.rows) {
       expect(policy.permissive).toBe('RESTRICTIVE');
       expect(policy.roles).toEqual(['public']);
@@ -254,9 +301,9 @@ describe('Database defensive RLS hardening (e2e)', () => {
     expect(result.rows).toHaveLength(
       DATA_API_ROLES.length * (APPLICATION_TABLES.length + 1),
     );
-    expect(result.rows.every((row) => row.privileges.every((value) => !value))).toBe(
-      true,
-    );
+    expect(
+      result.rows.every((row) => row.privileges.every((value) => !value)),
+    ).toBe(true);
   });
 
   it('removes every current sequence and function privilege from each Data API role', async () => {
@@ -365,10 +412,25 @@ describe('Database defensive RLS hardening (e2e)', () => {
     expect(futureSequences.rows).toHaveLength(DATA_API_ROLES.length);
     expect(futureFunctions.rows).toHaveLength(DATA_API_ROLES.length * 2);
     expect(
-      [...futureTables.rows, ...futureSequences.rows, ...futureFunctions.rows].every(
-        (row) => row.privileges.every((value) => !value),
-      ),
+      [
+        ...futureTables.rows,
+        ...futureSequences.rows,
+        ...futureFunctions.rows,
+      ].every((row) => row.privileges.every((value) => !value)),
     ).toBe(true);
     expect(defaultAclPrivileges.rows[0]?.privilege_count).toBe('0');
   });
 });
+
+function extractMigrationBlock(
+  sql: string,
+  startMarker: string,
+  endMarker: string,
+) {
+  const start = sql.indexOf(startMarker);
+  const end = sql.indexOf(endMarker);
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error(`Migration block not found: ${startMarker}`);
+  }
+  return sql.slice(start + startMarker.length, end).trim();
+}

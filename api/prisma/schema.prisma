@@ -323,11 +323,12 @@ model Recipe {
   professional     User            @relation("ProfessionalRecipes", fields: [professionalId], references: [id], onDelete: Restrict)
   status           RecipeStatus    @default(ACTIVE)
   currentVersionId String?         @unique
-  currentVersion   RecipeVersion?  @relation("CurrentRecipeVersion", fields: [currentVersionId], references: [id], onDelete: Restrict)
+  currentVersion   RecipeVersion?  @relation("CurrentRecipeVersion", fields: [id, currentVersionId], references: [recipeId, id], onDelete: Restrict)
   versions         RecipeVersion[] @relation("RecipeVersions")
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
+  @@unique([id, currentVersionId])
   @@index([professionalId, status, updatedAt])
   @@map("recipes")
 }
@@ -357,8 +358,10 @@ model RecipeVersion {
   ingredients   RecipeIngredient[]
   mealItems     MealItem[]
   createdAt     DateTime           @default(now())
+  publishedAt   DateTime?
 
   @@unique([recipeId, version])
+  @@unique([recipeId, id])
   @@index([recipeId, createdAt])
   @@map("recipe_versions")
 }
@@ -480,10 +483,10 @@ model MealItem {
 
   // Qual é o alimento da tabela TACO?
   foodId String?
-  food   Food?   @relation(fields: [foodId], references: [id])
+  food   Food?   @relation(fields: [foodId], references: [id], onDelete: Restrict)
 
   recipeVersionId String?
-  recipeVersion   RecipeVersion? @relation(fields: [recipeVersionId], references: [id])
+  recipeVersion   RecipeVersion? @relation(fields: [recipeVersionId], references: [id], onDelete: Restrict)
 
   @@map("meal_items")
 }

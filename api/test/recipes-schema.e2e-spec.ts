@@ -44,10 +44,46 @@ describe('Versioned recipe schema (e2e)', () => {
     expect(constraint.rows[0].definition).toContain('foodId');
     expect(constraint.rows[0].definition).toContain('recipeVersionId');
 
+    const deleteActions = await pool.query<{
+      constraint_name: string;
+      delete_action: string;
+    }>(
+      `select conname as constraint_name, confdeltype::text as delete_action
+       from pg_constraint
+       where conname = any($1::text[])
+       order by conname`,
+      [['meal_items_foodId_fkey', 'meal_items_recipeVersionId_fkey']],
+    );
+    expect(deleteActions.rows).toEqual([
+      {
+        constraint_name: 'meal_items_foodId_fkey',
+        delete_action: 'r',
+      },
+      {
+        constraint_name: 'meal_items_recipeVersionId_fkey',
+        delete_action: 'r',
+      },
+    ]);
+
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      await assertMealItemSourceConstraint(client);
+      const { foodId, recipeVersionId } =
+        await assertMealItemSourceConstraint(client);
+      await expectPgError(
+        client,
+        'delete_referenced_food',
+        'delete from public.foods where id = $1',
+        [foodId],
+        '23503',
+      );
+      await expectPgError(
+        client,
+        'delete_referenced_recipe_version',
+        'delete from public.recipe_versions where id = $1',
+        [recipeVersionId],
+        '55000',
+      );
       await client.query('ROLLBACK');
     } catch (error) {
       await client.query('ROLLBACK');
@@ -55,6 +91,131 @@ describe('Versioned recipe schema (e2e)', () => {
     } finally {
       client.release();
     }
+  });
+
+  it('rejects current versions owned by another recipe or professional', async () => {
+    await withTransaction(pool, async (client) => {
+      const professionalA = await createUser(client, 'owner-a');
+      const professionalB = await createUser(client, 'owner-b');
+      const recipe = await createRecipe(client, professionalA);
+      const validVersion = await createRecipeVersion(client, recipe, 1);
+      const siblingRecipe = await createRecipe(client, professionalA);
+      const siblingVersion = await createRecipeVersion(
+        client,
+        siblingRecipe,
+        1,
+      );
+      const foreignRecipe = await createRecipe(client, professionalB);
+      const foreignVersion = await createRecipeVersion(
+        client,
+        foreignRecipe,
+        1,
+      );
+
+      await expectPgError(
+        client,
+        'cross_recipe_current_version',
+        `update public.recipes
+         set "currentVersionId" = $1, "updatedAt" = CURRENT_TIMESTAMP
+         where id = $2`,
+        [siblingVersion, recipe],
+        '23503',
+      );
+      await expectPgError(
+        client,
+        'cross_professional_current_version',
+        `update public.recipes
+         set "currentVersionId" = $1, "updatedAt" = CURRENT_TIMESTAMP
+         where id = $2`,
+        [foreignVersion, recipe],
+        '23503',
+      );
+
+      const validPublication = await client.query<{ id: string }>(
+        `update public.recipes
+         set "currentVersionId" = $1, "updatedAt" = CURRENT_TIMESTAMP
+         where id = $2
+         returning id`,
+        [validVersion, recipe],
+      );
+      expect(validPublication.rows).toHaveLength(1);
+    });
+  });
+
+  it('keeps published recipe versions and ingredient snapshots immutable', async () => {
+    await withTransaction(pool, async (client) => {
+      const professionalId = await createUser(client, 'immutable-owner');
+      const recipeId = await createRecipe(client, professionalId);
+      const recipeVersionId = await createRecipeVersion(client, recipeId, 1);
+      const foodId = await createFood(client, 'Immutable food');
+      const ingredientId = await createRecipeIngredient(
+        client,
+        recipeVersionId,
+        foodId,
+      );
+
+      await client.query(
+        `update public.recipes
+         set "currentVersionId" = $1, "updatedAt" = CURRENT_TIMESTAMP
+         where id = $2`,
+        [recipeVersionId, recipeId],
+      );
+
+      await expectPgError(
+        client,
+        'update_published_version',
+        `update public.recipe_versions set name = 'Mutated' where id = $1`,
+        [recipeVersionId],
+        '55000',
+      );
+      await expectPgError(
+        client,
+        'delete_published_version',
+        `delete from public.recipe_versions where id = $1`,
+        [recipeVersionId],
+        '55000',
+      );
+      await expectPgError(
+        client,
+        'update_published_ingredient',
+        `update public.recipe_ingredients set quantity = 99 where id = $1`,
+        [ingredientId],
+        '55000',
+      );
+      await expectPgError(
+        client,
+        'delete_published_ingredient',
+        `delete from public.recipe_ingredients where id = $1`,
+        [ingredientId],
+        '55000',
+      );
+
+      const lateFoodId = await createFood(client, 'Late food');
+      await expectPgError(
+        client,
+        'insert_late_published_ingredient',
+        `insert into public.recipe_ingredients
+           (id, "recipeVersionId", "foodId", quantity, measure)
+         values (gen_random_uuid(), $1, $2, 1, 'g')`,
+        [recipeVersionId, lateFoodId],
+        '55000',
+      );
+      await expectPgError(
+        client,
+        'delete_recipe_with_snapshots',
+        `delete from public.recipes where id = $1`,
+        [recipeId],
+        '55000',
+      );
+
+      const nextVersionId = await createRecipeVersion(client, recipeId, 2);
+      const nextIngredient = await createRecipeIngredient(
+        client,
+        nextVersionId,
+        lateFoodId,
+      );
+      expect(nextIngredient).toBeTruthy();
+    });
   });
 });
 
@@ -138,4 +299,99 @@ async function assertMealItemSourceConstraint(client: PoolClient) {
 
   expect(foodItem.rows).toHaveLength(1);
   expect(recipeItem.rows).toHaveLength(1);
+
+  return { foodId, recipeVersionId };
+}
+
+async function withTransaction(
+  pool: Pool,
+  run: (client: PoolClient) => Promise<void>,
+) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await run(client);
+    await client.query('ROLLBACK');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function expectPgError(
+  client: PoolClient,
+  savepoint: string,
+  query: string,
+  values: unknown[],
+  code: string,
+) {
+  await client.query(`SAVEPOINT ${savepoint}`);
+  try {
+    await expect(client.query(query, values)).rejects.toMatchObject({ code });
+  } finally {
+    await client.query(`ROLLBACK TO SAVEPOINT ${savepoint}`);
+  }
+}
+
+async function createUser(client: PoolClient, suffix: string) {
+  const result = await client.query<{ id: string }>(
+    `insert into public."User" (id, name, email, password, "updatedAt")
+     values (gen_random_uuid(), $1, $2, 'not-a-real-password', CURRENT_TIMESTAMP)
+     returning id`,
+    [`Recipe ${suffix}`, `recipe-${suffix}@example.test`],
+  );
+  return result.rows[0].id;
+}
+
+async function createRecipe(client: PoolClient, professionalId: string) {
+  const result = await client.query<{ id: string }>(
+    `insert into public.recipes (id, "professionalId", "updatedAt")
+     values (gen_random_uuid(), $1, CURRENT_TIMESTAMP)
+     returning id`,
+    [professionalId],
+  );
+  return result.rows[0].id;
+}
+
+async function createRecipeVersion(
+  client: PoolClient,
+  recipeId: string,
+  version: number,
+) {
+  const result = await client.query<{ id: string }>(
+    `insert into public.recipe_versions
+       (id, "recipeId", version, name, category, servings, kcal, protein, carbs, fat, fiber, sodium, calcium, iron)
+     values (gen_random_uuid(), $1, $2, $3, 'MAIN_MEAL', 2, 500, 30, 50, 20, 5, 300, 100, 4)
+     returning id`,
+    [recipeId, version, `Recipe version ${version}`],
+  );
+  return result.rows[0].id;
+}
+
+async function createFood(client: PoolClient, name: string) {
+  const result = await client.query<{ id: string }>(
+    `insert into public.foods
+       (id, name, kcal, protein, carbs, fat, "updatedAt")
+     values (gen_random_uuid(), $1, 100, 10, 12, 2, CURRENT_TIMESTAMP)
+     returning id`,
+    [name],
+  );
+  return result.rows[0].id;
+}
+
+async function createRecipeIngredient(
+  client: PoolClient,
+  recipeVersionId: string,
+  foodId: string,
+) {
+  const result = await client.query<{ id: string }>(
+    `insert into public.recipe_ingredients
+       (id, "recipeVersionId", "foodId", quantity, measure)
+     values (gen_random_uuid(), $1, $2, 1, 'g')
+     returning id`,
+    [recipeVersionId, foodId],
+  );
+  return result.rows[0].id;
 }

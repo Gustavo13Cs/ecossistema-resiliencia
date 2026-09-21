@@ -535,7 +535,7 @@ export class DietPlansService {
           quantity: number;
           measure: string;
           notes?: string | null;
-          foodId?: string;
+          foodId?: string | null;
           name?: string;
         }>;
       }>;
