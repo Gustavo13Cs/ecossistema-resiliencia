@@ -8,7 +8,11 @@
 
 ## Current Task
 
-- _Nenhuma tarefa em andamento._
+- **Tarefa**: Banco de Receitas versionado, macros por porção, filtros de restrição e associação a planos alimentares
+- **Status**: Especificação aprovada e plano de implementação em revisão; código funcional ainda não iniciado
+- **Branch**: `codex/BancodeReceitas`
+- **Início**: 2026-09-21
+- **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migration versionada desta funcionalidade
 
 ---
 
