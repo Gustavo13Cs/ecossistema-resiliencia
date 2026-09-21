@@ -60,6 +60,8 @@ model User {
 
   createdDiets DietPlan[] @relation("CreatedDiets")
 
+  recipes Recipe[] @relation("ProfessionalRecipes")
+
   assessments PhysicalAssessment[] @relation("UserAssessments")
 
   trackings DailyTracking[]
@@ -119,6 +121,20 @@ enum Role {
   NUTRITIONIST
   PERSONAL
   PHYSIO
+}
+
+enum RecipeStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum RecipeCategory {
+  BREAKFAST
+  MAIN_MEAL
+  SNACK
+  DESSERT
+  DRINK
+  OTHER
 }
 
 enum ClientStatus {
@@ -301,6 +317,66 @@ enum ConsentCategory {
 }
 
 // Tabela 3: O Planeamento Nutricional
+model Recipe {
+  id               String          @id @default(uuid())
+  professionalId   String
+  professional     User            @relation("ProfessionalRecipes", fields: [professionalId], references: [id], onDelete: Restrict)
+  status           RecipeStatus    @default(ACTIVE)
+  currentVersionId String?         @unique
+  currentVersion   RecipeVersion?  @relation("CurrentRecipeVersion", fields: [currentVersionId], references: [id], onDelete: Restrict)
+  versions         RecipeVersion[] @relation("RecipeVersions")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([professionalId, status, updatedAt])
+  @@map("recipes")
+}
+
+model RecipeVersion {
+  id            String             @id @default(uuid())
+  recipeId      String
+  recipe        Recipe             @relation("RecipeVersions", fields: [recipeId], references: [id], onDelete: Cascade)
+  currentFor    Recipe?            @relation("CurrentRecipeVersion")
+  version       Int
+  name          String
+  description   String?            @db.Text
+  category      RecipeCategory
+  servings      Float
+  instructions  String?            @db.Text
+  isGlutenFree  Boolean            @default(false)
+  isLactoseFree Boolean            @default(false)
+  isVegan       Boolean            @default(false)
+  kcal          Float
+  protein       Float
+  carbs         Float
+  fat           Float
+  fiber         Float
+  sodium        Float
+  calcium       Float
+  iron          Float
+  ingredients   RecipeIngredient[]
+  mealItems     MealItem[]
+  createdAt     DateTime           @default(now())
+
+  @@unique([recipeId, version])
+  @@index([recipeId, createdAt])
+  @@map("recipe_versions")
+}
+
+model RecipeIngredient {
+  id              String        @id @default(uuid())
+  recipeVersionId String
+  recipeVersion   RecipeVersion @relation(fields: [recipeVersionId], references: [id], onDelete: Cascade)
+  foodId          String
+  food            Food          @relation(fields: [foodId], references: [id], onDelete: Restrict)
+  quantity        Float
+  measure         String
+
+  @@unique([recipeVersionId, foodId])
+  @@index([foodId])
+  @@map("recipe_ingredients")
+}
+
 model DietPlan {
   id    String @id @default(uuid())
   title String
@@ -363,7 +439,8 @@ model Food {
   iron    Float  @default(0)
 
   // 🔗 Relação
-  mealItems MealItem[]
+  mealItems         MealItem[]
+  recipeIngredients RecipeIngredient[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -402,8 +479,11 @@ model MealItem {
   meal   Meal   @relation("MealToItems", fields: [mealId], references: [id], onDelete: Cascade)
 
   // Qual é o alimento da tabela TACO?
-  foodId String
-  food   Food   @relation(fields: [foodId], references: [id])
+  foodId String?
+  food   Food?   @relation(fields: [foodId], references: [id])
+
+  recipeVersionId String?
+  recipeVersion   RecipeVersion? @relation(fields: [recipeVersionId], references: [id])
 
   @@map("meal_items")
 }
