@@ -90,6 +90,23 @@ async findOne(id: string, professionalId: string) {
 - [ ] O endpoint retorna 404 (não 403) para recursos de outro profissional?
 - [ ] Logs e erros NÃO contêm dados clínicos do prontuário?
 
+### Defesa no banco Supabase
+
+- A Data API REST/GraphQL está desabilitada; o frontend usa somente a API NestJS.
+- `anon`, `authenticated` e `service_role` não possuem grants sobre tabelas públicas.
+- As 33 tabelas físicas de aplicação usam RLS com policy restritiva
+  `deny_data_api_access`.
+- `consultation_notes` e `_prisma_migrations` permanecem fora dessas 33 tabelas.
+- O Prisma conecta como `postgres` com `BYPASSRLS`; portanto, o RLS atual protege a
+  superfície Data API, mas não aplica isolamento entre profissionais à API NestJS.
+- Ownership por `professionalId`, guards e testes negativos continuam obrigatórios.
+- Qualquer exposição futura exige migration com grant mínimo e policy de ownership
+  aprovada. Policies com `auth.uid()` são incompatíveis com o JWT próprio atual.
+- O preflight histórico não capturou sequences, functions, `PUBLIC EXECUTE` nem
+  default ACLs antes do deploy. O estado anterior não pode ser reconstruído; o
+  runbook foi corrigido e a verificação pós-deploy confirmou zero em toda essa
+  superfície.
+
 ---
 
 ## 4. Validação de Input
