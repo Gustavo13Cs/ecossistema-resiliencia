@@ -137,7 +137,6 @@ export default function NovaDietaPage() {
 
   const [showShareModal, setShowShareModal] = useState(false)
   const [shoppingDays, setShoppingDays] = useState(30)
-  const [printMode, setPrintMode] = useState<'diet' | 'list'>('diet')
   const [showDriModal, setShowDriModal] = useState(false)
   const [showTemplateModal, setShowTemplateModal] = useState(false)
   const [templates, setTemplates] = useState<any[]>([])
@@ -400,8 +399,346 @@ export default function NovaDietaPage() {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
   }
 
-  const handlePrintDiet = () => { setPrintMode('diet'); setShowShareModal(false); setTimeout(() => window.print(), 300) }
-  const handlePrintList = () => { setPrintMode('list'); setShowShareModal(false); setTimeout(() => window.print(), 300) }
+  const handlePrintDiet = () => {
+    setShowShareModal(false)
+    const clientName = patientProfile?.name || 'Paciente'
+    const date = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+
+    const mealsHtml = meals.map(meal => {
+      const mealTotals = getMealTotals(meal.items)
+      const itemsHtml = meal.items.map(item => {
+        const measure = item.measure && item.measure.trim() && item.measure !== 'g'
+          ? `<span class="measure">${item.measure}</span>`
+          : ''
+        return `
+          <tr>
+            <td class="qty-cell">${item.quantity}<span class="unit">g</span>${measure}</td>
+            <td class="food-name">${item.food.name}</td>
+          </tr>`
+      }).join('')
+
+      return `
+        <div class="meal-block">
+          <div class="meal-header">
+            <div class="meal-title-row">
+              <span class="meal-time">${meal.time}</span>
+              <span class="meal-name">${meal.name.toUpperCase()}</span>
+            </div>
+            <div class="meal-macros">
+              <span class="macro-kcal">${mealTotals.kcal} kcal</span>
+              <span class="macro-sep">·</span>
+              <span class="macro-p">P ${mealTotals.pro}g</span>
+              <span class="macro-sep">·</span>
+              <span class="macro-c">C ${mealTotals.carb}g</span>
+              <span class="macro-sep">·</span>
+              <span class="macro-g">G ${mealTotals.fat}g</span>
+            </div>
+          </div>
+          <table class="items-table">
+            <tbody>${itemsHtml}</tbody>
+          </table>
+          ${meal.notes ? `<div class="meal-notes">📌 ${meal.notes}</div>` : ''}
+        </div>`
+    }).join('')
+
+    const notesHtml = dietInfo.notes
+      ? `<div class="general-notes"><h3>Orientações Gerais</h3><p>${dietInfo.notes.replace(/\n/g, '<br>')}</p></div>`
+      : ''
+
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Plano Alimentar — ${clientName}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #fff; color: #1e293b; font-size: 13px; }
+    @page { size: A4; margin: 16mm 14mm 14mm 14mm; }
+
+    /* ── HEADER ── */
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #0d9488; padding-bottom: 14px; margin-bottom: 18px; }
+    .header-left {}
+    .brand { font-size: 11px; font-weight: 700; color: #0d9488; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+    .doc-title { font-size: 22px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; line-height: 1; }
+    .doc-subtitle { font-size: 13px; color: #64748b; margin-top: 4px; font-weight: 500; }
+    .header-right { text-align: right; }
+    .client-name { font-size: 15px; font-weight: 800; color: #0f172a; }
+    .meta-line { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+
+    /* ── INFO STRIP ── */
+    .info-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+    .info-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; }
+    .info-card .label { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 3px; }
+    .info-card .value { font-size: 14px; font-weight: 800; color: #0f172a; }
+    .info-card .value.green { color: #0d9488; }
+
+    /* ── MEAL BLOCK ── */
+    .meal-block { margin-bottom: 14px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; page-break-inside: avoid; }
+    .meal-header { background: #f1f5f9; padding: 9px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
+    .meal-title-row { display: flex; align-items: center; gap: 10px; }
+    .meal-time { font-size: 12px; font-weight: 800; color: #0d9488; background: #ccfbf1; padding: 2px 8px; border-radius: 4px; }
+    .meal-name { font-size: 13px; font-weight: 800; color: #0f172a; letter-spacing: 0.03em; }
+    .meal-macros { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; }
+    .macro-kcal { color: #334155; font-weight: 700; }
+    .macro-sep { color: #cbd5e1; }
+    .macro-p { color: #e11d48; }
+    .macro-c { color: #059669; }
+    .macro-g { color: #d97706; }
+
+    /* ── ITEMS TABLE ── */
+    .items-table { width: 100%; border-collapse: collapse; }
+    .items-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+    .items-table tbody tr:last-child { border-bottom: none; }
+    .items-table td { padding: 7px 14px; vertical-align: middle; }
+    .qty-cell { width: 90px; font-weight: 700; color: #334155; white-space: nowrap; }
+    .qty-cell .unit { font-size: 10px; color: #94a3b8; font-weight: 500; margin-left: 2px; }
+    .qty-cell .measure { display: block; font-size: 10px; color: #94a3b8; font-weight: 400; font-style: italic; }
+    .food-name { font-weight: 500; color: #1e293b; }
+    .meal-notes { background: #fffbeb; border-top: 1px solid #fde68a; padding: 8px 14px; font-size: 11px; color: #78350f; font-style: italic; }
+
+    /* ── TOTALS ── */
+    .totals-section { border: 1.5px solid #0d9488; border-radius: 10px; padding: 14px 18px; margin: 20px 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; text-align: center; }
+    .total-item { padding: 0 10px; }
+    .total-item + .total-item { border-left: 1px solid #e2e8f0; }
+    .total-item .t-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; margin-bottom: 4px; }
+    .total-item .t-value { font-size: 20px; font-weight: 900; color: #0d9488; }
+    .total-item .t-unit { font-size: 10px; color: #94a3b8; font-weight: 500; }
+    .total-item.ptn .t-value { color: #e11d48; }
+    .total-item.carb .t-value { color: #059669; }
+    .total-item.fat .t-value { color: #d97706; }
+
+    /* ── GENERAL NOTES ── */
+    .general-notes { background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 10px; padding: 14px 18px; margin-top: 20px; page-break-inside: avoid; }
+    .general-notes h3 { font-size: 11px; font-weight: 800; color: #0d9488; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+    .general-notes p { font-size: 12px; color: #134e4a; line-height: 1.7; }
+
+    /* ── FOOTER ── */
+    .footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+    .footer-left { font-size: 10px; color: #94a3b8; }
+    .footer-right { font-size: 10px; color: #94a3b8; text-align: right; }
+    .footer .highlight { font-weight: 700; color: #0d9488; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <div class="brand">SafeMove · Nutrição</div>
+      <div class="doc-title">Plano Alimentar</div>
+      <div class="doc-subtitle">${dietInfo.title} · Foco: ${dietInfo.goal}</div>
+    </div>
+    <div class="header-right">
+      <div class="client-name">${clientName}</div>
+      <div class="meta-line">Prescrito em ${date}</div>
+      <div class="meta-line">${dietInfo.durationDays} dias de plano</div>
+    </div>
+  </div>
+
+  <div class="info-strip">
+    <div class="info-card">
+      <div class="label">Meta Calórica</div>
+      <div class="value green">${Math.round(currentTotals.kcal)} kcal</div>
+    </div>
+    <div class="info-card">
+      <div class="label">Refeições por dia</div>
+      <div class="value">${meals.length}</div>
+    </div>
+    <div class="info-card">
+      <div class="label">Duração do plano</div>
+      <div class="value">${dietInfo.durationDays} dias</div>
+    </div>
+  </div>
+
+  ${mealsHtml}
+
+  <div class="totals-section">
+    <div class="total-item">
+      <div class="t-label">Calorias</div>
+      <div class="t-value">${Math.round(currentTotals.kcal)}</div>
+      <div class="t-unit">kcal / dia</div>
+    </div>
+    <div class="total-item ptn">
+      <div class="t-label">Proteínas</div>
+      <div class="t-value">${Math.round(currentTotals.pro)}</div>
+      <div class="t-unit">g / dia</div>
+    </div>
+    <div class="total-item carb">
+      <div class="t-label">Carboidratos</div>
+      <div class="t-value">${Math.round(currentTotals.carb)}</div>
+      <div class="t-unit">g / dia</div>
+    </div>
+    <div class="total-item fat">
+      <div class="t-label">Gorduras</div>
+      <div class="t-value">${Math.round(currentTotals.fat)}</div>
+      <div class="t-unit">g / dia</div>
+    </div>
+  </div>
+
+  ${notesHtml}
+
+  <div class="footer">
+    <div class="footer-left">
+      Documento gerado pelo <span class="highlight">SafeMove</span> · Uso exclusivo do paciente
+    </div>
+    <div class="footer-right">
+      Objetivo: <span class="highlight">${dietInfo.goal}</span>
+    </div>
+  </div>
+</body>
+</html>`
+
+    const win = window.open('', '_blank', 'width=900,height=700')
+    if (!win) return
+    win.document.write(html)
+    win.document.close()
+    win.focus()
+    setTimeout(() => win.print(), 600)
+  }
+
+  const handlePrintList = () => {
+    setShowShareModal(false)
+    const clientName = patientProfile?.name || 'Paciente'
+    const date = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+
+    // Group items by meal for context
+    const mealGroups = meals
+      .filter(m => m.items.length > 0)
+      .map(m => {
+        const grouped: Record<string, number> = {}
+        m.items.forEach(item => {
+          const name = item.food.name
+          if (!grouped[name]) grouped[name] = 0
+          grouped[name] += item.quantity * shoppingDays
+        })
+        return { mealName: m.name, items: Object.entries(grouped).map(([name, qty]) => ({ name, qty })) }
+      })
+
+    // Full consolidated list sorted by quantity desc
+    const sortedList = [...shoppingList].sort((a, b) => b.qty - a.qty)
+
+    // Split into two columns
+    const half = Math.ceil(sortedList.length / 2)
+    const col1 = sortedList.slice(0, half)
+    const col2 = sortedList.slice(half)
+
+    const renderRow = (item: { name: string; qty: number }) => `
+      <tr>
+        <td class="check-cell"><div class="checkbox"></div></td>
+        <td class="item-name">${item.name}</td>
+        <td class="item-qty">${formatQty(item.qty)}</td>
+      </tr>`
+
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lista de Compras — ${clientName}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #fff; color: #1e293b; font-size: 13px; }
+    @page { size: A4; margin: 16mm 14mm 14mm 14mm; }
+
+    /* ── HEADER ── */
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #0d9488; padding-bottom: 14px; margin-bottom: 18px; }
+    .brand { font-size: 11px; font-weight: 700; color: #0d9488; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+    .doc-title { font-size: 22px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; }
+    .doc-subtitle { font-size: 13px; color: #64748b; margin-top: 4px; font-weight: 500; }
+    .header-right { text-align: right; }
+    .client-name { font-size: 15px; font-weight: 800; color: #0f172a; }
+    .meta-line { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+
+    /* ── INTRO BOX ── */
+    .intro { background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; font-size: 12px; color: #134e4a; line-height: 1.6; }
+    .intro strong { font-weight: 700; color: #0d9488; }
+
+    /* ── SECTION TITLE ── */
+    .section-title { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
+
+    /* ── TWO COLUMN GRID ── */
+    .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+    /* ── LIST TABLE ── */
+    .list-table { width: 100%; border-collapse: collapse; }
+    .list-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+    .list-table tbody tr:last-child { border-bottom: none; }
+    .list-table tbody tr:hover { background: #f8fafc; }
+    .check-cell { width: 28px; padding: 8px 4px 8px 0; vertical-align: middle; }
+    .checkbox { width: 16px; height: 16px; border: 2px solid #cbd5e1; border-radius: 4px; }
+    .item-name { padding: 8px 6px; font-weight: 500; color: #1e293b; font-size: 13px; }
+    .item-qty { padding: 8px 0 8px 6px; text-align: right; font-weight: 800; color: #0d9488; font-size: 13px; white-space: nowrap; }
+
+    /* ── TIPS ── */
+    .tips { margin-top: 22px; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px; page-break-inside: avoid; }
+    .tips-title { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .tips-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .tip-item { display: flex; align-items: flex-start; gap: 8px; font-size: 11px; color: #475569; line-height: 1.5; }
+    .tip-icon { font-size: 13px; flex-shrink: 0; margin-top: 0px; }
+
+    /* ── FOOTER ── */
+    .footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; }
+    .footer span { font-size: 10px; color: #94a3b8; }
+    .footer .highlight { font-weight: 700; color: #0d9488; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="brand">SafeMove · Nutrição</div>
+      <div class="doc-title">Lista de Compras</div>
+      <div class="doc-subtitle">${dietInfo.title} · ${dietInfo.goal}</div>
+    </div>
+    <div class="header-right">
+      <div class="client-name">${clientName}</div>
+      <div class="meta-line">Gerada em ${date}</div>
+      <div class="meta-line">Quantidade para <strong>${shoppingDays} dias</strong></div>
+    </div>
+  </div>
+
+  <div class="intro">
+    📋 Esta lista contém todos os alimentos necessários para <strong>${shoppingDays} dias</strong> do seu plano alimentar 
+    "<strong>${dietInfo.title}</strong>". As quantidades já estão calculadas — basta comprar e seguir o plano!
+  </div>
+
+  <div class="section-title">Todos os Alimentos (${sortedList.length} itens)</div>
+
+  <div class="columns">
+    <table class="list-table">
+      <tbody>
+        ${col1.map(renderRow).join('')}
+      </tbody>
+    </table>
+    <table class="list-table">
+      <tbody>
+        ${col2.map(renderRow).join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tips">
+    <div class="tips-title">💡 Dicas para suas compras</div>
+    <div class="tips-grid">
+      <div class="tip-item"><span class="tip-icon">🥩</span><span>Proteínas frescas (carne, frango, peixe): prefira comprar 1–2x por semana para garantir frescor.</span></div>
+      <div class="tip-item"><span class="tip-icon">🥦</span><span>Legumes e verduras: compre 2–3x por semana. Congele o excedente se necessário.</span></div>
+      <div class="tip-item"><span class="tip-icon">🫙</span><span>Grãos e proteínas em pó podem ser comprados mensalmente — verifique a data de validade.</span></div>
+      <div class="tip-item"><span class="tip-icon">⚖️</span><span>Pese os alimentos crus quando possível — as quantidades do plano se referem ao peso antes do cozimento.</span></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Gerado pelo <span class="highlight">SafeMove</span> · Uso exclusivo do paciente</span>
+    <span>Objetivo: <span class="highlight">${dietInfo.goal}</span></span>
+  </div>
+</body>
+</html>`
+
+    const win = window.open('', '_blank', 'width=900,height=700')
+    if (!win) return
+    win.document.write(html)
+    win.document.close()
+    win.focus()
+    setTimeout(() => win.print(), 600)
+  }
 
   const handleOpenTemplateModal = async () => {
     if (!canUseDietEditor) return
@@ -594,7 +931,7 @@ export default function NovaDietaPage() {
         </AlertDialogContent>
       </AlertDialog>
       
-      <div className={`w-full px-6 md:px-12 lg:px-20 mx-auto space-y-6 print:px-0 print:max-w-4xl print:space-y-0 ${printMode === 'list' ? 'print:hidden' : 'print:block'}`}>
+      <div className="w-full px-6 md:px-12 lg:px-20 mx-auto space-y-6 print:px-0 print:max-w-4xl print:space-y-0">
         
         <div className="flex items-center justify-between mb-4 print:hidden">
           <div className="flex items-center gap-4">
@@ -854,34 +1191,7 @@ export default function NovaDietaPage() {
         </div>
       </div>
 
-      <div className={`hidden ${printMode === 'list' ? 'print:block' : ''} w-full max-w-4xl mx-auto bg-white`}>
-        <div className="border-b-4 border-teal-600 pb-6 mb-8 mt-10">
-          <h1 className="text-4xl font-black text-slate-800 uppercase tracking-tight">Lista de Compras</h1>
-          <h2 className="text-xl text-slate-600 mt-2 font-medium">Plano: {dietInfo.title} • Quantidade para {shoppingDays} dias</h2>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-          {shoppingList.map((item, index) => (
-            <div key={index} className="flex items-center justify-between border-b-2 border-slate-100 pb-3 break-inside-avoid">
-              <div className="flex items-center gap-4">
-                <div className="w-6 h-6 rounded-md border-2 border-slate-400"></div>
-                <span className="font-bold text-slate-800 text-lg">{item.name}</span>
-              </div>
-              <span className="font-black text-teal-700 text-lg bg-teal-50 px-3 py-1 rounded-lg border border-teal-100">
-                {formatQty(item.qty)}
-              </span>
-            </div>
-          ))}
-        </div>
 
-        {shoppingList.length === 0 && (
-          <p className="text-slate-500 italic text-center py-10">Nenhum item adicionado à dieta ainda.</p>
-        )}
-        
-        <div className="mt-16 pt-6 border-t border-slate-200 text-center text-sm text-slate-400 font-medium">
-          Documento gerado digitalmente • Foco no Objetivo: {dietInfo.goal}
-        </div>
-      </div>
 
       {showShareModal && (
         <>
