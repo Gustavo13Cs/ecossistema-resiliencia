@@ -12,14 +12,55 @@ import {
   UpdateDietTemplateDto,
   ScaleAndImportTemplateDto,
 } from './dto/create-diet-plan.dto';
-import {
-  SYSTEM_DIET_TEMPLATES,
-  SystemDietTemplate,
-} from './system-templates.data';
+import { SYSTEM_DIET_TEMPLATES } from './system-templates.data';
 
 const fullPlanInclude = {
-  meals: { include: { items: { include: { food: true } } } },
+  meals: {
+    include: {
+      items: {
+        include: {
+          food: true,
+          recipeVersion: {
+            include: {
+              recipe: {
+                select: { id: true, currentVersionId: true, status: true },
+              },
+              ingredients: { include: { food: true } },
+            },
+          },
+        },
+      },
+    },
+  },
 } satisfies Prisma.DietPlanInclude;
+
+type MealItemSourceInput = {
+  quantity: number;
+  measure: string;
+  notes?: string | null;
+  foodId?: string | null;
+  recipeVersionId?: string | null;
+};
+
+type MealSourceInput = {
+  name: string;
+  time?: string | null;
+  notes?: string | null;
+  items: MealItemSourceInput[];
+};
+
+type PreparedMeal = {
+  name: string;
+  time?: string | null;
+  notes?: string | null;
+  items: Array<{
+    quantity: number;
+    measure: string;
+    notes?: string | null;
+    foodId: string | null;
+    recipeVersionId: string | null;
+  }>;
+};
 
 @Injectable()
 export class DietPlansService {
@@ -30,6 +71,11 @@ export class DietPlansService {
       const target = await this.resolveOwnedClient(
         tx,
         createDietDto,
+        creatorId,
+      );
+      const preparedMeals = await this.prepareMeals(
+        tx,
+        createDietDto.meals,
         creatorId,
       );
 
@@ -62,17 +108,12 @@ export class DietPlansService {
           userId: target.legacyPatientId,
           creatorId,
           meals: {
-            create: createDietDto.meals.map((meal) => ({
+            create: preparedMeals.map((meal) => ({
               name: meal.name,
               time: meal.time,
               notes: meal.notes,
               items: {
-                create: meal.items.map((item) => ({
-                  quantity: item.quantity,
-                  measure: item.measure,
-                  notes: item.notes,
-                  foodId: item.foodId,
-                })),
+                create: meal.items,
               },
             })),
           },
@@ -80,9 +121,14 @@ export class DietPlansService {
         include: fullPlanInclude,
       });
 
-      for (const meal of createDietDto.meals) {
+      for (const meal of preparedMeals) {
         for (const item of meal.items) {
-          if (item.measure && item.measure.trim() && item.measure !== 'g') {
+          if (
+            item.foodId &&
+            item.measure &&
+            item.measure.trim() &&
+            item.measure !== 'g'
+          ) {
             await tx.foodPreference.upsert({
               where: {
                 nutritionistId_foodId_quantity: {
@@ -237,40 +283,37 @@ export class DietPlansService {
   }
 
   async createTemplate(dto: CreateDietTemplateDto, creatorId: string) {
-    return this.prisma.dietPlan.create({
-      data: {
-        title: dto.title,
-        goal: dto.goal,
-        targetKcal: dto.targetKcal,
-        proteinG: dto.proteinG,
-        fatG: dto.fatG,
-        carbsG: dto.carbsG,
-        fiberG: dto.fiberG,
-        sodiumMg: dto.sodiumMg,
-        calciumMg: dto.calciumMg,
-        ironMg: dto.ironMg,
-        notes: dto.notes,
-        durationDays: dto.durationDays || 30,
-        creatorId,
-        isTemplate: true,
-        isActive: true,
-        meals: {
-          create: dto.meals.map((meal) => ({
-            name: meal.name,
-            time: meal.time,
-            notes: meal.notes,
-            items: {
-              create: meal.items.map((item) => ({
-                quantity: item.quantity,
-                measure: item.measure,
-                notes: item.notes,
-                foodId: item.foodId,
-              })),
-            },
-          })),
+    return this.prisma.$transaction(async (tx) => {
+      const preparedMeals = await this.prepareMeals(tx, dto.meals, creatorId);
+
+      return tx.dietPlan.create({
+        data: {
+          title: dto.title,
+          goal: dto.goal,
+          targetKcal: dto.targetKcal,
+          proteinG: dto.proteinG,
+          fatG: dto.fatG,
+          carbsG: dto.carbsG,
+          fiberG: dto.fiberG,
+          sodiumMg: dto.sodiumMg,
+          calciumMg: dto.calciumMg,
+          ironMg: dto.ironMg,
+          notes: dto.notes,
+          durationDays: dto.durationDays || 30,
+          creatorId,
+          isTemplate: true,
+          isActive: true,
+          meals: {
+            create: preparedMeals.map((meal) => ({
+              name: meal.name,
+              time: meal.time,
+              notes: meal.notes,
+              items: { create: meal.items },
+            })),
+          },
         },
-      },
-      include: fullPlanInclude,
+        include: fullPlanInclude,
+      });
     });
   }
 
@@ -286,6 +329,10 @@ export class DietPlansService {
     }
 
     return this.prisma.$transaction(async (tx) => {
+      const preparedMeals = dto.meals
+        ? await this.prepareMeals(tx, dto.meals, creatorId)
+        : undefined;
+
       if (dto.meals) {
         const existingMeals = await tx.meal.findMany({
           where: { dietPlanId: id },
@@ -313,17 +360,12 @@ export class DietPlansService {
           ...(dto.meals
             ? {
                 meals: {
-                  create: dto.meals.map((meal) => ({
+                  create: preparedMeals?.map((meal) => ({
                     name: meal.name,
                     time: meal.time,
                     notes: meal.notes,
                     items: {
-                      create: meal.items.map((item) => ({
-                        quantity: item.quantity,
-                        measure: item.measure,
-                        notes: item.notes,
-                        foodId: item.foodId,
-                      })),
+                      create: meal.items,
                     },
                   })),
                 },
@@ -343,17 +385,7 @@ export class DietPlansService {
       }
 
       return this.prisma.$transaction(async (tx) => {
-        const preparedMeals: Array<{
-          name: string;
-          time?: string | null;
-          notes?: string | null;
-          items: Array<{
-            quantity: number;
-            measure: string;
-            notes?: string | null;
-            foodId: string;
-          }>;
-        }> = [];
+        const preparedMeals: MealSourceInput[] = [];
 
         for (const meal of sysTpl.meals) {
           const preparedItems: Array<{
@@ -361,6 +393,7 @@ export class DietPlansService {
             measure: string;
             notes?: string | null;
             foodId: string;
+            recipeVersionId: null;
           }> = [];
 
           for (const item of meal.items) {
@@ -397,6 +430,7 @@ export class DietPlansService {
               measure: item.measure || 'g',
               notes: item.notes || null,
               foodId: resolvedFoodId,
+              recipeVersionId: null,
             });
           }
 
@@ -407,6 +441,11 @@ export class DietPlansService {
             items: preparedItems,
           });
         }
+        const validatedMeals = await this.prepareMeals(
+          tx,
+          preparedMeals,
+          creatorId,
+        );
 
         return tx.dietPlan.create({
           data: {
@@ -423,17 +462,12 @@ export class DietPlansService {
             isTemplate: true,
             isActive: true,
             meals: {
-              create: preparedMeals.map((m) => ({
+              create: validatedMeals.map((m) => ({
                 name: m.name,
                 time: m.time,
                 notes: m.notes,
                 items: {
-                  create: m.items.map((it) => ({
-                    quantity: it.quantity,
-                    measure: it.measure,
-                    notes: it.notes,
-                    foodId: it.foodId,
-                  })),
+                  create: m.items,
                 },
               })),
             },
@@ -459,40 +493,41 @@ export class DietPlansService {
       newTitle = source.title.replace(/V\d+$/i, `V${nextVersion}`);
     }
 
-    return this.prisma.dietPlan.create({
-      data: {
-        title: newTitle,
-        goal: source.goal,
-        targetKcal: source.targetKcal,
-        proteinG: source.proteinG,
-        fatG: source.fatG,
-        carbsG: source.carbsG,
-        fiberG: source.fiberG,
-        sodiumMg: source.sodiumMg,
-        calciumMg: source.calciumMg,
-        ironMg: source.ironMg,
-        notes: source.notes,
-        durationDays: source.durationDays,
+    return this.prisma.$transaction(async (tx) => {
+      const preparedMeals = await this.prepareMeals(
+        tx,
+        source.meals,
         creatorId,
-        isTemplate: true,
-        isActive: true,
-        meals: {
-          create: source.meals.map((meal) => ({
-            name: meal.name,
-            time: meal.time,
-            notes: meal.notes,
-            items: {
-              create: meal.items.map((item) => ({
-                quantity: item.quantity,
-                measure: item.measure,
-                notes: item.notes,
-                foodId: item.foodId,
-              })),
-            },
-          })),
+      );
+
+      return tx.dietPlan.create({
+        data: {
+          title: newTitle,
+          goal: source.goal,
+          targetKcal: source.targetKcal,
+          proteinG: source.proteinG,
+          fatG: source.fatG,
+          carbsG: source.carbsG,
+          fiberG: source.fiberG,
+          sodiumMg: source.sodiumMg,
+          calciumMg: source.calciumMg,
+          ironMg: source.ironMg,
+          notes: source.notes,
+          durationDays: source.durationDays,
+          creatorId,
+          isTemplate: true,
+          isActive: true,
+          meals: {
+            create: preparedMeals.map((meal) => ({
+              name: meal.name,
+              time: meal.time,
+              notes: meal.notes,
+              items: { create: meal.items },
+            })),
+          },
         },
-      },
-      include: fullPlanInclude,
+        include: fullPlanInclude,
+      });
     });
   }
 
@@ -536,6 +571,7 @@ export class DietPlansService {
           measure: string;
           notes?: string | null;
           foodId?: string | null;
+          recipeVersionId?: string | null;
           name?: string;
         }>;
       }>;
@@ -573,34 +609,15 @@ export class DietPlansService {
       : null;
 
     return this.prisma.$transaction(async (tx) => {
-      await tx.dietPlan.updateMany({
-        where: { clientId: dto.clientId, creatorId, isActive: true },
-        data: { isActive: false },
-      });
-
-      const preparedMeals: Array<{
-        name: string;
-        time?: string | null;
-        notes?: string | null;
-        items: Array<{
-          quantity: number;
-          measure: string;
-          notes?: string | null;
-          foodId: string;
-        }>;
-      }> = [];
+      const preparedMeals: MealSourceInput[] = [];
 
       for (const meal of templateData.meals) {
-        const preparedItems: Array<{
-          quantity: number;
-          measure: string;
-          notes?: string | null;
-          foodId: string;
-        }> = [];
+        const preparedItems: MealItemSourceInput[] = [];
 
         for (const item of meal.items) {
-          let resolvedFoodId = item.foodId;
-          if (!resolvedFoodId) {
+          let resolvedFoodId = item.foodId ?? null;
+          const recipeVersionId = item.recipeVersionId ?? null;
+          if (!resolvedFoodId && !recipeVersionId) {
             const existing = await tx.food.findFirst({
               where: { name: { contains: item.name, mode: 'insensitive' } },
             });
@@ -640,6 +657,7 @@ export class DietPlansService {
             measure: item.measure || 'g',
             notes: item.notes || null,
             foodId: resolvedFoodId,
+            recipeVersionId,
           });
         }
 
@@ -650,6 +668,16 @@ export class DietPlansService {
           items: preparedItems,
         });
       }
+      const validatedMeals = await this.prepareMeals(
+        tx,
+        preparedMeals,
+        creatorId,
+      );
+
+      await tx.dietPlan.updateMany({
+        where: { clientId: dto.clientId, creatorId, isActive: true },
+        data: { isActive: false },
+      });
 
       return tx.dietPlan.create({
         data: {
@@ -667,17 +695,12 @@ export class DietPlansService {
           isActive: true,
           isTemplate: false,
           meals: {
-            create: preparedMeals.map((m) => ({
+            create: validatedMeals.map((m) => ({
               name: m.name,
               time: m.time,
               notes: m.notes,
               items: {
-                create: m.items.map((it) => ({
-                  quantity: it.quantity,
-                  measure: it.measure,
-                  notes: it.notes,
-                  foodId: it.foodId,
-                })),
+                create: m.items,
               },
             })),
           },
@@ -685,6 +708,69 @@ export class DietPlansService {
         include: fullPlanInclude,
       });
     });
+  }
+
+  private assertExactlyOneItemSource(item: MealItemSourceInput) {
+    const hasFoodId =
+      typeof item.foodId === 'string' && item.foodId.trim().length > 0;
+    const hasRecipeVersionId =
+      typeof item.recipeVersionId === 'string' &&
+      item.recipeVersionId.trim().length > 0;
+
+    if (hasFoodId === hasRecipeVersionId) {
+      throw new BadRequestException(
+        'Cada item da refeição deve informar alimento ou versão de receita',
+      );
+    }
+  }
+
+  private async prepareMeals(
+    tx: Prisma.TransactionClient,
+    meals: MealSourceInput[],
+    creatorId: string,
+  ): Promise<PreparedMeal[]> {
+    const items = meals.flatMap((meal) => meal.items);
+    items.forEach((item) => this.assertExactlyOneItemSource(item));
+
+    const recipeVersionIds = [
+      ...new Set(
+        items.flatMap((item) =>
+          item.recipeVersionId ? [item.recipeVersionId] : [],
+        ),
+      ),
+    ];
+
+    if (recipeVersionIds.length > 0) {
+      const ownedRecipeVersions = await tx.recipeVersion.findMany({
+        where: {
+          id: { in: recipeVersionIds },
+          recipe: { professionalId: creatorId },
+        },
+        include: {
+          recipe: {
+            select: { id: true, currentVersionId: true, status: true },
+          },
+          ingredients: { include: { food: true } },
+        },
+      });
+
+      if (ownedRecipeVersions.length !== recipeVersionIds.length) {
+        throw new NotFoundException('Versão de receita não encontrada');
+      }
+    }
+
+    return meals.map((meal) => ({
+      name: meal.name,
+      time: meal.time,
+      notes: meal.notes,
+      items: meal.items.map((item) => ({
+        quantity: item.quantity,
+        measure: item.measure,
+        notes: item.notes,
+        foodId: item.foodId ?? null,
+        recipeVersionId: item.recipeVersionId ?? null,
+      })),
+    }));
   }
 
   private async resolveOwnedClient(

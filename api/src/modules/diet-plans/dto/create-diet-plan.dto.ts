@@ -3,6 +3,7 @@ import {
   IsNumber,
   IsOptional,
   IsArray,
+  IsUUID,
   ValidateNested,
   Min,
   ValidateIf,
@@ -21,8 +22,13 @@ export class CreateMealItemDto {
   @IsString()
   notes?: string;
 
-  @IsString()
-  foodId!: string;
+  @IsOptional()
+  @IsUUID()
+  foodId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  recipeVersionId?: string;
 }
 
 export class CreateMealDto {
