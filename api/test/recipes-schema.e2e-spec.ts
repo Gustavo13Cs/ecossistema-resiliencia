@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Pool, PoolClient } from 'pg';
 
 const SAFE_TEST_DATABASE_URL =
@@ -216,6 +217,117 @@ describe('Versioned recipe schema (e2e)', () => {
       );
       expect(nextIngredient).toBeTruthy();
     });
+  });
+
+  it('rejects directly publishing a version that is not the recipe current version', async () => {
+    await withTransaction(pool, async (client) => {
+      const professionalId = await createUser(client, 'direct-publication');
+      const recipeId = await createRecipe(client, professionalId);
+      const recipeVersionId = await createRecipeVersion(client, recipeId, 1);
+
+      await expectPgError(
+        client,
+        'direct_version_publication',
+        `update public.recipe_versions
+         set "publishedAt" = CURRENT_TIMESTAMP
+         where id = $1`,
+        [recipeVersionId],
+        '55000',
+      );
+
+      const publication = await client.query<{ publishedAt: Date | null }>(
+        `select "publishedAt" from public.recipe_versions where id = $1`,
+        [recipeVersionId],
+      );
+      expect(publication.rows[0].publishedAt).toBeNull();
+    });
+  });
+
+  it('serializes ingredient mutation before publication and rejects later mutation', async () => {
+    const fixtureClient = await pool.connect();
+    const suffix = `publication-race-${randomUUID()}`;
+    let recipeId = '';
+    let recipeVersionId = '';
+    let ingredientId = '';
+
+    try {
+      await fixtureClient.query('BEGIN');
+      const professionalId = await createUser(fixtureClient, suffix);
+      recipeId = await createRecipe(fixtureClient, professionalId);
+      recipeVersionId = await createRecipeVersion(fixtureClient, recipeId, 1);
+      const foodId = await createFood(fixtureClient, `Race food ${suffix}`);
+      ingredientId = await createRecipeIngredient(
+        fixtureClient,
+        recipeVersionId,
+        foodId,
+      );
+      await fixtureClient.query('COMMIT');
+    } catch (error) {
+      await fixtureClient.query('ROLLBACK');
+      throw error;
+    } finally {
+      fixtureClient.release();
+    }
+
+    const mutator = await pool.connect();
+    const publisher = await pool.connect();
+    try {
+      await mutator.query('BEGIN');
+      await mutator.query(
+        `update public.recipe_ingredients set quantity = 2 where id = $1`,
+        [ingredientId],
+      );
+
+      await publisher.query('BEGIN');
+      await publisher.query(`set local lock_timeout = '250ms'`);
+      await expect(
+        publisher.query(
+          `update public.recipes
+           set "currentVersionId" = $1, "updatedAt" = CURRENT_TIMESTAMP
+           where id = $2`,
+          [recipeVersionId, recipeId],
+        ),
+      ).rejects.toMatchObject({ code: '55P03' });
+      await publisher.query('ROLLBACK');
+
+      await mutator.query('COMMIT');
+
+      await publisher.query('BEGIN');
+      await publisher.query(
+        `update public.recipes
+         set "currentVersionId" = $1, "updatedAt" = CURRENT_TIMESTAMP
+         where id = $2`,
+        [recipeVersionId, recipeId],
+      );
+      await publisher.query('COMMIT');
+
+      const snapshot = await pool.query<{
+        publishedAt: Date | null;
+        quantity: string;
+      }>(
+        `select rv."publishedAt", ri.quantity::text
+         from public.recipe_versions rv
+         join public.recipe_ingredients ri on ri."recipeVersionId" = rv.id
+         where rv.id = $1 and ri.id = $2`,
+        [recipeVersionId, ingredientId],
+      );
+      expect(snapshot.rows[0]).toMatchObject({ quantity: '2' });
+      expect(snapshot.rows[0].publishedAt).not.toBeNull();
+
+      await mutator.query('BEGIN');
+      await expect(
+        mutator.query(
+          `update public.recipe_ingredients set quantity = 3 where id = $1`,
+          [ingredientId],
+        ),
+      ).rejects.toMatchObject({ code: '55000' });
+      await mutator.query('ROLLBACK');
+    } finally {
+      await mutator.query('ROLLBACK').catch(() => undefined);
+      await publisher.query('ROLLBACK').catch(() => undefined);
+      mutator.release();
+      publisher.release();
+    }
   });
 });
 

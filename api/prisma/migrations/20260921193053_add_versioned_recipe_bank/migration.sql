@@ -128,7 +128,13 @@ BEGIN
 
   IF OLD."publishedAt" IS NULL
      AND NEW."publishedAt" IS NOT NULL
-     AND (to_jsonb(NEW) - 'publishedAt') = (to_jsonb(OLD) - 'publishedAt') THEN
+     AND (to_jsonb(NEW) - 'publishedAt') = (to_jsonb(OLD) - 'publishedAt')
+     AND EXISTS (
+       SELECT 1
+       FROM "public"."recipes" recipe
+       WHERE recipe."id" = NEW."recipeId"
+         AND recipe."currentVersionId" = NEW."id"
+     ) THEN
     RETURN NEW;
   END IF;
 
@@ -171,25 +177,37 @@ LANGUAGE plpgsql
 AS $recipe_ingredients_immutable$
 DECLARE
   published_snapshot boolean;
+  locked_version record;
 BEGIN
   IF TG_OP = 'INSERT' THEN
-    SELECT rv."publishedAt" IS NOT NULL
-    INTO published_snapshot
+    SELECT rv."id", rv."publishedAt"
+    INTO locked_version
     FROM "public"."recipe_versions" rv
-    WHERE rv."id" = NEW."recipeVersionId";
+    WHERE rv."id" = NEW."recipeVersionId"
+    FOR UPDATE;
+
+    published_snapshot := locked_version."publishedAt" IS NOT NULL;
   ELSIF TG_OP = 'DELETE' THEN
-    SELECT rv."publishedAt" IS NOT NULL
-    INTO published_snapshot
+    SELECT rv."id", rv."publishedAt"
+    INTO locked_version
     FROM "public"."recipe_versions" rv
-    WHERE rv."id" = OLD."recipeVersionId";
+    WHERE rv."id" = OLD."recipeVersionId"
+    FOR UPDATE;
+
+    published_snapshot := locked_version."publishedAt" IS NOT NULL;
   ELSE
-    SELECT EXISTS (
-      SELECT 1
+    published_snapshot := false;
+    FOR locked_version IN
+      SELECT rv."id", rv."publishedAt"
       FROM "public"."recipe_versions" rv
       WHERE rv."id" IN (OLD."recipeVersionId", NEW."recipeVersionId")
-        AND rv."publishedAt" IS NOT NULL
-    )
-    INTO published_snapshot;
+      ORDER BY rv."id"
+      FOR UPDATE
+    LOOP
+      IF locked_version."publishedAt" IS NOT NULL THEN
+        published_snapshot := true;
+      END IF;
+    END LOOP;
   END IF;
 
   IF COALESCE(published_snapshot, false) THEN
