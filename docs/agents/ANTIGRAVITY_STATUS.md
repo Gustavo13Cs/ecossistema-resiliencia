@@ -8,8 +8,8 @@
 
 ## Current Task
 
-- **Tarefa**: Nenhuma no momento (PDFs de dieta e lista de compras melhorados)
-- **Status**: Concluída
+- **Tarefa**: Mitigação de vulnerabilidades da Auditoria de Segurança (C-01, C-02, A-05)
+- **Status**: Em andamento (C-01 e C-02 mitigados localmente com .gitignore e rotação de JWT_SECRET; testes em execução)
 - **Início**: 2026-09-22
 
 ---
