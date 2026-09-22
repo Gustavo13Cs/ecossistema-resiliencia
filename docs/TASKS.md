@@ -49,6 +49,7 @@
 | 3.3 | Geração de PDF para prescrições | ⏳ | — |
 | 3.4 | Impressão de planos | ⏳ | — |
 | 3.5 | Compartilhamento por WhatsApp/e-mail | ⏳ | — |
+| 3.6 | Banco versionado de receitas com macros, restrições e associação às refeições | 🔄 | Codex |
 
 ---
 
