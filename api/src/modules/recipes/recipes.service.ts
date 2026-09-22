@@ -11,13 +11,23 @@ import { ListRecipesQueryDto } from './dto/list-recipes-query.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
 import { calculateRecipeNutrition } from './domain/recipe-nutrition';
 
-const recipeInclude = {
+const recipeVersionInclude = {
+  ingredients: {
+    include: { food: true },
+  },
+} satisfies Prisma.RecipeVersionInclude;
+
+const recipeListInclude = {
   currentVersion: {
-    include: {
-      ingredients: {
-        include: { food: true },
-      },
-    },
+    include: recipeVersionInclude,
+  },
+} satisfies Prisma.RecipeInclude;
+
+const recipeDetailInclude = {
+  ...recipeListInclude,
+  versions: {
+    include: recipeVersionInclude,
+    orderBy: { version: 'asc' },
   },
 } satisfies Prisma.RecipeInclude;
 
@@ -70,13 +80,13 @@ export class RecipesService {
         status: query.status,
         currentVersion: { is: currentVersion },
       },
-      include: recipeInclude,
+      include: recipeListInclude,
       orderBy: { updatedAt: 'desc' },
     });
   }
 
   findOne(recipeId: string, professionalId: string) {
-    return this.findOwnedRecipe(
+    return this.findOwnedRecipeDetails(
       this.prisma as unknown as RecipeTransaction,
       recipeId,
       professionalId,
@@ -295,7 +305,20 @@ export class RecipesService {
   ) {
     const recipe = await tx.recipe.findFirst({
       where: { id: recipeId, professionalId },
-      include: recipeInclude,
+      include: recipeListInclude,
+    });
+    if (!recipe) throw new NotFoundException('Receita não encontrada');
+    return recipe;
+  }
+
+  private async findOwnedRecipeDetails(
+    tx: RecipeTransaction,
+    recipeId: string,
+    professionalId: string,
+  ) {
+    const recipe = await tx.recipe.findFirst({
+      where: { id: recipeId, professionalId },
+      include: recipeDetailInclude,
     });
     if (!recipe) throw new NotFoundException('Receita não encontrada');
     return recipe;

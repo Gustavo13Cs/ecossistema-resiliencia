@@ -3,7 +3,7 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { RecipeCategory, RecipeStatus } from '@prisma/client';
+import { Prisma, RecipeCategory, RecipeStatus } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
@@ -83,6 +83,7 @@ type HydratedIngredient = IngredientFixture & { food: FoodFixture | undefined };
 type HydratedVersion = VersionFixture & { ingredients: HydratedIngredient[] };
 type HydratedRecipe = RecipeFixture & {
   currentVersion: HydratedVersion | null;
+  versions?: HydratedVersion[];
 };
 
 type FoodFindManyArguments = { where: { id: { in: string[] } } };
@@ -107,6 +108,7 @@ type RecipeUpdateManyArguments = {
 };
 type RecipeFindFirstArguments = {
   where: { id: string; professionalId: string };
+  include?: { versions?: unknown };
 };
 type RecipeVersionFilter = {
   name?: { contains: string; mode: 'insensitive' };
@@ -169,6 +171,8 @@ const validRecipeInput: CreateRecipeDto = {
 class RecipePrismaFake {
   state: FakeState;
   forceCompareAndSwapConflict = false;
+  forceInitialPublishConflict = false;
+  recipeVersionCreateError: Error | undefined;
   lastRecipeFindManyArgs: RecipeFindManyArguments | undefined;
   lastRecipeUpdateManyArgs: RecipeUpdateManyArguments | undefined;
   private sequence = 0;
@@ -244,6 +248,25 @@ class RecipePrismaFake {
       return { ...recipe };
     };
     this.recipeVersion.create = async ({ data }: any) => {
+      if (this.recipeVersionCreateError) {
+        throw this.recipeVersionCreateError;
+      }
+      if (
+        this.state.versions.some(
+          (version) =>
+            version.recipeId === data.recipeId &&
+            version.version === data.version,
+        )
+      ) {
+        throw new Prisma.PrismaClientKnownRequestError(
+          'Unique constraint failed on recipeId and version',
+          {
+            code: 'P2002',
+            clientVersion: '7.10.0',
+            meta: { modelName: 'RecipeVersion' },
+          },
+        );
+      }
       const version: VersionFixture = {
         id: this.nextId('version'),
         recipeId: data.recipeId,
@@ -281,17 +304,21 @@ class RecipePrismaFake {
     };
     this.recipe.updateMany = async ({ where, data }: any) => {
       this.lastRecipeUpdateManyArgs = { where, data };
-      if (this.forceCompareAndSwapConflict && where.currentVersionId) {
+      if (
+        (this.forceCompareAndSwapConflict &&
+          typeof where.currentVersionId === 'string') ||
+        (this.forceInitialPublishConflict && where.currentVersionId === null)
+      ) {
         return { count: 0 };
       }
       const recipes = this.state.recipes.filter(
         (recipe) =>
-          (!where.id || recipe.id === where.id) &&
-          (!where.professionalId ||
+          (where.id === undefined || recipe.id === where.id) &&
+          (where.professionalId === undefined ||
             recipe.professionalId === where.professionalId) &&
-          (!where.currentVersionId ||
+          (where.currentVersionId === undefined ||
             recipe.currentVersionId === where.currentVersionId) &&
-          (!where.status ||
+          (where.status === undefined ||
             typeof where.status !== 'object' ||
             recipe.status !== where.status.not),
       );
@@ -307,13 +334,20 @@ class RecipePrismaFake {
       }
       return { count: recipes.length };
     };
-    this.recipe.findFirst = async ({ where }: any) => {
+    this.recipe.findFirst = async (args: any) => {
+      const { where } = args;
       const recipe = this.state.recipes.find(
         (candidate) =>
           candidate.id === where.id &&
           candidate.professionalId === where.professionalId,
       );
-      return recipe ? this.hydrateRecipe(recipe) : null;
+      return recipe
+        ? this.hydrateRecipe(
+            recipe,
+            Boolean(args.include?.versions),
+            args.include?.versions?.orderBy?.version,
+          )
+        : null;
     };
     this.recipe.findMany = async (args: any) => {
       this.lastRecipeFindManyArgs = args;
@@ -399,16 +433,36 @@ class RecipePrismaFake {
     };
   }
 
-  private hydrateRecipe(recipe: RecipeFixture) {
+  private hydrateRecipe(
+    recipe: RecipeFixture,
+    includeVersions = false,
+    versionOrder?: 'asc' | 'desc',
+  ): HydratedRecipe {
     const currentVersion = this.state.versions.find(
       (version) => version.id === recipe.currentVersionId,
     );
-    return {
+    const hydrated: HydratedRecipe = {
       ...recipe,
       currentVersion: currentVersion
         ? this.hydrateVersion(currentVersion)
         : null,
     };
+    if (includeVersions) {
+      const versions = this.state.versions.filter(
+        (version) => version.recipeId === recipe.id,
+      );
+      if (versionOrder) {
+        versions.sort((left, right) =>
+          versionOrder === 'asc'
+            ? left.version - right.version
+            : right.version - left.version,
+        );
+      }
+      hydrated.versions = versions.map((version) =>
+        this.hydrateVersion(version),
+      );
+    }
+    return hydrated;
   }
 
   private matchesRecipeWhere(recipe: RecipeFixture, where: any): boolean {
@@ -501,6 +555,18 @@ describe('RecipesService', () => {
     });
   });
 
+  it('rolls back create when the initial current-version publication conflicts', async () => {
+    prisma.forceInitialPublishConflict = true;
+
+    await expect(
+      service.create(validRecipeInput, PROFESSIONAL_ID),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    expect(prisma.state.recipes).toHaveLength(0);
+    expect(prisma.state.versions).toHaveLength(0);
+    expect(prisma.state.ingredients).toHaveLength(0);
+  });
+
   it('rejects duplicate food ids before creating a recipe', async () => {
     const duplicateIngredientInput = {
       ...validRecipeInput,
@@ -541,6 +607,44 @@ describe('RecipesService', () => {
     await expect(
       service.findOne(RECIPE_ID, OTHER_PROFESSIONAL_ID),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('returns the owned immutable version history ordered with ingredients and foods', async () => {
+    prisma.seedRecipe({ id: RECIPE_ID, version: 2, name: 'Versão atual' });
+    const currentVersion = prisma.state.versions[0];
+    prisma.state.versions.push({
+      ...currentVersion,
+      id: 'historical-version',
+      version: 1,
+      name: 'Versão histórica',
+      createdAt: new Date('2026-09-21T12:00:00.000Z'),
+    });
+    prisma.state.ingredients.push({
+      id: 'historical-ingredient',
+      recipeVersionId: 'historical-version',
+      foodId: SECOND_FOOD_ID,
+      quantity: 100,
+      measure: 'g',
+    });
+
+    const detail = await service.findOne(RECIPE_ID, PROFESSIONAL_ID);
+
+    expect(detail.currentVersion).toMatchObject({
+      version: 2,
+      name: 'Versão atual',
+    });
+    expect(detail.versions).toMatchObject([
+      {
+        version: 1,
+        name: 'Versão histórica',
+        ingredients: [{ food: { id: SECOND_FOOD_ID, name: 'Banana' } }],
+      },
+      {
+        version: 2,
+        name: 'Versão atual',
+        ingredients: [{ food: { id: FOOD_ID, name: 'Aveia' } }],
+      },
+    ]);
   });
 
   it('combines filters against currentVersion only', async () => {
@@ -607,6 +711,7 @@ describe('RecipesService', () => {
       },
     });
     expect(prisma.lastRecipeFindManyArgs).not.toHaveProperty('where.versions');
+    expect(result[0]).not.toHaveProperty('versions');
   });
 
   it('updates by appending version 2 and switching the current snapshot', async () => {
@@ -651,6 +756,50 @@ describe('RecipesService', () => {
     ).toHaveLength(1);
   });
 
+  it('normalizes a real Prisma P2002 version race and leaves no new orphan data', async () => {
+    prisma.seedRecipe({ id: RECIPE_ID, version: 1 });
+    const versionOne = prisma.state.versions[0];
+    prisma.state.versions.push({
+      ...versionOne,
+      id: 'competing-version-2',
+      version: 2,
+      name: 'Versão concorrente',
+    });
+    prisma.state.ingredients.push({
+      ...prisma.state.ingredients[0],
+      id: 'competing-ingredient',
+      recipeVersionId: 'competing-version-2',
+    });
+    const before = structuredClone(prisma.state);
+
+    await expect(
+      service.update(
+        RECIPE_ID,
+        { ...validRecipeInput, expectedVersion: 1 },
+        PROFESSIONAL_ID,
+      ),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    expect(prisma.state).toEqual(before);
+  });
+
+  it('does not normalize a non-P2002 recipe-version error', async () => {
+    prisma.seedRecipe({ id: RECIPE_ID, version: 1 });
+    const databaseError = new Error('database unavailable');
+    prisma.recipeVersionCreateError = databaseError;
+    const before = structuredClone(prisma.state);
+
+    await expect(
+      service.update(
+        RECIPE_ID,
+        { ...validRecipeInput, expectedVersion: 1 },
+        PROFESSIONAL_ID,
+      ),
+    ).rejects.toBe(databaseError);
+
+    expect(prisma.state).toEqual(before);
+  });
+
   it('rolls back the orphan version when compare-and-swap affects zero rows', async () => {
     prisma.seedRecipe({ id: RECIPE_ID, version: 1 });
     prisma.forceCompareAndSwapConflict = true;
@@ -688,6 +837,38 @@ describe('RecipesService', () => {
     expect(duplicated.currentVersion!.id).not.toBe(
       prisma.state.recipes[0].currentVersionId,
     );
+  });
+
+  it('rolls back duplicate when its initial current-version publication conflicts', async () => {
+    prisma.seedRecipe({ id: RECIPE_ID, version: 1 });
+    prisma.forceInitialPublishConflict = true;
+    const before = structuredClone(prisma.state);
+
+    await expect(
+      service.duplicate(RECIPE_ID, PROFESSIONAL_ID),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    expect(prisma.state).toEqual(before);
+  });
+
+  it('duplicates an archived recipe into a new ACTIVE identity without changing the source', async () => {
+    const source = prisma.seedRecipe({
+      id: RECIPE_ID,
+      version: 3,
+      status: RecipeStatus.ARCHIVED,
+    });
+    const sourceBefore = structuredClone(source);
+
+    const duplicated = await service.duplicate(RECIPE_ID, PROFESSIONAL_ID);
+
+    expect(duplicated).toMatchObject({
+      status: RecipeStatus.ACTIVE,
+      currentVersion: { version: 1 },
+    });
+    expect(duplicated.id).not.toBe(RECIPE_ID);
+    expect(
+      prisma.state.recipes.find((recipe) => recipe.id === RECIPE_ID),
+    ).toEqual(sourceBefore);
   });
 
   it('archives and restores only the owned recipe', async () => {
