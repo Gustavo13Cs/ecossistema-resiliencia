@@ -11,6 +11,28 @@ const PROFESSIONAL_ID = 'professional-1';
 const CLIENT_ID = 'client-1';
 const FOOD_ID = '10000000-0000-4000-8000-000000000001';
 const VERSION_1_ID = '10000000-0000-4000-8000-000000000002';
+const SYSTEM_TEMPLATE_ID = 'system-tpl-deficit-1600';
+
+type CapturedMealItem = {
+  quantity: number;
+  measure: string;
+  foodId: string | null;
+  recipeVersionId: string | null;
+};
+
+const mealItemsFromCreateArgs = (args: unknown): CapturedMealItem[] => {
+  const createArgs = args as {
+    data: {
+      meals: {
+        create: Array<{
+          items: { create: CapturedMealItem[] };
+        }>;
+      };
+    };
+  };
+
+  return createArgs.data.meals.create.flatMap((meal) => meal.items.create);
+};
 
 const ownedArchivedRecipeVersion = {
   id: VERSION_1_ID,
@@ -503,6 +525,58 @@ describe('DietPlansService professional ownership', () => {
     );
   });
 
+  it('duplicates a system template by resolving existing foods by name into food-only items', async () => {
+    prisma.food.findFirst.mockResolvedValue({ id: FOOD_ID });
+
+    await service.duplicateTemplate(SYSTEM_TEMPLATE_ID, PROFESSIONAL_ID);
+
+    const createdItems = mealItemsFromCreateArgs(capturedDietCreateArgs);
+    expect(createdItems.length).toBeGreaterThan(0);
+    for (const item of createdItems) {
+      expect(item).toMatchObject({
+        foodId: FOOD_ID,
+        recipeVersionId: null,
+      });
+    }
+    expect(prisma.food.findFirst).toHaveBeenCalledWith({
+      where: {
+        name: {
+          contains: 'Ovo de galinha inteiro',
+          mode: 'insensitive',
+        },
+      },
+    });
+    expect(prisma.food.create).not.toHaveBeenCalled();
+  });
+
+  it('duplicates a system template by creating missing foods and normalizing the item source', async () => {
+    prisma.food.findFirst.mockResolvedValue(null);
+    let createdFoodSequence = 0;
+    let firstFoodCreateArgs: unknown;
+    prisma.food.create.mockImplementation((args: unknown) => {
+      firstFoodCreateArgs ??= args;
+      return Promise.resolve({
+        id: `created-system-food-${++createdFoodSequence}`,
+      });
+    });
+
+    await service.duplicateTemplate(SYSTEM_TEMPLATE_ID, PROFESSIONAL_ID);
+
+    const createdItems = mealItemsFromCreateArgs(capturedDietCreateArgs);
+    expect(prisma.food.create).toHaveBeenCalledTimes(createdItems.length);
+    const firstCreateArgs = firstFoodCreateArgs as {
+      data: { name: string; source: string };
+    };
+    expect(firstCreateArgs.data).toMatchObject({
+      name: 'Ovo de galinha inteiro',
+      source: 'SAFE_MOVE_TEMPLATE',
+    });
+    for (const item of createdItems) {
+      expect(item.foodId).toMatch(/^created-system-food-\d+$/);
+      expect(item.recipeVersionId).toBeNull();
+    }
+  });
+
   it('toggles archive status of a template', async () => {
     prisma.dietPlan.findUnique.mockResolvedValue({
       id: 'tpl-1',
@@ -672,6 +746,115 @@ describe('DietPlansService professional ownership', () => {
       ),
     ).rejects.toBeInstanceOf(NotFoundException);
 
+    expect(prisma.dietPlan.updateMany).not.toHaveBeenCalled();
+    expect(prisma.dietPlan.create).not.toHaveBeenCalled();
+  });
+
+  it('imports a system template with existing foods, scaled quantities, and transaction-scoped writes', async () => {
+    let capturedTransactionCreateArgs: unknown;
+    const transactionFoodFindFirst = jest
+      .fn()
+      .mockResolvedValue({ id: FOOD_ID });
+    const transactionFoodCreate = jest.fn();
+    const transactionDietUpdateMany = jest
+      .fn<Promise<{ count: number }>, [unknown]>()
+      .mockResolvedValue({ count: 1 });
+    const transactionDietCreate = jest
+      .fn<Promise<{ id: string }>, [unknown]>()
+      .mockImplementation((args) => {
+        capturedTransactionCreateArgs = args;
+        return Promise.resolve({ id: 'imported-system-plan' });
+      });
+    const transactionClient = {
+      ...prisma,
+      food: {
+        findFirst: transactionFoodFindFirst,
+        create: transactionFoodCreate,
+      },
+      dietPlan: {
+        ...prisma.dietPlan,
+        updateMany: transactionDietUpdateMany,
+        create: transactionDietCreate,
+      },
+    } as typeof prisma;
+    prisma.$transaction.mockImplementationOnce(
+      async (callback: (tx: typeof prisma) => Promise<unknown>) =>
+        callback(transactionClient),
+    );
+
+    await service.importTemplateToClient(
+      SYSTEM_TEMPLATE_ID,
+      { clientId: CLIENT_ID, targetKcal: 800 },
+      PROFESSIONAL_ID,
+    );
+
+    const createdItems = mealItemsFromCreateArgs(capturedTransactionCreateArgs);
+    expect(createdItems[0]).toMatchObject({
+      quantity: 1,
+      foodId: FOOD_ID,
+      recipeVersionId: null,
+    });
+    expect(transactionFoodCreate).not.toHaveBeenCalled();
+    expect(transactionDietUpdateMany).toHaveBeenCalledTimes(1);
+    expect(transactionDietCreate).toHaveBeenCalledTimes(1);
+    expect(prisma.food.findFirst).not.toHaveBeenCalled();
+    expect(prisma.dietPlan.updateMany).not.toHaveBeenCalled();
+    expect(prisma.dietPlan.create).not.toHaveBeenCalled();
+  });
+
+  it('keeps missing-food creation and the failing system import in one transaction callback', async () => {
+    let capturedTransactionCreateArgs: unknown;
+    let createdFoodSequence = 0;
+    const transactionFoodFindFirst = jest.fn().mockResolvedValue(null);
+    const transactionFoodCreate = jest.fn().mockImplementation(() =>
+      Promise.resolve({
+        id: `imported-system-food-${++createdFoodSequence}`,
+      }),
+    );
+    const transactionDietUpdateMany = jest
+      .fn<Promise<{ count: number }>, [unknown]>()
+      .mockResolvedValue({ count: 1 });
+    const transactionDietCreate = jest
+      .fn<Promise<{ id: string }>, [unknown]>()
+      .mockImplementation((args) => {
+        capturedTransactionCreateArgs = args;
+        return Promise.reject(new Error('forced plan creation failure'));
+      });
+    const transactionClient = {
+      ...prisma,
+      food: {
+        findFirst: transactionFoodFindFirst,
+        create: transactionFoodCreate,
+      },
+      dietPlan: {
+        ...prisma.dietPlan,
+        updateMany: transactionDietUpdateMany,
+        create: transactionDietCreate,
+      },
+    } as typeof prisma;
+    prisma.$transaction.mockImplementationOnce(
+      async (callback: (tx: typeof prisma) => Promise<unknown>) =>
+        callback(transactionClient),
+    );
+
+    await expect(
+      service.importTemplateToClient(
+        SYSTEM_TEMPLATE_ID,
+        { clientId: CLIENT_ID, targetKcal: 800 },
+        PROFESSIONAL_ID,
+      ),
+    ).rejects.toThrow('forced plan creation failure');
+
+    const createdItems = mealItemsFromCreateArgs(capturedTransactionCreateArgs);
+    expect(transactionFoodCreate).toHaveBeenCalledTimes(createdItems.length);
+    expect(createdItems[0]).toMatchObject({
+      quantity: 1,
+      foodId: 'imported-system-food-1',
+      recipeVersionId: null,
+    });
+    expect(transactionDietUpdateMany).toHaveBeenCalledTimes(1);
+    expect(transactionDietCreate).toHaveBeenCalledTimes(1);
+    expect(prisma.food.create).not.toHaveBeenCalled();
     expect(prisma.dietPlan.updateMany).not.toHaveBeenCalled();
     expect(prisma.dietPlan.create).not.toHaveBeenCalled();
   });
