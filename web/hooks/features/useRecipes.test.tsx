@@ -201,27 +201,45 @@ describe("recipe hooks", () => {
     )
   })
 
-  it("duplica e restaura invalidando lista, origem e resultado", async () => {
+  it("duplica invalidando lista, origem e nova receita", async () => {
     const duplicate = { ...recipe, id: "recipe-copy" }
-    const restored = { ...recipe, status: "ACTIVE" as const }
     http.onPost("/recipes/recipe-one/duplicate").reply(201, duplicate)
-    http.onPatch("/recipes/recipe-one/restore").reply(200, restored)
     const { queryClient, wrapper } = createWrapper()
     const invalidate = vi.spyOn(queryClient, "invalidateQueries")
     const duplicateHook = renderHook(() => useDuplicateRecipe(), { wrapper })
-    const restoreHook = renderHook(() => useRestoreRecipe(), { wrapper })
 
     await duplicateHook.result.current.mutateAsync("recipe-one")
-    await restoreHook.result.current.mutateAsync("recipe-one")
 
-    expect(invalidate).toHaveBeenCalledWith({
+    expect(invalidate).toHaveBeenCalledTimes(4)
+    expect(invalidate).toHaveBeenNthCalledWith(1, {
       queryKey: queryKeys.recipesRoot("nutritionist-one"),
     })
-    expect(invalidate).toHaveBeenCalledWith({
+    expect(invalidate).toHaveBeenNthCalledWith(2, {
       queryKey: queryKeys.recipe("nutritionist-one", "recipe-one"),
     })
-    expect(invalidate).toHaveBeenCalledWith({
+    expect(invalidate).toHaveBeenNthCalledWith(3, {
+      queryKey: queryKeys.recipesRoot("nutritionist-one"),
+    })
+    expect(invalidate).toHaveBeenNthCalledWith(4, {
       queryKey: queryKeys.recipe("nutritionist-one", "recipe-copy"),
+    })
+  })
+
+  it("restaura invalidando somente lista e receita restaurada", async () => {
+    const restored = { ...recipe, status: "ACTIVE" as const }
+    http.onPatch("/recipes/recipe-one/restore").reply(200, restored)
+    const { queryClient, wrapper } = createWrapper()
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    const { result } = renderHook(() => useRestoreRecipe(), { wrapper })
+
+    await result.current.mutateAsync("recipe-one")
+
+    expect(invalidate).toHaveBeenCalledTimes(2)
+    expect(invalidate).toHaveBeenNthCalledWith(1, {
+      queryKey: queryKeys.recipesRoot("nutritionist-one"),
+    })
+    expect(invalidate).toHaveBeenNthCalledWith(2, {
+      queryKey: queryKeys.recipe("nutritionist-one", "recipe-one"),
     })
   })
 })

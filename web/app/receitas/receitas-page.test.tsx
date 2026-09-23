@@ -293,7 +293,15 @@ describe("ReceitasPage", { timeout: 15_000 }, () => {
 
   it("arquiva e restaura a receita com confirmação", async () => {
     let status: RecipeSummary["status"] = "ACTIVE"
-    http.onGet("/recipes").reply(() => [200, [{ ...recipe, status }]])
+    http.onGet("/recipes").reply((config) => {
+      const params = config.params as
+        | { status?: RecipeSummary["status"] }
+        | undefined
+      return [
+        200,
+        params?.status === status ? [{ ...recipe, status }] : [],
+      ]
+    })
     http.onPatch("/recipes/recipe-one/archive").reply(() => {
       status = "ARCHIVED"
       return [200, { ...recipe, status }]
@@ -312,6 +320,13 @@ describe("ReceitasPage", { timeout: 15_000 }, () => {
     await user.click(
       await screen.findByRole("button", { name: /confirmar arquivar/i }),
     )
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("heading", { name: "Sopa de lentilha" }),
+      ).not.toBeInTheDocument(),
+    )
+
+    await user.click(screen.getByRole("button", { name: /arquivadas/i }))
     expect(
       await screen.findByRole("button", {
         name: /restaurar sopa de lentilha/i,
@@ -324,6 +339,18 @@ describe("ReceitasPage", { timeout: 15_000 }, () => {
     await user.click(
       await screen.findByRole("button", { name: /confirmar restaurar/i }),
     )
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("heading", { name: "Sopa de lentilha" }),
+      ).not.toBeInTheDocument(),
+    )
+
+    await user.click(screen.getByRole("button", { name: /^ativas$/i }))
+    expect(
+      await screen.findByRole("button", {
+        name: /arquivar sopa de lentilha/i,
+      }),
+    ).toBeEnabled()
 
     await waitFor(() => expect(http.history.patch).toHaveLength(2))
     expect(http.history.patch.map((request) => request.url)).toEqual([
