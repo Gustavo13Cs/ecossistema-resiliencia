@@ -65,3 +65,23 @@ export function calculateRecipePreview(
   }
   return perServing
 }
+
+const LEADING_BASE_AMOUNT = /^\s*\d+(?:[.,]\d+)?\s*/
+const baseAmountFormat = new Intl.NumberFormat("pt-BR", {
+  maximumFractionDigits: 6,
+})
+
+export function getRecipeFoodUnitPresentation(
+  baseAmount: number,
+  baseUnit: string,
+) {
+  const rawUnit = baseUnit.trim()
+  const unitWithoutEmbeddedAmount = rawUnit.replace(LEADING_BASE_AMOUNT, "").trim()
+  const measure = unitWithoutEmbeddedAmount || rawUnit
+  const formattedBaseAmount = baseAmountFormat.format(baseAmount)
+
+  return {
+    measure,
+    baseLabel: `${formattedBaseAmount} ${measure}`.trim(),
+  }
+}

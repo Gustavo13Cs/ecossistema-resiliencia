@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { calculateRecipePreview } from "./recipe-nutrition"
+import {
+  calculateRecipePreview,
+  getRecipeFoodUnitPresentation,
+} from "./recipe-nutrition"
 import type { RecipePreviewIngredient } from "@/types/recipe"
 
 const ingredients: RecipePreviewIngredient[] = [
@@ -81,4 +84,24 @@ describe("calculateRecipePreview", () => {
       ),
     ).toThrow(/base/i)
   })
+})
+
+describe("getRecipeFoodUnitPresentation", () => {
+  it.each([
+    [100, "100g", "g", "100 g"],
+    [100, "100 g", "g", "100 g"],
+    [100, "100ml", "ml", "100 ml"],
+    [1, "1 unidade", "unidade", "1 unidade"],
+    [100, "g", "g", "100 g"],
+    [1, "unidade", "unidade", "1 unidade"],
+    [2, "colheres", "colheres", "2 colheres"],
+  ])(
+    "normaliza base %s/%s para medida %s e rótulo %s",
+    (baseAmount, baseUnit, expectedMeasure, expectedBaseLabel) => {
+      expect(getRecipeFoodUnitPresentation(baseAmount, baseUnit)).toEqual({
+        measure: expectedMeasure,
+        baseLabel: expectedBaseLabel,
+      })
+    },
+  )
 })

@@ -24,11 +24,15 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useRecipeFoodSearch } from "@/hooks/features/useRecipes"
-import { calculateRecipePreview } from "@/lib/recipe-nutrition"
+import {
+  calculateRecipePreview,
+  getRecipeFoodUnitPresentation,
+} from "@/lib/recipe-nutrition"
 import type {
   RecipeCategory,
   RecipeFood,
   RecipeFormValues,
+  RecipeNutrition,
   RecipeSummary,
 } from "@/types/recipe"
 import { RECIPE_CATEGORY_LABELS } from "./RecipeFilters"
@@ -112,6 +116,21 @@ function safeErrorMessage(error: unknown) {
 
 const numberFormat = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 })
 
+const PREVIEW_FIELDS = [
+  { key: "kcal", label: "Calorias", unit: "kcal" },
+  { key: "protein", label: "Proteínas", unit: "g" },
+  { key: "carbs", label: "Carboidratos", unit: "g" },
+  { key: "fat", label: "Gorduras", unit: "g" },
+  { key: "fiber", label: "Fibras", unit: "g" },
+  { key: "sodium", label: "Sódio", unit: "mg" },
+  { key: "calcium", label: "Cálcio", unit: "mg" },
+  { key: "iron", label: "Ferro", unit: "mg" },
+] as const satisfies readonly {
+  key: keyof RecipeNutrition
+  label: string
+  unit: string
+}[]
+
 export function RecipeFormDialog({
   open,
   recipe,
@@ -159,9 +178,13 @@ export function RecipeFormDialog({
 
   const addFood = (food: RecipeFood) => {
     if (selectedFoodIds.has(food.id)) return
+    const { measure } = getRecipeFoodUnitPresentation(
+      food.baseAmount,
+      food.baseUnit,
+    )
     setIngredients((current) => [
       ...current,
-      { food, quantity: food.baseAmount, measure: food.baseUnit },
+      { food, quantity: food.baseAmount, measure },
     ])
     setFoodSearch("")
   }
@@ -281,10 +304,14 @@ export function RecipeFormDialog({
                 {foodQuery.data?.length === 0 ? <p className="p-3 text-sm text-[var(--sm-muted)]">Nenhum alimento encontrado.</p> : null}
                 {foodQuery.data?.map((food) => {
                   const alreadyAdded = selectedFoodIds.has(food.id)
+                  const { baseLabel } = getRecipeFoodUnitPresentation(
+                    food.baseAmount,
+                    food.baseUnit,
+                  )
                   return (
                     <button key={food.id} type="button" disabled={alreadyAdded} onClick={() => addFood(food)} aria-label={alreadyAdded ? `${food.name} já adicionado` : `Adicionar ${food.name}`} className="flex min-h-12 w-full items-center justify-between gap-4 px-3 py-2 text-left text-sm transition hover:bg-[var(--sm-subtle-hover)] disabled:cursor-not-allowed disabled:opacity-50">
                       <span className="font-semibold text-[var(--sm-ink)]">{food.name}</span>
-                      <span className="shrink-0 text-xs text-[var(--sm-muted)]">Base: {food.baseAmount} · {food.baseUnit}</span>
+                      <span className="shrink-0 text-xs text-[var(--sm-muted)]">Base: {baseLabel}</span>
                     </button>
                   )
                 })}
@@ -296,7 +323,7 @@ export function RecipeFormDialog({
                 <div key={ingredient.food.id} role="group" aria-label={ingredient.food.name} className="grid gap-3 rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] p-3 sm:grid-cols-[minmax(10rem,1fr)_8rem_9rem_auto] sm:items-end">
                   <div>
                     <p className="font-semibold text-[var(--sm-ink)]">{ingredient.food.name}</p>
-                    <p className="mt-1 text-xs text-[var(--sm-muted)]">Base nutricional: {ingredient.food.baseAmount} · {ingredient.food.baseUnit}</p>
+                    <p className="mt-1 text-xs text-[var(--sm-muted)]">Base nutricional: {getRecipeFoodUnitPresentation(ingredient.food.baseAmount, ingredient.food.baseUnit).baseLabel}</p>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor={`ingredient-quantity-${ingredient.food.id}`}>Quantidade</Label>
@@ -333,7 +360,7 @@ export function RecipeFormDialog({
             <div className="flex flex-wrap items-baseline justify-between gap-2"><h3 id="recipe-preview" className="text-sm font-bold text-[var(--sm-ink)]">Prévia por porção</h3><p className="text-xs text-[var(--sm-muted)]">Feedback visual. A API é a autoridade ao salvar.</p></div>
             {preview ? (
               <dl className="mt-3 grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-4">
-                {Object.entries(preview).map(([key, value]) => <div key={key} className="border-b border-[var(--sm-border)] pb-2"><dt className="text-xs text-[var(--sm-muted)]">{({ kcal: "Calorias", protein: "Proteínas", carbs: "Carboidratos", fat: "Gorduras", fiber: "Fibras", sodium: "Sódio", calcium: "Cálcio", iron: "Ferro" } as Record<string, string>)[key]}</dt><dd className="mt-1 font-bold tabular-nums text-[var(--sm-ink)]">{numberFormat.format(value)} {key === "kcal" ? "kcal" : "g"}</dd></div>)}
+                {PREVIEW_FIELDS.map(({ key, label, unit }) => <div key={key} className="border-b border-[var(--sm-border)] pb-2"><dt className="text-xs text-[var(--sm-muted)]">{label}</dt><dd className="mt-1 font-bold tabular-nums text-[var(--sm-ink)]">{numberFormat.format(preview[key])} {unit}</dd></div>)}
               </dl>
             ) : <p className="mt-3 text-sm text-[var(--sm-muted)]">Adicione ingredientes e informe quantidades válidas para calcular a prévia.</p>}
           </section>

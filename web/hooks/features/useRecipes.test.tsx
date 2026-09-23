@@ -10,7 +10,10 @@ import type { RecipeFormValues, RecipeSummary } from "@/types/recipe"
 import {
   useArchiveRecipe,
   useCreateRecipe,
+  useDuplicateRecipe,
+  useRecipe,
   useRecipes,
+  useRestoreRecipe,
   useUpdateRecipe,
 } from "./useRecipes"
 
@@ -181,6 +184,44 @@ describe("recipe hooks", () => {
     })
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: queryKeys.recipe("nutritionist-one", "recipe-one"),
+    })
+  })
+
+  it("busca o detalhe privado usado pelo histórico", async () => {
+    const detail = { ...recipe, versions: [recipe.currentVersion] }
+    http.onGet("/recipes/recipe-one").reply(200, detail)
+    const { queryClient, wrapper } = createWrapper()
+    const { result } = renderHook(() => useRecipe("recipe-one"), { wrapper })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(result.current.data).toEqual(detail)
+    expect(queryClient.getQueryCache().getAll()[0]?.queryKey).toEqual(
+      queryKeys.recipe("nutritionist-one", "recipe-one"),
+    )
+  })
+
+  it("duplica e restaura invalidando lista, origem e resultado", async () => {
+    const duplicate = { ...recipe, id: "recipe-copy" }
+    const restored = { ...recipe, status: "ACTIVE" as const }
+    http.onPost("/recipes/recipe-one/duplicate").reply(201, duplicate)
+    http.onPatch("/recipes/recipe-one/restore").reply(200, restored)
+    const { queryClient, wrapper } = createWrapper()
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    const duplicateHook = renderHook(() => useDuplicateRecipe(), { wrapper })
+    const restoreHook = renderHook(() => useRestoreRecipe(), { wrapper })
+
+    await duplicateHook.result.current.mutateAsync("recipe-one")
+    await restoreHook.result.current.mutateAsync("recipe-one")
+
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: queryKeys.recipesRoot("nutritionist-one"),
+    })
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: queryKeys.recipe("nutritionist-one", "recipe-one"),
+    })
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: queryKeys.recipe("nutritionist-one", "recipe-copy"),
     })
   })
 })

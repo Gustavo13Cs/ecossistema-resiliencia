@@ -56,12 +56,12 @@ export function RecipeCard({ recipe, pending = false, onEdit, onHistory, onDupli
       </dl>
       <div className="mt-4 min-h-6"><RestrictionBadges recipe={recipe} /></div>
       <div className="mt-auto flex flex-wrap gap-1 border-t border-[var(--sm-border)] pt-4">
-        {!archived ? <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={() => onEdit(recipe)}><Pencil aria-hidden="true" className="size-4" strokeWidth={1.8} />Editar</Button> : null}
-        <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={() => onHistory(recipe)}><History aria-hidden="true" className="size-4" strokeWidth={1.8} />Histórico</Button>
-        <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={() => void onDuplicate(recipe)}><Copy aria-hidden="true" className="size-4" strokeWidth={1.8} />Duplicar</Button>
+        {!archived ? <Button type="button" variant="ghost" size="sm" aria-label={`Editar ${version.name}`} disabled={pending} onClick={() => onEdit(recipe)}><Pencil aria-hidden="true" className="size-4" strokeWidth={1.8} />Editar</Button> : null}
+        <Button type="button" variant="ghost" size="sm" aria-label={`Histórico ${version.name}`} disabled={pending} onClick={() => onHistory(recipe)}><History aria-hidden="true" className="size-4" strokeWidth={1.8} />Histórico</Button>
+        <Button type="button" variant="ghost" size="sm" aria-label={`Duplicar ${version.name}`} disabled={pending} onClick={() => void onDuplicate(recipe)}><Copy aria-hidden="true" className="size-4" strokeWidth={1.8} />Duplicar</Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button type="button" variant="ghost" size="sm" disabled={pending} className="ml-auto text-[var(--sm-muted)] hover:text-[var(--sm-ink)]"><ActionIcon aria-hidden="true" className="size-4" strokeWidth={1.8} />{action}</Button>
+            <Button type="button" variant="ghost" size="sm" aria-label={`${action} ${version.name}`} disabled={pending} className="ml-auto text-[var(--sm-muted)] hover:text-[var(--sm-ink)]"><ActionIcon aria-hidden="true" className="size-4" strokeWidth={1.8} />{action}</Button>
           </AlertDialogTrigger>
           <AlertDialogContent className="border-[var(--sm-border)] bg-[var(--sm-surface)] shadow-[var(--sm-shadow-elevated)]">
             <AlertDialogHeader><AlertDialogTitle>{action} receita?</AlertDialogTitle><AlertDialogDescription>{archived ? `${version.name} voltará a aparecer entre as receitas ativas.` : `${version.name} será preservada no histórico e poderá continuar em planos existentes.`}</AlertDialogDescription></AlertDialogHeader>

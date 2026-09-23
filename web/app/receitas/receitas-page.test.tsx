@@ -77,7 +77,16 @@ const recipe: RecipeSummary = {
     sodium: 180,
     calcium: 60,
     iron: 4,
-    ingredients: [],
+    ingredients: [
+      {
+        id: "ingredient-one",
+        recipeVersionId: "version-one",
+        foodId: "food-one",
+        quantity: 240,
+        measure: "g",
+        food,
+      },
+    ],
     createdAt: "2026-09-20T12:00:00.000Z",
     publishedAt: "2026-09-20T12:00:00.000Z",
   },
@@ -112,7 +121,7 @@ afterEach(() => {
   authState.user = null
 })
 
-describe("ReceitasPage", () => {
+describe("ReceitasPage", { timeout: 15_000 }, () => {
   it("substitui o placeholder por uma biblioteca operacional", async () => {
     http.onGet("/recipes").reply(200, [])
     renderPage()
@@ -205,15 +214,25 @@ describe("ReceitasPage", () => {
     await user.clear(servings)
     await user.type(servings, "4")
     await user.type(screen.getByRole("searchbox", { name: /buscar alimento/i }), "lentilha")
-    await user.click(await screen.findByRole("button", { name: /adicionar lentilha cozida/i }))
+    const foodResult = await screen.findByRole("button", {
+      name: /adicionar lentilha cozida/i,
+    })
+    expect(within(foodResult).getByText("Base: 100 g")).toBeInTheDocument()
+    expect(within(foodResult).queryByText(/100\s*·\s*100\s*g/i)).not.toBeInTheDocument()
+    await user.click(foodResult)
 
     const ingredient = screen.getByRole("group", { name: /lentilha cozida/i })
     const quantity = within(ingredient).getByRole("spinbutton", { name: /quantidade/i })
+    expect(quantity).toHaveValue(100)
     await user.clear(quantity)
     await user.type(quantity, "240")
     const measure = within(ingredient).getByRole("textbox", { name: /medida/i })
-    await user.clear(measure)
-    await user.type(measure, "g")
+    expect(measure).toHaveValue("g")
+
+    const preview = screen.getByRole("region", { name: /prévia por porção/i })
+    expect(within(preview).getByText("1,2 mg")).toBeInTheDocument()
+    expect(within(preview).getByText("11,4 mg")).toBeInTheDocument()
+    expect(within(preview).getByText("2 mg")).toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: /salvar receita/i }))
 
     await waitFor(() => expect(http.history.post).toHaveLength(1))
@@ -225,5 +244,124 @@ describe("ReceitasPage", () => {
     expect(payload).not.toHaveProperty("protein")
     expect(payload).not.toHaveProperty("photo")
     expect(payload).not.toHaveProperty("imageUrl")
+  })
+
+  it("edita criando uma nova versão sem enviar nutrientes", async () => {
+    http.onGet("/recipes").reply(200, [recipe])
+    http.onPatch("/recipes/recipe-one").reply(200, recipe)
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText("Sopa de lentilha")
+
+    await user.click(
+      screen.getByRole("button", { name: /editar sopa de lentilha/i }),
+    )
+    const name = screen.getByRole("textbox", { name: /^nome/i })
+    await user.clear(name)
+    await user.type(name, "Sopa de lentilha cremosa")
+    await user.click(screen.getByRole("button", { name: /salvar receita/i }))
+
+    await waitFor(() => expect(http.history.patch).toHaveLength(1))
+    const payload = JSON.parse(
+      http.history.patch[0]?.data ?? "{}",
+    ) as Record<string, unknown>
+    expect(payload).toMatchObject({
+      name: "Sopa de lentilha cremosa",
+      expectedVersion: 1,
+    })
+    expect(payload).not.toHaveProperty("kcal")
+    expect(payload).not.toHaveProperty("protein")
+  })
+
+  it("duplica a receita pela ação identificada pelo nome", async () => {
+    http.onGet("/recipes").reply(200, [recipe])
+    http.onPost("/recipes/recipe-one/duplicate").reply(201, {
+      ...recipe,
+      id: "recipe-copy",
+    })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText("Sopa de lentilha")
+
+    await user.click(
+      screen.getByRole("button", { name: /duplicar sopa de lentilha/i }),
+    )
+
+    await waitFor(() => expect(http.history.post).toHaveLength(1))
+    expect(http.history.post[0]?.url).toBe("/recipes/recipe-one/duplicate")
+  })
+
+  it("arquiva e restaura a receita com confirmação", async () => {
+    let status: RecipeSummary["status"] = "ACTIVE"
+    http.onGet("/recipes").reply(() => [200, [{ ...recipe, status }]])
+    http.onPatch("/recipes/recipe-one/archive").reply(() => {
+      status = "ARCHIVED"
+      return [200, { ...recipe, status }]
+    })
+    http.onPatch("/recipes/recipe-one/restore").reply(() => {
+      status = "ACTIVE"
+      return [200, { ...recipe, status }]
+    })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText("Sopa de lentilha")
+
+    await user.click(
+      screen.getByRole("button", { name: /arquivar sopa de lentilha/i }),
+    )
+    await user.click(
+      await screen.findByRole("button", { name: /confirmar arquivar/i }),
+    )
+    expect(
+      await screen.findByRole("button", {
+        name: /restaurar sopa de lentilha/i,
+      }),
+    ).toBeEnabled()
+
+    await user.click(
+      screen.getByRole("button", { name: /restaurar sopa de lentilha/i }),
+    )
+    await user.click(
+      await screen.findByRole("button", { name: /confirmar restaurar/i }),
+    )
+
+    await waitFor(() => expect(http.history.patch).toHaveLength(2))
+    expect(http.history.patch.map((request) => request.url)).toEqual([
+      "/recipes/recipe-one/archive",
+      "/recipes/recipe-one/restore",
+    ])
+  })
+
+  it("abre histórico nomeado e mantém versões em somente leitura", async () => {
+    const secondVersion = {
+      ...recipe.currentVersion,
+      id: "version-two",
+      version: 2,
+      name: "Sopa de lentilha cremosa",
+      createdAt: "2026-09-21T12:00:00.000Z",
+    }
+    http.onGet("/recipes").reply(200, [recipe])
+    http.onGet("/recipes/recipe-one").reply(200, {
+      ...recipe,
+      currentVersionId: "version-two",
+      currentVersion: secondVersion,
+      versions: [recipe.currentVersion, secondVersion],
+    })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText("Sopa de lentilha")
+
+    await user.click(
+      screen.getByRole("button", { name: /histórico sopa de lentilha/i }),
+    )
+
+    const dialog = await screen.findByRole("dialog", {
+      name: /histórico da receita/i,
+    })
+    expect(within(dialog).getByText(/versão 2/i)).toBeInTheDocument()
+    expect(within(dialog).getByText(/versão 1/i)).toBeInTheDocument()
+    expect(
+      within(dialog).queryByRole("button", { name: /editar|salvar|excluir/i }),
+    ).not.toBeInTheDocument()
   })
 })
