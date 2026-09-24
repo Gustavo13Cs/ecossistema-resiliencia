@@ -26,6 +26,11 @@ import { useAuth } from "@/contexts/auth-context"
 import { useClientRecord, type ClientRecordStatus } from "@/hooks/features/useClientRecord"
 import { useQueryClient } from "@tanstack/react-query"
 import { invalidatePatientDiet } from "@/lib/query-invalidation"
+import { RecipePicker } from "@/components/features/diet/RecipePickerPanel"
+import { buildShoppingList, getMealItemNutrition, hydrateMealItem, toMealItemPayload } from "@/lib/diet-meal-items"
+import type { ApiMealItem, DietMeal, DietMealItem, FoodNutrition } from "@/types/diet"
+import type { RecipeVersion } from "@/types/recipe"
+import { useRecipe } from "@/hooks/features/useRecipes"
 import {
   consumeLegacyDietDraft,
   discardLegacyDietDraft,
@@ -88,6 +93,13 @@ const CLIENT_GATE_ERRORS: Record<Exclude<ClientRecordStatus, "loading" | "ready"
   },
 }
 
+function RecipeVersionUpdate({ item, onUpdate }: { item: Extract<DietMealItem, { kind: "RECIPE" }>; onUpdate: (version: RecipeVersion) => void }) {
+  const recipe = useRecipe(item.recipeVersion.recipeId)
+  const current = recipe.data?.status === "ACTIVE" ? recipe.data.currentVersion : null
+  if (!current || current.id === item.recipeVersion.id) return null
+  return <Button type="button" size="sm" variant="outline" className="mt-2 print:hidden" onClick={() => onUpdate(current)}>Atualizar {item.recipeVersion.name} para versão {current.version}</Button>
+}
+
 export default function NovaDietaPage() {
   const params = useParams()
   const router = useRouter()
@@ -121,17 +133,18 @@ export default function NovaDietaPage() {
   iron: 15 
   })
 
-  const [meals, setMeals] = useState([
-    { id: `m${Date.now()}`, name: "Café da Manhã", time: "08:00", notes: "", items: [] as any[] }
+  const [meals, setMeals] = useState<DietMeal[]>([
+    { id: `m${Date.now()}`, name: "Café da Manhã", time: "08:00", notes: "", items: [] }
   ])
 
   const [activeMealId, setActiveMealId] = useState<string | null>(null)
+  const [pickerTab, setPickerTab] = useState<"FOOD" | "RECIPE">("FOOD")
   const [searchTerm, setSearchTerm] = useState("")
   const [isSearching, setIsSearching] = useState(false)
   const [amountToAdd, setAmountToAdd] = useState(100)
   
   const [selectedSource, setSelectedSource] = useState("TODAS")
-  const [availableFoods, setAvailableFoods] = useState<any[]>([])
+  const [availableFoods, setAvailableFoods] = useState<FoodNutrition[]>([])
   const [isCreatingManual, setIsCreatingManual] = useState(false)
   const [editingFoodId, setEditingFoodId] = useState<string | null>(null)
 
@@ -180,9 +193,9 @@ export default function NovaDietaPage() {
           calcium: res.data.calciumMg || defaultDri.calcium,
           iron: res.data.ironMg || defaultDri.iron
         })
-        setMeals(res.data.meals.map((m: any) => ({
+        setMeals(res.data.meals.map((m: { id: string; name: string; time: string; notes: string | null; items: ApiMealItem[] }) => ({
           id: m.id, name: m.name, time: m.time, notes: m.notes || "",
-          items: m.items.map((i: any) => ({ id: i.id, quantity: i.quantity, measure: i.measure || "", food: i.food }))
+          items: m.items.map(hydrateMealItem)
         })))
       } else {
         setTargets(prev => ({ ...prev, ...defaultDri }));
@@ -208,7 +221,7 @@ export default function NovaDietaPage() {
     legacyDraftApplied.current = true
     setDietInfo(consumedDraft.dietInfo)
     setTargets(consumedDraft.targets)
-    setMeals(consumedDraft.meals)
+    setMeals(consumedDraft.meals.map((meal) => ({ ...meal, items: meal.items.map((item) => ({ ...item, kind: "FOOD" as const, food: { ...item.food, baseUnit: "g" } })) })))
     setLegacyDraftState({ clientId, value: null })
   }
 
@@ -246,14 +259,9 @@ export default function NovaDietaPage() {
   const currentTotals = useMemo(() => {
   let kcal = 0, pro = 0, carb = 0, fat = 0, fiber = 0, sodium = 0, calcium = 0, iron = 0
   meals.forEach(meal => meal.items.forEach(item => {
-    kcal += calcMacro(item.food.kcal, item.food.baseAmount, item.quantity)
-    pro += calcMacro(item.food.protein, item.food.baseAmount, item.quantity)
-    carb += calcMacro(item.food.carbs, item.food.baseAmount, item.quantity)
-    fat += calcMacro(item.food.fat, item.food.baseAmount, item.quantity)
-    fiber += calcMacro(item.food.fiber || 0, item.food.baseAmount, item.quantity)
-    sodium += calcMacro(item.food.sodium || 0, item.food.baseAmount, item.quantity)
-    calcium += calcMacro(item.food.calcium || 0, item.food.baseAmount, item.quantity)
-    iron += calcMacro(item.food.iron || 0, item.food.baseAmount, item.quantity)
+    const nutrition = getMealItemNutrition(item)
+    kcal += nutrition.kcal; pro += nutrition.protein; carb += nutrition.carbs; fat += nutrition.fat
+    fiber += nutrition.fiber; sodium += nutrition.sodium; calcium += nutrition.calcium; iron += nutrition.iron
   }))
   return { kcal, pro, carb, fat, fiber, sodium, calcium, iron }
   }, [meals])
@@ -264,31 +272,21 @@ export default function NovaDietaPage() {
     { name: 'Lipídios', value: currentTotals.fat * 9, color: '#f59e0b' },
   ], [currentTotals])
 
-  const getMealTotals = (items: any[]) => {
+  const getMealTotals = (items: DietMealItem[]) => {
     let kcal = 0, pro = 0, carb = 0, fat = 0
     items.forEach(item => {
-      kcal += calcMacro(item.food.kcal, item.food.baseAmount, item.quantity)
-      pro += calcMacro(item.food.protein, item.food.baseAmount, item.quantity)
-      carb += calcMacro(item.food.carbs, item.food.baseAmount, item.quantity)
-      fat += calcMacro(item.food.fat, item.food.baseAmount, item.quantity)
+      const nutrition = getMealItemNutrition(item)
+      kcal += nutrition.kcal; pro += nutrition.protein; carb += nutrition.carbs; fat += nutrition.fat
     })
     return { kcal: Math.round(kcal), pro: Math.round(pro), carb: Math.round(carb), fat: Math.round(fat) }
   }
 
-  const shoppingList = useMemo(() => {
-    const list: Record<string, number> = {}
-    meals.forEach(meal => meal.items.forEach(item => {
-      const name = item.food.name
-      if(!list[name]) list[name] = 0
-      list[name] += (item.quantity * shoppingDays)
-    }))
-    return Object.entries(list).map(([name, qty]) => ({ name, qty })).sort((a,b) => b.qty - a.qty)
-  }, [meals, shoppingDays])
+  const shoppingList = useMemo(() => buildShoppingList(meals.flatMap((meal) => meal.items), shoppingDays), [meals, shoppingDays])
 
   const addMeal = () => setMeals([...meals, { id: `m${Date.now()}`, name: "Nova Refeição", time: "12:00", notes: "", items: [] }])
   const removeMeal = (id: string) => setMeals(meals.filter(m => m.id !== id))
   
-  const addFoodToMeal = async (food: any, quantity: number | string = amountToAdd) => {
+  const addFoodToMeal = async (food: FoodNutrition, quantity: number | string = amountToAdd) => {
     if (!activeMealId) return
     
     const safeQty = Number(quantity) || 0
@@ -296,7 +294,7 @@ export default function NovaDietaPage() {
     
     const itemJaNaTela = meals
       .flatMap(m => m.items)
-      .find(i => i.food.id === food.id && Number(i.quantity) === safeQty && i.measure && i.measure.trim() !== "" && i.measure !== "g")
+      .find(i => i.kind === "FOOD" && i.food.id === food.id && Number(i.quantity) === safeQty && i.measure && i.measure.trim() !== "" && i.measure !== "g")
       
     if (itemJaNaTela) {
       savedMeasure = itemJaNaTela.measure
@@ -311,12 +309,23 @@ export default function NovaDietaPage() {
       }
     }
 
-    const newItem = { id: `i${Date.now()}`, quantity: safeQty, measure: savedMeasure, food }
+    const newItem: DietMealItem = { kind: "FOOD", id: `i${Date.now()}`, quantity: safeQty, measure: savedMeasure, food }
     setMeals(meals.map(m => m.id === activeMealId ? { ...m, items: [...m.items, newItem] } : m))
     closeModal()
   }
 
-  const updateItemValue = (mealId: string, itemId: string, field: 'quantity' | 'measure', value: any) => {
+  const addRecipeToMeal = (version: RecipeVersion, servings: number) => {
+    if (!activeMealId) return
+    const newItem: DietMealItem = { kind: "RECIPE", id: `i${Date.now()}`, quantity: servings, measure: "porções", recipeVersion: { ...version, recipe: { id: version.recipeId, currentVersionId: version.id, status: "ACTIVE" } } }
+    setMeals((previous) => previous.map((meal) => meal.id === activeMealId ? { ...meal, items: [...meal.items, newItem] } : meal))
+    closeModal()
+  }
+
+  const updateRecipeVersion = (mealId: string, item: Extract<DietMealItem, { kind: "RECIPE" }>, currentVersion: RecipeVersion) => {
+    setMeals((previous) => previous.map((meal) => meal.id === mealId ? { ...meal, items: meal.items.map((entry) => entry.id === item.id ? { ...item, recipeVersion: { ...currentVersion, recipe: { id: item.recipeVersion.recipeId, currentVersionId: currentVersion.id, status: "ACTIVE" as const } } } : entry) } : meal))
+  }
+
+  const updateItemValue = (mealId: string, itemId: string, field: 'quantity' | 'measure', value: number | string) => {
     setMeals(meals.map(m => {
       if (m.id !== mealId) return m;
       return {
@@ -326,7 +335,7 @@ export default function NovaDietaPage() {
           if (field === 'quantity') {
             const newQty = Number(value) || 0;
             if (newQty !== Number(i.quantity)) {
-              return { ...i, quantity: newQty, measure: "" }; 
+              return { ...i, quantity: newQty, measure: i.kind === "RECIPE" ? "porções" : "" };
             }
           }
           
@@ -344,7 +353,7 @@ export default function NovaDietaPage() {
     try { await api.delete(`/foods/${foodId}`); setAvailableFoods(availableFoods.filter(f => f.id !== foodId)); toast.success("Apagado!") } catch (error) {}
   }
 
-  const handleEditFood = (e: React.MouseEvent, food: any) => {
+  const handleEditFood = (e: React.MouseEvent, food: FoodNutrition) => {
     e.stopPropagation()
     setEditingFoodId(food.id)
     setNewFood({ name: food.name, kcal: food.kcal, pro: food.protein, carb: food.carbs, fat: food.fat, fiber: food.fiber || 0, sodium: food.sodium || 0, calcium: food.calcium || 0, iron: food.iron || 0 })
@@ -381,8 +390,8 @@ export default function NovaDietaPage() {
     } catch (error) {}
   }
 
-  const closeModal = () => { setActiveMealId(null); setSearchTerm(""); setAmountToAdd(100); setIsCreatingManual(false); setEditingFoodId(null) }
-  const formatQty = (qty: number) => qty >= 1000 ? `${(qty/1000).toFixed(1)} kg` : `${qty} g`
+  const closeModal = () => { setActiveMealId(null); setPickerTab("FOOD"); setSearchTerm(""); setAmountToAdd(100); setIsCreatingManual(false); setEditingFoodId(null) }
+  const formatQty = (qty: number, measure: string) => measure === "g" && qty >= 1000 ? `${(qty/1000).toFixed(1)} kg` : `${Number(qty.toFixed(1))} ${measure}`
 
   const handleOpenShareModal = () => {
     setShoppingDays(dietInfo.durationDays) 
@@ -394,7 +403,7 @@ export default function NovaDietaPage() {
     text += `*📋 Fase:* ${dietInfo.title}\n`
     text += `*🎯 Objetivo:* ${dietInfo.goal}\n\n`
     text += `🛒 *Lista de Compras (${shoppingDays} dias):*\n`
-    shoppingList.forEach(item => { text += `• ${item.name}: ${formatQty(item.qty)}\n` })
+    shoppingList.forEach(item => { text += `• ${item.name}: ${formatQty(item.qty, item.measure)}\n` })
     text += "\nLembre-se de verificar o PDF da dieta que enviarei logo abaixo! 💪"
     
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
@@ -450,6 +459,9 @@ export default function NovaDietaPage() {
         notes: m.notes || "",
         items: (m.items || []).map((i: any) => {
           let scaledQty = i.quantity * scaleFactor
+          if (i.recipeVersion) {
+            return { kind: "RECIPE" as const, id: `i${Date.now()}_${Math.random()}`, quantity: Math.max(0.5, Math.round(scaledQty * 2) / 2), measure: "porções", recipeVersion: i.recipeVersion }
+          }
           const measureLower = (i.measure || "").toLowerCase()
           if (measureLower === "g" || measureLower === "ml") {
             scaledQty = Math.max(5, Math.round(scaledQty / 5) * 5)
@@ -458,16 +470,22 @@ export default function NovaDietaPage() {
           }
 
           return {
+            kind: "FOOD" as const,
             id: `i${Date.now()}_${Math.random()}`,
             quantity: scaledQty,
             measure: i.measure || "g",
             food: i.food || {
               id: i.foodId || "food-custom",
               name: i.name || "Alimento",
+              baseUnit: "g",
               kcal: 100,
               protein: 5,
               carbs: 10,
               fat: 2,
+              fiber: 0,
+              sodium: 0,
+              calcium: 0,
+              iron: 0,
               baseAmount: 100,
             },
           }
@@ -502,11 +520,7 @@ export default function NovaDietaPage() {
         notes: dietInfo.notes,
         meals: meals.map(m => ({ 
           name: m.name, time: m.time, notes: m.notes, 
-          items: m.items.map(item => ({ 
-            quantity: Number(item.quantity) || 0, 
-            measure: item.measure || "", 
-            foodId: item.food.id 
-          }))
+          items: m.items.map(toMealItemPayload)
         }))
       }
       await api.post('/diet-plans', payload)
@@ -730,22 +744,28 @@ export default function NovaDietaPage() {
                              <div className="flex flex-col gap-1 w-28 print:w-auto shrink-0">
                                 <div className="flex items-center gap-1 print:hidden">
                                   {/* ­ƒîƒ BLINDAGEM PERFEITA: O Input s├│ usa "" no value, mas converte sempre para Number no onChange */}
-                                  <Input type="number" value={item.quantity || ""} onChange={(e) => updateItemValue(meal.id, item.id, 'quantity', Number(e.target.value))} className="h-8 text-center px-1 font-bold text-slate-700" />
-                                  <span className="text-xs font-bold text-slate-400">g</span>
+                                  <Input type="number" min={item.kind === "RECIPE" ? 0.5 : 0.1} step={item.kind === "RECIPE" ? 0.5 : 1} aria-label={`Quantidade de ${item.kind === "RECIPE" ? item.recipeVersion.name : item.food.name}`} value={item.quantity || ""} onChange={(e) => updateItemValue(meal.id, item.id, 'quantity', Number(e.target.value))} className="h-8 text-center px-1 font-bold text-slate-700" />
+                                  <span className="text-xs font-bold text-slate-400">{item.kind === "RECIPE" ? "porções" : "g"}</span>
                                 </div>
                                 <Input placeholder="Medida Caseira" value={item.measure || ""} onChange={(e) => updateItemValue(meal.id, item.id, 'measure', e.target.value)} className="h-7 text-[10px] px-2 bg-slate-50 border-dashed print:hidden" />
                               
-                                <div className="hidden print:block font-bold text-slate-700 text-sm">{item.quantity}g</div>
+                                <div className="hidden print:block font-bold text-slate-700 text-sm">{item.quantity} {item.kind === "RECIPE" ? "porções" : "g"}</div>
                                 {item.measure && <div className="hidden print:block text-xs text-slate-500 italic">{item.measure}</div>}
                              </div>
 
                              <div className="flex flex-col flex-1 pt-1">
-                                <span className="font-semibold text-slate-700 leading-tight">{item.food.name}</span>
+                                <span className="font-semibold text-slate-700 leading-tight">{item.kind === "RECIPE" ? item.recipeVersion.name : item.food.name}</span>
+                                {item.kind === "RECIPE" && <div className="text-xs text-teal-700">Versão {item.recipeVersion.version}</div>}
+                                {item.kind === "RECIPE" && <div className="hidden print:block text-xs text-slate-600">
+                                  <p>Ingredientes: {item.recipeVersion.ingredients.map((ingredient) => `${ingredient.food.name} ${formatQty(ingredient.quantity * item.quantity / item.recipeVersion.servings, ingredient.measure)}`).join(", ")}</p>
+                                  {item.recipeVersion.instructions && <p>{item.recipeVersion.instructions}</p>}
+                                </div>}
+                                {item.kind === "RECIPE" && item.recipeVersion.recipe?.status === "ACTIVE" && item.recipeVersion.recipe.currentVersionId !== item.recipeVersion.id && <RecipeVersionUpdate item={item} onUpdate={(version) => updateRecipeVersion(meal.id, item, version)} />}
                                 <span className="text-xs text-slate-400 font-medium mt-1 print:hidden flex items-center gap-2">
-                                  <span className="bg-slate-100 px-1.5 py-0.5 rounded">{calcMacro(item.food.kcal, item.food.baseAmount, item.quantity)} kcal</span>
-                                  <span className="text-rose-500">P: {calcMacro(item.food.protein, item.food.baseAmount, item.quantity)}g</span>
-                                  <span className="text-emerald-500">C: {calcMacro(item.food.carbs, item.food.baseAmount, item.quantity)}g</span>
-                                  <span className="text-amber-500">G: {calcMacro(item.food.fat, item.food.baseAmount, item.quantity)}g</span>
+                                  <span className="bg-slate-100 px-1.5 py-0.5 rounded">{getMealItemNutrition(item).kcal} kcal</span>
+                                  <span className="text-rose-500">P: {getMealItemNutrition(item).protein}g</span>
+                                  <span className="text-emerald-500">C: {getMealItemNutrition(item).carbs}g</span>
+                                  <span className="text-amber-500">G: {getMealItemNutrition(item).fat}g</span>
                                 </span>
                              </div>
                           </div>
@@ -755,7 +775,7 @@ export default function NovaDietaPage() {
                       ))}
                     </div>
                     <div className="p-4 bg-slate-50/30 flex flex-col gap-3 print:hidden border-t border-slate-100">
-                      <Button variant="outline" className="w-full border-dashed text-teal-600 bg-white" onClick={() => setActiveMealId(meal.id)}><Search className="w-4 h-4 mr-2" /> Buscar e Adicionar Alimento</Button>
+                      <Button variant="outline" className="w-full border-dashed text-teal-600 bg-white" onClick={() => setActiveMealId(meal.id)}><Search className="w-4 h-4 mr-2" /> Buscar e Adicionar Alimento ou Receita</Button>
                       <textarea value={meal.notes || ""} onChange={(e) => { const n = [...meals]; n[index].notes = e.target.value; setMeals(n) }} placeholder='Observações ou modo de preparo desta refeição...' className="w-full min-h-[60px] p-3 text-sm border rounded-lg resize-none focus:ring-1 focus:ring-teal-500 outline-none" />
                     </div>
                     {meal.notes && <div className="hidden print:block p-3 mx-4 mb-4 mt-2 bg-slate-50 text-slate-600 text-sm rounded border border-slate-200 italic">📌 {meal.notes}</div>}
@@ -868,7 +888,7 @@ export default function NovaDietaPage() {
                 <span className="font-bold text-slate-800 text-lg">{item.name}</span>
               </div>
               <span className="font-black text-teal-700 text-lg bg-teal-50 px-3 py-1 rounded-lg border border-teal-100">
-                {formatQty(item.qty)}
+                {formatQty(item.qty, item.measure)}
               </span>
             </div>
           ))}
@@ -909,15 +929,22 @@ export default function NovaDietaPage() {
       {activeMealId && (
         <>
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40" onClick={closeModal}></div>
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl bg-white rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]">
+          <div role="dialog" aria-modal="true" aria-label="Adicionar alimento ou receita" onKeyDown={(event) => { if (event.key === "Escape") closeModal() }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl bg-white rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-5 border-b bg-slate-50">
               <div className="flex justify-between mb-4">
-                <h3 className="font-bold flex items-center gap-2"><Database className="w-5 h-5 text-teal-600" /> {isCreatingManual ? (editingFoodId ? "Editar Alimento" : "Criar Alimento") : "Banco de Alimentos"}</h3>
-                <Button variant="outline" size="sm" onClick={() => { setIsCreatingManual(!isCreatingManual); setEditingFoodId(null); setNewFood({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 })}} className="text-teal-600">
-                  {isCreatingManual ? "Voltar para Busca" : "Cadastrar Manualmente"}
-                </Button>
+                <h3 className="font-bold flex items-center gap-2"><Database className="w-5 h-5 text-teal-600" /> {isCreatingManual ? (editingFoodId ? "Editar Alimento" : "Criar Alimento") : "Banco de Alimentos e Receitas"}</h3>
+                <div className="flex items-center gap-2">
+                  {pickerTab === "FOOD" && <Button variant="outline" size="sm" onClick={() => { setIsCreatingManual(!isCreatingManual); setEditingFoodId(null); setNewFood({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 })}} className="text-teal-600">
+                    {isCreatingManual ? "Voltar para Busca" : "Cadastrar Manualmente"}
+                  </Button>}
+                  <Button variant="ghost" size="icon" aria-label="Fechar seletor" onClick={closeModal}><X className="h-4 w-4" /></Button>
+                </div>
               </div>
-              {!isCreatingManual && (
+              {!isCreatingManual && <div role="tablist" aria-label="Tipo de item" className="flex gap-2 mb-3">
+                <Button role="tab" aria-selected={pickerTab === "FOOD"} variant={pickerTab === "FOOD" ? "default" : "outline"} onClick={() => setPickerTab("FOOD")}>Alimentos</Button>
+                <Button role="tab" aria-selected={pickerTab === "RECIPE"} variant={pickerTab === "RECIPE" ? "default" : "outline"} onClick={() => setPickerTab("RECIPE")}>Receitas</Button>
+              </div>}
+              {!isCreatingManual && pickerTab === "FOOD" && (
                 <>
                   <div className="flex gap-2 mb-3">
                     {["TODAS", "TACO", "IBGE", "TBCA", "MANUAL"].map(s => (
@@ -938,7 +965,7 @@ export default function NovaDietaPage() {
               )}
             </div>
             <div className="overflow-y-auto flex-1">
-              {isCreatingManual ? (
+              {pickerTab === "RECIPE" ? <RecipePicker onSelect={addRecipeToMeal} /> : isCreatingManual ? (
                 <div className="p-6 space-y-6">
                   <div className="space-y-2">
                     <Label className="text-slate-600">Nome do Alimento / Receita <span className="text-rose-500">*</span></Label>
@@ -976,7 +1003,7 @@ export default function NovaDietaPage() {
                       <div>
                         <div className="flex gap-2 mb-1 items-center">
                           <p className="font-bold text-slate-800">{food.name}</p>
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-sm ${getSourceBadgeColor(food.source)}`}>{food.source || 'MANUAL'}</span>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-sm ${getSourceBadgeColor(food.source ?? "MANUAL")}`}>{food.source || 'MANUAL'}</span>
                         </div>
                         <p className="text-sm font-medium text-slate-500">
                           {calcMacro(food.kcal, food.baseAmount, amountToAdd)} kcal | 
