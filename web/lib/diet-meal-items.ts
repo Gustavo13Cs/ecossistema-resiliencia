@@ -32,9 +32,10 @@ export function buildShoppingList(items: DietMealItem[], days: number): Shopping
   const list = new Map<string, ShoppingListItem>()
   const unit = (baseUnit: string, fallback: string) => baseUnit.toLowerCase().includes("ml") ? "ml" : baseUnit.toLowerCase().includes("g") ? "g" : fallback
   const add = (foodId: string, name: string, quantity: number, measure: string) => {
-    const existing = list.get(foodId)
+    const key = JSON.stringify([foodId, measure])
+    const existing = list.get(key)
     if (existing) existing.qty += quantity
-    else list.set(foodId, { foodId, name, qty: quantity, measure })
+    else list.set(key, { foodId, name, qty: quantity, measure })
   }
   for (const item of items) {
     if (item.kind === "FOOD") {

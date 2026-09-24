@@ -34,4 +34,28 @@ describe("diet meal items", () => {
       { foodId: "oat", name: "Aveia", qty: 200, measure: "g" },
     ])
   })
+
+  it("keeps the same foodId on separate rows when normalized units differ", () => {
+    const recipeWithSpoons: RecipeMealItem = {
+      ...recipeItem,
+      quantity: 1,
+      recipeVersion: {
+        ...recipeVersion,
+        servings: 1,
+        ingredients: [{
+          id: "ingredient-spoon",
+          recipeVersionId: recipeVersion.id,
+          foodId: food.id,
+          food: { ...food, baseUnit: "tbsp" },
+          quantity: 2,
+          measure: "colher",
+        }],
+      },
+    }
+
+    expect(buildShoppingList([foodItem, recipeWithSpoons], 1)).toEqual([
+      { foodId: "oat", name: "Aveia", qty: 50, measure: "g" },
+      { foodId: "oat", name: "Aveia", qty: 2, measure: "colher" },
+    ])
+  })
 })
