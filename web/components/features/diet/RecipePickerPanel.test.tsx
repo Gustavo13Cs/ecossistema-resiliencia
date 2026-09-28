@@ -22,7 +22,11 @@ describe("RecipePickerPanel", () => {
     await user.type(screen.getByRole("searchbox", { name: "Buscar receitas" }), "panqueca")
     await user.clear(screen.getByRole("spinbutton", { name: "Porções de Panqueca de aveia" }))
     await user.type(screen.getByRole("spinbutton", { name: "Porções de Panqueca de aveia" }), "1.5")
-    await user.click(screen.getByRole("button", { name: "Adicionar Panqueca de aveia" }))
+    const servingsInput = screen.getByRole("spinbutton", { name: "Porções de Panqueca de aveia" })
+    const addButton = screen.getByRole("button", { name: "Adicionar Panqueca de aveia" })
+    expect(servingsInput).toHaveClass("min-h-11")
+    expect(addButton).toHaveClass("min-h-11")
+    await user.click(addButton)
     expect(onSelect).toHaveBeenCalledWith(version, 1.5)
   })
 

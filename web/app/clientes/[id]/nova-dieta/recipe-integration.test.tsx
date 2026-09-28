@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import AxiosMockAdapter from "axios-mock-adapter"
@@ -28,6 +28,35 @@ beforeEach(() => {
 })
 afterEach(cleanup)
 describe("recipe prescription page", () => {
+  it("opens the item picker with a semantic title and description", async () => {
+    const user = userEvent.setup()
+    renderPage()
+    expect(await screen.findByText("Versão 1")).toBeInTheDocument()
+    const trigger = await screen.findByRole("button", { name: "Buscar e Adicionar Alimento ou Receita" })
+    await user.click(trigger)
+
+    const dialog = await screen.findByRole("dialog", { name: "Banco de Alimentos e Receitas" })
+    expect(dialog).toHaveAttribute("aria-labelledby")
+    expect(dialog).toHaveAccessibleDescription("Escolha um alimento ou receita para adicionar à refeição selecionada.")
+  })
+
+  it("moves and traps focus, locks page scrolling, then restores trigger focus", async () => {
+    const user = userEvent.setup()
+    renderPage()
+    expect(await screen.findByText("Versão 1")).toBeInTheDocument()
+    const trigger = await screen.findByRole("button", { name: "Buscar e Adicionar Alimento ou Receita" })
+    await user.click(trigger)
+
+    const dialog = await screen.findByRole("dialog", { name: "Banco de Alimentos e Receitas" })
+    expect(dialog).toContainElement(document.activeElement as HTMLElement)
+    expect(document.body).toHaveStyle({ overflow: "hidden" })
+    await user.keyboard("{Shift>}{Tab}{/Shift}")
+    expect(dialog).toContainElement(document.activeElement as HTMLElement)
+
+    await user.click(within(dialog).getByRole("button", { name: "Fechar seletor" }))
+    await waitFor(() => expect(trigger).toHaveFocus())
+  })
+
   it("shows the saved version and updates only in memory until Finalizar", async () => {
     const user = userEvent.setup()
     http.onPost("/diet-plans").reply(201, {})

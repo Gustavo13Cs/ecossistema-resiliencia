@@ -28,8 +28,8 @@ export function RecipePickerPanel({ recipes, onSelect, isLoading, isError, onRet
 
   return <div className="space-y-3 p-4">
     <div className="flex flex-wrap gap-2">
-      <Input type="search" aria-label="Buscar receitas" placeholder="Buscar receitas" value={query} onChange={(event) => setQuery(event.target.value)} className="min-w-40 flex-1" />
-      <select aria-label="Categoria de receitas" value={category} onChange={(event) => setCategory(event.target.value)} className="h-10 rounded-md border border-[var(--sm-border)] bg-[var(--sm-surface)] px-3 text-sm">
+      <Input type="search" aria-label="Buscar receitas" placeholder="Buscar receitas" value={query} onChange={(event) => setQuery(event.target.value)} className="min-h-11 min-w-40 flex-1" />
+      <select aria-label="Categoria de receitas" value={category} onChange={(event) => setCategory(event.target.value)} className="min-h-11 rounded-md border border-[var(--sm-border)] bg-[var(--sm-surface)] px-3 text-sm">
         <option value="">Todas as categorias</option>
         <option value="BREAKFAST">Café da manhã</option><option value="MAIN_MEAL">Refeição principal</option>
         <option value="SNACK">Lanche</option><option value="DESSERT">Sobremesa</option>
@@ -46,8 +46,8 @@ export function RecipePickerPanel({ recipes, onSelect, isLoading, isError, onRet
         return <div key={recipe.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--sm-border)] p-3">
           <div><p className="font-semibold text-[var(--sm-ink)]">{version.name}</p><p className="text-xs text-[var(--sm-muted)]">Versão {version.version} · {version.kcal} kcal por porção</p></div>
           <div className="flex items-center gap-2">
-            <Input type="number" min="0.5" step="0.5" aria-label={`Porções de ${version.name}`} value={servings[recipe.id] ?? "1"} onChange={(event) => setServings((previous) => ({ ...previous, [recipe.id]: event.target.value }))} className="w-20" />
-            <Button disabled={!Number.isFinite(amount) || amount < 0.5 || amount % 0.5 !== 0} onClick={() => onSelect(version, amount)} aria-label={`Adicionar ${version.name}`}>Adicionar</Button>
+            <Input type="number" min="0.5" step="0.5" aria-label={`Porções de ${version.name}`} value={servings[recipe.id] ?? "1"} onChange={(event) => setServings((previous) => ({ ...previous, [recipe.id]: event.target.value }))} className="min-h-11 w-20" />
+            <Button type="button" className="min-h-11" disabled={!Number.isFinite(amount) || amount < 0.5 || amount % 0.5 !== 0} onClick={() => onSelect(version, amount)} aria-label={`Adicionar ${version.name}`}>Adicionar</Button>
           </div>
         </div>
       })}

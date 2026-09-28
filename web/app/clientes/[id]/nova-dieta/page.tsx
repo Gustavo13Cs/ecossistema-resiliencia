@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   AlertDialog,
@@ -138,6 +139,7 @@ export default function NovaDietaPage() {
   ])
 
   const [activeMealId, setActiveMealId] = useState<string | null>(null)
+  const itemPickerTriggerRef = useRef<HTMLButtonElement | null>(null)
   const [pickerTab, setPickerTab] = useState<"FOOD" | "RECIPE">("FOOD")
   const [searchTerm, setSearchTerm] = useState("")
   const [isSearching, setIsSearching] = useState(false)
@@ -610,14 +612,14 @@ export default function NovaDietaPage() {
       
       <div className={`w-full px-6 md:px-12 lg:px-20 mx-auto space-y-6 print:px-0 print:max-w-4xl print:space-y-0 ${printMode === 'list' ? 'print:hidden' : 'print:block'}`}>
         
-        <div className="flex items-center justify-between mb-4 print:hidden">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4 print:hidden">
           <div className="flex items-center gap-4">
             <Link href={`/clientes/${params.id}`}><Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-200"><ArrowLeft className="w-5 h-5 text-slate-600" /></Button></Link>
             <div>
               <div className="flex items-center gap-3"><h1 className="text-3xl font-bold text-slate-800">Prescrição Dietética</h1></div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button onClick={handleOpenTemplateModal} variant="outline" className="h-12 border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 font-bold">
               <Bookmark className="w-5 h-5 mr-2" /> Usar Template
             </Button>
@@ -775,7 +777,10 @@ export default function NovaDietaPage() {
                       ))}
                     </div>
                     <div className="p-4 bg-slate-50/30 flex flex-col gap-3 print:hidden border-t border-slate-100">
-                      <Button variant="outline" className="w-full border-dashed text-teal-600 bg-white" onClick={() => setActiveMealId(meal.id)}><Search className="w-4 h-4 mr-2" /> Buscar e Adicionar Alimento ou Receita</Button>
+                      <Button ref={itemPickerTriggerRef} variant="outline" className="h-auto min-h-11 w-full whitespace-normal border-dashed text-teal-600 bg-white" onClick={(event) => {
+                        itemPickerTriggerRef.current = event.currentTarget
+                        setActiveMealId(meal.id)
+                      }}><Search className="w-4 h-4 mr-2" /> Buscar e Adicionar Alimento ou Receita</Button>
                       <textarea value={meal.notes || ""} onChange={(e) => { const n = [...meals]; n[index].notes = e.target.value; setMeals(n) }} placeholder='Observações ou modo de preparo desta refeição...' className="w-full min-h-[60px] p-3 text-sm border rounded-lg resize-none focus:ring-1 focus:ring-teal-500 outline-none" />
                     </div>
                     {meal.notes && <div className="hidden print:block p-3 mx-4 mb-4 mt-2 bg-slate-50 text-slate-600 text-sm rounded border border-slate-200 italic">📌 {meal.notes}</div>}
@@ -926,27 +931,29 @@ export default function NovaDietaPage() {
         </>
       )}
 
-      {activeMealId && (
-        <>
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40" onClick={closeModal}></div>
-          <div role="dialog" aria-modal="true" aria-label="Adicionar alimento ou receita" onKeyDown={(event) => { if (event.key === "Escape") closeModal() }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl bg-white rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-5 border-b bg-slate-50">
-              <div className="flex justify-between mb-4">
-                <h3 className="font-bold flex items-center gap-2"><Database className="w-5 h-5 text-teal-600" /> {isCreatingManual ? (editingFoodId ? "Editar Alimento" : "Criar Alimento") : "Banco de Alimentos e Receitas"}</h3>
+      <Dialog open={activeMealId !== null} onOpenChange={(open) => { if (!open) closeModal() }}>
+        <DialogContent showCloseButton={false} onCloseAutoFocus={(event) => {
+          event.preventDefault()
+          itemPickerTriggerRef.current?.focus()
+        }} className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden rounded-2xl bg-white p-0 shadow-2xl sm:max-w-3xl">
+            <div className="shrink-0 border-b bg-slate-50 p-5">
+              <div className="mb-4 flex flex-wrap justify-between gap-3">
+                <DialogTitle className="flex items-center gap-2 font-bold"><Database className="h-5 w-5 text-teal-600" /> {isCreatingManual ? (editingFoodId ? "Editar Alimento" : "Criar Alimento") : "Banco de Alimentos e Receitas"}</DialogTitle>
                 <div className="flex items-center gap-2">
                   {pickerTab === "FOOD" && <Button variant="outline" size="sm" onClick={() => { setIsCreatingManual(!isCreatingManual); setEditingFoodId(null); setNewFood({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 })}} className="text-teal-600">
                     {isCreatingManual ? "Voltar para Busca" : "Cadastrar Manualmente"}
                   </Button>}
-                  <Button variant="ghost" size="icon" aria-label="Fechar seletor" onClick={closeModal}><X className="h-4 w-4" /></Button>
+                  <DialogClose asChild><Button type="button" variant="ghost" size="icon" aria-label="Fechar seletor" className="min-h-11 min-w-11"><X className="h-4 w-4" /></Button></DialogClose>
                 </div>
               </div>
+              <DialogDescription className="sr-only">Escolha um alimento ou receita para adicionar à refeição selecionada.</DialogDescription>
               {!isCreatingManual && <div role="tablist" aria-label="Tipo de item" className="flex gap-2 mb-3">
                 <Button role="tab" aria-selected={pickerTab === "FOOD"} variant={pickerTab === "FOOD" ? "default" : "outline"} onClick={() => setPickerTab("FOOD")}>Alimentos</Button>
                 <Button role="tab" aria-selected={pickerTab === "RECIPE"} variant={pickerTab === "RECIPE" ? "default" : "outline"} onClick={() => setPickerTab("RECIPE")}>Receitas</Button>
               </div>}
               {!isCreatingManual && pickerTab === "FOOD" && (
                 <>
-                  <div className="flex gap-2 mb-3">
+                  <div className="mb-3 flex flex-wrap gap-2">
                     {["TODAS", "TACO", "IBGE", "TBCA", "MANUAL"].map(s => (
                       <Button key={s} variant={selectedSource === s ? "default" : "outline"} size="sm" onClick={() => setSelectedSource(s)} className={`rounded-full px-4 ${selectedSource === s ? 'bg-teal-600' : ''}`}>{s}</Button>
                     ))}
@@ -964,7 +971,7 @@ export default function NovaDietaPage() {
                 </>
               )}
             </div>
-            <div className="overflow-y-auto flex-1">
+            <div className="min-h-0 flex-1 overflow-y-auto">
               {pickerTab === "RECIPE" ? <RecipePicker onSelect={addRecipeToMeal} /> : isCreatingManual ? (
                 <div className="p-6 space-y-6">
                   <div className="space-y-2">
@@ -1026,9 +1033,8 @@ export default function NovaDietaPage() {
                 </div>
               )}
             </div>
-          </div>
-        </>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* ­ƒîƒ MODAL DRI: SOMAT├ôRIO DE MICRONUTRIENTES */}
       {showDriModal && (

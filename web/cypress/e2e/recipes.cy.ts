@@ -1,5 +1,6 @@
 describe("Banco de receitas na prescrição", () => {
   it("cria e filtra uma receita ativa, adiciona alimento e versão à dieta e salva payload XOR", () => {
+    cy.viewport(1280, 900)
     const food = { id: "oat", name: "Aveia", baseUnit: "g", baseAmount: 100, source: "MANUAL", kcal: 400, protein: 10, carbs: 60, fat: 8, fiber: 10, sodium: 20, calcium: 80, iron: 4 }
     const version = { id: "version-1", recipeId: "recipe-1", version: 1, name: "Panqueca de aveia", description: null, category: "BREAKFAST", servings: 2, instructions: null, isGlutenFree: false, isLactoseFree: false, isVegan: false, kcal: 200, protein: 5, carbs: 30, fat: 4, fiber: 5, sodium: 10, calcium: 40, iron: 2, ingredients: [{ id: "ingredient-1", recipeVersionId: "version-1", foodId: "oat", food, quantity: 100, measure: "g" }], createdAt: "2026-09-21T00:00:00Z" }
     const recipe = { id: "recipe-1", status: "ACTIVE", currentVersionId: "version-1", currentVersion: version, createdAt: "2026-09-21T00:00:00Z", updatedAt: "2026-09-21T00:00:00Z" }
@@ -43,11 +44,25 @@ describe("Banco de receitas na prescrição", () => {
     cy.wait("@createRecipe")
     cy.get('input[aria-label="Buscar receitas"]').type("Panqueca")
     cy.contains("Panqueca de aveia").should("be.visible")
+    cy.document().then((document) => cy.window().then((window) => {
+      expect(document.documentElement.scrollWidth).to.be.at.most(window.innerWidth)
+    }))
 
+    cy.viewport(390, 844)
     cy.visit("/clientes/client-one/nova-dieta")
+    cy.contains("button", "Buscar e Adicionar Alimento ou Receita").should("be.visible")
+    cy.document().then((document) => cy.window().then((window) => {
+      expect(document.documentElement.scrollWidth).to.be.at.most(window.innerWidth)
+    }))
     cy.contains("button", "Buscar e Adicionar Alimento ou Receita").click()
+    cy.document().then((document) => cy.window().then((window) => {
+      expect(document.documentElement.scrollWidth).to.be.at.most(window.innerWidth)
+    }))
     cy.contains('[role="tab"]', "Receitas").click()
     cy.get('input[aria-label="Buscar receitas"]').type("Panqueca")
+    cy.document().then((document) => cy.window().then((window) => {
+      expect(document.documentElement.scrollWidth).to.be.at.most(window.innerWidth)
+    }))
     cy.get('input[aria-label="Porções de Panqueca de aveia"]').type("{selectall}1.5")
     cy.get('button[aria-label="Adicionar Panqueca de aveia"]').click()
     cy.contains("Versão 1").should("be.visible")
