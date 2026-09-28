@@ -24,6 +24,7 @@ import { ConsultationNotesModule } from './modules/consultation-notes/consultati
 import { ClientsModule } from './modules/clients/clients.module';
 import { AppController } from '../app.controller';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
+import { RecipesModule } from './modules/recipes/recipes.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
     ConsultationNotesModule,
     ClientsModule,
     AppointmentsModule,
+    RecipesModule,
   ],
   controllers: [AppController],
   providers: [

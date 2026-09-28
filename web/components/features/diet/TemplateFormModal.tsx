@@ -17,7 +17,9 @@ import {
   useDietTemplateMutations,
   type DietTemplate,
   type CreateTemplatePayload,
+  type DietTemplateMealItemPayload,
 } from "@/hooks/features/useDietTemplates"
+import type { RecipeVersion } from "@/types/recipe"
 import { api } from "@/lib/api"
 import { Plus, Trash2, Search, Loader2, Sparkles, Utensils } from "lucide-react"
 import { toast } from "sonner"
@@ -60,12 +62,10 @@ export function TemplateFormModal({
       name: string
       time: string
       notes: string
-      items: Array<{
-        foodId: string
+      items: Array<DietTemplateMealItemPayload & {
         name: string
-        quantity: number
-        measure: string
         notes: string
+        recipeVersion?: RecipeVersion
       }>
     }>
   >([
@@ -117,10 +117,12 @@ export function TemplateFormModal({
           time: m.time || "",
           notes: m.notes || "",
           items: m.items.map((it) => ({
-            foodId: it.foodId || it.food?.id || "",
-            name: it.name || it.food?.name || "Alimento",
+            ...(it.recipeVersionId
+              ? { recipeVersionId: it.recipeVersionId, recipeVersion: it.recipeVersion }
+              : { foodId: it.foodId || it.food?.id || "" }),
+            name: it.recipeVersion?.name || it.name || it.food?.name || "Alimento",
             quantity: it.quantity,
-            measure: it.measure,
+            measure: it.recipeVersionId ? "porções" : it.measure,
             notes: it.notes || "",
           })),
         }))
@@ -216,6 +218,13 @@ export function TemplateFormModal({
       return
     }
 
+    if (meals.some((meal) => meal.items.some((item) => item.recipeVersionId && (
+      !Number.isFinite(item.quantity) || item.quantity < 0.5 || !Number.isInteger(item.quantity * 2)
+    )))) {
+      toast.error("Informe porções de receita em passos de 0,5, com mínimo de 0,5.")
+      return
+    }
+
     const payload: CreateTemplatePayload = {
       title: title.trim(),
       goal: goal.trim(),
@@ -230,12 +239,9 @@ export function TemplateFormModal({
         name: m.name,
         time: m.time || undefined,
         notes: m.notes || undefined,
-        items: m.items.map((it) => ({
-          foodId: it.foodId,
-          quantity: Number(it.quantity) || 100,
-          measure: it.measure || "g",
-          notes: it.notes || undefined,
-        })),
+        items: m.items.map((it): DietTemplateMealItemPayload => it.recipeVersionId
+          ? { recipeVersionId: it.recipeVersionId, quantity: it.quantity, measure: "porções", notes: it.notes || undefined }
+          : { foodId: it.foodId!, quantity: Number(it.quantity) || 100, measure: it.measure || "g", notes: it.notes || undefined }),
       })),
     }
 
@@ -435,12 +441,15 @@ export function TemplateFormModal({
                         className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg text-xs"
                       >
                         <span className="font-medium text-slate-700 flex-1 truncate">
-                          {item.name}
+                          {item.recipeVersion ? `${item.recipeVersion.name} · Versão ${item.recipeVersion.version}` : item.name}
                         </span>
 
                         <div className="flex items-center gap-1.5">
                           <Input
                             type="number"
+                            aria-label={item.recipeVersionId ? `Porções de ${item.name}` : `Quantidade de ${item.name}`}
+                            min={item.recipeVersionId ? 0.5 : undefined}
+                            step={item.recipeVersionId ? 0.5 : undefined}
                             value={item.quantity}
                             onChange={(e) => {
                               const val = Number(e.target.value)
@@ -453,6 +462,8 @@ export function TemplateFormModal({
                             className="h-7 w-20 text-xs font-mono"
                           />
                           <Input
+                            aria-label={`Medida de ${item.name}`}
+                            readOnly={Boolean(item.recipeVersionId)}
                             value={item.measure}
                             onChange={(e) => {
                               const val = e.target.value

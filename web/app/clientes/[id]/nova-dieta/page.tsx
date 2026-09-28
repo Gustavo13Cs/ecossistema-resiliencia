@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   AlertDialog,
@@ -26,6 +27,12 @@ import { useAuth } from "@/contexts/auth-context"
 import { useClientRecord, type ClientRecordStatus } from "@/hooks/features/useClientRecord"
 import { useQueryClient } from "@tanstack/react-query"
 import { invalidatePatientDiet } from "@/lib/query-invalidation"
+import { RecipePicker } from "@/components/features/diet/RecipePickerPanel"
+import { buildShoppingList, getMealItemNutrition, hydrateMealItem, toMealItemPayload } from "@/lib/diet-meal-items"
+import { buildDietPrintHtml, buildShoppingListPrintHtml } from "@/lib/diet-print-document"
+import type { ApiMealItem, DietMeal, DietMealItem, FoodNutrition } from "@/types/diet"
+import type { RecipeVersion } from "@/types/recipe"
+import { useRecipe } from "@/hooks/features/useRecipes"
 import {
   consumeLegacyDietDraft,
   discardLegacyDietDraft,
@@ -88,6 +95,13 @@ const CLIENT_GATE_ERRORS: Record<Exclude<ClientRecordStatus, "loading" | "ready"
   },
 }
 
+function RecipeVersionUpdate({ item, onUpdate }: { item: Extract<DietMealItem, { kind: "RECIPE" }>; onUpdate: (version: RecipeVersion) => void }) {
+  const recipe = useRecipe(item.recipeVersion.recipeId)
+  const current = recipe.data?.status === "ACTIVE" ? recipe.data.currentVersion : null
+  if (!current || current.id === item.recipeVersion.id) return null
+  return <Button type="button" size="sm" variant="outline" className="mt-2 print:hidden" onClick={() => onUpdate(current)}>Atualizar {item.recipeVersion.name} para versão {current.version}</Button>
+}
+
 export default function NovaDietaPage() {
   const params = useParams()
   const router = useRouter()
@@ -121,17 +135,19 @@ export default function NovaDietaPage() {
   iron: 15 
   })
 
-  const [meals, setMeals] = useState([
-    { id: `m${Date.now()}`, name: "Café da Manhã", time: "08:00", notes: "", items: [] as any[] }
+  const [meals, setMeals] = useState<DietMeal[]>([
+    { id: `m${Date.now()}`, name: "Café da Manhã", time: "08:00", notes: "", items: [] }
   ])
 
   const [activeMealId, setActiveMealId] = useState<string | null>(null)
+  const itemPickerTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const [pickerTab, setPickerTab] = useState<"FOOD" | "RECIPE">("FOOD")
   const [searchTerm, setSearchTerm] = useState("")
   const [isSearching, setIsSearching] = useState(false)
   const [amountToAdd, setAmountToAdd] = useState(100)
   
   const [selectedSource, setSelectedSource] = useState("TODAS")
-  const [availableFoods, setAvailableFoods] = useState<any[]>([])
+  const [availableFoods, setAvailableFoods] = useState<FoodNutrition[]>([])
   const [isCreatingManual, setIsCreatingManual] = useState(false)
   const [editingFoodId, setEditingFoodId] = useState<string | null>(null)
 
@@ -179,9 +195,9 @@ export default function NovaDietaPage() {
           calcium: res.data.calciumMg || defaultDri.calcium,
           iron: res.data.ironMg || defaultDri.iron
         })
-        setMeals(res.data.meals.map((m: any) => ({
-          id: m.id, name: m.name, time: m.time, notes: m.notes || "",
-          items: m.items.map((i: any) => ({ id: i.id, quantity: i.quantity, measure: i.measure || "", food: i.food }))
+        setMeals(res.data.meals.map((m: { id: string; name: string; time: string | null; notes: string | null; items: ApiMealItem[] }) => ({
+          id: m.id, name: m.name, time: m.time ?? "", notes: m.notes || "",
+          items: m.items.map(hydrateMealItem)
         })))
       } else {
         setTargets(prev => ({ ...prev, ...defaultDri }));
@@ -207,7 +223,7 @@ export default function NovaDietaPage() {
     legacyDraftApplied.current = true
     setDietInfo(consumedDraft.dietInfo)
     setTargets(consumedDraft.targets)
-    setMeals(consumedDraft.meals)
+    setMeals(consumedDraft.meals.map((meal) => ({ ...meal, items: meal.items.map((item) => ({ ...item, kind: "FOOD" as const, food: { ...item.food, baseUnit: "g" } })) })))
     setLegacyDraftState({ clientId, value: null })
   }
 
@@ -245,14 +261,9 @@ export default function NovaDietaPage() {
   const currentTotals = useMemo(() => {
   let kcal = 0, pro = 0, carb = 0, fat = 0, fiber = 0, sodium = 0, calcium = 0, iron = 0
   meals.forEach(meal => meal.items.forEach(item => {
-    kcal += calcMacro(item.food.kcal, item.food.baseAmount, item.quantity)
-    pro += calcMacro(item.food.protein, item.food.baseAmount, item.quantity)
-    carb += calcMacro(item.food.carbs, item.food.baseAmount, item.quantity)
-    fat += calcMacro(item.food.fat, item.food.baseAmount, item.quantity)
-    fiber += calcMacro(item.food.fiber || 0, item.food.baseAmount, item.quantity)
-    sodium += calcMacro(item.food.sodium || 0, item.food.baseAmount, item.quantity)
-    calcium += calcMacro(item.food.calcium || 0, item.food.baseAmount, item.quantity)
-    iron += calcMacro(item.food.iron || 0, item.food.baseAmount, item.quantity)
+    const nutrition = getMealItemNutrition(item)
+    kcal += nutrition.kcal; pro += nutrition.protein; carb += nutrition.carbs; fat += nutrition.fat
+    fiber += nutrition.fiber; sodium += nutrition.sodium; calcium += nutrition.calcium; iron += nutrition.iron
   }))
   return { kcal, pro, carb, fat, fiber, sodium, calcium, iron }
   }, [meals])
@@ -263,31 +274,21 @@ export default function NovaDietaPage() {
     { name: 'Lipídios', value: currentTotals.fat * 9, color: '#f59e0b' },
   ], [currentTotals])
 
-  const getMealTotals = (items: any[]) => {
+  const getMealTotals = (items: DietMealItem[]) => {
     let kcal = 0, pro = 0, carb = 0, fat = 0
     items.forEach(item => {
-      kcal += calcMacro(item.food.kcal, item.food.baseAmount, item.quantity)
-      pro += calcMacro(item.food.protein, item.food.baseAmount, item.quantity)
-      carb += calcMacro(item.food.carbs, item.food.baseAmount, item.quantity)
-      fat += calcMacro(item.food.fat, item.food.baseAmount, item.quantity)
+      const nutrition = getMealItemNutrition(item)
+      kcal += nutrition.kcal; pro += nutrition.protein; carb += nutrition.carbs; fat += nutrition.fat
     })
     return { kcal: Math.round(kcal), pro: Math.round(pro), carb: Math.round(carb), fat: Math.round(fat) }
   }
 
-  const shoppingList = useMemo(() => {
-    const list: Record<string, number> = {}
-    meals.forEach(meal => meal.items.forEach(item => {
-      const name = item.food.name
-      if(!list[name]) list[name] = 0
-      list[name] += (item.quantity * shoppingDays)
-    }))
-    return Object.entries(list).map(([name, qty]) => ({ name, qty })).sort((a,b) => b.qty - a.qty)
-  }, [meals, shoppingDays])
+  const shoppingList = useMemo(() => buildShoppingList(meals.flatMap((meal) => meal.items), shoppingDays), [meals, shoppingDays])
 
   const addMeal = () => setMeals([...meals, { id: `m${Date.now()}`, name: "Nova Refeição", time: "12:00", notes: "", items: [] }])
   const removeMeal = (id: string) => setMeals(meals.filter(m => m.id !== id))
   
-  const addFoodToMeal = async (food: any, quantity: number | string = amountToAdd) => {
+  const addFoodToMeal = async (food: FoodNutrition, quantity: number | string = amountToAdd) => {
     if (!activeMealId) return
     
     const safeQty = Number(quantity) || 0
@@ -295,7 +296,7 @@ export default function NovaDietaPage() {
     
     const itemJaNaTela = meals
       .flatMap(m => m.items)
-      .find(i => i.food.id === food.id && Number(i.quantity) === safeQty && i.measure && i.measure.trim() !== "" && i.measure !== "g")
+      .find(i => i.kind === "FOOD" && i.food.id === food.id && Number(i.quantity) === safeQty && i.measure && i.measure.trim() !== "" && i.measure !== "g")
       
     if (itemJaNaTela) {
       savedMeasure = itemJaNaTela.measure
@@ -310,12 +311,23 @@ export default function NovaDietaPage() {
       }
     }
 
-    const newItem = { id: `i${Date.now()}`, quantity: safeQty, measure: savedMeasure, food }
+    const newItem: DietMealItem = { kind: "FOOD", id: `i${Date.now()}`, quantity: safeQty, measure: savedMeasure, food }
     setMeals(meals.map(m => m.id === activeMealId ? { ...m, items: [...m.items, newItem] } : m))
     closeModal()
   }
 
-  const updateItemValue = (mealId: string, itemId: string, field: 'quantity' | 'measure', value: any) => {
+  const addRecipeToMeal = (version: RecipeVersion, servings: number) => {
+    if (!activeMealId) return
+    const newItem: DietMealItem = { kind: "RECIPE", id: `i${Date.now()}`, quantity: servings, measure: "porções", recipeVersion: { ...version, recipe: { id: version.recipeId, currentVersionId: version.id, status: "ACTIVE" } } }
+    setMeals((previous) => previous.map((meal) => meal.id === activeMealId ? { ...meal, items: [...meal.items, newItem] } : meal))
+    closeModal()
+  }
+
+  const updateRecipeVersion = (mealId: string, item: Extract<DietMealItem, { kind: "RECIPE" }>, currentVersion: RecipeVersion) => {
+    setMeals((previous) => previous.map((meal) => meal.id === mealId ? { ...meal, items: meal.items.map((entry) => entry.id === item.id ? { ...item, recipeVersion: { ...currentVersion, recipe: { id: item.recipeVersion.recipeId, currentVersionId: currentVersion.id, status: "ACTIVE" as const } } } : entry) } : meal))
+  }
+
+  const updateItemValue = (mealId: string, itemId: string, field: 'quantity' | 'measure', value: number | string) => {
     setMeals(meals.map(m => {
       if (m.id !== mealId) return m;
       return {
@@ -325,7 +337,7 @@ export default function NovaDietaPage() {
           if (field === 'quantity') {
             const newQty = Number(value) || 0;
             if (newQty !== Number(i.quantity)) {
-              return { ...i, quantity: newQty, measure: "" }; 
+              return { ...i, quantity: newQty, measure: i.kind === "RECIPE" ? "porções" : "" };
             }
           }
           
@@ -343,7 +355,7 @@ export default function NovaDietaPage() {
     try { await api.delete(`/foods/${foodId}`); setAvailableFoods(availableFoods.filter(f => f.id !== foodId)); toast.success("Apagado!") } catch (error) {}
   }
 
-  const handleEditFood = (e: React.MouseEvent, food: any) => {
+  const handleEditFood = (e: React.MouseEvent, food: FoodNutrition) => {
     e.stopPropagation()
     setEditingFoodId(food.id)
     setNewFood({ name: food.name, kcal: food.kcal, pro: food.protein, carb: food.carbs, fat: food.fat, fiber: food.fiber || 0, sodium: food.sodium || 0, calcium: food.calcium || 0, iron: food.iron || 0 })
@@ -380,8 +392,8 @@ export default function NovaDietaPage() {
     } catch (error) {}
   }
 
-  const closeModal = () => { setActiveMealId(null); setSearchTerm(""); setAmountToAdd(100); setIsCreatingManual(false); setEditingFoodId(null) }
-  const formatQty = (qty: number) => qty >= 1000 ? `${(qty/1000).toFixed(1)} kg` : `${qty} g`
+  const closeModal = () => { setActiveMealId(null); setPickerTab("FOOD"); setSearchTerm(""); setAmountToAdd(100); setIsCreatingManual(false); setEditingFoodId(null) }
+  const formatQty = (qty: number, measure: string) => measure === "g" && qty >= 1000 ? `${(qty/1000).toFixed(1)} kg` : `${Number(qty.toFixed(1))} ${measure}`
 
   const handleOpenShareModal = () => {
     setShoppingDays(dietInfo.durationDays) 
@@ -393,200 +405,13 @@ export default function NovaDietaPage() {
     text += `*📋 Fase:* ${dietInfo.title}\n`
     text += `*🎯 Objetivo:* ${dietInfo.goal}\n\n`
     text += `🛒 *Lista de Compras (${shoppingDays} dias):*\n`
-    shoppingList.forEach(item => { text += `• ${item.name}: ${formatQty(item.qty)}\n` })
+    shoppingList.forEach(item => { text += `• ${item.name}: ${formatQty(item.qty, item.measure)}\n` })
     text += "\nLembre-se de verificar o PDF da dieta que enviarei logo abaixo! 💪"
     
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
   }
 
-  const handlePrintDiet = () => {
-    setShowShareModal(false)
-    const clientName = patientProfile?.name || 'Paciente'
-    const date = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
-
-    const mealsHtml = meals.map(meal => {
-      const mealTotals = getMealTotals(meal.items)
-      const itemsHtml = meal.items.map(item => {
-        const measure = item.measure && item.measure.trim() && item.measure !== 'g'
-          ? `<span class="measure">${item.measure}</span>`
-          : ''
-        return `
-          <tr>
-            <td class="qty-cell">${item.quantity}<span class="unit">g</span>${measure}</td>
-            <td class="food-name">${item.food.name}</td>
-          </tr>`
-      }).join('')
-
-      return `
-        <div class="meal-block">
-          <div class="meal-header">
-            <div class="meal-title-row">
-              <span class="meal-time">${meal.time}</span>
-              <span class="meal-name">${meal.name.toUpperCase()}</span>
-            </div>
-            <div class="meal-macros">
-              <span class="macro-kcal">${mealTotals.kcal} kcal</span>
-              <span class="macro-sep">·</span>
-              <span class="macro-p">P ${mealTotals.pro}g</span>
-              <span class="macro-sep">·</span>
-              <span class="macro-c">C ${mealTotals.carb}g</span>
-              <span class="macro-sep">·</span>
-              <span class="macro-g">G ${mealTotals.fat}g</span>
-            </div>
-          </div>
-          <table class="items-table">
-            <tbody>${itemsHtml}</tbody>
-          </table>
-          ${meal.notes ? `<div class="meal-notes">📌 ${meal.notes}</div>` : ''}
-        </div>`
-    }).join('')
-
-    const notesHtml = dietInfo.notes
-      ? `<div class="general-notes"><h3>Orientações Gerais</h3><p>${dietInfo.notes.replace(/\n/g, '<br>')}</p></div>`
-      : ''
-
-    const html = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <title>Plano Alimentar — ${clientName}</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background: #fff; color: #1e293b; font-size: 13px; }
-    @page { size: A4; margin: 16mm 14mm 14mm 14mm; }
-
-    /* ── HEADER ── */
-    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #0d9488; padding-bottom: 14px; margin-bottom: 18px; }
-    .header-left {}
-    .brand { font-size: 11px; font-weight: 700; color: #0d9488; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
-    .doc-title { font-size: 22px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; line-height: 1; }
-    .doc-subtitle { font-size: 13px; color: #64748b; margin-top: 4px; font-weight: 500; }
-    .header-right { text-align: right; }
-    .client-name { font-size: 15px; font-weight: 800; color: #0f172a; }
-    .meta-line { font-size: 11px; color: #94a3b8; margin-top: 3px; }
-
-    /* ── INFO STRIP ── */
-    .info-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-    .info-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; }
-    .info-card .label { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 3px; }
-    .info-card .value { font-size: 14px; font-weight: 800; color: #0f172a; }
-    .info-card .value.green { color: #0d9488; }
-
-    /* ── MEAL BLOCK ── */
-    .meal-block { margin-bottom: 14px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; page-break-inside: avoid; }
-    .meal-header { background: #f1f5f9; padding: 9px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
-    .meal-title-row { display: flex; align-items: center; gap: 10px; }
-    .meal-time { font-size: 12px; font-weight: 800; color: #0d9488; background: #ccfbf1; padding: 2px 8px; border-radius: 4px; }
-    .meal-name { font-size: 13px; font-weight: 800; color: #0f172a; letter-spacing: 0.03em; }
-    .meal-macros { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; }
-    .macro-kcal { color: #334155; font-weight: 700; }
-    .macro-sep { color: #cbd5e1; }
-    .macro-p { color: #e11d48; }
-    .macro-c { color: #059669; }
-    .macro-g { color: #d97706; }
-
-    /* ── ITEMS TABLE ── */
-    .items-table { width: 100%; border-collapse: collapse; }
-    .items-table tbody tr { border-bottom: 1px solid #f1f5f9; }
-    .items-table tbody tr:last-child { border-bottom: none; }
-    .items-table td { padding: 7px 14px; vertical-align: middle; }
-    .qty-cell { width: 90px; font-weight: 700; color: #334155; white-space: nowrap; }
-    .qty-cell .unit { font-size: 10px; color: #94a3b8; font-weight: 500; margin-left: 2px; }
-    .qty-cell .measure { display: block; font-size: 10px; color: #94a3b8; font-weight: 400; font-style: italic; }
-    .food-name { font-weight: 500; color: #1e293b; }
-    .meal-notes { background: #fffbeb; border-top: 1px solid #fde68a; padding: 8px 14px; font-size: 11px; color: #78350f; font-style: italic; }
-
-    /* ── TOTALS ── */
-    .totals-section { border: 1.5px solid #0d9488; border-radius: 10px; padding: 14px 18px; margin: 20px 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; text-align: center; }
-    .total-item { padding: 0 10px; }
-    .total-item + .total-item { border-left: 1px solid #e2e8f0; }
-    .total-item .t-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; margin-bottom: 4px; }
-    .total-item .t-value { font-size: 20px; font-weight: 900; color: #0d9488; }
-    .total-item .t-unit { font-size: 10px; color: #94a3b8; font-weight: 500; }
-    .total-item.ptn .t-value { color: #e11d48; }
-    .total-item.carb .t-value { color: #059669; }
-    .total-item.fat .t-value { color: #d97706; }
-
-    /* ── GENERAL NOTES ── */
-    .general-notes { background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 10px; padding: 14px 18px; margin-top: 20px; page-break-inside: avoid; }
-    .general-notes h3 { font-size: 11px; font-weight: 800; color: #0d9488; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
-    .general-notes p { font-size: 12px; color: #134e4a; line-height: 1.7; }
-
-    /* ── FOOTER ── */
-    .footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-    .footer-left { font-size: 10px; color: #94a3b8; }
-    .footer-right { font-size: 10px; color: #94a3b8; text-align: right; }
-    .footer .highlight { font-weight: 700; color: #0d9488; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div class="header-left">
-      <div class="brand">SafeMove · Nutrição</div>
-      <div class="doc-title">Plano Alimentar</div>
-      <div class="doc-subtitle">${dietInfo.title} · Foco: ${dietInfo.goal}</div>
-    </div>
-    <div class="header-right">
-      <div class="client-name">${clientName}</div>
-      <div class="meta-line">Prescrito em ${date}</div>
-      <div class="meta-line">${dietInfo.durationDays} dias de plano</div>
-    </div>
-  </div>
-
-  <div class="info-strip">
-    <div class="info-card">
-      <div class="label">Meta Calórica</div>
-      <div class="value green">${Math.round(currentTotals.kcal)} kcal</div>
-    </div>
-    <div class="info-card">
-      <div class="label">Refeições por dia</div>
-      <div class="value">${meals.length}</div>
-    </div>
-    <div class="info-card">
-      <div class="label">Duração do plano</div>
-      <div class="value">${dietInfo.durationDays} dias</div>
-    </div>
-  </div>
-
-  ${mealsHtml}
-
-  <div class="totals-section">
-    <div class="total-item">
-      <div class="t-label">Calorias</div>
-      <div class="t-value">${Math.round(currentTotals.kcal)}</div>
-      <div class="t-unit">kcal / dia</div>
-    </div>
-    <div class="total-item ptn">
-      <div class="t-label">Proteínas</div>
-      <div class="t-value">${Math.round(currentTotals.pro)}</div>
-      <div class="t-unit">g / dia</div>
-    </div>
-    <div class="total-item carb">
-      <div class="t-label">Carboidratos</div>
-      <div class="t-value">${Math.round(currentTotals.carb)}</div>
-      <div class="t-unit">g / dia</div>
-    </div>
-    <div class="total-item fat">
-      <div class="t-label">Gorduras</div>
-      <div class="t-value">${Math.round(currentTotals.fat)}</div>
-      <div class="t-unit">g / dia</div>
-    </div>
-  </div>
-
-  ${notesHtml}
-
-  <div class="footer">
-    <div class="footer-left">
-      Documento gerado pelo <span class="highlight">SafeMove</span> · Uso exclusivo do paciente
-    </div>
-    <div class="footer-right">
-      Objetivo: <span class="highlight">${dietInfo.goal}</span>
-    </div>
-  </div>
-</body>
-</html>`
-
+  const openPrintDocument = (html: string) => {
     const win = window.open('', '_blank', 'width=900,height=700')
     if (!win) return
     win.document.write(html)
@@ -595,149 +420,21 @@ export default function NovaDietaPage() {
     setTimeout(() => win.print(), 600)
   }
 
+  const getPrintInput = () => ({
+    clientName: patientProfile?.name || 'Paciente',
+    dateLabel: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
+    dietInfo,
+    meals,
+  })
+
+  const handlePrintDiet = () => {
+    setShowShareModal(false)
+    openPrintDocument(buildDietPrintHtml(getPrintInput()))
+  }
+
   const handlePrintList = () => {
     setShowShareModal(false)
-    const clientName = patientProfile?.name || 'Paciente'
-    const date = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
-
-    // Group items by meal for context
-    const mealGroups = meals
-      .filter(m => m.items.length > 0)
-      .map(m => {
-        const grouped: Record<string, number> = {}
-        m.items.forEach(item => {
-          const name = item.food.name
-          if (!grouped[name]) grouped[name] = 0
-          grouped[name] += item.quantity * shoppingDays
-        })
-        return { mealName: m.name, items: Object.entries(grouped).map(([name, qty]) => ({ name, qty })) }
-      })
-
-    // Full consolidated list sorted by quantity desc
-    const sortedList = [...shoppingList].sort((a, b) => b.qty - a.qty)
-
-    // Split into two columns
-    const half = Math.ceil(sortedList.length / 2)
-    const col1 = sortedList.slice(0, half)
-    const col2 = sortedList.slice(half)
-
-    const renderRow = (item: { name: string; qty: number }) => `
-      <tr>
-        <td class="check-cell"><div class="checkbox"></div></td>
-        <td class="item-name">${item.name}</td>
-        <td class="item-qty">${formatQty(item.qty)}</td>
-      </tr>`
-
-    const html = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <title>Lista de Compras — ${clientName}</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background: #fff; color: #1e293b; font-size: 13px; }
-    @page { size: A4; margin: 16mm 14mm 14mm 14mm; }
-
-    /* ── HEADER ── */
-    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #0d9488; padding-bottom: 14px; margin-bottom: 18px; }
-    .brand { font-size: 11px; font-weight: 700; color: #0d9488; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
-    .doc-title { font-size: 22px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; }
-    .doc-subtitle { font-size: 13px; color: #64748b; margin-top: 4px; font-weight: 500; }
-    .header-right { text-align: right; }
-    .client-name { font-size: 15px; font-weight: 800; color: #0f172a; }
-    .meta-line { font-size: 11px; color: #94a3b8; margin-top: 3px; }
-
-    /* ── INTRO BOX ── */
-    .intro { background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; font-size: 12px; color: #134e4a; line-height: 1.6; }
-    .intro strong { font-weight: 700; color: #0d9488; }
-
-    /* ── SECTION TITLE ── */
-    .section-title { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
-
-    /* ── TWO COLUMN GRID ── */
-    .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-
-    /* ── LIST TABLE ── */
-    .list-table { width: 100%; border-collapse: collapse; }
-    .list-table tbody tr { border-bottom: 1px solid #f1f5f9; }
-    .list-table tbody tr:last-child { border-bottom: none; }
-    .list-table tbody tr:hover { background: #f8fafc; }
-    .check-cell { width: 28px; padding: 8px 4px 8px 0; vertical-align: middle; }
-    .checkbox { width: 16px; height: 16px; border: 2px solid #cbd5e1; border-radius: 4px; }
-    .item-name { padding: 8px 6px; font-weight: 500; color: #1e293b; font-size: 13px; }
-    .item-qty { padding: 8px 0 8px 6px; text-align: right; font-weight: 800; color: #0d9488; font-size: 13px; white-space: nowrap; }
-
-    /* ── TIPS ── */
-    .tips { margin-top: 22px; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px; page-break-inside: avoid; }
-    .tips-title { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
-    .tips-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .tip-item { display: flex; align-items: flex-start; gap: 8px; font-size: 11px; color: #475569; line-height: 1.5; }
-    .tip-icon { font-size: 13px; flex-shrink: 0; margin-top: 0px; }
-
-    /* ── FOOTER ── */
-    .footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; }
-    .footer span { font-size: 10px; color: #94a3b8; }
-    .footer .highlight { font-weight: 700; color: #0d9488; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div>
-      <div class="brand">SafeMove · Nutrição</div>
-      <div class="doc-title">Lista de Compras</div>
-      <div class="doc-subtitle">${dietInfo.title} · ${dietInfo.goal}</div>
-    </div>
-    <div class="header-right">
-      <div class="client-name">${clientName}</div>
-      <div class="meta-line">Gerada em ${date}</div>
-      <div class="meta-line">Quantidade para <strong>${shoppingDays} dias</strong></div>
-    </div>
-  </div>
-
-  <div class="intro">
-    📋 Esta lista contém todos os alimentos necessários para <strong>${shoppingDays} dias</strong> do seu plano alimentar 
-    "<strong>${dietInfo.title}</strong>". As quantidades já estão calculadas — basta comprar e seguir o plano!
-  </div>
-
-  <div class="section-title">Todos os Alimentos (${sortedList.length} itens)</div>
-
-  <div class="columns">
-    <table class="list-table">
-      <tbody>
-        ${col1.map(renderRow).join('')}
-      </tbody>
-    </table>
-    <table class="list-table">
-      <tbody>
-        ${col2.map(renderRow).join('')}
-      </tbody>
-    </table>
-  </div>
-
-  <div class="tips">
-    <div class="tips-title">💡 Dicas para suas compras</div>
-    <div class="tips-grid">
-      <div class="tip-item"><span class="tip-icon">🥩</span><span>Proteínas frescas (carne, frango, peixe): prefira comprar 1–2x por semana para garantir frescor.</span></div>
-      <div class="tip-item"><span class="tip-icon">🥦</span><span>Legumes e verduras: compre 2–3x por semana. Congele o excedente se necessário.</span></div>
-      <div class="tip-item"><span class="tip-icon">🫙</span><span>Grãos e proteínas em pó podem ser comprados mensalmente — verifique a data de validade.</span></div>
-      <div class="tip-item"><span class="tip-icon">⚖️</span><span>Pese os alimentos crus quando possível — as quantidades do plano se referem ao peso antes do cozimento.</span></div>
-    </div>
-  </div>
-
-  <div class="footer">
-    <span>Gerado pelo <span class="highlight">SafeMove</span> · Uso exclusivo do paciente</span>
-    <span>Objetivo: <span class="highlight">${dietInfo.goal}</span></span>
-  </div>
-</body>
-</html>`
-
-    const win = window.open('', '_blank', 'width=900,height=700')
-    if (!win) return
-    win.document.write(html)
-    win.document.close()
-    win.focus()
-    setTimeout(() => win.print(), 600)
+    openPrintDocument(buildShoppingListPrintHtml({ ...getPrintInput(), shoppingDays }))
   }
 
   const handleOpenTemplateModal = async () => {
@@ -787,6 +484,9 @@ export default function NovaDietaPage() {
         notes: m.notes || "",
         items: (m.items || []).map((i: any) => {
           let scaledQty = i.quantity * scaleFactor
+          if (i.recipeVersion) {
+            return { kind: "RECIPE" as const, id: `i${Date.now()}_${Math.random()}`, quantity: Math.max(0.5, Math.round(scaledQty * 2) / 2), measure: "porções", recipeVersion: i.recipeVersion }
+          }
           const measureLower = (i.measure || "").toLowerCase()
           if (measureLower === "g" || measureLower === "ml") {
             scaledQty = Math.max(5, Math.round(scaledQty / 5) * 5)
@@ -795,16 +495,22 @@ export default function NovaDietaPage() {
           }
 
           return {
+            kind: "FOOD" as const,
             id: `i${Date.now()}_${Math.random()}`,
             quantity: scaledQty,
             measure: i.measure || "g",
             food: i.food || {
               id: i.foodId || "food-custom",
               name: i.name || "Alimento",
+              baseUnit: "g",
               kcal: 100,
               protein: 5,
               carbs: 10,
               fat: 2,
+              fiber: 0,
+              sodium: 0,
+              calcium: 0,
+              iron: 0,
               baseAmount: 100,
             },
           }
@@ -839,11 +545,7 @@ export default function NovaDietaPage() {
         notes: dietInfo.notes,
         meals: meals.map(m => ({ 
           name: m.name, time: m.time, notes: m.notes, 
-          items: m.items.map(item => ({ 
-            quantity: Number(item.quantity) || 0, 
-            measure: item.measure || "", 
-            foodId: item.food.id 
-          }))
+          items: m.items.map(toMealItemPayload)
         }))
       }
       await api.post('/diet-plans', payload)
@@ -933,14 +635,14 @@ export default function NovaDietaPage() {
       
       <div className="w-full px-6 md:px-12 lg:px-20 mx-auto space-y-6 print:px-0 print:max-w-4xl print:space-y-0">
         
-        <div className="flex items-center justify-between mb-4 print:hidden">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4 print:hidden">
           <div className="flex items-center gap-4">
             <Link href={`/clientes/${params.id}`}><Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-200"><ArrowLeft className="w-5 h-5 text-slate-600" /></Button></Link>
             <div>
               <div className="flex items-center gap-3"><h1 className="text-3xl font-bold text-slate-800">Prescrição Dietética</h1></div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button onClick={handleOpenTemplateModal} variant="outline" className="h-12 border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 font-bold">
               <Bookmark className="w-5 h-5 mr-2" /> Usar Template
             </Button>
@@ -1067,22 +769,28 @@ export default function NovaDietaPage() {
                              <div className="flex flex-col gap-1 w-28 print:w-auto shrink-0">
                                 <div className="flex items-center gap-1 print:hidden">
                                   {/* ­ƒîƒ BLINDAGEM PERFEITA: O Input s├│ usa "" no value, mas converte sempre para Number no onChange */}
-                                  <Input type="number" value={item.quantity || ""} onChange={(e) => updateItemValue(meal.id, item.id, 'quantity', Number(e.target.value))} className="h-8 text-center px-1 font-bold text-slate-700" />
-                                  <span className="text-xs font-bold text-slate-400">g</span>
+                                  <Input type="number" min={item.kind === "RECIPE" ? 0.5 : 0.1} step={item.kind === "RECIPE" ? 0.5 : 1} aria-label={`Quantidade de ${item.kind === "RECIPE" ? item.recipeVersion.name : item.food.name}`} value={item.quantity || ""} onChange={(e) => updateItemValue(meal.id, item.id, 'quantity', Number(e.target.value))} className="h-8 text-center px-1 font-bold text-slate-700" />
+                                  <span className="text-xs font-bold text-slate-400">{item.kind === "RECIPE" ? "porções" : "g"}</span>
                                 </div>
                                 <Input placeholder="Medida Caseira" value={item.measure || ""} onChange={(e) => updateItemValue(meal.id, item.id, 'measure', e.target.value)} className="h-7 text-[10px] px-2 bg-slate-50 border-dashed print:hidden" />
                               
-                                <div className="hidden print:block font-bold text-slate-700 text-sm">{item.quantity}g</div>
+                                <div className="hidden print:block font-bold text-slate-700 text-sm">{item.quantity} {item.kind === "RECIPE" ? "porções" : "g"}</div>
                                 {item.measure && <div className="hidden print:block text-xs text-slate-500 italic">{item.measure}</div>}
                              </div>
 
                              <div className="flex flex-col flex-1 pt-1">
-                                <span className="font-semibold text-slate-700 leading-tight">{item.food.name}</span>
+                                <span className="font-semibold text-slate-700 leading-tight">{item.kind === "RECIPE" ? item.recipeVersion.name : item.food.name}</span>
+                                {item.kind === "RECIPE" && <div className="text-xs text-teal-700">Versão {item.recipeVersion.version}</div>}
+                                {item.kind === "RECIPE" && <div className="hidden print:block text-xs text-slate-600">
+                                  <p>Ingredientes: {item.recipeVersion.ingredients.map((ingredient) => `${ingredient.food.name} ${formatQty(ingredient.quantity * item.quantity / item.recipeVersion.servings, ingredient.measure)}`).join(", ")}</p>
+                                  {item.recipeVersion.instructions && <p>{item.recipeVersion.instructions}</p>}
+                                </div>}
+                                {item.kind === "RECIPE" && item.recipeVersion.recipe?.status === "ACTIVE" && item.recipeVersion.recipe.currentVersionId !== item.recipeVersion.id && <RecipeVersionUpdate item={item} onUpdate={(version) => updateRecipeVersion(meal.id, item, version)} />}
                                 <span className="text-xs text-slate-400 font-medium mt-1 print:hidden flex items-center gap-2">
-                                  <span className="bg-slate-100 px-1.5 py-0.5 rounded">{calcMacro(item.food.kcal, item.food.baseAmount, item.quantity)} kcal</span>
-                                  <span className="text-rose-500">P: {calcMacro(item.food.protein, item.food.baseAmount, item.quantity)}g</span>
-                                  <span className="text-emerald-500">C: {calcMacro(item.food.carbs, item.food.baseAmount, item.quantity)}g</span>
-                                  <span className="text-amber-500">G: {calcMacro(item.food.fat, item.food.baseAmount, item.quantity)}g</span>
+                                  <span className="bg-slate-100 px-1.5 py-0.5 rounded">{getMealItemNutrition(item).kcal} kcal</span>
+                                  <span className="text-rose-500">P: {getMealItemNutrition(item).protein}g</span>
+                                  <span className="text-emerald-500">C: {getMealItemNutrition(item).carbs}g</span>
+                                  <span className="text-amber-500">G: {getMealItemNutrition(item).fat}g</span>
                                 </span>
                              </div>
                           </div>
@@ -1092,7 +800,10 @@ export default function NovaDietaPage() {
                       ))}
                     </div>
                     <div className="p-4 bg-slate-50/30 flex flex-col gap-3 print:hidden border-t border-slate-100">
-                      <Button variant="outline" className="w-full border-dashed text-teal-600 bg-white" onClick={() => setActiveMealId(meal.id)}><Search className="w-4 h-4 mr-2" /> Buscar e Adicionar Alimento</Button>
+                      <Button ref={itemPickerTriggerRef} variant="outline" className="h-auto min-h-11 w-full whitespace-normal border-dashed text-teal-600 bg-white" onClick={(event) => {
+                        itemPickerTriggerRef.current = event.currentTarget
+                        setActiveMealId(meal.id)
+                      }}><Search className="w-4 h-4 mr-2" /> Buscar e Adicionar Alimento ou Receita</Button>
                       <textarea value={meal.notes || ""} onChange={(e) => { const n = [...meals]; n[index].notes = e.target.value; setMeals(n) }} placeholder='Observações ou modo de preparo desta refeição...' className="w-full min-h-[60px] p-3 text-sm border rounded-lg resize-none focus:ring-1 focus:ring-teal-500 outline-none" />
                     </div>
                     {meal.notes && <div className="hidden print:block p-3 mx-4 mb-4 mt-2 bg-slate-50 text-slate-600 text-sm rounded border border-slate-200 italic">📌 {meal.notes}</div>}
@@ -1216,39 +927,48 @@ export default function NovaDietaPage() {
         </>
       )}
 
-      {activeMealId && (
-        <>
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40" onClick={closeModal}></div>
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl bg-white rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-5 border-b bg-slate-50">
-              <div className="flex justify-between mb-4">
-                <h3 className="font-bold flex items-center gap-2"><Database className="w-5 h-5 text-teal-600" /> {isCreatingManual ? (editingFoodId ? "Editar Alimento" : "Criar Alimento") : "Banco de Alimentos"}</h3>
-                <Button variant="outline" size="sm" onClick={() => { setIsCreatingManual(!isCreatingManual); setEditingFoodId(null); setNewFood({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 })}} className="text-teal-600">
-                  {isCreatingManual ? "Voltar para Busca" : "Cadastrar Manualmente"}
-                </Button>
+      <Dialog open={activeMealId !== null} onOpenChange={(open) => { if (!open) closeModal() }}>
+        <DialogContent showCloseButton={false} onCloseAutoFocus={(event) => {
+          event.preventDefault()
+          itemPickerTriggerRef.current?.focus()
+        }} className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden rounded-2xl bg-white p-0 shadow-2xl sm:max-w-3xl">
+            <div className="shrink-0 border-b bg-slate-50 p-5">
+              <div className="mb-4 flex flex-wrap justify-between gap-3">
+                <DialogTitle className="flex items-center gap-2 font-bold"><Database className="h-5 w-5 text-teal-600" /> {isCreatingManual ? (editingFoodId ? "Editar Alimento" : "Criar Alimento") : "Banco de Alimentos e Receitas"}</DialogTitle>
+                <div className="flex items-center gap-2">
+                  {pickerTab === "FOOD" && <Button variant="outline" size="sm" onClick={() => { setIsCreatingManual(!isCreatingManual); setEditingFoodId(null); setNewFood({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 })}} className="min-h-11 text-teal-600">
+                    {isCreatingManual ? "Voltar para Busca" : "Cadastrar Manualmente"}
+                  </Button>}
+                  <DialogClose asChild><Button type="button" variant="ghost" size="icon" aria-label="Fechar seletor" className="min-h-11 min-w-11"><X className="h-4 w-4" /></Button></DialogClose>
+                </div>
               </div>
-              {!isCreatingManual && (
+              <DialogDescription className="sr-only">Escolha um alimento ou receita para adicionar à refeição selecionada.</DialogDescription>
+              {!isCreatingManual && <div role="tablist" aria-label="Tipo de item" className="flex gap-2 mb-3">
+                <Button role="tab" aria-selected={pickerTab === "FOOD"} variant={pickerTab === "FOOD" ? "default" : "outline"} className="min-h-11" onClick={() => setPickerTab("FOOD")}>Alimentos</Button>
+                <Button role="tab" aria-selected={pickerTab === "RECIPE"} variant={pickerTab === "RECIPE" ? "default" : "outline"} className="min-h-11" onClick={() => setPickerTab("RECIPE")}>Receitas</Button>
+              </div>}
+              {!isCreatingManual && pickerTab === "FOOD" && (
                 <>
-                  <div className="flex gap-2 mb-3">
+                  <div className="mb-3 flex flex-wrap gap-2">
                     {["TODAS", "TACO", "IBGE", "TBCA", "MANUAL"].map(s => (
-                      <Button key={s} variant={selectedSource === s ? "default" : "outline"} size="sm" onClick={() => setSelectedSource(s)} className={`rounded-full px-4 ${selectedSource === s ? 'bg-teal-600' : ''}`}>{s}</Button>
+                      <Button key={s} variant={selectedSource === s ? "default" : "outline"} size="sm" onClick={() => setSelectedSource(s)} className={`min-h-11 rounded-full px-4 ${selectedSource === s ? 'bg-teal-600' : ''}`}>{s}</Button>
                     ))}
                   </div>
                   <div className="flex gap-3">
-                    <div className="relative flex-1">
-                      <Input placeholder="Pesquise..." value={searchTerm || ""} onChange={e => setSearchTerm(e.target.value)} autoFocus />
+                    <div className="relative min-w-0 flex-1">
+                      <Input aria-label="Buscar alimentos" placeholder="Pesquise..." value={searchTerm || ""} onChange={e => setSearchTerm(e.target.value)} className="min-h-11" autoFocus />
                       {isSearching && <Loader2 className="w-4 h-4 text-teal-500 animate-spin absolute right-3 top-3" />}
                     </div>
                     <div className="flex items-center gap-2 bg-white px-3 border rounded-md w-32 shrink-0">
-                      <Input type="number" value={amountToAdd || ""} onChange={e => setAmountToAdd(Number(e.target.value))} className="border-0 p-0 text-center font-bold" />
+                      <Input type="number" aria-label="Quantidade de alimento em gramas" value={amountToAdd || ""} onChange={e => setAmountToAdd(Number(e.target.value))} className="min-h-11 border-0 p-0 text-center font-bold" />
                       <span className="text-sm font-semibold text-slate-400">g</span>
                     </div>
                   </div>
                 </>
               )}
             </div>
-            <div className="overflow-y-auto flex-1">
-              {isCreatingManual ? (
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {pickerTab === "RECIPE" ? <RecipePicker onSelect={addRecipeToMeal} /> : isCreatingManual ? (
                 <div className="p-6 space-y-6">
                   <div className="space-y-2">
                     <Label className="text-slate-600">Nome do Alimento / Receita <span className="text-rose-500">*</span></Label>
@@ -1257,20 +977,20 @@ export default function NovaDietaPage() {
                   
                   <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
                     <p className="text-xs font-bold mb-4 text-slate-500 uppercase tracking-wider">Macronutrientes Principais (em 100g)</p>
-                    <div className="grid grid-cols-4 gap-4">
-                      <div><Label>Kcal</Label><Input type="number" value={newFood.kcal || ""} onChange={e => setNewFood({...newFood, kcal: Number(e.target.value)})} /></div>
-                      <div><Label className="text-rose-600">PTN (g)</Label><Input type="number" value={newFood.pro || ""} onChange={e => setNewFood({...newFood, pro: Number(e.target.value)})} /></div>
-                      <div><Label className="text-emerald-600">CARB (g)</Label><Input type="number" value={newFood.carb || ""} onChange={e => setNewFood({...newFood, carb: Number(e.target.value)})} /></div>
-                      <div><Label className="text-amber-600">GOR (g)</Label><Input type="number" value={newFood.fat || ""} onChange={e => setNewFood({...newFood, fat: Number(e.target.value)})} /></div>
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                      <div><Label>Kcal</Label><Input type="number" className="min-h-11" value={newFood.kcal || ""} onChange={e => setNewFood({...newFood, kcal: Number(e.target.value)})} /></div>
+                      <div><Label className="text-rose-600">PTN (g)</Label><Input type="number" className="min-h-11" value={newFood.pro || ""} onChange={e => setNewFood({...newFood, pro: Number(e.target.value)})} /></div>
+                      <div><Label className="text-emerald-600">CARB (g)</Label><Input type="number" className="min-h-11" value={newFood.carb || ""} onChange={e => setNewFood({...newFood, carb: Number(e.target.value)})} /></div>
+                      <div><Label className="text-amber-600">GOR (g)</Label><Input type="number" className="min-h-11" value={newFood.fat || ""} onChange={e => setNewFood({...newFood, fat: Number(e.target.value)})} /></div>
                     </div>
 
                     <div className="mt-6 pt-4 border-t border-slate-200">
                       <p className="text-xs font-bold mb-4 text-slate-500 uppercase tracking-wider">Micronutrientes e Fibras (Opcional)</p>
-                      <div className="grid grid-cols-4 gap-4">
-                        <div><Label className="text-slate-600">Fibras (g)</Label><Input type="number" value={newFood.fiber || ""} onChange={e => setNewFood({...newFood, fiber: Number(e.target.value)})} /></div>
-                        <div><Label className="text-slate-600">Sódio (mg)</Label><Input type="number" value={newFood.sodium || ""} onChange={e => setNewFood({...newFood, sodium: Number(e.target.value)})} /></div>
-                        <div><Label className="text-slate-600">Cálcio (mg)</Label><Input type="number" value={newFood.calcium || ""} onChange={e => setNewFood({...newFood, calcium: Number(e.target.value)})} /></div>
-                        <div><Label className="text-slate-600">Ferro (mg)</Label><Input type="number" value={newFood.iron || ""} onChange={e => setNewFood({...newFood, iron: Number(e.target.value)})} /></div>
+                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                        <div><Label className="text-slate-600">Fibras (g)</Label><Input type="number" className="min-h-11" value={newFood.fiber || ""} onChange={e => setNewFood({...newFood, fiber: Number(e.target.value)})} /></div>
+                        <div><Label className="text-slate-600">Sódio (mg)</Label><Input type="number" className="min-h-11" value={newFood.sodium || ""} onChange={e => setNewFood({...newFood, sodium: Number(e.target.value)})} /></div>
+                        <div><Label className="text-slate-600">Cálcio (mg)</Label><Input type="number" className="min-h-11" value={newFood.calcium || ""} onChange={e => setNewFood({...newFood, calcium: Number(e.target.value)})} /></div>
+                        <div><Label className="text-slate-600">Ferro (mg)</Label><Input type="number" className="min-h-11" value={newFood.iron || ""} onChange={e => setNewFood({...newFood, iron: Number(e.target.value)})} /></div>
                       </div>
                     </div>
                   </div>
@@ -1282,11 +1002,11 @@ export default function NovaDietaPage() {
               ) : (
                 <div className="p-2">
                   {availableFoods.map(food => (
-                    <div key={food.id} className="flex items-center justify-between p-4 hover:bg-slate-50 border-b last:border-0 cursor-pointer" onClick={() => addFoodToMeal(food)}>
+                    <div key={food.id} className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-slate-50 border-b last:border-0 cursor-pointer" onClick={() => addFoodToMeal(food)}>
                       <div>
                         <div className="flex gap-2 mb-1 items-center">
                           <p className="font-bold text-slate-800">{food.name}</p>
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-sm ${getSourceBadgeColor(food.source)}`}>{food.source || 'MANUAL'}</span>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-sm ${getSourceBadgeColor(food.source ?? "MANUAL")}`}>{food.source || 'MANUAL'}</span>
                         </div>
                         <p className="text-sm font-medium text-slate-500">
                           {calcMacro(food.kcal, food.baseAmount, amountToAdd)} kcal | 
@@ -1295,23 +1015,22 @@ export default function NovaDietaPage() {
                           <span className="text-amber-500 ml-1">G: {calcMacro(food.fat, food.baseAmount, amountToAdd)}g</span>
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {food.source === 'MANUAL' && (
                           <div className="flex bg-slate-100 rounded-md p-1 mr-2">
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-500 hover:text-teal-600" onClick={(e) => handleEditFood(e, food)}><Edit2 className="w-4 h-4" /></Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-500 hover:text-rose-600" onClick={(e) => handleDeleteFood(e, food.id)}><Trash2 className="w-4 h-4" /></Button>
+                            <Button size="icon" variant="ghost" aria-label={`Editar ${food.name}`} className="min-h-11 min-w-11 text-slate-500 hover:text-teal-600" onClick={(e) => handleEditFood(e, food)}><Edit2 className="w-4 h-4" /></Button>
+                            <Button size="icon" variant="ghost" aria-label={`Excluir ${food.name}`} className="min-h-11 min-w-11 text-slate-500 hover:text-rose-600" onClick={(e) => handleDeleteFood(e, food.id)}><Trash2 className="w-4 h-4" /></Button>
                           </div>
                         )}
-                        <Button size="sm" className="bg-teal-50 text-teal-700 hover:bg-teal-100 font-bold border"><Plus className="w-4 h-4 mr-1" /> Add</Button>
+                        <Button size="sm" className="min-h-11 bg-teal-50 text-teal-700 hover:bg-teal-100 font-bold border"><Plus className="w-4 h-4 mr-1" /> Add</Button>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          </div>
-        </>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* ­ƒîƒ MODAL DRI: SOMAT├ôRIO DE MICRONUTRIENTES */}
       {showDriModal && (

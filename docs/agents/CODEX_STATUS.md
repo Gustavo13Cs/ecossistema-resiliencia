@@ -9,9 +9,10 @@
 ## Current Task
 
 - **Tarefa**: Banco de Receitas versionado, macros por porção, filtros de restrição e associação a planos alimentares
-- **Status**: Especificação aprovada e plano de implementação em revisão; código funcional ainda não iniciado
+- **Status**: Implementação e merge local concluídos no commit `154bac9`, com impressão A4 conciliada e revisão independente sem Critical/Important pendentes. Gates da funcionalidade aprovados; publicação e aplicação da migration de receitas em produção não realizadas.
 - **Branch**: `codex/BancodeReceitas`
 - **Início**: 2026-09-21
+- **Conclusão**: 2026-09-28
 - **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migration versionada desta funcionalidade
 
 ---
@@ -29,16 +30,29 @@
 | 2026-09-14 | Avaliações migradas para prontuários Client e integradas em `main` | `codex/fix-assessments-client-flow` |
 | 2026-09-14 | Agenda profissional vinculada a Client: calendário dia/semana/mês, lifecycle auditável, conflitos, ownership e E2E real | `agent/codex/professional-agenda-phase-1` |
 | 2026-09-16 | Endurecimento da Data API, grants e RLS defensivo verificado em produção | `agent/codex/supabase-rls-hardening` |
+| 2026-09-28 | Banco privado de receitas versionadas, macros por porção, restrições, prescrição com snapshot, modelos e impressão/lista de compras | `codex/BancodeReceitas` |
 
 ---
 
 ## Blocked
 
-_Nenhum impedimento._
+- Gates globais do frontend têm pendências preexistentes fora do Banco de Receitas: ESLint em `useClientGoals.ts` (`react-hooks/preserve-manual-memoization`) e Cypress de `professional-agenda.cy.ts` (botão de fechamento recortado pelo overflow). Não foram adicionadas supressões nem alterados esses fluxos nesta entrega.
 
 ---
 
 ## Notes
+
+### Banco de Receitas — evidência local de 2026-09-28
+
+- Implementado: criação, edição versionada, categorias, busca, arquivamento/restauração e filtros manuais sem glúten, sem lactose e vegano. Fotos fora do escopo aprovado.
+- Nutrientes calculados no backend a partir de alimentos persistidos. Prescrições e modelos mantêm a versão selecionada até atualização explícita e salvamento pelo nutricionista; impressão e compras preservam esse conteúdo.
+- API: 24 suítes/279 unitários e 10 suítes/28 E2E aprovados; build aprovado. Prisma validate/generate e deploy/status das 10 migrations aprovados somente no banco isolado de teste da porta 5434.
+- Frontend: suíte completa com 39 arquivos/273 testes aprovada em execução isolada; regressão adicional do seletor assíncrono aprovada em 7/7 casos focais. Typecheck e build aprovados. A primeira execução concorrente teve timeouts; a mesma suíte passou sem alterar limites ou configuração.
+- Cypress da funcionalidade: 1/1 aprovado na execução final (1m26s), em desktop 1280px e mobile 390px, com criação/refetch, erro 503/retry, receitas e alimentos, liberação de pointer/scroll e payload XOR. Sincronização por respostas específicas e pós-condições reais, sem force-click, aumento de timeout, screenshots ou vídeo.
+- Revisões independentes aprovaram a integração, a preservação dos snapshots e o delta dos testes. Validação visual final aprovada, sem overflow, com seletor acessível e alvos de toque de ao menos 44px.
+- Limites: nenhum push, deploy ou acesso ao banco de produção nesta conclusão. A migration `20260921193053_add_versioned_recipe_bank` ainda precisa de aplicação controlada em produção antes da publicação da API. As pendências globais antigas estão listadas em Blocked.
+
+### Hardening anterior — evidência de 2026-09-16
 
 - Produção: migration `20260915133000_harden_supabase_data_api_rls` aplicada uma vez; 33 tabelas de aplicação com RLS, 33 policies restritivas e zero privilégios atuais ou default ACLs nas superfícies verificadas.
 - Gate local: Prisma validate/deploy/status/generate, build NestJS, 218/218 casos unitários em 21/21 suites e 8 suites E2E concluídos sem falhas.
