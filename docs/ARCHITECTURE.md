@@ -22,7 +22,7 @@
 │  class-validator + class-transformer                              │
 │  ScheduleModule (alertas automáticos)                             │
 └────────────────────────────┬─────────────────────────────────────┘
-                             │ Prisma ORM 7.5
+                             │ Prisma ORM 7.10
 ┌────────────────────────────┴─────────────────────────────────────┐
 │                      DATABASE                                     │
 │  PostgreSQL 16                                                    │
@@ -59,6 +59,7 @@ api/src/
     ├── workouts/           # Planos de treino (Workout → Split → Exercise)
     ├── diet-plans/         # Planos dietéticos (DietPlan → Meal → MealItem)
     ├── foods/              # Banco de alimentos (busca, CRUD)
+    ├── recipes/            # Biblioteca privada, nutrientes por porção e versões imutáveis
     ├── assessments/        # Avaliações físicas (antropometria)
     ├── physio-assessments/ # Avaliações fisioterapêuticas
     ├── rehab-plans/        # Planos de reabilitação (RehabPlan → Session → Exercise)
@@ -116,7 +117,8 @@ web/
 │   ├── treinos/              # Módulo treino
 │   ├── reabilitacao/         # Módulo fisioterapia
 │   ├── avaliacoes/           # Avaliações
-│   └── alimentos/            # Banco de alimentos
+│   ├── alimentos/            # Banco de alimentos
+│   └── receitas/             # Banco privado de receitas versionadas
 │
 ├── components/
 │   ├── ui/                   # 57 primitivos (Button, Dialog, Table, etc.)
@@ -170,7 +172,12 @@ erDiagram
     Client ||--o{ ClientAuditEvent : "tracked by"
     DietPlan ||--o{ Meal : contains
     Meal ||--o{ MealItem : contains
-    MealItem }o--|| Food : references
+    MealItem }o--o| Food : references
+    MealItem }o--o| RecipeVersion : prescribes
+    User ||--o{ Recipe : owns
+    Recipe ||--o{ RecipeVersion : versions
+    RecipeVersion ||--o{ RecipeIngredient : contains
+    RecipeIngredient }o--|| Food : references
     Workout ||--o{ WorkoutSplit : contains
     WorkoutSplit ||--o{ WorkoutExercise : contains
     RehabPlan ||--o{ RehabSession : contains
@@ -184,12 +191,23 @@ erDiagram
 | `User`            | Identidade autenticável (profissional)  | —                  |
 | `Client`          | Prontuário sem login                    | `User` (owner)     |
 | `DietPlan`        | Prescrição nutricional                  | `User` (creator)   |
+| `Recipe`          | Identidade privada e estado da receita | `User` (owner)     |
+| `RecipeVersion`   | Conteúdo e nutrientes por porção imutáveis | `Recipe`       |
+| `RecipeIngredient`| Alimento e quantidade da versão        | `RecipeVersion`    |
 | `Workout`         | Plano de treino                         | `User` (creator)   |
 | `RehabPlan`       | Plano de reabilitação                   | `User` (creator)   |
 | `PhysioAssessment`| Avaliação fisioterapêutica              | `User` (patient)   |
 | `Anamnesis`       | Ficha clínica completa                  | `User` (patient)   |
 | `LabExam`         | Exame laboratorial                      | `User` (patient)   |
 | `AgendaTask`      | Tarefa na agenda diária                 | `User` (both)      |
+
+`MealItem` referencia exatamente um alimento ou uma versão de receita (constraint
+XOR). Na receita, a quantidade do item representa porções. O cálculo nutricional
+usa `Food` persistido no backend; a edição publica uma nova versão e os planos
+existentes mantêm a versão prescrita até atualização explícita no editor.
+Templates, impressão e lista de compras preservam essa referência. As novas
+tabelas usam o RLS defensivo da Data API; o isolamento entre profissionais
+continua sendo aplicado nos services NestJS.
 
 ---
 

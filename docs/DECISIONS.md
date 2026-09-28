@@ -162,3 +162,35 @@ críticos.
 - ✅ Worktrees permitem edições paralelas sem conflitos de branch
 - ✅ Documentação centralizada reduz "alucinações" sobre o estado do projeto
 - ⚠️ Requer que cada agente atualize seu status file
+
+---
+
+## ADR-008: Receitas Privadas com Versões Imutáveis
+
+**Status**: Aceita
+**Data**: 2026-09-21
+
+### Contexto
+
+Preparações precisam de ingredientes e nutrientes por porção. Uma alteração na
+biblioteca não pode modificar silenciosamente uma prescrição já salva.
+
+### Decisão
+
+- `Recipe` pertence ao profissional; cada edição acrescenta `RecipeVersion`.
+- Nutrientes são calculados no backend a partir dos alimentos persistidos.
+- Publicação e escrita de ingredientes são serializadas; snapshots publicados
+  não podem ser alterados ou removidos pelos fluxos normais.
+- `MealItem` referencia `Food` ou `RecipeVersion`, com constraint XOR.
+- Atualizar uma versão prescrita exige ação explícita no editor e salvar a dieta.
+- Glúten, lactose e veganismo são marcadores manuais, sem inferência automática.
+- Fotos ficam fora do MVP; as novas tabelas seguem RLS/revogações defensivas da
+  Data API, sem substituir ownership na aplicação.
+
+### Consequências
+
+- Prescrições, modelos e impressão mantêm a revisão utilizada.
+- Conflitos de edição retornam HTTP 409 e não deixam versões órfãs.
+- Quantidade de receita é porções; compras expandem os ingredientes pelo
+  rendimento, pelas porções prescritas e pelos dias.
+- A migration precisa ser aplicada antes de publicar a API que usa esses modelos.

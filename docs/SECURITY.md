@@ -100,6 +100,9 @@ async findOne(id: string, professionalId: string) {
 - O Prisma conecta como `postgres` com `BYPASSRLS`; portanto, o RLS atual protege a
   superfície Data API, mas não aplica isolamento entre profissionais à API NestJS.
 - Ownership por `professionalId`, guards e testes negativos continuam obrigatórios.
+- A migration `20260921193053_add_versioned_recipe_bank` acrescenta `recipes`,
+  `recipe_versions` e `recipe_ingredients` com RLS defensivo e grants revogados.
+  Sua validação é local; a entrega do código não confirma aplicação em produção.
 - Qualquer exposição futura exige migration com grant mínimo e policy de ownership
   aprovada. Policies com `auth.uid()` são incompatíveis com o JWT próprio atual.
 - O preflight histórico não capturou sequences, functions, `PUBLIC EXECUTE` nem
