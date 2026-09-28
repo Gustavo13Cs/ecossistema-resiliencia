@@ -139,7 +139,7 @@ export default function ModelosPlanosPage() {
           t.goal.toLowerCase().includes(q) ||
           (t.notes && t.notes.toLowerCase().includes(q)) ||
           t.meals.some((m) =>
-            m.items.some((it) => (it.name || it.food?.name || "").toLowerCase().includes(q))
+            m.items.some((it) => (it.recipeVersion?.name || it.name || it.food?.name || "").toLowerCase().includes(q))
           )
       )
     }

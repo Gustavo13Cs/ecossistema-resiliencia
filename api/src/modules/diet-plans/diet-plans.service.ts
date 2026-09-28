@@ -646,7 +646,10 @@ export class DietPlansService {
 
           let scaledQuantity = item.quantity * scaleFactor;
           const measureLower = (item.measure || '').toLowerCase();
-          if (measureLower === 'g' || measureLower === 'ml') {
+          if (
+            !recipeVersionId &&
+            (measureLower === 'g' || measureLower === 'ml')
+          ) {
             scaledQuantity = Math.max(5, Math.round(scaledQuantity / 5) * 5);
           } else {
             scaledQuantity = Math.max(0.5, Math.round(scaledQuantity * 2) / 2);
@@ -654,7 +657,7 @@ export class DietPlansService {
 
           preparedItems.push({
             quantity: scaledQuantity,
-            measure: item.measure || 'g',
+            measure: recipeVersionId ? 'porções' : item.measure || 'g',
             notes: item.notes || null,
             foodId: resolvedFoodId,
             recipeVersionId,

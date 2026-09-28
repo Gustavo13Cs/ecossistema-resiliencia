@@ -712,6 +712,64 @@ describe('DietPlansService professional ownership', () => {
     });
   });
 
+  it.each(['g', 'ml', ''])(
+    'scales recipes as servings even with legacy measure %j',
+    async (measure) => {
+      prisma.recipeVersion.findMany.mockResolvedValue([
+        ownedArchivedRecipeVersion,
+      ]);
+      prisma.dietPlan.findUnique.mockResolvedValue({
+        id: 'tpl-recipe',
+        title: 'Receita',
+        goal: 'Manutenção',
+        targetKcal: 2000,
+        proteinG: 100,
+        carbsG: 200,
+        fatG: 60,
+        creatorId: PROFESSIONAL_ID,
+        meals: [
+          {
+            name: 'Café',
+            items: [
+              {
+                quantity: 2,
+                measure,
+                foodId: null,
+                recipeVersionId: VERSION_1_ID,
+              },
+              {
+                quantity: 0.2,
+                measure,
+                foodId: null,
+                recipeVersionId: VERSION_1_ID,
+              },
+            ],
+          },
+        ],
+      });
+      await service.importTemplateToClient(
+        'tpl-recipe',
+        { clientId: CLIENT_ID, targetKcal: 1600 },
+        PROFESSIONAL_ID,
+      );
+      expect(mealItemsFromCreateArgs(capturedDietCreateArgs)).toEqual([
+        expect.objectContaining({
+          recipeVersionId: VERSION_1_ID,
+          foodId: null,
+          quantity: 1.5,
+          measure: 'porções',
+        }),
+        expect.objectContaining({
+          recipeVersionId: VERSION_1_ID,
+          foodId: null,
+          quantity: 0.5,
+          measure: 'porções',
+        }),
+      ]);
+      expect(prisma.food.findFirst).not.toHaveBeenCalled();
+    },
+  );
+
   it('validates recipe ownership before deactivating a plan during import', async () => {
     prisma.dietPlan.findUnique.mockResolvedValue({
       id: 'tpl-foreign-recipe',

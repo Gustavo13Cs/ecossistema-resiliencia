@@ -64,8 +64,11 @@ export function TemplateDetailDrawer({
       text += `🍽️ *${idx + 1}. ${meal.name}* ${meal.time ? `(${meal.time})` : ""}\n`
       if (meal.notes) text += `   _Obs: ${meal.notes}_\n`
       meal.items.forEach((item) => {
-        const foodName = item.name || item.food?.name || "Alimento"
-        text += `   • ${foodName}: ${item.quantity} ${item.measure}${item.notes ? ` (${item.notes})` : ""}\n`
+        const foodName = item.recipeVersion
+          ? `${item.recipeVersion.name} · Versão ${item.recipeVersion.version}`
+          : item.name || item.food?.name || "Alimento"
+        text += `   • ${foodName}: ${item.quantity} ${item.recipeVersionId ? "porções" : item.measure}${item.notes ? ` (${item.notes})` : ""}\n`
+        if (item.recipeVersion?.instructions) text += `     Preparo: ${item.recipeVersion.instructions}\n`
       })
       text += `\n`
     })
@@ -204,16 +207,23 @@ export function TemplateDetailDrawer({
 
                     <div className="divide-y divide-slate-100">
                       {meal.items.map((item, itemIdx) => {
-                        const foodName = item.name || item.food?.name || "Alimento"
+                        const foodName = item.recipeVersion
+                          ? `${item.recipeVersion.name} · Versão ${item.recipeVersion.version}`
+                          : item.name || item.food?.name || "Alimento"
                         return (
                           <div
                             key={itemIdx}
                             className="py-1.5 flex items-center justify-between text-xs"
                           >
-                            <span className="font-medium text-slate-700">{foodName}</span>
+                            <div className="min-w-0">
+                              <span className="font-medium text-slate-700">{foodName}</span>
+                              {item.recipeVersion?.instructions && (
+                                <p className="text-slate-500 whitespace-pre-wrap mt-1">Preparo: {item.recipeVersion.instructions}</p>
+                              )}
+                            </div>
                             <div className="flex items-center gap-2">
                               <span className="text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded text-[11px]">
-                                {item.quantity} {item.measure}
+                                {item.quantity} {item.recipeVersionId ? "porções" : item.measure}
                               </span>
                               {item.notes && (
                                 <span className="text-[10px] text-slate-400 italic">

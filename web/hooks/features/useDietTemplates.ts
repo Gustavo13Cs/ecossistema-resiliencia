@@ -2,24 +2,39 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import type { RecipeVersion } from "@/types/recipe"
 
-export interface DietTemplateMealItem {
+interface DietTemplateMealItemBase {
   id?: string
-  foodId?: string
   name?: string
   quantity: number
   measure: string
   notes?: string | null
-  food?: {
-    id: string
-    name: string
-    kcal: number
-    protein: number
-    carbs: number
-    fat: number
-    fiber?: number
-  }
 }
+
+interface DietTemplateFood {
+  id: string
+  name: string
+  kcal: number
+  protein: number
+  carbs: number
+  fat: number
+  fiber?: number
+}
+
+export type DietTemplateMealItem = DietTemplateMealItemBase & (
+  | { foodId?: string | null; food?: DietTemplateFood | null; recipeVersionId?: null; recipeVersion?: null }
+  | { recipeVersionId: string; recipeVersion: RecipeVersion; foodId?: null; food?: null }
+)
+
+export type DietTemplateMealItemPayload = {
+  quantity: number
+  measure: string
+  notes?: string
+} & (
+  | { foodId: string; recipeVersionId?: never }
+  | { recipeVersionId: string; foodId?: never }
+)
 
 export interface DietTemplateMeal {
   id?: string
@@ -66,12 +81,7 @@ export interface CreateTemplatePayload {
     name: string
     time?: string
     notes?: string
-    items: Array<{
-      foodId: string
-      quantity: number
-      measure: string
-      notes?: string
-    }>
+    items: DietTemplateMealItemPayload[]
   }>
 }
 
