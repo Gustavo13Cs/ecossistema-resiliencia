@@ -37,9 +37,9 @@ export function RecipePickerPanel({ recipes, onSelect, isLoading, isError, onRet
       </select>
     </div>
     <div className="flex flex-wrap gap-4 text-sm text-[var(--sm-ink)]">
-      {([ ["isGlutenFree", "Sem glúten"], ["isLactoseFree", "Sem lactose"], ["isVegan", "Vegano"] ] as const).map(([key, label]) => <label key={key} className="flex min-h-10 items-center gap-2"><input type="checkbox" checked={restrictions[key]} onChange={(event) => setRestrictions((current) => ({ ...current, [key]: event.target.checked }))} />{label}</label>)}
+      {([ ["isGlutenFree", "Sem glúten"], ["isLactoseFree", "Sem lactose"], ["isVegan", "Vegano"] ] as const).map(([key, label]) => <label key={key} className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={restrictions[key]} onChange={(event) => setRestrictions((current) => ({ ...current, [key]: event.target.checked }))} />{label}</label>)}
     </div>
-    {isLoading ? <p role="status">Carregando receitas...</p> : isError ? <div role="alert">Não foi possível carregar receitas. <Button onClick={onRetry}>Tentar novamente</Button></div> :
+    {isLoading ? <p role="status">Carregando receitas...</p> : isError ? <div role="alert">Não foi possível carregar receitas. <Button type="button" className="min-h-11" onClick={onRetry}>Tentar novamente</Button></div> :
       filtered.length === 0 ? <p>Nenhuma receita ativa encontrada.</p> : filtered.map((recipe) => {
         const version = recipe.currentVersion
         const amount = Number(servings[recipe.id] ?? "1")

@@ -940,7 +940,7 @@ export default function NovaDietaPage() {
               <div className="mb-4 flex flex-wrap justify-between gap-3">
                 <DialogTitle className="flex items-center gap-2 font-bold"><Database className="h-5 w-5 text-teal-600" /> {isCreatingManual ? (editingFoodId ? "Editar Alimento" : "Criar Alimento") : "Banco de Alimentos e Receitas"}</DialogTitle>
                 <div className="flex items-center gap-2">
-                  {pickerTab === "FOOD" && <Button variant="outline" size="sm" onClick={() => { setIsCreatingManual(!isCreatingManual); setEditingFoodId(null); setNewFood({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 })}} className="text-teal-600">
+                  {pickerTab === "FOOD" && <Button variant="outline" size="sm" onClick={() => { setIsCreatingManual(!isCreatingManual); setEditingFoodId(null); setNewFood({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 })}} className="min-h-11 text-teal-600">
                     {isCreatingManual ? "Voltar para Busca" : "Cadastrar Manualmente"}
                   </Button>}
                   <DialogClose asChild><Button type="button" variant="ghost" size="icon" aria-label="Fechar seletor" className="min-h-11 min-w-11"><X className="h-4 w-4" /></Button></DialogClose>
@@ -948,23 +948,23 @@ export default function NovaDietaPage() {
               </div>
               <DialogDescription className="sr-only">Escolha um alimento ou receita para adicionar à refeição selecionada.</DialogDescription>
               {!isCreatingManual && <div role="tablist" aria-label="Tipo de item" className="flex gap-2 mb-3">
-                <Button role="tab" aria-selected={pickerTab === "FOOD"} variant={pickerTab === "FOOD" ? "default" : "outline"} onClick={() => setPickerTab("FOOD")}>Alimentos</Button>
-                <Button role="tab" aria-selected={pickerTab === "RECIPE"} variant={pickerTab === "RECIPE" ? "default" : "outline"} onClick={() => setPickerTab("RECIPE")}>Receitas</Button>
+                <Button role="tab" aria-selected={pickerTab === "FOOD"} variant={pickerTab === "FOOD" ? "default" : "outline"} className="min-h-11" onClick={() => setPickerTab("FOOD")}>Alimentos</Button>
+                <Button role="tab" aria-selected={pickerTab === "RECIPE"} variant={pickerTab === "RECIPE" ? "default" : "outline"} className="min-h-11" onClick={() => setPickerTab("RECIPE")}>Receitas</Button>
               </div>}
               {!isCreatingManual && pickerTab === "FOOD" && (
                 <>
                   <div className="mb-3 flex flex-wrap gap-2">
                     {["TODAS", "TACO", "IBGE", "TBCA", "MANUAL"].map(s => (
-                      <Button key={s} variant={selectedSource === s ? "default" : "outline"} size="sm" onClick={() => setSelectedSource(s)} className={`rounded-full px-4 ${selectedSource === s ? 'bg-teal-600' : ''}`}>{s}</Button>
+                      <Button key={s} variant={selectedSource === s ? "default" : "outline"} size="sm" onClick={() => setSelectedSource(s)} className={`min-h-11 rounded-full px-4 ${selectedSource === s ? 'bg-teal-600' : ''}`}>{s}</Button>
                     ))}
                   </div>
                   <div className="flex gap-3">
-                    <div className="relative flex-1">
-                      <Input placeholder="Pesquise..." value={searchTerm || ""} onChange={e => setSearchTerm(e.target.value)} autoFocus />
+                    <div className="relative min-w-0 flex-1">
+                      <Input aria-label="Buscar alimentos" placeholder="Pesquise..." value={searchTerm || ""} onChange={e => setSearchTerm(e.target.value)} className="min-h-11" autoFocus />
                       {isSearching && <Loader2 className="w-4 h-4 text-teal-500 animate-spin absolute right-3 top-3" />}
                     </div>
                     <div className="flex items-center gap-2 bg-white px-3 border rounded-md w-32 shrink-0">
-                      <Input type="number" value={amountToAdd || ""} onChange={e => setAmountToAdd(Number(e.target.value))} className="border-0 p-0 text-center font-bold" />
+                      <Input type="number" aria-label="Quantidade de alimento em gramas" value={amountToAdd || ""} onChange={e => setAmountToAdd(Number(e.target.value))} className="min-h-11 border-0 p-0 text-center font-bold" />
                       <span className="text-sm font-semibold text-slate-400">g</span>
                     </div>
                   </div>
@@ -981,20 +981,20 @@ export default function NovaDietaPage() {
                   
                   <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
                     <p className="text-xs font-bold mb-4 text-slate-500 uppercase tracking-wider">Macronutrientes Principais (em 100g)</p>
-                    <div className="grid grid-cols-4 gap-4">
-                      <div><Label>Kcal</Label><Input type="number" value={newFood.kcal || ""} onChange={e => setNewFood({...newFood, kcal: Number(e.target.value)})} /></div>
-                      <div><Label className="text-rose-600">PTN (g)</Label><Input type="number" value={newFood.pro || ""} onChange={e => setNewFood({...newFood, pro: Number(e.target.value)})} /></div>
-                      <div><Label className="text-emerald-600">CARB (g)</Label><Input type="number" value={newFood.carb || ""} onChange={e => setNewFood({...newFood, carb: Number(e.target.value)})} /></div>
-                      <div><Label className="text-amber-600">GOR (g)</Label><Input type="number" value={newFood.fat || ""} onChange={e => setNewFood({...newFood, fat: Number(e.target.value)})} /></div>
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                      <div><Label>Kcal</Label><Input type="number" className="min-h-11" value={newFood.kcal || ""} onChange={e => setNewFood({...newFood, kcal: Number(e.target.value)})} /></div>
+                      <div><Label className="text-rose-600">PTN (g)</Label><Input type="number" className="min-h-11" value={newFood.pro || ""} onChange={e => setNewFood({...newFood, pro: Number(e.target.value)})} /></div>
+                      <div><Label className="text-emerald-600">CARB (g)</Label><Input type="number" className="min-h-11" value={newFood.carb || ""} onChange={e => setNewFood({...newFood, carb: Number(e.target.value)})} /></div>
+                      <div><Label className="text-amber-600">GOR (g)</Label><Input type="number" className="min-h-11" value={newFood.fat || ""} onChange={e => setNewFood({...newFood, fat: Number(e.target.value)})} /></div>
                     </div>
 
                     <div className="mt-6 pt-4 border-t border-slate-200">
                       <p className="text-xs font-bold mb-4 text-slate-500 uppercase tracking-wider">Micronutrientes e Fibras (Opcional)</p>
-                      <div className="grid grid-cols-4 gap-4">
-                        <div><Label className="text-slate-600">Fibras (g)</Label><Input type="number" value={newFood.fiber || ""} onChange={e => setNewFood({...newFood, fiber: Number(e.target.value)})} /></div>
-                        <div><Label className="text-slate-600">Sódio (mg)</Label><Input type="number" value={newFood.sodium || ""} onChange={e => setNewFood({...newFood, sodium: Number(e.target.value)})} /></div>
-                        <div><Label className="text-slate-600">Cálcio (mg)</Label><Input type="number" value={newFood.calcium || ""} onChange={e => setNewFood({...newFood, calcium: Number(e.target.value)})} /></div>
-                        <div><Label className="text-slate-600">Ferro (mg)</Label><Input type="number" value={newFood.iron || ""} onChange={e => setNewFood({...newFood, iron: Number(e.target.value)})} /></div>
+                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                        <div><Label className="text-slate-600">Fibras (g)</Label><Input type="number" className="min-h-11" value={newFood.fiber || ""} onChange={e => setNewFood({...newFood, fiber: Number(e.target.value)})} /></div>
+                        <div><Label className="text-slate-600">Sódio (mg)</Label><Input type="number" className="min-h-11" value={newFood.sodium || ""} onChange={e => setNewFood({...newFood, sodium: Number(e.target.value)})} /></div>
+                        <div><Label className="text-slate-600">Cálcio (mg)</Label><Input type="number" className="min-h-11" value={newFood.calcium || ""} onChange={e => setNewFood({...newFood, calcium: Number(e.target.value)})} /></div>
+                        <div><Label className="text-slate-600">Ferro (mg)</Label><Input type="number" className="min-h-11" value={newFood.iron || ""} onChange={e => setNewFood({...newFood, iron: Number(e.target.value)})} /></div>
                       </div>
                     </div>
                   </div>
@@ -1006,7 +1006,7 @@ export default function NovaDietaPage() {
               ) : (
                 <div className="p-2">
                   {availableFoods.map(food => (
-                    <div key={food.id} className="flex items-center justify-between p-4 hover:bg-slate-50 border-b last:border-0 cursor-pointer" onClick={() => addFoodToMeal(food)}>
+                    <div key={food.id} className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-slate-50 border-b last:border-0 cursor-pointer" onClick={() => addFoodToMeal(food)}>
                       <div>
                         <div className="flex gap-2 mb-1 items-center">
                           <p className="font-bold text-slate-800">{food.name}</p>
@@ -1019,14 +1019,14 @@ export default function NovaDietaPage() {
                           <span className="text-amber-500 ml-1">G: {calcMacro(food.fat, food.baseAmount, amountToAdd)}g</span>
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {food.source === 'MANUAL' && (
                           <div className="flex bg-slate-100 rounded-md p-1 mr-2">
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-500 hover:text-teal-600" onClick={(e) => handleEditFood(e, food)}><Edit2 className="w-4 h-4" /></Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-500 hover:text-rose-600" onClick={(e) => handleDeleteFood(e, food.id)}><Trash2 className="w-4 h-4" /></Button>
+                            <Button size="icon" variant="ghost" aria-label={`Editar ${food.name}`} className="min-h-11 min-w-11 text-slate-500 hover:text-teal-600" onClick={(e) => handleEditFood(e, food)}><Edit2 className="w-4 h-4" /></Button>
+                            <Button size="icon" variant="ghost" aria-label={`Excluir ${food.name}`} className="min-h-11 min-w-11 text-slate-500 hover:text-rose-600" onClick={(e) => handleDeleteFood(e, food.id)}><Trash2 className="w-4 h-4" /></Button>
                           </div>
                         )}
-                        <Button size="sm" className="bg-teal-50 text-teal-700 hover:bg-teal-100 font-bold border"><Plus className="w-4 h-4 mr-1" /> Add</Button>
+                        <Button size="sm" className="min-h-11 bg-teal-50 text-teal-700 hover:bg-teal-100 font-bold border"><Plus className="w-4 h-4 mr-1" /> Add</Button>
                       </div>
                     </div>
                   ))}
