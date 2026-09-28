@@ -1,7 +1,8 @@
 function assertPageFitsViewport() {
   cy.document().should((document) => {
-    const viewportWidth = document.defaultView?.innerWidth ?? 0
-    expect(document.documentElement.scrollWidth, "largura da página").to.be.at.most(viewportWidth)
+    const scrollingElement = document.scrollingElement
+    expect(scrollingElement, "elemento rolável da página").not.to.equal(null)
+    if (scrollingElement) expect(scrollingElement.scrollWidth, "largura da página").to.be.at.most(scrollingElement.clientWidth)
     const main = document.querySelector("main")
     expect(main, "conteúdo principal").not.to.equal(null)
     if (main) expect(main.scrollWidth, "largura do conteúdo principal").to.be.at.most(main.clientWidth)
