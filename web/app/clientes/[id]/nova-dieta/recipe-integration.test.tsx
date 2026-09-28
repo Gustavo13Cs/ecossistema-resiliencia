@@ -42,7 +42,7 @@ describe("recipe prescription page", () => {
     const trigger = screen.getByRole("button", { name: "Buscar e Adicionar Alimento ou Receita" })
     await user.click(trigger)
     const dialog = await screen.findByRole("dialog", { name: "Banco de Alimentos e Receitas" })
-    await user.click(await within(dialog).findByRole("button", { name: "Add", exact: true }))
+    await user.click(await within(dialog).findByRole("button", { name: "Add" }))
     await waitFor(() => expect(http.history.get.some((request) => request.url?.includes("/foods/oat/preference"))).toBe(true))
     expect(dialog).toBeInTheDocument()
     expect(document.body).toHaveAttribute("data-scroll-locked", "1")
