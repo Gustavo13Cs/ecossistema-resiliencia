@@ -8,9 +8,9 @@
 
 ## Current Task
 
-- **Tarefa**: Nenhuma no momento (Relatórios & Métricas de Gestão concluído)
-- **Status**: Concluída
-- **Início**: 2026-09-17
+- **Tarefa**: Mitigação de vulnerabilidades da Auditoria de Segurança (C-01, C-02, A-05)
+- **Status**: Em andamento (C-01 e C-02 mitigados localmente com .gitignore e rotação de JWT_SECRET; testes em execução)
+- **Início**: 2026-09-22
 
 ---
 
@@ -18,6 +18,8 @@
 
 | Data | Tarefa | Branch |
 |------|--------|--------|
+| 2026-09-22 | Refatoração dos PDFs de Dieta e Lista de Compras: janelas dedicadas com HTML/CSS limpo, layout profissional A4, sem dados clínicos internos para o paciente | `main` |
+| 2026-09-17 | Implementação do módulo de Relatórios & Métricas de Gestão concluído | `main` |
 | 2026-09-15 | Implementação do módulo de Modelos de Planos Alimentares (templates pré-configurados SafeMove, auto-scaling de porções e macros, versionamento, arquivamento e importação para prontuário) | `main` |
 | 2026-09-08 | Corrigir 500/429 em `/clients`: throttler 20→60, Dockerfile com migrate deploy, backfill de dados legados | `codex/fix-production-client-data` |
 

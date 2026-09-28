@@ -15,6 +15,17 @@ const recipeItem: RecipeMealItem = { kind: "RECIPE", id: "item-1", quantity: 1.5
 const foodItem: FoodMealItem = { kind: "FOOD", id: "item-2", quantity: 50, measure: "g", food }
 
 describe("diet meal items", () => {
+  it("uses the normalized base count unit when food and ingredient measures are empty", () => {
+    const countFood = { ...food, id: "egg", name: "Ovo", baseAmount: 1, baseUnit: "1 unidade" }
+    const direct: FoodMealItem = { kind: "FOOD", id: "egg-item", food: countFood, quantity: 2, measure: "" }
+    const recipeWithCount: RecipeMealItem = { ...recipeItem, recipeVersion: {
+      ...recipeVersion, ingredients: [{ id: "egg-ingredient", recipeVersionId: recipeVersion.id, foodId: countFood.id, food: countFood, quantity: 2, measure: "" }],
+    } }
+    expect(buildShoppingList([direct, recipeWithCount], 2)).toEqual([
+      { foodId: "egg", name: "Ovo", qty: 7, measure: "unidade" },
+    ])
+  })
+
   it("scales all eight recipe nutrients by prescribed servings and emits only recipeVersionId", () => {
     expect(getMealItemNutrition(recipeItem)).toEqual({ kcal: 300, protein: 24, carbs: 45, fat: 9, fiber: 6, sodium: 150, calcium: 120, iron: 3 })
     expect(toMealItemPayload(recipeItem)).toEqual({ quantity: 1.5, measure: "porções", recipeVersionId: "version-1" })

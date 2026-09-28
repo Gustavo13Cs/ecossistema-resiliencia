@@ -1,5 +1,6 @@
 import type { ApiMealItem, DietMealItem } from "@/types/diet"
 import type { RecipeNutrition } from "@/types/recipe"
+import { getRecipeFoodUnitPresentation } from "./recipe-nutrition"
 
 const nutrients = ["kcal", "protein", "carbs", "fat", "fiber", "sodium", "calcium", "iron"] as const
 
@@ -30,7 +31,11 @@ export interface ShoppingListItem { foodId: string; name: string; qty: number; m
 
 export function buildShoppingList(items: DietMealItem[], days: number): ShoppingListItem[] {
   const list = new Map<string, ShoppingListItem>()
-  const unit = (baseUnit: string, fallback: string) => baseUnit.toLowerCase().includes("ml") ? "ml" : baseUnit.toLowerCase().includes("g") ? "g" : fallback
+  const unit = (baseAmount: number, baseUnit: string, fallback: string) => {
+    const baseMeasure = getRecipeFoodUnitPresentation(baseAmount, baseUnit).measure
+    const normalized = baseMeasure.toLowerCase()
+    return normalized === "ml" || normalized === "g" ? normalized : fallback.trim() || baseMeasure
+  }
   const add = (foodId: string, name: string, quantity: number, measure: string) => {
     const key = JSON.stringify([foodId, measure])
     const existing = list.get(key)
@@ -39,10 +44,10 @@ export function buildShoppingList(items: DietMealItem[], days: number): Shopping
   }
   for (const item of items) {
     if (item.kind === "FOOD") {
-      add(item.food.id, item.food.name, item.quantity * days, unit(item.food.baseUnit, item.measure || "g"))
+      add(item.food.id, item.food.name, item.quantity * days, unit(item.food.baseAmount, item.food.baseUnit, item.measure))
     } else {
       for (const ingredient of item.recipeVersion.ingredients) {
-        add(ingredient.foodId, ingredient.food.name, ingredient.quantity * item.quantity / item.recipeVersion.servings * days, unit(ingredient.food.baseUnit, ingredient.measure))
+        add(ingredient.foodId, ingredient.food.name, ingredient.quantity * item.quantity / item.recipeVersion.servings * days, unit(ingredient.food.baseAmount, ingredient.food.baseUnit, ingredient.measure))
       }
     }
   }

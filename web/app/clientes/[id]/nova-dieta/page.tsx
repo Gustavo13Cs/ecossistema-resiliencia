@@ -29,6 +29,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { invalidatePatientDiet } from "@/lib/query-invalidation"
 import { RecipePicker } from "@/components/features/diet/RecipePickerPanel"
 import { buildShoppingList, getMealItemNutrition, hydrateMealItem, toMealItemPayload } from "@/lib/diet-meal-items"
+import { buildDietPrintHtml, buildShoppingListPrintHtml } from "@/lib/diet-print-document"
 import type { ApiMealItem, DietMeal, DietMealItem, FoodNutrition } from "@/types/diet"
 import type { RecipeVersion } from "@/types/recipe"
 import { useRecipe } from "@/hooks/features/useRecipes"
@@ -152,7 +153,6 @@ export default function NovaDietaPage() {
 
   const [showShareModal, setShowShareModal] = useState(false)
   const [shoppingDays, setShoppingDays] = useState(30)
-  const [printMode, setPrintMode] = useState<'diet' | 'list'>('diet')
   const [showDriModal, setShowDriModal] = useState(false)
   const [showTemplateModal, setShowTemplateModal] = useState(false)
   const [templates, setTemplates] = useState<any[]>([])
@@ -195,8 +195,8 @@ export default function NovaDietaPage() {
           calcium: res.data.calciumMg || defaultDri.calcium,
           iron: res.data.ironMg || defaultDri.iron
         })
-        setMeals(res.data.meals.map((m: { id: string; name: string; time: string; notes: string | null; items: ApiMealItem[] }) => ({
-          id: m.id, name: m.name, time: m.time, notes: m.notes || "",
+        setMeals(res.data.meals.map((m: { id: string; name: string; time: string | null; notes: string | null; items: ApiMealItem[] }) => ({
+          id: m.id, name: m.name, time: m.time ?? "", notes: m.notes || "",
           items: m.items.map(hydrateMealItem)
         })))
       } else {
@@ -411,8 +411,31 @@ export default function NovaDietaPage() {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
   }
 
-  const handlePrintDiet = () => { setPrintMode('diet'); setShowShareModal(false); setTimeout(() => window.print(), 300) }
-  const handlePrintList = () => { setPrintMode('list'); setShowShareModal(false); setTimeout(() => window.print(), 300) }
+  const openPrintDocument = (html: string) => {
+    const win = window.open('', '_blank', 'width=900,height=700')
+    if (!win) return
+    win.document.write(html)
+    win.document.close()
+    win.focus()
+    setTimeout(() => win.print(), 600)
+  }
+
+  const getPrintInput = () => ({
+    clientName: patientProfile?.name || 'Paciente',
+    dateLabel: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
+    dietInfo,
+    meals,
+  })
+
+  const handlePrintDiet = () => {
+    setShowShareModal(false)
+    openPrintDocument(buildDietPrintHtml(getPrintInput()))
+  }
+
+  const handlePrintList = () => {
+    setShowShareModal(false)
+    openPrintDocument(buildShoppingListPrintHtml({ ...getPrintInput(), shoppingDays }))
+  }
 
   const handleOpenTemplateModal = async () => {
     if (!canUseDietEditor) return
@@ -610,7 +633,7 @@ export default function NovaDietaPage() {
         </AlertDialogContent>
       </AlertDialog>
       
-      <div className={`w-full px-6 md:px-12 lg:px-20 mx-auto space-y-6 print:px-0 print:max-w-4xl print:space-y-0 ${printMode === 'list' ? 'print:hidden' : 'print:block'}`}>
+      <div className="w-full px-6 md:px-12 lg:px-20 mx-auto space-y-6 print:px-0 print:max-w-4xl print:space-y-0">
         
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4 print:hidden">
           <div className="flex items-center gap-4">
@@ -879,34 +902,7 @@ export default function NovaDietaPage() {
         </div>
       </div>
 
-      <div className={`hidden ${printMode === 'list' ? 'print:block' : ''} w-full max-w-4xl mx-auto bg-white`}>
-        <div className="border-b-4 border-teal-600 pb-6 mb-8 mt-10">
-          <h1 className="text-4xl font-black text-slate-800 uppercase tracking-tight">Lista de Compras</h1>
-          <h2 className="text-xl text-slate-600 mt-2 font-medium">Plano: {dietInfo.title} • Quantidade para {shoppingDays} dias</h2>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-          {shoppingList.map((item, index) => (
-            <div key={index} className="flex items-center justify-between border-b-2 border-slate-100 pb-3 break-inside-avoid">
-              <div className="flex items-center gap-4">
-                <div className="w-6 h-6 rounded-md border-2 border-slate-400"></div>
-                <span className="font-bold text-slate-800 text-lg">{item.name}</span>
-              </div>
-              <span className="font-black text-teal-700 text-lg bg-teal-50 px-3 py-1 rounded-lg border border-teal-100">
-                {formatQty(item.qty, item.measure)}
-              </span>
-            </div>
-          ))}
-        </div>
 
-        {shoppingList.length === 0 && (
-          <p className="text-slate-500 italic text-center py-10">Nenhum item adicionado à dieta ainda.</p>
-        )}
-        
-        <div className="mt-16 pt-6 border-t border-slate-200 text-center text-sm text-slate-400 font-medium">
-          Documento gerado digitalmente • Foco no Objetivo: {dietInfo.goal}
-        </div>
-      </div>
 
       {showShareModal && (
         <>
