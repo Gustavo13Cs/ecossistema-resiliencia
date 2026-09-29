@@ -29,13 +29,13 @@
 | 2.2 | Navegação profissional no Sidebar (filtrar por role) | 🔄 | Codex |
 | 2.3 | Dashboard por atuação profissional | 🔄 | Codex |
 | 2.4 | Migrar dietas de User para Client | ✅ | Codex |
-| 2.5 | Migrar treinos de User para Client | ⏳ | — |
+| 2.5 | Migrar treinos de User para Client | 🔄 | Codex |
 | 2.6 | Migrar avaliações de User para Client | 🔄 | Codex |
-| 2.7 | Migrar reabilitação de User para Client | ⏳ | — |
-| 2.8 | Migrar anamnese de User para Client | ⏳ | — |
-| 2.9 | Migrar suplementos de User para Client | ⏳ | — |
-| 2.10 | Migrar exames lab de User para Client | ⏳ | — |
-| 2.11 | Remover fluxos legados de paciente (ProfessionalPatientLink, /membros, /paciente) | ⏳ | — |
+| 2.7 | Migrar reabilitação de User para Client | 🔄 | Codex |
+| 2.8 | Migrar anamnese de User para Client | 🔄 | Codex |
+| 2.9 | Migrar suplementos de User para Client | 🔄 | Codex |
+| 2.10 | Migrar exames lab de User para Client | 🔄 | Codex |
+| 2.11 | Remover fluxos legados de paciente (ProfessionalPatientLink, /membros, /paciente) | 🔄 | Codex |
 | 2.12 | Agenda profissional de atendimentos vinculada a Client | ✅ | Codex |
 
 ---
@@ -64,6 +64,7 @@
 | 4.5 | Documentação de API (Swagger/OpenAPI) | ⏳ | — |
 | 4.6 | Monitoramento de performance (bundle size, query time) | ⏳ | — |
 | 4.7 | Endurecer Data API, grants e RLS defensivo no Supabase | ✅ | Codex |
+| 4.8 | Remediar os 15 achados da auditoria de segurança e qualidade | 🔄 | Codex |
 
 ---
 

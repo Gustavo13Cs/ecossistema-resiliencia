@@ -8,12 +8,12 @@
 
 ## Current Task
 
-- **Tarefa**: Banco de Receitas versionado, macros por porção, filtros de restrição e associação a planos alimentares
-- **Status**: Implementação e merge local concluídos no commit `154bac9`, com impressão A4 conciliada e revisão independente sem Critical/Important pendentes. Gates da funcionalidade aprovados; publicação e aplicação da migration de receitas em produção não realizadas.
-- **Branch**: `codex/BancodeReceitas`
-- **Início**: 2026-09-21
-- **Conclusão**: 2026-09-28
-- **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migration versionada desta funcionalidade
+- **Tarefa**: Remediação ponta a ponta dos 15 achados de segurança e qualidade
+- **Status**: Especificação aprovada; planos de implementação A-D em elaboração
+- **Branch**: `agent/codex/security-remediation`
+- **Início**: 2026-09-29
+- **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migrations versionadas necessárias à remediação
+- **Worktree**: `.worktrees/security/security-remediation`
 
 ---
 
