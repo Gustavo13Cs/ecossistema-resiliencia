@@ -9,11 +9,12 @@
 ## Current Task
 
 - **Tarefa**: Remediação ponta a ponta dos 15 achados de segurança e qualidade
-- **Status**: Especificação aprovada; planos de implementação A-D em elaboração
+- **Status**: Especificação e planos A-D concluídos; aguardando revisão e escolha do modo de execução
 - **Branch**: `agent/codex/security-remediation`
 - **Início**: 2026-09-29
 - **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migrations versionadas necessárias à remediação
 - **Worktree**: `.worktrees/security/security-remediation`
+- **Coordenação**: o status do Antigravity ainda cita uma tarefa iniciada em 2026-09-22, mas não há branch/worktree detectável para ela; confirmar antes de alterar auth, package files ou `.gitignore` fora deste worktree
 
 ---
 

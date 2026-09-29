@@ -1,8 +1,8 @@
 # Remediacao Ponta a Ponta de Seguranca e Qualidade
 
-**Data:** 2026-09-29  
-**Status:** Aprovado pelo mantenedor; pronto para planejamento  
-**Branch:** `agent/codex/security-remediation`  
+**Data:** 2026-09-29
+**Status:** Aprovado pelo mantenedor; planos A-D concluídos
+**Branch:** `agent/codex/security-remediation`
 **Base:** `origin/main` em `dcca5e591e9ebda2dd57fb94a40153af99355767`
 
 ## 1. Objetivo
@@ -96,13 +96,16 @@ Os seguintes models passam a ter relacao obrigatoria ou transicional com
 - `LabExam`
 - `ConsultationNote`
 - `DailyTracking`
+- `PatientAlert`
 - novo `ClientGoal`
 - novo `LabOrder`
 
 `Workout`, `RehabPlan`, `Anamnesis`, `SupplementPlan`, `LabExam` e
 `ConsultationNote` preservam `creatorId`. `PhysioAssessment` recebe
 `creatorId`, que hoje nao existe. `DailyTracking` recebe `professionalId` para
-tornar a origem auditavel.
+tornar a origem auditavel. `PatientAlert` recebe `clientId`; novos snapshots
+usam `clientId` e `professionalId`, deixando `patientId` apenas como referencia
+historica nullable.
 
 Durante a transicao, os models clinicos existentes usam `clientId String?` e
 relacao nullable com `Client`; seus campos legados tambem se tornam nullable.
@@ -182,13 +185,14 @@ listagem, leitura e delete exigem `clientId` owned e `creatorId` autenticado.
 
 ### 6.4 Modulos de paciente antigos
 
-`ConsentsModule`, `HealthCheckInsModule`, `MealLogsModule` e
-`WorkoutLogsModule` nao serao simplesmente expostos com contratos `PATIENT`.
-Como o produto nao possui portal de paciente, o codigo de runtime dessas rotas
-sera removido nesta remediacao depois de uma busca por consumidores. Tabelas e
-models historicos permanecem para preservacao de dados, sem controllers,
-services ou modules inacessiveis. Se houver consumidor profissional atual, ele
-sera migrado para um endpoint por Client antes da remocao.
+`ConsentsModule`, `HealthCheckInsModule`, `MealLogsModule`, `WorkoutLogsModule`,
+`AgendaModule` e `MetricsModule` nao serao simplesmente expostos com contratos
+`PATIENT`. Como o produto nao possui portal de paciente e a agenda profissional
+ativa usa `AppointmentsModule`, o codigo de runtime dessas rotas sera removido
+nesta remediacao depois de uma busca por consumidores. Tabelas e models
+historicos permanecem para preservacao de dados, sem controllers, services ou
+modules inacessiveis. Se surgir consumidor profissional real, ele sera migrado
+para um endpoint por Client antes da remocao.
 
 ## 7. Sessao e cookies
 
@@ -213,9 +217,11 @@ Alteracao de role, bloqueio ou reset de credenciais invalida sessoes ativas.
 Em producao, ausencia de `AUTH_COOKIE_SECURE=true` aborta o bootstrap. Cookies
 de access e refresh usam `HttpOnly`, `Secure`, `SameSite` configurado, path
 minimo necessario e a mesma policy para set/clear. `access_token` usa path `/`;
-`refresh_token` usa path `/auth`; ambos usam `SameSite=lax` por padrao. O token
-CSRF continua separado, e refresh/logout exigem origem permitida e token CSRF
-valido com comparacao constante.
+`refresh_token` usa por padrao `/api/auth`, que corresponde ao rewrite
+same-origin do frontend, e pode usar outro path absoluto validado por ambiente.
+Ambos usam `SameSite=lax` por padrao. O token CSRF continua separado, e
+refresh/logout exigem origem permitida e token CSRF valido com comparacao
+constante.
 
 ## 8. Frontend e documentos
 
@@ -297,8 +303,10 @@ Linha de base confirmada neste worktree antes de qualquer mudanca funcional:
 
 - API: 24/24 suites e 279/279 testes;
 - frontend: 39/39 arquivos e 274/274 testes;
-- API `npm audit`: 7 vulnerabilidades (5 altas, 2 moderadas);
-- frontend `npm audit`: 11 vulnerabilidades (1 critica, 6 altas, 4 moderadas).
+- API `npm audit --omit=dev`: 6 vulnerabilidades (4 altas, 2 moderadas),
+  verificadas novamente em 2026-09-29;
+- frontend `npm audit --omit=dev`: 0 vulnerabilidades, verificadas novamente em
+  2026-09-29.
 
 ## 12. Entregas e ordem
 
