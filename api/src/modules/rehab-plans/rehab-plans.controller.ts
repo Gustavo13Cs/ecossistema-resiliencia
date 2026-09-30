@@ -1,4 +1,6 @@
-﻿import {
+// api/src/modules/rehab-plans/rehab-plans.controller.ts
+
+import {
   Controller,
   Post,
   Body,
@@ -23,42 +25,48 @@ type AuthenticatedRequest = { user: AuthUser };
 @Roles(...DOMAIN_ROLES.rehabilitation)
 @Controller('rehab-plans')
 export class RehabPlansController {
-  constructor(private readonly service: RehabPlansService) {}
+  constructor(private readonly rehabPlansService: RehabPlansService) {}
 
   @Post()
   create(
     @Request() request: AuthenticatedRequest,
-    @Body() dto: CreateRehabPlanDto,
+    @Body() createRehabPlanDto: CreateRehabPlanDto,
   ) {
-    return this.service.create(request.user.sub, dto);
+    return this.rehabPlansService.create(request.user, createRehabPlanDto);
   }
 
+  // Lista planos de reabilitação criados pelo profissional logado
   @Get()
   findAll(@Request() request: AuthenticatedRequest) {
-    return this.service.findAllByProfessional(request.user.sub);
+    return this.rehabPlansService.findAllByProfessional(request.user);
   }
 
-  // templates antes de :id para evitar conflito de rotas
-  @Get('templates')
-  listTemplates(@Request() request: AuthenticatedRequest) {
-    return this.service.listTemplates(request.user.sub);
+  @Get('client/:clientId/active')
+  findActive(
+    @Request() request: AuthenticatedRequest,
+    @Param('clientId') clientId: string,
+  ) {
+    return this.rehabPlansService.findActive(request.user, clientId);
   }
 
-  @Get('user/:userId/active')
-  findActiveByUser(@Param('userId') userId: string) {
-    return this.service.findActiveByUser(userId);
-  }
-
+  // Só o criador do plano de reabilitação pode deletar
   @Delete(':id')
   remove(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
-    return this.service.remove(id, request.user.sub);
+    return this.rehabPlansService.remove(request.user, id);
   }
 
+  // Salvar um plano de reabilitação existente como template reutilizável
   @Patch(':id/save-as-template')
   saveAsTemplate(
     @Request() request: AuthenticatedRequest,
     @Param('id') id: string,
   ) {
-    return this.service.saveAsTemplate(id, request.user.sub);
+    return this.rehabPlansService.saveAsTemplate(request.user, id);
+  }
+
+  // Listar todos os templates do fisioterapeuta logado (com sessões e exercícios para pré-preencher)
+  @Get('templates')
+  listTemplates(@Request() request: AuthenticatedRequest) {
+    return this.rehabPlansService.listTemplates(request.user);
   }
 }

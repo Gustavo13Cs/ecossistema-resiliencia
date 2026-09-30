@@ -1,14 +1,15 @@
 "use client"
 
 import { Activity, Info, Timer, Repeat, AlertTriangle } from "lucide-react"
-import { useAuth } from "@/contexts/auth-context"
+import { useState } from "react"
+import Link from "next/link"
+import { useClients } from "@/hooks/features/useClients"
 import { useFisio } from "@/hooks/features/useFisio"
 
-export default function FisioPacientePage() {
-  const { user } = useAuth()
-  
-  // A Lógica de Negócio importada e tipada
-  const { rehabPlan, loading, error } = useFisio(user?.sub)
+export default function ReabilitacaoPage() {
+  const [clientId, setClientId] = useState("")
+  const clients = useClients("ACTIVE")
+  const { rehabPlan, loading, error } = useFisio(clientId || undefined)
 
   return (
     <div className="p-6 md:p-10 max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
@@ -20,8 +21,18 @@ export default function FisioPacientePage() {
         </div>
         <div>
           <h1 className="text-3xl font-black text-slate-800">Reabilitação</h1>
-          <p className="text-slate-500">O seu protocolo de recuperação clínica.</p>
+          <p className="text-slate-500">Protocolos de reabilitação dos seus clientes.</p>
         </div>
+      </div>
+
+      <div className="space-y-3">
+        <label htmlFor="rehab-client" className="block font-medium">Cliente</label>
+        <select id="rehab-client" value={clientId} onChange={event => setClientId(event.target.value)} disabled={clients.isPending || clients.isError} className="w-full min-h-11 rounded-lg border border-slate-300 bg-white px-3">
+          <option value="">Selecione um cliente</option>
+          {clients.data?.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}
+        </select>
+        {clients.isError && <p role="alert">Não foi possível carregar os clientes.</p>}
+        {clientId && <Link className="inline-flex min-h-11 items-center text-purple-700 underline" href={`/clientes/${clientId}/nova-reabilitacao`}>Prescrever protocolo</Link>}
       </div>
 
       {/* FEEDBACK DE ERRO */}
@@ -39,15 +50,14 @@ export default function FisioPacientePage() {
       {loading ? (
         <div className="bg-white p-10 rounded-2xl border border-slate-100 text-center shadow-sm">
           <div className="animate-spin rounded-full h-8 w-8 border border-slate-200 border-t-[var(--sm-brand)] mx-auto mb-4"></div>
-          <p className="text-slate-500 font-medium">A carregar o seu protocolo...</p>
+          <p className="text-slate-500 font-medium">Carregando protocolo...</p>
         </div>
       ) : !rehabPlan && !error ? (
         
         /* ESTADO VAZIO (Sem Protocolo) */
         <div className="bg-white p-10 rounded-2xl border border-slate-100 text-center shadow-sm">
            <Activity className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-           <p className="text-slate-500 font-medium">Você não possui protocolos de reabilitação ativos.</p>
-           <p className="text-sm text-slate-400 mt-1">Fale com a sua Fisioterapeuta.</p>
+           <p className="text-slate-500 font-medium">{clientId ? "Este cliente não possui protocolo de reabilitação ativo." : "Selecione um cliente para consultar o protocolo."}</p>
         </div>
       ) : rehabPlan && (
         

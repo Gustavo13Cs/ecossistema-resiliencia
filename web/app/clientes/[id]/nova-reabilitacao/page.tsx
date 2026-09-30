@@ -10,9 +10,11 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
+import type { Client } from "@/types/client"
+import type { RehabPlan } from "@/hooks/features/useFisio"
 
 export default function NovaReabilitacaoPage() {
-  const params = useParams()
+  const params = useParams<{ id: string }>()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [patientName, setPatientName] = useState("Carregando...")
@@ -38,10 +40,10 @@ export default function NovaReabilitacaoPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const userRes = await api.get(`/users/${params.id}`)
-        setPatientName(userRes.data.name)
+        const clientRes = await api.get<Client>(`/clients/${params.id}`)
+        setPatientName(clientRes.data.name)
 
-        const planRes = await api.get(`/rehab-plans/user/${params.id}/active`)
+        const planRes = await api.get<RehabPlan | null>(`/rehab-plans/client/${params.id}/active`)
         if (planRes.data) {
           const active = planRes.data
           setPlanInfo({
@@ -52,11 +54,11 @@ export default function NovaReabilitacaoPage() {
           })
 
           if (active.sessions && active.sessions.length > 0) {
-            setSessions(active.sessions.map((s: any) => ({
+            setSessions(active.sessions.map((s) => ({
               id: s.id || `s${Date.now() + Math.random()}`,
               name: s.name,
               focus: s.focus || "",
-              exercises: s.exercises.map((e: any) => ({
+              exercises: s.exercises.map((e) => ({
                 id: e.id || `e${Date.now() + Math.random()}`,
                 name: e.name,
                 sets: e.sets || "",
@@ -66,8 +68,8 @@ export default function NovaReabilitacaoPage() {
             })))
           }
         }
-      } catch (error) {
-        console.error("Erro ao carregar dados", error)
+      } catch {
+        toast.error("Não foi possível carregar o prontuário e o protocolo.")
       }
     }
     loadData()
@@ -132,7 +134,7 @@ export default function NovaReabilitacaoPage() {
         goal: planInfo.goal,
         durationWeeks: planInfo.durationWeeks,
         notes: planInfo.notes,
-        userId: params.id,
+        clientId: params.id,
         sessions: sessions.map(session => ({
           name: session.name,
           focus: session.focus,
@@ -148,8 +150,8 @@ export default function NovaReabilitacaoPage() {
       await api.post('/rehab-plans', payload)
       toast.success("Plano de Reabilitação salvo com sucesso! 🩺")
       router.push(`/clientes/${params.id}`)
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Erro ao salvar reabilitação.")
+    } catch {
+      toast.error("Erro ao salvar reabilitação. Tente novamente.")
     } finally {
       setLoading(false)
     }

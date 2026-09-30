@@ -9,13 +9,13 @@
 ## Current Task
 
 - **Tarefa**: Remediação ponta a ponta dos 15 achados de segurança e qualidade
-- **Status**: Execução nativa retomada em 2026-09-30; Plano A Tasks 1-3 concluídas; iniciando Task 4 de reabilitação atômica por Client
+- **Status**: Execução nativa retomada em 2026-09-30; Plano A Tasks 1-4 implementadas e testes focais aprovados; Task 5 de avaliações fisioterapêuticas na sequência
 - **Branch**: `agent/codex/security-remediation`
 - **Início**: 2026-09-29
 - **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migrations versionadas necessárias à remediação
 - **Worktree**: `.worktrees/security/security-remediation`
 - **Plano atual**: `docs/superpowers/plans/2026-09-29-security-remediation-a-ownership-schema.md`
-- **Próximo gate**: executar os testes de ownership e rollback da reabilitação e migrar seus consumidores web
+- **Próximo gate**: concluir verificações adicionais da Task 4 e corrigir persistência/ownership de PhysioAssessment
 - **Coordenação**: o status do Antigravity ainda cita uma tarefa iniciada em 2026-09-22, mas não há branch/worktree detectável para ela; confirmar antes de alterar auth, package files ou `.gitignore` fora deste worktree
 
 ---
@@ -47,6 +47,7 @@
 
 ### Remediação — retomada em 2026-09-30
 
+- Task 4: reabilitação por Client com criação transacional; 26 testes API, 2 PostgreSQL de rollback e 6 web aprovados; lint API aprovado, typecheck/lint web e build API em execução.
 - Task 3: treinos vinculados a Client, escrita transacional e rotas legadas removidas; API 318 unitários/35 E2E, web 279 testes, typecheck, builds e lint focal aprovados.
 - Task 1 preservada no commit `8f2c26b`; nenhuma migration aplicada em produção.
 - Task 2: overview por Client, perfil próprio e remoção das rotas legadas de pacientes; 26 suítes/292 unitários API, 11 suítes/33 E2E API, 40 arquivos/276 testes web, typecheck web e builds API/web aprovados. Lint focal API/web sem erros ou warnings.

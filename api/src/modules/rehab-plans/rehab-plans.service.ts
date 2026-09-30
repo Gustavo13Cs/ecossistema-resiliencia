@@ -1,102 +1,121 @@
 import {
+  ForbiddenException,
   Injectable,
   NotFoundException,
-  ForbiddenException,
 } from '@nestjs/common';
+import { ClientAccessService } from '../../common/client-access/client-access.service';
+import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { CreateRehabPlanDto } from './dto/create-rehab-plan.dto';
 
 @Injectable()
 export class RehabPlansService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly clientAccess: ClientAccessService,
+  ) {}
 
-  async create(professionalId: string, data: CreateRehabPlanDto) {
-    const { sessions, userId, ...planData } = data;
-
-    await this.prisma.rehabPlan.updateMany({
-      where: { userId: userId, isActive: true },
-      data: { isActive: false }
-    });
-
-    return this.prisma.rehabPlan.create({
-      data: {
-        ...planData,
-        userId: userId,
-        creatorId: professionalId,
-        isActive: true,
-        sessions: {
-          create: sessions.map(session => ({
-            name: session.name,
-            focus: session.focus,
-            exercises: {
-              create: session.exercises.map(ex => ({
-                name: ex.name,
-                sets: ex.sets,
-                reps: ex.reps,
-                notes: ex.notes
-              }))
-            }
-          }))
-        }
-      }
+  async create(user: AuthUser, data: CreateRehabPlanDto) {
+    this.assertRehabilitationProfessional(user);
+    const client = await this.clientAccess.getOwnedClient(user, data.clientId);
+    return this.prisma.$transaction(async (tx) => {
+      await tx.rehabPlan.updateMany({
+        where: { clientId: client.id, creatorId: user.sub, isActive: true },
+        data: { isActive: false },
+      });
+      return tx.rehabPlan.create({
+        data: {
+          title: data.title,
+          goal: data.goal,
+          durationWeeks: data.durationWeeks,
+          notes: data.notes,
+          clientId: client.id,
+          userId: null,
+          creatorId: user.sub,
+          isActive: true,
+          sessions: {
+            create: data.sessions.map((session) => ({
+              name: session.name,
+              focus: session.focus,
+              exercises: {
+                create: session.exercises.map((exercise) => ({
+                  name: exercise.name,
+                  sets: exercise.sets,
+                  reps: exercise.reps,
+                  notes: exercise.notes,
+                })),
+              },
+            })),
+          },
+        },
+      });
     });
   }
 
-  async findAllByProfessional(professionalId: string) {
+  async findAllByProfessional(user: AuthUser) {
+    this.assertRehabilitationProfessional(user);
     return this.prisma.rehabPlan.findMany({
-      where: { creatorId: professionalId },
-      include: { user: { select: { name: true } } },
-      orderBy: { createdAt: 'desc' }
+      where: { creatorId: user.sub, client: { professionalId: user.sub } },
+      include: { client: { select: { id: true, name: true } } },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
-  async findActiveByUser(userId: string) {
+  async findActive(user: AuthUser, clientId: string) {
+    this.assertRehabilitationProfessional(user);
+    await this.clientAccess.getOwnedClient(user, clientId);
     return this.prisma.rehabPlan.findFirst({
-      where: { userId: userId, isActive: true },
-      include: {
-        sessions: { include: { exercises: true } }
-      },
-      orderBy: { createdAt: 'desc' }
+      where: { clientId, creatorId: user.sub, isActive: true },
+      include: { sessions: { include: { exercises: true } } },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
-  async remove(id: string, requesterId: string) {
-  const plan = await this.prisma.rehabPlan.findUnique({ where: { id } });
-
-  if (!plan) throw new NotFoundException('Plano de reabilitação não encontrado');
-
-  if (plan.creatorId !== requesterId) {
-    throw new ForbiddenException('Você não pode deletar um plano que não criou');
+  async remove(user: AuthUser, id: string) {
+    const plan = await this.getOwnedPlan(user, id);
+    return this.prisma.rehabPlan.delete({
+      where: { id, creatorId: user.sub, clientId: plan.clientId },
+    });
   }
 
-  return this.prisma.rehabPlan.delete({ where: { id } });
-}
-
-  async saveAsTemplate(id: string, requesterId: string) {
-    const plan = await this.prisma.rehabPlan.findUnique({ where: { id } });
-
-    if (!plan) throw new NotFoundException('Plano de reabilitação não encontrado');
-
-    if (plan.creatorId !== requesterId) {
-      throw new ForbiddenException('Você não pode salvar um plano que não criou como template');
-    }
-
+  async saveAsTemplate(user: AuthUser, id: string) {
+    const plan = await this.getOwnedPlan(user, id);
     return this.prisma.rehabPlan.update({
-      where: { id },
+      where: { id, creatorId: user.sub, clientId: plan.clientId },
       data: { isTemplate: true },
       select: { id: true, title: true, isTemplate: true },
     });
   }
 
-  async listTemplates(creatorId: string) {
+  async listTemplates(user: AuthUser) {
+    this.assertRehabilitationProfessional(user);
     return this.prisma.rehabPlan.findMany({
-      where: { creatorId, isTemplate: true },
-      include: {
-        sessions: {
-          include: { exercises: true },
-        },
+      where: {
+        creatorId: user.sub,
+        isTemplate: true,
+        OR: [{ clientId: null }, { client: { professionalId: user.sub } }],
       },
+      include: { sessions: { include: { exercises: true } } },
       orderBy: { updatedAt: 'desc' },
     });
+  }
+
+  private async getOwnedPlan(user: AuthUser, id: string) {
+    this.assertRehabilitationProfessional(user);
+    const plan = await this.prisma.rehabPlan.findFirst({
+      where: { id, creatorId: user.sub },
+      select: { id: true, clientId: true, isTemplate: true },
+    });
+    if (!plan || (!plan.clientId && !plan.isTemplate)) {
+      throw new NotFoundException('Plano de reabilitação não encontrado');
+    }
+    if (plan.clientId)
+      await this.clientAccess.getOwnedClient(user, plan.clientId);
+    return plan;
+  }
+
+  private assertRehabilitationProfessional(user: AuthUser) {
+    if (user.role !== 'PHYSIO')
+      throw new ForbiddenException('Acesso permitido somente a fisioterapeuta');
   }
 }
