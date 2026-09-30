@@ -32,31 +32,27 @@ export class WorkoutsController {
     @Request() request: AuthenticatedRequest,
     @Body() createWorkoutDto: CreateWorkoutDto,
   ) {
-    return this.workoutsService.create(request.user.sub, createWorkoutDto);
+    return this.workoutsService.create(request.user, createWorkoutDto);
   }
 
   // Lista treinos criados pelo profissional logado
   @Get()
   findAll(@Request() request: AuthenticatedRequest) {
-    return this.workoutsService.findAllByProfessional(request.user.sub);
+    return this.workoutsService.findAllByProfessional(request.user);
   }
 
-  @Get('user/:userId/active')
-  findActiveByUser(
+  @Get('client/:clientId/active')
+  findActive(
     @Request() request: AuthenticatedRequest,
-    @Param('userId') userId: string,
+    @Param('clientId') clientId: string,
   ) {
-    return this.workoutsService.findActiveByUser(
-      userId,
-      request.user.sub,
-      true,
-    );
+    return this.workoutsService.findActive(request.user, clientId);
   }
 
   // Só o criador do treino pode deletar
   @Delete(':id')
   remove(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
-    return this.workoutsService.remove(id, request.user.sub);
+    return this.workoutsService.remove(request.user, id);
   }
 
   // Salvar um treino existente como template reutilizável
@@ -65,12 +61,12 @@ export class WorkoutsController {
     @Request() request: AuthenticatedRequest,
     @Param('id') id: string,
   ) {
-    return this.workoutsService.saveAsTemplate(id, request.user.sub);
+    return this.workoutsService.saveAsTemplate(request.user, id);
   }
 
   // Listar todos os templates do personal logado (com splits e exercícios para pré-preencher)
   @Get('templates')
   listTemplates(@Request() request: AuthenticatedRequest) {
-    return this.workoutsService.listTemplates(request.user.sub);
+    return this.workoutsService.listTemplates(request.user);
   }
 }
