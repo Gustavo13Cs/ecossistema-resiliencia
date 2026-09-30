@@ -1,13 +1,21 @@
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsOptional,
+  IsUUID,
+  Min,
+  Max,
+  MaxLength,
+} from 'class-validator';
 
 export class CreatePhysioAssessmentDto {
-  @IsString() userId!: string;
-  @IsOptional() @IsString() chiefComplaint?: string;
-  @IsOptional() @IsString() historyOfIllness?: string;
-  @IsOptional() @IsNumber() painLevel?: number;
-  @IsOptional() @IsString() posturalAnalysis?: string;
-  @IsOptional() @IsString() palpation?: string;
-  @IsOptional() @IsString() jointMobility?: string;
-  @IsOptional() @IsString() orthopedicTests?: string;
-  @IsOptional() @IsString() treatmentPlan?: string;
+  @IsUUID() clientId!: string;
+  @IsOptional() @IsString() @MaxLength(5000) chiefComplaint?: string;
+  @IsOptional() @IsString() @MaxLength(10000) historyOfIllness?: string;
+  @IsOptional() @IsInt() @Min(0) @Max(10) painLevel?: number;
+  @IsOptional() @IsString() @MaxLength(10000) posturalAnalysis?: string;
+  @IsOptional() @IsString() @MaxLength(10000) palpation?: string;
+  @IsOptional() @IsString() @MaxLength(10000) jointMobility?: string;
+  @IsOptional() @IsString() @MaxLength(10000) orthopedicTests?: string;
+  @IsOptional() @IsString() @MaxLength(10000) treatmentPlan?: string;
 }

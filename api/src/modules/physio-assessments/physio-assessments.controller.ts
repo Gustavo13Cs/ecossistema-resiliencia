@@ -25,22 +25,28 @@ export class PhysioAssessmentsController {
   constructor(private readonly service: PhysioAssessmentsService) {}
 
   @Post()
-  create(@Body() dto: CreatePhysioAssessmentDto) {
-    return this.service.create(dto);
+  create(
+    @Request() request: AuthenticatedRequest,
+    @Body() dto: CreatePhysioAssessmentDto,
+  ) {
+    return this.service.create(request.user, dto);
   }
 
   @Get()
   findAll(@Request() request: AuthenticatedRequest) {
-    return this.service.findAllByProfessional(request.user.sub);
+    return this.service.findAllByProfessional(request.user);
   }
 
-  @Get('user/:userId')
-  findByUser(@Param('userId') userId: string) {
-    return this.service.findByUser(userId);
+  @Get('client/:clientId')
+  findByClient(
+    @Request() request: AuthenticatedRequest,
+    @Param('clientId') clientId: string,
+  ) {
+    return this.service.findByClient(request.user, clientId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
+    return this.service.remove(request.user, id);
   }
 }
