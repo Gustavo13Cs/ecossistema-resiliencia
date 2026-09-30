@@ -9,11 +9,13 @@
 ## Current Task
 
 - **Tarefa**: Remediação ponta a ponta dos 15 achados de segurança e qualidade
-- **Status**: Especificação e planos A-D concluídos; aguardando revisão e escolha do modo de execução
+- **Status**: Execução nativa retomada em 2026-09-30; Plano A Tasks 1-2 validadas; próxima etapa: Task 3, treinos atômicos por Client
 - **Branch**: `agent/codex/security-remediation`
 - **Início**: 2026-09-29
 - **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migrations versionadas necessárias à remediação
 - **Worktree**: `.worktrees/security/security-remediation`
+- **Plano atual**: `docs/superpowers/plans/2026-09-29-security-remediation-a-ownership-schema.md`
+- **Próximo gate**: testes RED de ownership, DTOs e transação de treinos; migração das telas para Client
 - **Coordenação**: o status do Antigravity ainda cita uma tarefa iniciada em 2026-09-22, mas não há branch/worktree detectável para ela; confirmar antes de alterar auth, package files ou `.gitignore` fora deste worktree
 
 ---
@@ -42,6 +44,14 @@
 ---
 
 ## Notes
+
+### Remediação — retomada em 2026-09-30
+
+- Task 1 preservada no commit `8f2c26b`; nenhuma migration aplicada em produção.
+- Task 2: overview por Client, perfil próprio e remoção das rotas legadas de pacientes; 26 suítes/292 unitários API, 11 suítes/33 E2E API, 40 arquivos/276 testes web, typecheck web e builds API/web aprovados. Lint focal API/web sem erros ou warnings.
+- Corrigido teardown do E2E da aplicação: `app.close()` encerra conexões/jobs, sem `forceExit`. A repetição completa encerrou com exit 0.
+- Banco temporário recriado pelo Docker: 11 migrations reaplicadas somente em `localhost:5434/ecossistema_resiliencia_test`.
+- Execução dos planos A-D ainda em andamento; nenhum push ou deploy realizado.
 
 ### Banco de Receitas — evidência local de 2026-09-28
 

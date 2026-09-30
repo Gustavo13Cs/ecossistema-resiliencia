@@ -82,8 +82,8 @@ function WeightDelta({ delta }: { delta: number | null }) {
 export default function Visao360Page() {
   const params = useParams()
   const { user: loggedInUser } = useAuth()
-  const patientId = params.id as string
-  const { overview, loading, error } = usePatientOverview(patientId)
+  const clientId = params.id as string
+  const { overview, loading, error } = usePatientOverview(clientId)
 
   const isPersonal = loggedInUser?.role === "PERSONAL"
   const isFisio    = loggedInUser?.role === "PHYSIO"
@@ -116,7 +116,7 @@ export default function Visao360Page() {
           <AlertTriangle className="w-12 h-12 text-rose-400 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-slate-800 mb-2">Erro ao carregar</h2>
           <p className="text-slate-500 text-sm">{error || "Dados não encontrados."}</p>
-          <Link href={`/clientes/${patientId}`} className="mt-6 inline-block">
+          <Link href={`/clientes/${clientId}`} className="mt-6 inline-block">
             <Button variant="outline">Voltar à ficha</Button>
           </Link>
         </div>
@@ -125,7 +125,7 @@ export default function Visao360Page() {
   }
 
   const {
-    patient, activeDietPlan, activeWorkout, activeRehabPlan,
+    client, activeDietPlan, activeWorkout, activeRehabPlan,
     latestAssessment, weightDelta, latestLabExam, activeAlerts,
     latestPhysioAssessment, conflictWarning, recentTimeline,
   } = overview
@@ -138,33 +138,33 @@ export default function Visao360Page() {
       <div className={`bg-white border-b-4 ${accent.border} shadow-sm sticky top-0 z-30`}>
         <div className="w-full px-6 md:px-12 lg:px-20 mx-auto py-5 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
-            <Link href={`/clientes/${patientId}`}>
+            <Link href={`/clientes/${clientId}`}>
               <Button variant="outline" size="icon" className="rounded-full shadow-sm">
                 <ArrowLeft className="w-5 h-5 text-slate-600" />
               </Button>
             </Link>
             <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-black text-white shadow-md ${accent.bg}`}>
-              {patient.name?.charAt(0).toUpperCase()}
+              {client.name?.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h1 className="text-xl font-black text-slate-800 leading-tight">{patient.name}</h1>
+              <h1 className="text-xl font-black text-slate-800 leading-tight">{client.name}</h1>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Visão 360° · Painel Integrado</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {patient.goal && (
+            {client.goal && (
               <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
-                🎯 {patient.goal}
+                🎯 {client.goal}
               </span>
             )}
-            {patient.allergies && (
+            {client.allergies && (
               <span className="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200">
-                ⚠️ {patient.allergies}
+                ⚠️ {client.allergies}
               </span>
             )}
-            {patient.pathologies && (
+            {client.pathologies && (
               <span className="text-xs font-bold text-rose-700 bg-rose-50 px-3 py-1.5 rounded-full border border-rose-200">
-                🏥 {patient.pathologies}
+                🏥 {client.pathologies}
               </span>
             )}
           </div>
@@ -453,7 +453,7 @@ export default function Visao360Page() {
                     <p className="text-xs font-black text-slate-400 uppercase tracking-wider">
                       Coleta: {formatDate(latestLabExam.date)}
                     </p>
-                    <Link href={`/membros/${patientId}/exames`}>
+                    <Link href={`/clientes/${clientId}/exames`}>
                       <Button
                         variant="outline"
                         size="sm"

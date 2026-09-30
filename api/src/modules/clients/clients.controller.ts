@@ -13,6 +13,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { AuthUser } from '../../common/types/auth-user';
+import { ClientOverviewService } from './client-overview.service';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { ListClientsQueryDto } from './dto/list-clients-query.dto';
@@ -25,7 +26,10 @@ type AuthenticatedRequest = { user: AuthUser };
 @Roles('NUTRITIONIST', 'PERSONAL', 'PHYSIO')
 @Controller('clients')
 export class ClientsController {
-  constructor(private readonly clientsService: ClientsService) {}
+  constructor(
+    private readonly clientsService: ClientsService,
+    private readonly clientOverviewService: ClientOverviewService,
+  ) {}
 
   @Post()
   create(
@@ -41,6 +45,14 @@ export class ClientsController {
     @Query() query: ListClientsQueryDto,
   ) {
     return this.clientsService.findAll(request.user, query.status ?? 'ACTIVE');
+  }
+
+  @Get(':clientId/overview')
+  getOverview(
+    @Request() request: AuthenticatedRequest,
+    @Param('clientId') clientId: string,
+  ) {
+    return this.clientOverviewService.getOverview(request.user, clientId);
   }
 
   @Get(':id')
