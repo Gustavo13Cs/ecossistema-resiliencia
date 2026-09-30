@@ -28,11 +28,14 @@ export class LabExamsController {
     @Request() request: AuthenticatedRequest,
     @Body() createLabExamDto: CreateLabExamDto,
   ) {
-    return this.labExamsService.create(createLabExamDto, request.user.sub);
+    return this.labExamsService.create(request.user, createLabExamDto);
   }
 
-  @Get('user/:patientId')
-  findByPatient(@Param('patientId') patientId: string) {
-    return this.labExamsService.findByPatient(patientId);
+  @Get('client/:clientId')
+  findByClient(
+    @Request() request: AuthenticatedRequest,
+    @Param('clientId') clientId: string,
+  ) {
+    return this.labExamsService.findByClient(request.user, clientId);
   }
 }

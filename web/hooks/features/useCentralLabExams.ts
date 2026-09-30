@@ -156,7 +156,7 @@ export const useCentralLabExams = () => {
         // 1. Fetch live exams from backend for active clients
         const clientExamsPromises = clients.slice(0, 10).map(async (client: { id: string; name: string }) => {
           try {
-            const res = await api.get(`/lab-exams/user/${client.id}`)
+            const res = await api.get(`/lab-exams/client/${client.id}`)
             if (Array.isArray(res.data) && res.data.length > 0) {
               return res.data.map((exam: any) => {
                 const markers = (exam.markers || []).map((m: any) => enrichMarker(m))

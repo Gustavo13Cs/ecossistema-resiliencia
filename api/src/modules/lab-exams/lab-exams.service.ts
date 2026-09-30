@@ -1,35 +1,49 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ClientAccessService } from '../../common/client-access/client-access.service';
+import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { CreateLabExamDto } from './dto/create-lab-exam.dto';
 
 @Injectable()
 export class LabExamsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly clientAccess: ClientAccessService,
+  ) {}
 
-  async create(data: CreateLabExamDto, creatorId: string) {
+  async create(user: AuthUser, data: CreateLabExamDto) {
+    this.assertNutritionist(user);
+    const client = await this.clientAccess.getOwnedClient(user, data.clientId);
     return this.prisma.labExam.create({
       data: {
         date: new Date(data.date),
         notes: data.notes,
-        patientId: data.patientId,
-        creatorId,
+        clientId: client.id,
+        patientId: null,
+        creatorId: user.sub,
         markers: {
-          create: data.markers.map(m => ({
-            name: m.name,
-            value: m.value,
-            unit: m.unit,
+          create: data.markers.map((marker) => ({
+            name: marker.name,
+            value: marker.value,
+            unit: marker.unit,
           })),
         },
       },
     });
   }
 
-  // Busca ordenada pela data do exame (do mais antigo para o mais novo facilita o gráfico)
-  async findByPatient(patientId: string) {
+  async findByClient(user: AuthUser, clientId: string) {
+    this.assertNutritionist(user);
+    await this.clientAccess.getOwnedClient(user, clientId);
     return this.prisma.labExam.findMany({
-      where: { patientId },
+      where: { clientId, creatorId: user.sub },
       orderBy: { date: 'asc' },
       include: { markers: true },
     });
+  }
+
+  private assertNutritionist(user: AuthUser) {
+    if (user.role !== 'NUTRITIONIST')
+      throw new ForbiddenException('Acesso permitido somente a nutricionista');
   }
 }
