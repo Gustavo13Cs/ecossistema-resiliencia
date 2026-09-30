@@ -28,11 +28,14 @@ export class AnamnesesController {
     @Request() request: AuthenticatedRequest,
     @Body() createDto: CreateAnamnesisDto,
   ) {
-    return this.anamnesesService.create(createDto, request.user.sub);
+    return this.anamnesesService.create(request.user, createDto);
   }
 
-  @Get('user/:patientId')
-  findByPatient(@Param('patientId') patientId: string) {
-    return this.anamnesesService.findByPatient(patientId);
+  @Get('client/:clientId')
+  findByClient(
+    @Request() request: AuthenticatedRequest,
+    @Param('clientId') clientId: string,
+  ) {
+    return this.anamnesesService.findByClient(request.user, clientId);
   }
 }
