@@ -81,18 +81,144 @@ específico.
 
 ```text
 .
-├── api/
-│   ├── src/modules/       # Domínios da API NestJS
-│   ├── prisma/            # Schema e migrations
-│   └── test/              # Testes da API
-├── web/
-│   ├── app/               # Rotas Next.js
-│   ├── components/        # Interface e componentes de domínio
-│   ├── hooks/             # Hooks de dados e funcionalidades
-│   └── cypress/           # Testes E2E
-├── docs/                  # Arquitetura, segurança e operação
-└── docker-compose.yml     # API e web em containers
+├── api/                              # Backend NestJS e persistência
+│   ├── src/
+│   │   ├── main.ts                   # Bootstrap, CORS e validação global
+│   │   ├── app.module.ts             # Módulo raiz da API
+│   │   ├── common/
+│   │   │   ├── decorators/           # Rotas públicas e papéis
+│   │   │   ├── guards/               # Autenticação e autorização
+│   │   │   ├── client-access/         # Acesso ao prontuário Client
+│   │   │   ├── patient-access/        # Compatibilidade com fluxos legados
+│   │   │   ├── policies/              # Regras de domínio profissional
+│   │   │   ├── security/              # Proteções compartilhadas
+│   │   │   ├── strategies/            # Estratégias Passport/JWT
+│   │   │   └── types/                 # Tipos compartilhados da API
+│   │   ├── infra/
+│   │   │   └── database/              # PrismaService e módulo de banco
+│   │   └── modules/                   # Domínios da aplicação
+│   │       ├── agenda/                # Tarefas e ocorrências recorrentes
+│   │       ├── alerts/                # Alertas e tarefas agendadas
+│   │       ├── anamneses/             # Fichas de anamnese
+│   │       ├── appointments/          # Atendimentos e compromissos
+│   │       ├── assessments/           # Avaliações físicas
+│   │       ├── auth/                  # Cadastro, login e sessão
+│   │       ├── clients/               # Prontuários e ciclo de vida
+│   │       ├── consultation-notes/    # Notas de consulta
+│   │       ├── consents/              # Consentimentos
+│   │       ├── diet-plans/            # Planos alimentares e modelos
+│   │       ├── foods/                 # Alimentos e dados nutricionais
+│   │       ├── health-check-ins/      # Check-ins de saúde
+│   │       ├── lab-exams/             # Exames e marcadores laboratoriais
+│   │       ├── meal-logs/             # Registros de refeições
+│   │       ├── metrics/               # Métricas e cálculos
+│   │       ├── physio-assessments/    # Avaliações fisioterapêuticas
+│   │       ├── recipes/               # Receitas privadas e versionadas
+│   │       ├── rehab-plans/           # Planos e sessões de reabilitação
+│   │       ├── supplements/           # Prescrições de suplementos
+│   │       ├── users/                 # Perfis profissionais
+│   │       ├── workout-logs/          # Registros de treino
+│   │       └── workouts/              # Planos de treinamento
+│   ├── prisma/
+│   │   ├── migrations/                # Histórico versionado do banco
+│   │   ├── schema.prisma              # Modelos e relações
+│   │   ├── seed.ts                    # Seed de desenvolvimento
+│   │   └── seed-phase1-e2e.ts         # Seed restrito aos testes E2E
+│   ├── test/                          # Testes de integração/E2E da API
+│   ├── .env.example                   # Modelo de configuração local
+│   └── package.json                   # Scripts e dependências da API
+├── web/                               # Frontend Next.js
+│   ├── app/                           # Rotas e páginas (App Router)
+│   │   ├── auth/                      # Login e cadastro profissional
+│   │   ├── clientes/
+│   │   │   ├── novo/                  # Cadastro de cliente
+│   │   │   └── [id]/                  # Prontuário e ações do cliente
+│   │   │       ├── exames/
+│   │   │       ├── nova-anamnese/
+│   │   │       ├── nova-dieta/
+│   │   │       ├── nova-reabilitacao/
+│   │   │       ├── nova-suplementacao/
+│   │   │       ├── novo-treino/
+│   │   │       ├── calculo-energetico/
+│   │   │       └── visao-360/
+│   │   ├── agenda/
+│   │   ├── alimentos/
+│   │   ├── avaliacoes/
+│   │   ├── dietas/
+│   │   ├── evolucao/
+│   │   ├── exames/
+│   │   ├── home/
+│   │   ├── metas/
+│   │   ├── modelos-planos/
+│   │   ├── reabilitacao/
+│   │   ├── receitas/
+│   │   ├── relatorios/
+│   │   ├── retornos/
+│   │   └── treinos/
+│   ├── components/
+│   │   ├── auth/                      # Limites e proteção de rotas
+│   │   ├── dashboard/                 # Painéis profissionais
+│   │   ├── design/                    # Contratos e direção visual
+│   │   ├── features/                  # Componentes por domínio
+│   │   │   ├── agenda/                # Agenda e progresso
+│   │   │   ├── appointments/           # Calendários e atendimentos
+│   │   │   ├── clients/                # Diretório e prontuários
+│   │   │   ├── dashboard/              # Resumo profissional
+│   │   │   ├── diet/                   # Planos e modelos alimentares
+│   │   │   ├── evolution/              # Evolução do cliente
+│   │   │   ├── follow-ups/             # Retornos e acompanhamento
+│   │   │   ├── goals/                  # Metas e alertas
+│   │   │   ├── lab-exams/              # Exames e marcadores
+│   │   │   ├── management/             # Indicadores da carteira
+│   │   │   ├── placeholder/            # Estados de funcionalidades futuras
+│   │   │   └── recipes/                # Receitas e versões
+│   │   ├── feedback/                  # Estados de carregamento e erro
+│   │   ├── layout/                    # Estrutura, sidebar e navegação
+│   │   ├── marketing/                 # Apresentação das áreas profissionais
+│   │   ├── providers/                 # Providers globais
+│   │   └── ui/                        # Primitivos de interface reutilizáveis
+│   ├── contexts/                      # Contexto de autenticação
+│   ├── hooks/
+│   │   ├── core/                      # Hooks de perfil e infraestrutura
+│   │   ├── features/                  # Hooks por domínio/funcionalidade
+│   │   └── ui/                        # Hooks de interface
+│   ├── lib/                           # API, cache, regras e utilitários
+│   ├── types/                         # Tipos de domínio do frontend
+│   ├── styles/                        # Estilos globais
+│   ├── public/                        # Logos, ícones e arquivos estáticos
+│   ├── scripts/                       # Verificações e utilitários
+│   ├── test/                          # Setup dos testes unitários
+│   ├── cypress/
+│   │   ├── e2e/                       # Fluxos automatizados no navegador
+│   │   ├── fixtures/                  # Dados de apoio aos testes
+│   │   └── support/                   # Comandos e configuração E2E
+│   ├── .env.example                   # Modelo de configuração local
+│   └── package.json                   # Scripts e dependências da web
+├── docs/
+│   ├── agents/                        # Registros de trabalho dos agentes
+│   ├── app/guides/                    # Guias da aplicação
+│   ├── assets/readme/                 # Capturas usadas neste README
+│   ├── runbooks/                      # Procedimentos operacionais
+│   ├── superpowers/
+│   │   ├── plans/                     # Planos de implementação
+│   │   └── specs/                     # Especificações de funcionalidades
+│   ├── ARCHITECTURE.md
+│   ├── database-baseline.md
+│   ├── DECISIONS.md
+│   ├── SECURITY.md
+│   └── TASKS.md
+├── .github/workflows/                 # CI
+├── scripts/                           # Scripts operacionais da raiz
+├── docker-compose.yml                 # Serviços locais da API e web
+├── docker-compose.test.yml            # PostgreSQL isolado para testes
+├── Dockerfile                         # Imagem de produção da API
+├── AGENTS.md                          # Orientações para agentes
+└── PRODUCT.md                         # Visão, usuários e princípios do produto
 ```
+
+Cada módulo NestJS costuma agrupar controller, service, DTOs e testes junto ao
+domínio. Na web, `app/` organiza as rotas; `components/features/` e
+`hooks/features/` reúnem a interface e os dados de cada funcionalidade.
 
 ## Executar localmente
 
