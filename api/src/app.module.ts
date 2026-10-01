@@ -9,7 +9,6 @@ import { DatabaseModule } from './infra/database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { WorkoutsModule } from './modules/workouts/workouts.module';
-import { MetricsModule } from './modules/metrics/metrics.module';
 import { DietPlansModule } from './modules/diet-plans/diet-plans.module';
 import { FoodsModule } from './modules/foods/foods.module';
 import { AssessmentsModule } from './modules/assessments/assessments.module';
@@ -19,7 +18,6 @@ import { AnamnesesModule } from './modules/anamneses/anamneses.module';
 import { SupplementsModule } from './modules/supplements/supplements.module';
 import { LabExamsModule } from './modules/lab-exams/lab-exams.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
-import { AgendaModule } from './modules/agenda/agenda.module';
 import { ConsultationNotesModule } from './modules/consultation-notes/consultation-notes.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { AppController } from '../app.controller';
@@ -39,7 +37,6 @@ import { RecipesModule } from './modules/recipes/recipes.module';
     AuthModule,
     UsersModule,
     WorkoutsModule,
-    MetricsModule,
     DietPlansModule,
     FoodsModule,
     AssessmentsModule,
@@ -49,7 +46,6 @@ import { RecipesModule } from './modules/recipes/recipes.module';
     SupplementsModule,
     LabExamsModule,
     AlertsModule,
-    AgendaModule,
     ConsultationNotesModule,
     ClientsModule,
     AppointmentsModule,

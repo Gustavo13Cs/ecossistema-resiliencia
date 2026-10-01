@@ -10,7 +10,6 @@ import { DietPlansController } from '../../modules/diet-plans/diet-plans.control
 import { WorkoutsController } from '../../modules/workouts/workouts.controller';
 import { RehabPlansController } from '../../modules/rehab-plans/rehab-plans.controller';
 import { ConsultationNotesController } from '../../modules/consultation-notes/consultation-notes.controller';
-import { MetricsController } from '../../modules/metrics/metrics.controller';
 
 describe('DOMAIN_ROLES', () => {
   it('exposes the exact professional-only role boundary for every clinical domain', () => {
@@ -48,7 +47,6 @@ describe('DOMAIN_ROLES', () => {
     [RehabPlansController, ['PHYSIO']],
     [PhysioAssessmentsController, ['PHYSIO']],
     [AssessmentsController, ['NUTRITIONIST', 'PERSONAL', 'PHYSIO']],
-    [MetricsController, ['NUTRITIONIST', 'PERSONAL', 'PHYSIO']],
   ] as const)(
     '%s applies its exact domain role policy without endpoint overrides',
     (controller, expectedRoles) => {
