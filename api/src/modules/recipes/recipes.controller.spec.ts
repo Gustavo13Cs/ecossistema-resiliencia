@@ -2,6 +2,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { RecipeCategory, RecipeStatus } from '@prisma/client';
 import request from 'supertest';
+import { App } from 'supertest/types';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { RecipesController } from './recipes.controller';
@@ -34,7 +35,7 @@ describe('RecipesController', () => {
     restore: jest.fn(),
   };
 
-  let app: INestApplication;
+  let app: INestApplication<App>;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({

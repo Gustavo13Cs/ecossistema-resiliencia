@@ -13,15 +13,13 @@ import {
 import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { AuthUser } from '../../common/types/auth-user';
+import { AuthenticatedRequest } from '../../common/types/auth-user';
 import { AppointmentActionDto } from './dto/appointment-action.dto';
 import { AppointmentRangeQueryDto } from './dto/appointment-range-query.dto';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { AppointmentsService } from './appointments.service';
-
-type AuthenticatedRequest = { user: AuthUser };
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('NUTRITIONIST', 'PERSONAL', 'PHYSIO')

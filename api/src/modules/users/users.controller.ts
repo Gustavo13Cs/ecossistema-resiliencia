@@ -11,13 +11,12 @@ import {
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import {
+  AuthenticatedRequest,
   AuthUser,
   CLINICAL_PROFESSIONAL_ROLES,
 } from '../../common/types/auth-user';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
-
-type AuthenticatedRequest = { user: AuthUser };
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('users')

@@ -24,23 +24,22 @@ export class CreateFoodDto {
   @IsNumber()
   fat!: number;
 
-
   @IsOptional()
   @IsString()
-  source?: string; 
+  source?: string;
 
   @IsOptional()
   @IsNumber()
-  fiber?: number;  
+  fiber?: number;
 
   @IsOptional()
   @IsNumber()
-  sodium?: number; 
+  sodium?: number;
 
   @IsOptional()
   @IsNumber()
   calcium?: number;
   @IsOptional()
   @IsNumber()
-  iron?: number; 
+  iron?: number;
 }

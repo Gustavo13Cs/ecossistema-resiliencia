@@ -8,15 +8,22 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { Transform, TransformFnParams } from 'class-transformer';
+import { Transform } from 'class-transformer';
 
-export const normalizeOptionalText = ({ value }: TransformFnParams) =>
-  typeof value === 'string' ? value.trim() || null : value;
+export const normalizeOptionalText = ({
+  value,
+}: {
+  value: unknown;
+}): unknown => (typeof value === 'string' ? value.trim() || null : value);
 
-export const normalizeOptionalEmail = ({ value }: TransformFnParams) =>
+export const normalizeOptionalEmail = ({
+  value,
+}: {
+  value: unknown;
+}): unknown =>
   typeof value === 'string' ? value.trim().toLowerCase() || null : value;
 
-export const trimRequiredText = ({ value }: TransformFnParams) =>
+export const trimRequiredText = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.trim() : value;
 
 export class ClientOptionalFieldsDto {

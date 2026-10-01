@@ -1,17 +1,17 @@
-import { Injectable,BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { CreateFoodDto } from './dto/create-food.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class FoodsService {
   constructor(private prisma: PrismaService) {}
 
-
   async searchFoods(query: string, sourceFilter?: string) {
     if (!query || query.length < 2) return [];
 
-    const whereClause: any = {
-      name: { contains: query, mode: 'insensitive' }
+    const whereClause: Prisma.FoodWhereInput = {
+      name: { contains: query, mode: 'insensitive' },
     };
 
     if (sourceFilter && sourceFilter !== 'TODAS') {
@@ -20,7 +20,7 @@ export class FoodsService {
 
     return this.prisma.food.findMany({
       where: whereClause,
-      take: 20
+      take: 20,
     });
   }
 
@@ -29,8 +29,8 @@ export class FoodsService {
   }
 
   async findAll(sourceFilter?: string) {
-    const whereClause: any = {};
-    
+    const whereClause: Prisma.FoodWhereInput = {};
+
     if (sourceFilter && sourceFilter !== 'TODAS') {
       whereClause.source = sourceFilter;
     }
@@ -38,7 +38,7 @@ export class FoodsService {
     return this.prisma.food.findMany({
       where: whereClause,
       orderBy: { name: 'asc' },
-      take: 50
+      take: 50,
     });
   }
 
@@ -51,17 +51,23 @@ export class FoodsService {
 
   async remove(id: string) {
     const inUse = await this.prisma.mealItem.findFirst({
-      where: { foodId: id }
+      where: { foodId: id },
     });
 
     if (inUse) {
-      throw new BadRequestException('Este alimento não pode ser apagado pois está a ser utilizado numa prescrição.');
+      throw new BadRequestException(
+        'Este alimento não pode ser apagado pois está a ser utilizado numa prescrição.',
+      );
     }
 
     return this.prisma.food.delete({ where: { id } });
   }
 
-  async getPreference(foodId: string, nutritionistId: string, quantity: number) {
+  async getPreference(
+    foodId: string,
+    nutritionistId: string,
+    quantity: number,
+  ) {
     return this.prisma.foodPreference.findUnique({
       where: {
         nutritionistId_foodId_quantity: { nutritionistId, foodId, quantity },

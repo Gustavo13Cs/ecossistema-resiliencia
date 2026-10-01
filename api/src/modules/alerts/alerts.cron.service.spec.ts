@@ -1,3 +1,4 @@
+import { expect } from '@jest/globals';
 import { Logger } from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { AlertsCronService } from './alerts.cron.service';

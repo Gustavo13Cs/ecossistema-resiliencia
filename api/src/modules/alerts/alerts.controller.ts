@@ -3,7 +3,7 @@ import { PrismaService } from '../../infra/database/prisma.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { AuthUser } from '../../common/types/auth-user';
+import { AuthenticatedRequest } from '../../common/types/auth-user';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('PERSONAL')
@@ -13,7 +13,7 @@ export class AlertsController {
 
   @Get('dashboard')
   @Header('Cache-Control', 'no-store')
-  getProfessionalAlerts(@Request() req: { user: AuthUser }) {
+  getProfessionalAlerts(@Request() req: AuthenticatedRequest) {
     return this.prisma.patientAlert.findMany({
       where: {
         professionalId: req.user.sub,

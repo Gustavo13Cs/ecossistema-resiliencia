@@ -149,9 +149,9 @@ describe('Legacy professional-client backfill (e2e)', () => {
         goal: 'Objetivo legado',
       },
     ]);
-    expect(clients.every(({ professionalNotes }) => professionalNotes === null)).toBe(
-      true,
-    );
+    expect(
+      clients.every(({ professionalNotes }) => professionalNotes === null),
+    ).toBe(true);
     await expect(
       prisma.clientAuditEvent.count({ where: { id: { in: LINK_IDS } } }),
     ).resolves.toBe(2);

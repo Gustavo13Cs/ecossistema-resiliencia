@@ -6,6 +6,7 @@ import {
 import { Test } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import { Request, Response } from 'express';
+import { AuthenticatedRequest } from '../../common/types/auth-user';
 import request from 'supertest';
 import { createCsrfProtection } from '../../common/security/csrf-protection';
 import {
@@ -238,7 +239,7 @@ describe('AuthController registration contract', () => {
           role: 'NUTRITIONIST',
           signedToken: 'signed-token',
         },
-      } as unknown as Request,
+      } as unknown as AuthenticatedRequest,
       response,
     );
 
@@ -263,7 +264,7 @@ describe('AuthController registration contract', () => {
     const requestWithSession = {
       cookies: { csrf_token: sessionToken },
       user: { sub: 'pro-1', role: 'NUTRITIONIST' },
-    } as unknown as Request;
+    } as unknown as AuthenticatedRequest;
     const firstCookie = jest.fn();
     const secondCookie = jest.fn();
     const firstResponse = { cookie: firstCookie } as unknown as Response;
@@ -289,7 +290,7 @@ describe('AuthController registration contract', () => {
       {
         cookies: { csrf_token: 'attacker-controlled' },
         user: { sub: 'pro-1', role: 'NUTRITIONIST' },
-      } as unknown as Request,
+      } as unknown as AuthenticatedRequest,
       response,
     );
 

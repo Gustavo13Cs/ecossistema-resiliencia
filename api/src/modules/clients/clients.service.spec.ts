@@ -1,9 +1,9 @@
+import { expect } from '@jest/globals';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { ClientAccessService } from '../../common/client-access/client-access.service';
-import { PrismaService } from '../../infra/database/prisma.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { ClientsService } from './clients.service';
@@ -42,10 +42,10 @@ describe('ClientsService', () => {
       professionalId: 'pro-1',
     });
 
-    await service.create(
-      { sub: 'pro-1', role: 'NUTRITIONIST' },
-      { name: 'Ana', email: 'ana@example.com' } as CreateClientDto,
-    );
+    await service.create({ sub: 'pro-1', role: 'NUTRITIONIST' }, {
+      name: 'Ana',
+      email: 'ana@example.com',
+    } as CreateClientDto);
 
     expect(tx.client.create).toHaveBeenCalledWith({
       data: {
@@ -74,7 +74,11 @@ describe('ClientsService', () => {
       },
     });
     expect(tx.clientAuditEvent.create).toHaveBeenCalledWith({
-      data: { clientId: 'client-1', professionalId: 'pro-1', action: 'CREATED' },
+      data: {
+        clientId: 'client-1',
+        professionalId: 'pro-1',
+        action: 'CREATED',
+      },
     });
   });
 
@@ -126,7 +130,11 @@ describe('ClientsService', () => {
       where: { id: 'client-1', professionalId: 'pro-1' },
     });
     expect(tx.clientAuditEvent.create).toHaveBeenCalledWith({
-      data: { clientId: 'client-1', professionalId: 'pro-1', action: 'ARCHIVED' },
+      data: {
+        clientId: 'client-1',
+        professionalId: 'pro-1',
+        action: 'ARCHIVED',
+      },
     });
   });
 
@@ -183,10 +191,10 @@ describe('ClientsService', () => {
     );
 
     await expect(
-      service.create(
-        { sub: 'pro-1', role: 'NUTRITIONIST' },
-        { name: 'Ana', email: 'ana@example.test' } as CreateClientDto,
-      ),
+      service.create({ sub: 'pro-1', role: 'NUTRITIONIST' }, {
+        name: 'Ana',
+        email: 'ana@example.test',
+      } as CreateClientDto),
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
@@ -268,7 +276,11 @@ describe('ClientsService', () => {
       where: { id: 'client-1', professionalId: 'pro-1' },
     });
     expect(tx.clientAuditEvent.create).toHaveBeenCalledWith({
-      data: { clientId: 'client-1', professionalId: 'pro-1', action: 'UPDATED' },
+      data: {
+        clientId: 'client-1',
+        professionalId: 'pro-1',
+        action: 'UPDATED',
+      },
     });
   });
 
@@ -318,7 +330,11 @@ describe('ClientsService', () => {
     );
 
     expect(tx.clientAuditEvent.create).toHaveBeenCalledWith({
-      data: { clientId: 'client-1', professionalId: 'pro-1', action: 'RESTORED' },
+      data: {
+        clientId: 'client-1',
+        professionalId: 'pro-1',
+        action: 'RESTORED',
+      },
     });
   });
 });

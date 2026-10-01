@@ -12,15 +12,13 @@ import {
 import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { AuthUser } from '../../common/types/auth-user';
+import { AuthenticatedRequest } from '../../common/types/auth-user';
 import { ClientOverviewService } from './client-overview.service';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { ListClientsQueryDto } from './dto/list-clients-query.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { UpdateClientStatusDto } from './dto/update-client-status.dto';
-
-type AuthenticatedRequest = { user: AuthUser };
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('NUTRITIONIST', 'PERSONAL', 'PHYSIO')

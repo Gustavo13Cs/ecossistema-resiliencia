@@ -68,7 +68,7 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   workActivityLevel?: string;
-  
+
   @IsOptional()
   @IsString()
   nutritionistNotes?: string;

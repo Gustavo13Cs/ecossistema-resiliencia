@@ -9,7 +9,7 @@ import { AuthController } from './modules/auth/auth.controller';
 
 describe('Application authentication defaults', () => {
   it('registers JWT and throttling as independent global guards', () => {
-    const providers: unknown[] = Reflect.getMetadata(
+    const providers: unknown = Reflect.getMetadata(
       MODULE_METADATA.PROVIDERS,
       AppModule,
     );
@@ -29,19 +29,23 @@ describe('Application authentication defaults', () => {
 
   it('marks exactly the deliberate health/auth handlers public', () => {
     const handlers = [AppController, AuthController].flatMap((controller) =>
-      Object.getOwnPropertyNames(controller.prototype)
-        .filter(
-          (name) =>
-            name !== 'constructor' &&
-            Reflect.getMetadata('path', controller.prototype[name]) !==
-              undefined,
+      Object.entries(
+        Object.getOwnPropertyDescriptors(controller.prototype),
+      ).flatMap(([name, descriptor]) => {
+        const handler: unknown = descriptor.value;
+        if (
+          name === 'constructor' ||
+          typeof handler !== 'function' ||
+          Reflect.getMetadata('path', handler) === undefined
         )
-        .map((name) => ({
-          name,
-          public:
-            Reflect.getMetadata(IS_PUBLIC_KEY, controller.prototype[name]) ===
-            true,
-        })),
+          return [];
+        return [
+          {
+            name,
+            public: Reflect.getMetadata(IS_PUBLIC_KEY, handler) === true,
+          },
+        ];
+      }),
     );
     expect(
       handlers

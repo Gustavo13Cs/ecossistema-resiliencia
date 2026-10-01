@@ -18,7 +18,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { AuthUser } from '../../common/types/auth-user';
+import { AuthUser, AuthenticatedRequest } from '../../common/types/auth-user';
 import {
   generateCsrfToken,
   isValidCsrfToken,
@@ -47,8 +47,11 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @Header('Cache-Control', 'no-store')
-  me(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const authenticatedUser = req.user as AuthUser;
+  me(
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const authenticatedUser = req.user;
     const user: AuthUser = {
       sub: authenticatedUser.sub,
       role: authenticatedUser.role,

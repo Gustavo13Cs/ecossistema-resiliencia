@@ -1,4 +1,5 @@
 import { PrismaService } from '../src/infra/database/prisma.service';
+import { AuthenticatedRequest } from '../src/common/types/auth-user';
 import { AlertsCronService } from '../src/modules/alerts/alerts.cron.service';
 import { AlertsController } from '../src/modules/alerts/alerts.controller';
 import { isolatedPostgres } from './fixtures/isolated-postgres';
@@ -148,7 +149,7 @@ describe('Atomic alert snapshots (isolated PostgreSQL)', () => {
     const controller = new AlertsController(prisma);
     const result = await controller.getProfessionalAlerts({
       user: { sub: 'a', role: 'PERSONAL' },
-    });
+    } as AuthenticatedRequest);
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({
       client: { id: 'client-a', name: 'Private A' },

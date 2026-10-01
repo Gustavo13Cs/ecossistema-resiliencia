@@ -114,8 +114,6 @@ describe('Professional domain boundaries (e2e)', () => {
     })
       .overrideGuard(JwtAuthGuard)
       .useClass(TestJwtAuthGuard)
-      .overrideProvider(GLOBAL_JWT_AUTH_GUARD)
-      .useClass(TestJwtAuthGuard)
       .compile();
 
     app = moduleFixture.createNestApplication();

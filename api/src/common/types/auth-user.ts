@@ -1,4 +1,5 @@
 import { Role } from '@prisma/client';
+import type { Request } from 'express';
 
 export type AccessTokenPayload = {
   sub: string;
@@ -12,6 +13,8 @@ export type AuthUser = {
   email?: string;
   name?: string;
 };
+
+export type AuthenticatedRequest = Request & { user: AuthUser };
 
 export const CLINICAL_PROFESSIONAL_ROLES: Role[] = [
   'NUTRITIONIST',
