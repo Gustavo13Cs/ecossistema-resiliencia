@@ -12,6 +12,7 @@ import type { ClientFormPayload } from "@/components/features/clients/client-fie
 import { NutritionistQuickActions } from "@/components/features/clients/NutritionistQuickActions"
 import { BodyCompositionChart } from "@/components/features/clients/BodyCompositionChart"
 import { AssessmentModal } from "@/components/AssessmentModal"
+import { PhysioAssessmentModal } from "@/components/PhysioAssessmentModal"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
 import { useClientRecord, type ClientRecordStatus } from "@/hooks/features/useClientRecord"
@@ -55,6 +56,7 @@ export default function ClienteHubPage() {
   const [reloadingLatest, setReloadingLatest] = useState(false)
   const [formRevision, setFormRevision] = useState(0)
   const [showAssessmentModal, setShowAssessmentModal] = useState(false)
+  const [showPhysioAssessmentModal, setShowPhysioAssessmentModal] = useState(false)
 
   const updateClient = useMutation({
     mutationFn: async ({ values, expectedUpdatedAt }: { values: ClientFormPayload; expectedUpdatedAt: string }) => {
@@ -169,6 +171,9 @@ export default function ClienteHubPage() {
       {user.role === "NUTRITIONIST" && (
         <NutritionistQuickActions clientId={clientId} />
       )}
+      {user.role === "PHYSIO" && (
+        <Button onClick={() => setShowPhysioAssessmentModal(true)}>Nova avaliação fisioterapêutica</Button>
+      )}
 
       {user.role === "NUTRITIONIST" ? (
         <div className="space-y-6">
@@ -211,6 +216,17 @@ export default function ClienteHubPage() {
             if (user.sub) {
               void queryClient.invalidateQueries({ queryKey: queryKeys.assessments(user.sub, clientId) })
             }
+          }}
+        />
+      )}
+      {showPhysioAssessmentModal && (
+        <PhysioAssessmentModal
+          isOpen
+          clientId={clientId}
+          onClose={() => setShowPhysioAssessmentModal(false)}
+          onSuccess={() => {
+            setShowPhysioAssessmentModal(false)
+            void queryClient.invalidateQueries({ queryKey: queryKeys.patientOverview(user.sub, clientId) })
           }}
         />
       )}

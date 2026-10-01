@@ -118,7 +118,7 @@ export const canAccessProfessionalPath = (role: UserRole, pathname: string) => {
   }
 
   if (matchesPathPrefix(pathname, "/clientes/:id/visao-360")) {
-    return false
+    return role === "NUTRITIONIST" || role === "PERSONAL" || role === "PHYSIO"
   }
 
   const roleOnlyRoute = ROLE_ONLY_PREFIXES.find(([prefix]) => matchesPathPrefix(pathname, prefix))

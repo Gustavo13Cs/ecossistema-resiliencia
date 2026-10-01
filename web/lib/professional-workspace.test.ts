@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest"
 import { canAccessProfessionalPath, getNavigationForRole } from "./professional-workspace"
+import type { UserRole } from "@/types/auth"
+
+describe("owned Client overview access", () => {
+  it.each(["NUTRITIONIST", "PERSONAL", "PHYSIO"] as const)("permits %s to open its owned overview", role => {
+    expect(canAccessProfessionalPath(role, "/clientes/client-one/visao-360")).toBe(true)
+  })
+  it.each(["ADMIN", "PATIENT"] as const)("denies %s clinical overview", role => {
+    // PATIENT é legado e deliberadamente não faz parte do contrato atual UserRole.
+    expect(canAccessProfessionalPath(role as UserRole, "/clientes/client-one/visao-360")).toBe(false)
+  })
+})
 
 describe("professional workspace policy", () => {
   it.each(["NUTRITIONIST", "PERSONAL", "PHYSIO"] as const)(
