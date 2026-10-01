@@ -9,13 +9,13 @@
 ## Current Task
 
 - **Tarefa**: Remediação ponta a ponta dos 15 achados de segurança e qualidade
-- **Status**: Execução nativa retomada em 2026-10-01; Plano A concluído; Plano B Tasks 1-5 concluídas, iniciando Task 6
+- **Status**: Execução nativa retomada em 2026-10-01; Plano A concluído; Plano B Tasks 1-6 concluídas, iniciando Task 7
 - **Branch**: `agent/codex/security-remediation`
 - **Início**: 2026-09-29
 - **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migrations versionadas necessárias à remediação
 - **Worktree**: `.worktrees/security/security-remediation`
 - **Plano atual**: `docs/superpowers/plans/2026-09-29-security-remediation-b-frontend-persistence-xss.md`
-- **Próximo gate**: CSP com nonce novo por requisição no proxy do Next e verificação de build/headers
+- **Próximo gate**: jornada Cypress real para metas/exames/pedidos e limpeza das chaves clínicas legadas
 - **Coordenação**: o status do Antigravity ainda cita uma tarefa iniciada em 2026-09-22, mas não há branch/worktree detectável para ela; confirmar antes de alterar auth, package files ou `.gitignore` fora deste worktree
 
 ---
@@ -47,6 +47,7 @@
 
 ### Remediação — retomada em 2026-10-01
 
+- Plano B Task 6: CSP com nonce de 128 bits por requisição, scripts sem unsafe-inline/eval em produção; 47/47 testes focais, typecheck/lint e build aprovados. Gate pós-build adaptado à renderização dinâmica, contrato exato e nonces validados nas 28 páginas reais.
 - Plano B Task 5: builders compartilhados com escaping de títulos/texto/valores, impressão sem scripts inline e único writer revisado. 28/28 testes de impressão, typecheck e lint focal aprovados.
 - Plano B Task 4: central sem storage, seeds, valores clínicos fictícios ou upload PDF simulado; listagem agregada e mutações server-only isoladas por sessão. Falhas mantêm dados/formulários; exportação somente de pedidos salvos. 18/18 testes, typecheck e lint focal aprovados.
 - Plano B Task 3: metas sem storage, seed ou adesão simulada; operações assíncronas preservam cache/formulário em erro. Medidas ausentes não geram progresso/platô inventado. 12/12 testes web, typecheck e lint focal aprovados.

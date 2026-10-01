@@ -87,3 +87,9 @@
 2. **Ao iniciar**: mude o status para 🔄 e coloque seu nome na coluna "Agente"
 3. **Ao concluir**: mude o status para ✅
 4. **Se bloqueado**: mude para ❌ e descreva o impedimento em `docs/agents/<SEU_STATUS>.md`
+
+### Remediação de segurança — Codex
+- [x] Plano A: ownership por Client, schema e retirada do runtime legado — concluído no worktree de segurança.
+- [ ] Plano B: persistência server-only, impressão escapada e CSP — em andamento (Codex); Tasks 1-6 concluídas, validando Task 7 no navegador.
+- [ ] Plano C: sessões revogáveis e dependências — pendente (Codex).
+- [ ] Plano D: operação, índices e gates de qualidade — pendente (Codex).
