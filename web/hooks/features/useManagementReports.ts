@@ -11,6 +11,8 @@ import {
   ClientClinicalGoal,
 } from "@/types/management-reports"
 import { toast } from "sonner"
+import { buildManagementReportPrintHtml } from "@/lib/management-print-document"
+import { openPrintWindow } from "@/lib/print-document"
 
 export function useManagementReports() {
   const { data: rawActiveClients = [], isLoading: loadingActive } = useClients("ACTIVE")
@@ -293,137 +295,12 @@ export function useManagementReports() {
 
   // Print Executive PDF Report
   const generatePDFReport = () => {
-    const printWindow = window.open("", "_blank")
-    if (!printWindow) {
-      toast.error("Permita pop-ups no navegador para gerar o relatório impresso.")
-      return
-    }
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>SafeMove - Relatório Gerencial Executivo</title>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #0f172a; line-height: 1.5; }
-          .header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
-          .logo { font-size: 22px; font-weight: 800; color: #059669; }
-          .sub { font-size: 13px; color: #64748b; margin-top: 4px; }
-          .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
-          .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: left; }
-          .card-title { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; }
-          .card-val { font-size: 24px; font-weight: 800; margin-top: 6px; color: #0f172a; }
-          .section { margin-top: 30px; margin-bottom: 16px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; }
-          .section-title { font-size: 16px; font-weight: 700; color: #0f172a; }
-          table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
-          th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
-          th { background: #f1f5f9; font-weight: 600; color: #334155; }
-          .footer { margin-top: 50px; display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 16px; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div>
-            <div class="logo">SAFEMOVE HEALTH & MANAGEMENT</div>
-            <div class="sub">Relatório Gerencial Clínico • Nutrição & Consultório Privado</div>
-          </div>
-          <div style="text-align: right; font-size: 12px; color: #64748b;">
-            Período: <strong>${period}</strong><br/>
-            Data: ${new Date().toLocaleDateString("pt-BR")}
-          </div>
-        </div>
-
-        <div class="grid">
-          <div class="card">
-            <div class="card-title">Taxa de Retenção</div>
-            <div class="card-val">${report.retention.retentionRatePercent}%</div>
-            <div style="font-size: 11px; color: #059669; margin-top: 4px;">Evasão: ${report.retention.churnRatePercent}%</div>
-          </div>
-          <div class="card">
-            <div class="card-title">Adesão Alimentar</div>
-            <div class="card-val">${report.dietAdherence.averageAdherencePercent}%</div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">${report.dietAdherence.totalMealCheckIns} check-ins</div>
-          </div>
-          <div class="card">
-            <div class="card-title">Consultas Realizadas</div>
-            <div class="card-val">${report.appointments.totalAppointments}</div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">${report.appointments.weeklyAverage} por semana</div>
-          </div>
-          <div class="card">
-            <div class="card-title">Base Privada</div>
-            <div class="card-val">${report.growth.totalActiveClients}</div>
-            <div style="font-size: 11px; color: #059669; margin-top: 4px;">+${report.growth.netNewClients} novos clientes</div>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">1. Retenção & Continuidade do Tratamento</div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Etapa do Acompanhamento</th>
-              <th>Taxa de Retenção Ativa</th>
-              <th>Clientes em Tratamento</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${report.retention.cohortData
-              .map(
-                (c) => `
-              <tr>
-                <td>${c.month}</td>
-                <td><strong>${c.activeRate}%</strong></td>
-                <td>${c.retainedCount} clientes</td>
-              </tr>
-            `
-              )
-              .join("")}
-          </tbody>
-        </table>
-
-        <div class="section">
-          <div class="section-title">2. Distribuição de Objetivos Clínicos da Carteira</div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Objetivo Nutricional</th>
-              <th>Pacientes Ativos</th>
-              <th>Participação na Carteira</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${report.growth.goalDistribution
-              .map(
-                (g) => `
-              <tr>
-                <td><strong>${g.label}</strong></td>
-                <td>${g.count} pacientes</td>
-                <td>${g.percent}%</td>
-              </tr>
-            `
-              )
-              .join("")}
-          </tbody>
-        </table>
-
-        <div class="footer">
-          <div>Documento gerado automaticamente pelo SafeMove SaaS</div>
-          <div>Confidencial • Uso exclusivo do profissional</div>
-        </div>
-
-        <script>
-          window.onload = function() { window.print(); }
-        </script>
-      </body>
-      </html>
-    `
-
-    printWindow.document.write(html)
-    printWindow.document.close()
+    const popup = openPrintWindow(buildManagementReportPrintHtml({
+      ...report,
+      dateLabel: new Date().toLocaleDateString("pt-BR"),
+    }))
+    if (!popup) toast.error("Permita pop-ups no navegador para gerar o relatório impresso.")
   }
-
   return {
     loading,
     period,
