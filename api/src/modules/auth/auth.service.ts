@@ -81,4 +81,12 @@ export class AuthService {
 
     return newUser;
   }
+
+  refresh(rawToken: string) {
+    return this.sessions.rotate(rawToken);
+  }
+
+  logout(rawToken: string) {
+    return this.sessions.revoke(rawToken);
+  }
 }

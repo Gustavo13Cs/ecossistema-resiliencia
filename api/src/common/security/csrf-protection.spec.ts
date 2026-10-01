@@ -13,6 +13,7 @@ function requestFor({
   path = '/clients',
   origin,
   accessToken,
+  refreshToken,
   cookieToken,
   headerToken,
 }: {
@@ -20,6 +21,7 @@ function requestFor({
   path?: string;
   origin?: string;
   accessToken?: string;
+  refreshToken?: string;
   cookieToken?: string;
   headerToken?: string;
 } = {}) {
@@ -32,6 +34,7 @@ function requestFor({
     path,
     cookies: {
       ...(accessToken ? { access_token: accessToken } : {}),
+      ...(refreshToken ? { refresh_token: refreshToken } : {}),
       ...(cookieToken ? { csrf_token: cookieToken } : {}),
     },
     header: (name: string) => headers[name.toLowerCase()],
@@ -61,8 +64,8 @@ describe('CSRF protection', () => {
       requestFor({
         origin: ALLOWED_ORIGIN,
         accessToken: 'signed-token',
-        cookieToken: 'known-token',
-        headerToken: 'known-token',
+        cookieToken: 'a'.repeat(43),
+        headerToken: 'a'.repeat(43),
       }),
       response,
       next,
@@ -143,19 +146,48 @@ describe('CSRF protection', () => {
     expect(next).toHaveBeenCalledTimes(1);
   });
 
-  it('allows a trusted browser origin to clear a stale authenticated session', () => {
-    protection(
-      requestFor({
-        path: '/auth/logout',
-        origin: ALLOWED_ORIGIN,
-        accessToken: 'signed-token',
-        cookieToken: 'stale-token',
-        headerToken: 'different-token',
-      }),
-      response,
-      next,
-    );
+  it('rejects stale CSRF during logout even with an allowed browser origin', () => {
+    expect(() =>
+      protection(
+        requestFor({
+          path: '/auth/logout',
+          origin: ALLOWED_ORIGIN,
+          accessToken: 'signed-token',
+          cookieToken: 'stale-token',
+          headerToken: 'different-token',
+        }),
+        response,
+        next,
+      ),
+    ).toThrow(ForbiddenException);
+    expect(next).not.toHaveBeenCalled();
+  });
 
-    expect(next).toHaveBeenCalledTimes(1);
+  it('protects mutations when only a refresh cookie is present', () => {
+    expect(() =>
+      protection(
+        requestFor({ origin: ALLOWED_ORIGIN, refreshToken: 'opaque' }),
+        response,
+        next,
+      ),
+    ).toThrow(ForbiddenException);
+  });
+
+  it.each([
+    '/auth/refresh',
+    '/auth/logout',
+    '/auth/login',
+    '/auth/register',
+    '/auth/login/',
+  ])('requires an Origin on %s even without authentication cookies', (path) => {
+    expect(() => protection(requestFor({ path }), response, next)).toThrow(
+      ForbiddenException,
+    );
+  });
+
+  it('does not accept two identical malformed CSRF values', () => {
+    expect(() => assertCsrfPair('not-random', 'not-random')).toThrow(
+      ForbiddenException,
+    );
   });
 });

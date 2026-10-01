@@ -3,8 +3,10 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { createCsrfProtection } from './common/security/csrf-protection';
+import { createAuthCookiePolicies } from './modules/auth/auth-cookie-options';
 
 async function bootstrap() {
+  createAuthCookiePolicies();
   const app = await NestFactory.create(AppModule);
 
   // middleware ANTES do listen
@@ -30,7 +32,10 @@ async function bootstrap() {
   }
 
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (
+      origin: string | undefined,
+      callback: (error: Error | null, allow?: boolean) => void,
+    ) => {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -48,4 +53,4 @@ async function bootstrap() {
   console.log('🚀 API do Ecossistema rodando na porta 3000');
 }
 
-bootstrap();
+void bootstrap();

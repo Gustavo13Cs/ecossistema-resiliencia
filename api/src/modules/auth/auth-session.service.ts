@@ -98,17 +98,14 @@ export class AuthSessionService {
     const revoked = await this.prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
         const session = await this.lockSession(tx, sessionId);
-        if (
-          !session ||
-          !matchesRefreshToken(session.refreshTokenHash, rawToken)
-        )
-          return false;
+        if (!session) return false;
+        const matches = matchesRefreshToken(session.refreshTokenHash, rawToken);
         if (!session.revokedAt)
           await tx.authSession.update({
             where: { id: sessionId },
             data: { revokedAt: new Date() },
           });
-        return true;
+        return matches;
       },
     );
     if (!revoked) throw this.invalidSession();
