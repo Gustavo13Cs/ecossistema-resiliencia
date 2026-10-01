@@ -9,13 +9,13 @@
 ## Current Task
 
 - **Tarefa**: Remediação ponta a ponta dos 15 achados de segurança e qualidade
-- **Status**: Execução nativa retomada em 2026-10-01; Plano A concluído; Plano B Tasks 1-3 concluídas, iniciando Task 4
+- **Status**: Execução nativa retomada em 2026-10-01; Plano A concluído; Plano B Tasks 1-4 concluídas, iniciando Task 5
 - **Branch**: `agent/codex/security-remediation`
 - **Início**: 2026-09-29
 - **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migrations versionadas necessárias à remediação
 - **Worktree**: `.worktrees/security/security-remediation`
 - **Plano atual**: `docs/superpowers/plans/2026-09-29-security-remediation-b-frontend-persistence-xss.md`
-- **Próximo gate**: substituir seeds/fallbacks da central de exames por queries e mutations na API
+- **Próximo gate**: escapar todos os documentos clínicos impressos e centralizar a janela de impressão
 - **Coordenação**: o status do Antigravity ainda cita uma tarefa iniciada em 2026-09-22, mas não há branch/worktree detectável para ela; confirmar antes de alterar auth, package files ou `.gitignore` fora deste worktree
 
 ---
@@ -45,8 +45,9 @@
 
 ## Notes
 
-### Remediação — retomada em 2026-09-30
+### Remediação — retomada em 2026-10-01
 
+- Plano B Task 4: central sem storage, seeds, valores clínicos fictícios ou upload PDF simulado; listagem agregada e mutações server-only isoladas por sessão. Falhas mantêm dados/formulários; exportação somente de pedidos salvos. 18/18 testes, typecheck e lint focal aprovados.
 - Plano B Task 3: metas sem storage, seed ou adesão simulada; operações assíncronas preservam cache/formulário em erro. Medidas ausentes não geram progresso/platô inventado. 12/12 testes web, typecheck e lint focal aprovados.
 - Plano B Task 2: pedidos persistidos e exames agregados/listagem/exclusão por Client/autor; 39/39 testes focais e 12/12 HTTP PostgreSQL aprovados, build API e lint focal aprovados.
 - Plano B Task 1: API de metas persistidas por Client/autor, hábitos aninhados e DTOs limitados; 27/27 testes, build API e lint focal aprovados.

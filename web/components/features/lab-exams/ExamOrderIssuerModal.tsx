@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useRef } from "react"
 import {
   Dialog,
   DialogContent,
@@ -13,18 +13,17 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import {
   FileText,
-  Copy,
-  Printer,
   Sparkles,
   Plus,
   Trash2,
-  Check,
   Send,
 } from "lucide-react"
 import {
   LAB_ORDER_TEMPLATES,
   LabOrderTemplate,
   ClientOption,
+  IssueOrderInput,
+  IssuedLabOrder,
 } from "@/types/lab-exam"
 import { toast } from "sonner"
 
@@ -33,14 +32,7 @@ interface ExamOrderIssuerModalProps {
   onClose: () => void
   clients: ClientOption[]
   defaultClientId?: string
-  onSubmit: (data: {
-    clientId: string
-    clientName: string
-    templateTitle?: string
-    markers: string[]
-    clinicalIndication: string
-    preparationInstructions: string
-  }) => any
+  onSubmit: (data: IssueOrderInput) => Promise<IssuedLabOrder>
 }
 
 export const ExamOrderIssuerModal: React.FC<ExamOrderIssuerModalProps> = ({
@@ -64,31 +56,14 @@ export const ExamOrderIssuerModal: React.FC<ExamOrderIssuerModalProps> = ({
   const [preparationInstructions, setPreparationInstructions] = useState<string>(
     "Jejum de 10 a 12 horas. Ingestão de água permitida em moderação. Evitar bebidas alcoólicas e exercícios vigorosos nas 24h antecedentes à coleta."
   )
-  const [copied, setCopied] = useState<boolean>(false)
-
-  // Reset or initialize
-  React.useEffect(() => {
-    if (isOpen) {
-      if (defaultClientId) {
-        setSelectedClientId(defaultClientId)
-      } else if (clients.length > 0 && !selectedClientId) {
-        setSelectedClientId(clients[0].id)
-      }
-    }
-  }, [isOpen, defaultClientId, clients, selectedClientId])
+  const [submitting, setSubmitting] = useState(false)
+  const submissionPending = useRef(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const handleTemplateSelect = (tmpl: LabOrderTemplate) => {
     setSelectedTemplateId(tmpl.id)
     setMarkersList([...tmpl.suggestedMarkers])
     setClinicalIndication(`Investigação clínica e ${tmpl.title.toLowerCase()} para plano alimentar individualizado.`)
-  }
-
-  const toggleMarker = (markerName: string) => {
-    if (markersList.includes(markerName)) {
-      setMarkersList(markersList.filter((m) => m !== markerName))
-    } else {
-      setMarkersList([...markersList, markerName])
-    }
   }
 
   const addCustomMarker = () => {
@@ -106,13 +81,9 @@ export const ExamOrderIssuerModal: React.FC<ExamOrderIssuerModalProps> = ({
     setMarkersList(markersList.filter((m) => m !== name))
   }
 
-  const getClientName = () => {
-    const c = clients.find((client) => client.id === selectedClientId)
-    return c ? c.name : "Paciente"
-  }
-
-  const handleSaveOrder = (e: React.FormEvent) => {
+  const handleSaveOrder = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submissionPending.current) return
     if (!selectedClientId) {
       toast.error("Selecione um paciente.")
       return
@@ -123,110 +94,28 @@ export const ExamOrderIssuerModal: React.FC<ExamOrderIssuerModalProps> = ({
     }
 
     const tmpl = LAB_ORDER_TEMPLATES.find((t: LabOrderTemplate) => t.id === selectedTemplateId)
-    onSubmit({
-      clientId: selectedClientId,
-      clientName: getClientName(),
-      templateTitle: tmpl?.title,
-      markers: markersList,
-      clinicalIndication,
-      preparationInstructions,
-    })
-    onClose()
-  }
-
-  // Format text for WhatsApp export
-  const handleCopyWhatsApp = () => {
-    const clientName = getClientName()
-    const text = `📋 *PEDIDO DE EXAMES LABORATORIAIS - SAFEMOVE*
-
-*Paciente:* ${clientName}
-*Data:* ${new Date().toLocaleDateString("pt-BR")}
-*Indicação Clínica:* ${clinicalIndication}
-
-🔬 *Exames Solicitados:*
-${markersList.map((m, i) => `${i + 1}. ${m}`).join("\n")}
-
-⚠️ *Orientações de Preparo:*
-${preparationInstructions}
-
-_Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
-
-    navigator.clipboard.writeText(text)
-    setCopied(true)
-    toast.success("Requisição copiada para a área de transferência!")
-    setTimeout(() => setCopied(false), 2500)
-  }
-
-  const handlePrint = () => {
-    const clientName = getClientName()
-    const printWindow = window.open("", "_blank")
-    if (!printWindow) {
-      toast.error("Permita pop-ups no navegador para imprimir a requisição.")
-      return
+    submissionPending.current = true
+    setSubmitting(true)
+    setSaveError(null)
+    try {
+      await onSubmit({
+        clientId: selectedClientId,
+        templateTitle: tmpl?.title,
+        markers: markersList,
+        clinicalIndication,
+        preparationInstructions,
+      })
+      onClose()
+    } catch {
+      setSaveError("Não foi possível salvar o pedido. Seus dados continuam neste formulário.")
+    } finally {
+      submissionPending.current = false
+      setSubmitting(false)
     }
-
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Pedido de Exames - ${clientName}</title>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #1e293b; }
-          .header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
-          .logo { font-size: 20px; font-weight: 800; color: #0f172a; }
-          .title { font-size: 18px; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-          .patient-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px; font-size: 14px; }
-          .section-title { font-size: 14px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px; margin-top: 24px; margin-bottom: 12px; }
-          ol { margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.8; }
-          .instructions { font-size: 13px; color: #475569; background: #f1f5f9; padding: 12px; border-radius: 6px; line-height: 1.5; }
-          .footer { margin-top: 60px; display: flex; justify-content: space-between; align-items: flex-end; }
-          .signature-line { border-top: 1px solid #64748b; width: 240px; text-align: center; padding-top: 8px; font-size: 13px; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div>
-            <div class="logo">SAFEMOVE HEALTH & CLINICAL NUTRITION</div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Requisição Laboratorial Padronizada</div>
-          </div>
-          <div style="font-size: 12px; text-align: right;">
-            Data: ${new Date().toLocaleDateString("pt-BR")}
-          </div>
-        </div>
-
-        <div class="patient-box">
-          <div><strong>Paciente:</strong> ${clientName}</div>
-          <div style="margin-top: 4px;"><strong>Indicação Clínica:</strong> ${clinicalIndication}</div>
-        </div>
-
-        <div class="section-title">EXAMES SOLICITADOS</div>
-        <ol>
-          ${markersList.map((m) => `<li><strong>${m}</strong></li>`).join("")}
-        </ol>
-
-        <div class="section-title">ORIENTAÇÕES AO PACIENTE / LABORATÓRIO</div>
-        <div class="instructions">${preparationInstructions}</div>
-
-        <div class="footer">
-          <div style="font-size: 11px; color: #94a3b8;">Emitido digitalmente via SafeMove</div>
-          <div class="signature-line">
-            Assinatura / Carimbo Profissional
-          </div>
-        </div>
-
-        <script>
-          window.onload = function() { window.print(); }
-        </script>
-      </body>
-      </html>
-    `
-
-    printWindow.document.write(htmlContent)
-    printWindow.document.close()
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !submissionPending.current) onClose() }}>
       <DialogContent className="sm:max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader className="space-y-1 pb-3 border-b border-border">
           <div className="flex items-center gap-2 text-primary">
@@ -239,7 +128,7 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSaveOrder} className="space-y-5 pt-2">
+        <form onSubmit={handleSaveOrder} className="pt-2"><fieldset disabled={submitting} className="space-y-5">
           {/* Patient Selector */}
           <div>
             <label className="text-xs font-semibold text-foreground block mb-1">
@@ -325,6 +214,7 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault()
+    if (submissionPending.current) return
                     addCustomMarker()
                   }
                 }}
@@ -367,31 +257,10 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
             />
           </div>
 
-          {/* Export & Actions Bar */}
+          {saveError && <p role="alert" className="text-sm text-destructive">{saveError}</p>}
+          <p className="text-xs text-muted-foreground">Depois de registrar, copie ou imprima o pedido na lista de pedidos emitidos.</p>
+          {/* Actions Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-border">
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={handleCopyWhatsApp}
-                className="cursor-pointer text-xs gap-1.5 flex-1 sm:flex-none"
-              >
-                {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? "Copiado!" : "Copiar p/ WhatsApp"}
-              </Button>
-
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={handlePrint}
-                className="cursor-pointer text-xs gap-1.5 flex-1 sm:flex-none"
-              >
-                <Printer className="h-3.5 w-3.5" /> Imprimir / PDF
-              </Button>
-            </div>
-
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
               <Button
                 type="button"
@@ -409,7 +278,7 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
               </Button>
             </div>
           </div>
-        </form>
+        </fieldset></form>
       </DialogContent>
     </Dialog>
   )

@@ -54,6 +54,8 @@ const categoryLabels: Record<string, string> = {
 export default function ExamesPage() {
   const {
     loading,
+    error,
+    deleting,
     clients,
     exams,
     orders,
@@ -188,6 +190,9 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
     printWindow.document.close()
   }
 
+  if (error) {
+    return <div className="p-6"><AsyncState kind="error" title="Não foi possível carregar os exames" description="Tente novamente quando a conexão com o servidor estiver disponível." /></div>
+  }
   if (loading) {
     return (
       <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -691,9 +696,10 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
                         <div className="pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
                           <button
                             type="button"
-                            onClick={() => {
+                            disabled={deleting}
+                            onClick={async () => {
                               if (confirm(`Excluir este laudo do paciente ${exam.clientName}?`)) {
-                                deleteExam(exam.id)
+                                try { await deleteExam(exam.id) } catch { /* Erro exibido pelo hook. */ }
                               }
                             }}
                             className="text-muted-foreground hover:text-rose-500 flex items-center gap-1 cursor-pointer transition-colors"
@@ -926,7 +932,8 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
 
                       <button
                         type="button"
-                        onClick={() => deleteOrder(order.id)}
+                        disabled={deleting}
+                        onClick={async () => { try { await deleteOrder(order.id) } catch { /* Erro exibido pelo hook. */ } }}
                         className="text-muted-foreground hover:text-rose-500 p-1 cursor-pointer transition-colors"
                         title="Excluir requisição"
                       >
@@ -991,23 +998,24 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
       )}
 
       {/* Modals & Detail Drawer */}
-      <ExamRegistryModal
+      {isRegistryModalOpen && <ExamRegistryModal
         isOpen={isRegistryModalOpen}
         onClose={() => setIsRegistryModalOpen(false)}
         clients={clients}
         defaultClientId={selectedClientId !== "ALL" ? selectedClientId : undefined}
         onSubmit={registerExam}
-      />
+      />}
 
-      <ExamOrderIssuerModal
+      {isOrderModalOpen && <ExamOrderIssuerModal
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}
         clients={clients}
         defaultClientId={selectedClientId !== "ALL" ? selectedClientId : undefined}
         onSubmit={issueOrder}
-      />
+      />}
 
-      <LabExamDetailDrawer
+      {selectedExamForDetail && <LabExamDetailDrawer
+        key={selectedExamForDetail.id}
         exam={selectedExamForDetail}
         isOpen={!!selectedExamForDetail}
         onClose={() => setSelectedExamForDetail(null)}
@@ -1016,7 +1024,7 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
           setSelectedClientId(clientId)
           setActiveTab("longitudinal")
         }}
-      />
+      />}
     </div>
   )
 }

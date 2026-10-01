@@ -3,6 +3,8 @@ import type { AppointmentStatus } from "@/types/appointment"
 import type { RecipeFilters } from "@/types/recipe"
 
 export const queryKeys = {
+  centralLabExams: (sessionUserId: string) => ["central-lab-exams", sessionUserId] as const,
+  labOrders: (sessionUserId: string) => ["lab-orders", sessionUserId] as const,
   clientGoals: (sessionUserId: string) => ["client-goals", sessionUserId] as const,
   supplements: (sessionUserId: string, clientId: string) => ["supplements", sessionUserId, clientId] as const,
   labExams: (sessionUserId: string, clientId: string) => ["lab-exams", sessionUserId, clientId] as const,
