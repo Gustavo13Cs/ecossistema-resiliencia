@@ -8,11 +8,12 @@ datasource db {
 
 // Tabela 1: Usuários (Pacientes e Profissionais)
 model User {
-  id       String @id @default(uuid())
-  name     String
-  email    String @unique
-  password String
-  role     Role   @default(PATIENT)
+  id          String @id @default(uuid())
+  name        String
+  email       String @unique
+  password    String
+  role        Role   @default(PATIENT)
+  authVersion Int    @default(0)
 
   phone       String?
   birthDate   DateTime?
@@ -99,6 +100,23 @@ model User {
   healthCheckIns           HealthCheckIn[]        @relation("PatientHealthCheckIns")
   patientConsultationNotes ConsultationNote[]     @relation("PatientConsultationNotes")
   createdConsultationNotes ConsultationNote[]     @relation("CreatedConsultationNotes")
+  authSessions             AuthSession[]
+}
+
+model AuthSession {
+  id               String    @id @default(uuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash String
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  lastUsedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([userId, revokedAt, expiresAt])
+  @@index([expiresAt])
+  @@map("auth_sessions")
 }
 
 model ProfessionalPatientLink {
