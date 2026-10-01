@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
-import { JwtService } from '@nestjs/jwt';
+import { AuthSessionService } from './auth-session.service';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -15,7 +15,7 @@ const normalizeEmail = (email: string) => email.trim().toLowerCase();
 export class AuthService {
   constructor(
     private prisma: PrismaService,
-    private jwtService: JwtService,
+    private readonly sessions: AuthSessionService,
   ) {}
 
   async login(loginDto: LoginDto) {
@@ -36,16 +36,7 @@ export class AuthService {
       throw new UnauthorizedException('E-mail ou senha incorretos');
     }
 
-    const payload = {
-      sub: user.id,
-      name: user.name,
-      role: user.role,
-      email: user.email,
-    };
-
-    return {
-      access_token: await this.jwtService.signAsync(payload),
-    };
+    return this.sessions.create(user);
   }
 
   async register(registerDto: RegisterDto) {

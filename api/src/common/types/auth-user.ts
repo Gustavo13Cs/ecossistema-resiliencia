@@ -1,5 +1,11 @@
 import { Role } from '@prisma/client';
 
+export type AccessTokenPayload = {
+  sub: string;
+  jti: string;
+  authVersion: number;
+};
+
 export type AuthUser = {
   sub: string;
   role: Role;
