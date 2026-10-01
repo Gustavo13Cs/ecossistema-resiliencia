@@ -121,7 +121,7 @@ describe("SafeMove professional phase one over real HTTP", () => {
         ))
         .join("\n")
 
-      expect(persisted).not.to.match(/access_token|csrf|Cliente privado A|diet_draft_/i)
+      expect(persisted).not.to.match(/access_token|csrf|Cliente privado A|diet_draft_|safemove_client_goals|safemove_central_lab_exams|safemove_issued_lab_orders/i)
     })
   })
 

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Param,
   ParseUUIDPipe,
   Post,
@@ -21,10 +22,14 @@ import { CreateLabOrderDto } from './dto/create-lab-order.dto';
 @Roles(...DOMAIN_ROLES.nutrition)
 export class LabOrdersController {
   constructor(private readonly service: LabOrdersService) {}
-  @Get() list(@Request() request: { user: AuthUser }) {
+  @Get()
+  @Header('Cache-Control', 'no-store')
+  list(@Request() request: { user: AuthUser }) {
     return this.service.list(request.user);
   }
-  @Post() create(
+  @Post()
+  @Header('Cache-Control', 'no-store')
+  create(
     @Request() request: { user: AuthUser },
     @Body() dto: CreateLabOrderDto,
   ) {

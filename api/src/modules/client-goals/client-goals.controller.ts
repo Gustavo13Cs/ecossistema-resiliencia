@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Param,
   ParseUUIDPipe,
   Put,
@@ -22,16 +23,22 @@ import { UpsertClientGoalDto } from './dto/upsert-client-goal.dto';
 @Roles(...DOMAIN_ROLES.nutrition)
 export class ClientGoalsController {
   constructor(private readonly service: ClientGoalsService) {}
-  @Get() list(@Request() request: { user: AuthUser }) {
+  @Get()
+  @Header('Cache-Control', 'no-store')
+  list(@Request() request: { user: AuthUser }) {
     return this.service.list(request.user);
   }
-  @Get(':clientId') findOne(
+  @Get(':clientId')
+  @Header('Cache-Control', 'no-store')
+  findOne(
     @Request() request: { user: AuthUser },
     @Param('clientId', ParseUUIDPipe) clientId: string,
   ) {
     return this.service.findOne(request.user, clientId);
   }
-  @Put(':clientId') upsert(
+  @Put(':clientId')
+  @Header('Cache-Control', 'no-store')
+  upsert(
     @Request() request: { user: AuthUser },
     @Param('clientId', ParseUUIDPipe) clientId: string,
     @Body() dto: UpsertClientGoalDto,

@@ -3,6 +3,7 @@ import {
   Post,
   Body,
   Get,
+  Header,
   Param,
   UseGuards,
   Request,
@@ -26,6 +27,7 @@ export class LabExamsController {
   constructor(private readonly labExamsService: LabExamsService) {}
 
   @Get()
+  @Header('Cache-Control', 'no-store')
   findAll(@Request() request: AuthenticatedRequest) {
     return this.labExamsService.findAll(request.user);
   }
@@ -39,6 +41,7 @@ export class LabExamsController {
   }
 
   @Post()
+  @Header('Cache-Control', 'no-store')
   create(
     @Request() request: AuthenticatedRequest,
     @Body() createLabExamDto: CreateLabExamDto,
@@ -47,6 +50,7 @@ export class LabExamsController {
   }
 
   @Get('client/:clientId')
+  @Header('Cache-Control', 'no-store')
   findByClient(
     @Request() request: AuthenticatedRequest,
     @Param('clientId') clientId: string,

@@ -6,6 +6,7 @@ import { AsyncState } from "@/components/feedback/AsyncState"
 import { api, setCsrfToken, setUnauthorizedHandler } from "@/lib/api"
 import { useQueryClient } from "@tanstack/react-query"
 import type { AuthUser } from "@/types/auth"
+import { discardLegacyClinicalStorage } from "@/lib/discard-legacy-clinical-storage"
 
 type AuthContextType = {
   user: AuthUser | null;
@@ -71,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // O browser envia o cookie automaticamente — sem precisar de localStorage.
   useEffect(() => {
     const hydrateUser = async () => {
+      discardLegacyClinicalStorage()
       try {
         const { data } = await api.get<AuthSessionResponse>('/auth/me')
         setCsrfToken(data.csrfToken)

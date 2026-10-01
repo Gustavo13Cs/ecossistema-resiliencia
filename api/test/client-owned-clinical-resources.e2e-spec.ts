@@ -69,6 +69,17 @@ describe('Client-owned clinical resources (PostgreSQL HTTP)', () => {
     }
   });
 
+  it.each(['client-goals', 'lab-exams', 'lab-orders'])(
+    '%s disables persistent HTTP caching of clinical responses',
+    async (path) => {
+      await request(app.getHttpServer())
+        .get(`/${path}`)
+        .set(asUser(isolationFixtures.nutrition.a))
+        .expect(200)
+        .expect('Cache-Control', 'no-store');
+    },
+  );
+
   it('persists one current goal per Client and isolates read/upsert/delete/list', async () => {
     const { a, b, clientA } = isolationFixtures.nutrition;
     const payload = {
