@@ -500,6 +500,7 @@ model Meal {
   isConsumed Boolean    @default(false)
   logs       MealLog[]
 
+  @@index([dietPlanId])
   @@map("meals")
 }
 
@@ -521,6 +522,8 @@ model MealItem {
   recipeVersionId String?
   recipeVersion   RecipeVersion? @relation(fields: [recipeVersionId], references: [id], onDelete: Restrict)
 
+  @@index([mealId])
+  @@index([foodId])
   @@map("meal_items")
 }
 
@@ -621,6 +624,7 @@ model Workout {
   logs   WorkoutLog[]
 
   @@index([creatorId, clientId, isActive])
+  @@index([clientId])
   @@map("workouts")
 }
 
@@ -636,6 +640,7 @@ model WorkoutSplit {
   exercises WorkoutExercise[] @relation("SplitToExercises")
   logs      WorkoutLog[]
 
+  @@index([workoutId])
   @@map("workout_splits")
 }
 
@@ -653,6 +658,7 @@ model WorkoutExercise {
 
   logSets WorkoutLogSet[]
 
+  @@index([splitId])
   @@map("workout_exercises")
 }
 
@@ -689,6 +695,7 @@ model PhysioAssessment {
   updatedAt DateTime @updatedAt
 
   @@index([creatorId, clientId, date])
+  @@index([clientId, date])
   @@map("physio_assessments")
 }
 
@@ -717,6 +724,7 @@ model RehabPlan {
   sessions RehabSession[] @relation("PlanToSessions")
 
   @@index([creatorId, clientId, isActive])
+  @@index([clientId])
   @@map("rehab_plans")
 }
 
@@ -731,6 +739,7 @@ model RehabSession {
 
   exercises RehabExercise[] @relation("SessionToExercises")
 
+  @@index([rehabPlanId])
   @@map("rehab_sessions")
 }
 
@@ -745,6 +754,7 @@ model RehabExercise {
   sessionId String
   session   RehabSession @relation("SessionToExercises", fields: [sessionId], references: [id], onDelete: Cascade)
 
+  @@index([sessionId])
   @@map("rehab_exercises")
 }
 
@@ -837,6 +847,7 @@ model DailyTracking {
   @@index([patientId, completedAt])
   @@index([clientId, completedAt])
   @@index([professionalId, completedAt])
+  @@index([professionalId, clientId, type, completedAt])
 }
 
 // Tabela 16: Anamnese Geral (Documento Intocável)
@@ -954,6 +965,7 @@ model Anamnesis {
   updatedAt DateTime @updatedAt
 
   @@index([creatorId, clientId, createdAt])
+  @@index([clientId, createdAt])
   @@map("anamneses")
 }
 
@@ -979,6 +991,7 @@ model ConsultationNote {
 
   @@index([patientId, createdAt])
   @@index([creatorId, clientId, createdAt])
+  @@index([clientId, createdAt])
   @@map("consultation_notes")
 }
 
@@ -1002,6 +1015,7 @@ model SupplementPlan {
   updatedAt DateTime @updatedAt
 
   @@index([creatorId, clientId, createdAt])
+  @@index([clientId, createdAt])
   @@map("supplement_plans")
 }
 
@@ -1015,6 +1029,7 @@ model SupplementItem {
   planId String
   plan   SupplementPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
+  @@index([planId])
   @@map("supplement_items")
 }
 
@@ -1039,6 +1054,7 @@ model LabExam {
   updatedAt DateTime @updatedAt
 
   @@index([creatorId, clientId, date])
+  @@index([clientId, date])
   @@map("lab_exams")
 }
 
@@ -1052,6 +1068,7 @@ model LabMarker {
   examId String
   exam   LabExam @relation(fields: [examId], references: [id], onDelete: Cascade)
 
+  @@index([examId])
   @@map("lab_markers")
 }
 
@@ -1132,6 +1149,7 @@ model ClientGoal {
   updatedAt DateTime @updatedAt
 
   @@index([professionalId, status, targetDate])
+  @@index([professionalId, updatedAt])
   @@map("client_goals")
 }
 
@@ -1150,5 +1168,7 @@ model LabOrder {
   updatedAt               DateTime @updatedAt
 
   @@index([professionalId, clientId, issuedAt])
+  @@index([clientId, issuedAt])
+  @@index([professionalId, issuedAt])
   @@map("lab_orders")
 }

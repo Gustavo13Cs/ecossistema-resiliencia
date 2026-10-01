@@ -27,6 +27,23 @@ describe('Forward-only recipe function hardening', () => {
   });
 });
 
+describe('Query-backed Client indexes', () => {
+  it('adds only non-unique indexes, preserving schema and data semantics', () => {
+    const path = resolve(
+      __dirname,
+      '../../../prisma/migrations/20260929133000_index_client_owned_foreign_keys/migration.sql',
+    );
+    const sql = readFileSync(path, 'utf8');
+    expect(sql.match(/^CREATE INDEX /gm)).toHaveLength(20);
+    expect(sql).not.toMatch(/UNIQUE|DROP|ALTER|DELETE|UPDATE|INSERT/);
+    expect(sql).toContain(
+      '"DailyTracking"("professionalId", "clientId", "type", "completedAt")',
+    );
+    expect(sql).toContain('"client_goals"("professionalId", "updatedAt")');
+    expect(sql).toContain('"lab_orders"("professionalId", "issuedAt")');
+  });
+});
+
 const APPLICATION_TABLES = [
   'User',
   'DailyTracking',
