@@ -89,6 +89,14 @@ describe('AuthService registration', () => {
 
     expect(prisma.user.findUnique).toHaveBeenCalledWith({
       where: { email: 'physio@example.test' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        password: true,
+        authVersion: true,
+      },
     });
     expect(sessions.create).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'pro-1' }),

@@ -22,6 +22,14 @@ export class AuthService {
     const email = normalizeEmail(loginDto.email);
     const user = await this.prisma.user.findUnique({
       where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        password: true,
+        authVersion: true,
+      },
     });
 
     if (!user) {

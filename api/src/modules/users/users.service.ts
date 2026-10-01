@@ -1,10 +1,53 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Prisma, Role } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+import { AuthSessionService } from '../auth/auth-session.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sessions: AuthSessionService,
+  ) {}
+
+  // Operações internas: o endpoint de perfil não aceita role, senha ou authVersion.
+  changeRole(id: string, role: Role) {
+    return this.updateAuthentication(id, { role });
+  }
+
+  async resetCredentials(id: string, password: string) {
+    return this.updateAuthentication(id, {
+      password: await bcrypt.hash(password, 12),
+    });
+  }
+
+  invalidateAuthentication(id: string) {
+    return this.updateAuthentication(id, {});
+  }
+
+  private async updateAuthentication(
+    id: string,
+    changes: { role?: Role; password?: string },
+  ) {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${id} FOR UPDATE`;
+      const user = await tx.user.update({
+        where: { id },
+        data: { ...changes, authVersion: { increment: 1 } },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          authVersion: true,
+        },
+      });
+      await this.sessions.revokeAll(id, tx);
+      return user;
+    });
+  }
 
   async findOne(id: string, canAccessClinicalFields: boolean) {
     return this.prisma.user.findUnique({
