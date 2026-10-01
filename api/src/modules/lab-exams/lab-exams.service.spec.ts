@@ -17,11 +17,15 @@ describe('LabExamsService Client ownership', () => {
     labExam: {
       create: jest.fn<Promise<unknown>, [unknown]>(),
       findMany: jest.fn(),
+      findFirst: jest.fn(),
+      deleteMany: jest.fn(),
     },
   };
   let service: {
     create(user: AuthUser, data: typeof dto): Promise<unknown>;
     findByClient(user: AuthUser, clientId: string): Promise<unknown>;
+    findAll(user: AuthUser): Promise<unknown>;
+    remove(user: AuthUser, id: string): Promise<unknown>;
   };
   beforeAll(async () => {
     const module = await Test.createTestingModule({
@@ -36,6 +40,58 @@ describe('LabExamsService Client ownership', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     prisma.client.findFirst.mockResolvedValue({ id: dto.clientId });
+    prisma.labExam.findFirst.mockResolvedValue({ clientId: dto.clientId });
+    prisma.labExam.deleteMany.mockResolvedValue({ count: 1 });
+  });
+  it('lists only records with this author and owned Client relation', async () => {
+    await service.findAll(user);
+    expect(prisma.labExam.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { creatorId: user.sub, client: { professionalId: user.sub } },
+        include: {
+          markers: true,
+          client: { select: { id: true, name: true } },
+        },
+      }),
+    );
+  });
+  it('deletes an owned exam after author-scoped routing metadata and Client access', async () => {
+    await service.remove(user, 'exam-1');
+    expect(prisma.labExam.findFirst).toHaveBeenCalledWith({
+      where: { id: 'exam-1', creatorId: user.sub },
+      select: { clientId: true },
+    });
+    expect(prisma.labExam.deleteMany).toHaveBeenCalledWith({
+      where: { id: 'exam-1', creatorId: user.sub, clientId: dto.clientId },
+    });
+    expect(prisma.client.findFirst.mock.invocationCallOrder[0]).toBeLessThan(
+      prisma.labExam.deleteMany.mock.invocationCallOrder[0],
+    );
+  });
+  it('denies foreign exam IDs without reading clinical content or deleting', async () => {
+    prisma.labExam.findFirst.mockResolvedValue(null);
+    await expect(service.remove(user, 'foreign')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(prisma.client.findFirst).not.toHaveBeenCalled();
+    expect(prisma.labExam.deleteMany).not.toHaveBeenCalled();
+  });
+  it('denies deletion when the routed Client is foreign', async () => {
+    prisma.client.findFirst.mockResolvedValue(null);
+    await expect(service.remove(user, 'exam-1')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(prisma.labExam.deleteMany).not.toHaveBeenCalled();
+  });
+  it('denies ADMIN for new aggregate and deletion operations', async () => {
+    await expect(
+      service.findAll({ ...user, role: 'ADMIN' }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      service.remove({ ...user, role: 'ADMIN' }, 'exam-1'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(prisma.labExam.findMany).not.toHaveBeenCalled();
+    expect(prisma.labExam.findFirst).not.toHaveBeenCalled();
   });
   it('creates an owned Client record with an authenticated author and no legacy identity', async () => {
     await service.create(user, dto);

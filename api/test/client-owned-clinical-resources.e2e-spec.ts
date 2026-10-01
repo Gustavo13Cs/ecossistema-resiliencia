@@ -69,6 +69,134 @@ describe('Client-owned clinical resources (PostgreSQL HTTP)', () => {
     }
   });
 
+  it('persists one current goal per Client and isolates read/upsert/delete/list', async () => {
+    const { a, b, clientA } = isolationFixtures.nutrition;
+    const payload = {
+      category: 'WEIGHT_LOSS',
+      startDate: '2026-10-01',
+      targetDate: '2026-12-01',
+      targetWeightKg: 80,
+      habits: {
+        waterTargetMl: 2500,
+        sleepTargetHours: 8,
+        mealsAdherencePercent: 90,
+        dailyStepsTarget: 8000,
+      },
+    };
+    const created = await request(app.getHttpServer())
+      .put(`/client-goals/${clientA}`)
+      .set(asUser(a))
+      .send(payload)
+      .expect(200);
+    const row: unknown = created.body;
+    expect(row).toMatchObject({
+      clientId: clientA,
+      professionalId: a.sub,
+      habits: payload.habits,
+    });
+    const id = (row as { id: string }).id;
+    const before = await prisma.clientGoal.findUniqueOrThrow({
+      where: { clientId: clientA },
+    });
+    await request(app.getHttpServer())
+      .get(`/client-goals/${clientA}`)
+      .set(asUser(b))
+      .expect(404);
+    await request(app.getHttpServer())
+      .put(`/client-goals/${clientA}`)
+      .set(asUser(b))
+      .send({ ...payload, targetWeightKg: 70 })
+      .expect(404);
+    await request(app.getHttpServer())
+      .delete(`/client-goals/${clientA}`)
+      .set(asUser(b))
+      .expect(404);
+    const foreign = await request(app.getHttpServer())
+      .get('/client-goals')
+      .set(asUser(b))
+      .expect(200);
+    expect(foreign.body).toEqual([]);
+    expect(
+      await prisma.clientGoal.findUnique({ where: { clientId: clientA } }),
+    ).toEqual(before);
+    const updated = await request(app.getHttpServer())
+      .put(`/client-goals/${clientA}`)
+      .set(asUser(a))
+      .send({ ...payload, targetWeightKg: 78 })
+      .expect(200);
+    expect(updated.body).toMatchObject({ id, targetWeightKg: 78 });
+    expect(
+      await prisma.clientGoal.count({ where: { clientId: clientA } }),
+    ).toBe(1);
+    await request(app.getHttpServer())
+      .delete(`/client-goals/${clientA}`)
+      .set(asUser(a))
+      .expect(200);
+    expect(
+      await prisma.clientGoal.findUnique({ where: { clientId: clientA } }),
+    ).toBeNull();
+  });
+
+  it('persists orders and aggregate exams using live owned Client relations', async () => {
+    const { a, b, clientA } = isolationFixtures.nutrition;
+    for (const domain of [
+      {
+        path: 'lab-orders',
+        payload: {
+          clientId: clientA,
+          markers: ['Synthetic marker'],
+          title: 'Synthetic panel',
+        },
+        row: (id: string) => prisma.labOrder.findUnique({ where: { id } }),
+      },
+      {
+        path: 'lab-exams',
+        payload: {
+          clientId: clientA,
+          date: '2026-10-01T12:00:00.000Z',
+          markers: [{ name: 'Synthetic marker', value: 90, unit: 'mg/dL' }],
+        },
+        row: (id: string) => prisma.labExam.findUnique({ where: { id } }),
+      },
+    ]) {
+      const created = await request(app.getHttpServer())
+        .post(`/${domain.path}`)
+        .set(asUser(a))
+        .send(domain.payload)
+        .expect(201);
+      const body: unknown = created.body;
+      expect(body).toMatchObject({
+        clientId: clientA,
+        client: { id: clientA, name: 'Synthetic Client A' },
+        markers: domain.payload.markers,
+      });
+      const id = (body as { id: string }).id;
+      const before = await domain.row(id);
+      const own = await request(app.getHttpServer())
+        .get(`/${domain.path}`)
+        .set(asUser(a))
+        .expect(200);
+      expect(own.body).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id })]),
+      );
+      const other = await request(app.getHttpServer())
+        .get(`/${domain.path}`)
+        .set(asUser(b))
+        .expect(200);
+      expect(other.body).toEqual([]);
+      await request(app.getHttpServer())
+        .delete(`/${domain.path}/${id}`)
+        .set(asUser(b))
+        .expect(404);
+      expect(await domain.row(id)).toEqual(before);
+      await request(app.getHttpServer())
+        .delete(`/${domain.path}/${id}`)
+        .set(asUser(a))
+        .expect(200);
+      expect(await domain.row(id)).toBeNull();
+    }
+  });
+
   const domains = [
     {
       path: 'workouts',

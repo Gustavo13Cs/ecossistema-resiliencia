@@ -24,6 +24,7 @@ import { AppController } from '../app.controller';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { RecipesModule } from './modules/recipes/recipes.module';
 import { ClientGoalsModule } from './modules/client-goals/client-goals.module';
+import { LabOrdersModule } from './modules/lab-orders/lab-orders.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { ClientGoalsModule } from './modules/client-goals/client-goals.module';
     AppointmentsModule,
     RecipesModule,
     ClientGoalsModule,
+    LabOrdersModule,
   ],
   controllers: [AppController],
   providers: [

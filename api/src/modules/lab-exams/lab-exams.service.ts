@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ClientAccessService } from '../../common/client-access/client-access.service';
 import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../infra/database/prisma.service';
@@ -10,6 +14,31 @@ export class LabExamsService {
     private readonly prisma: PrismaService,
     private readonly clientAccess: ClientAccessService,
   ) {}
+
+  async findAll(user: AuthUser) {
+    this.assertNutritionist(user);
+    return this.prisma.labExam.findMany({
+      where: { creatorId: user.sub, client: { professionalId: user.sub } },
+      orderBy: { date: 'desc' },
+      include: { markers: true, client: { select: { id: true, name: true } } },
+    });
+  }
+
+  async remove(user: AuthUser, id: string) {
+    this.assertNutritionist(user);
+    const metadata = await this.prisma.labExam.findFirst({
+      where: { id, creatorId: user.sub },
+      select: { clientId: true },
+    });
+    if (!metadata?.clientId)
+      throw new NotFoundException('Exame não encontrado');
+    await this.clientAccess.getOwnedClient(user, metadata.clientId);
+    const { count } = await this.prisma.labExam.deleteMany({
+      where: { id, creatorId: user.sub, clientId: metadata.clientId },
+    });
+    if (!count) throw new NotFoundException('Exame não encontrado');
+    return { deleted: true };
+  }
 
   async create(user: AuthUser, data: CreateLabExamDto) {
     this.assertNutritionist(user);
@@ -29,6 +58,7 @@ export class LabExamsService {
           })),
         },
       },
+      include: { markers: true, client: { select: { id: true, name: true } } },
     });
   }
 

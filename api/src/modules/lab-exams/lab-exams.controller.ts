@@ -6,6 +6,8 @@ import {
   Param,
   UseGuards,
   Request,
+  Delete,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { LabExamsService } from './lab-exams.service';
 import { CreateLabExamDto } from './dto/create-lab-exam.dto';
@@ -22,6 +24,19 @@ type AuthenticatedRequest = { user: AuthUser };
 @Controller('lab-exams')
 export class LabExamsController {
   constructor(private readonly labExamsService: LabExamsService) {}
+
+  @Get()
+  findAll(@Request() request: AuthenticatedRequest) {
+    return this.labExamsService.findAll(request.user);
+  }
+
+  @Delete(':id')
+  remove(
+    @Request() request: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.labExamsService.remove(request.user, id);
+  }
 
   @Post()
   create(

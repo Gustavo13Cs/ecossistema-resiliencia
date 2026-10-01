@@ -9,13 +9,13 @@
 ## Current Task
 
 - **Tarefa**: Remediação ponta a ponta dos 15 achados de segurança e qualidade
-- **Status**: Execução nativa retomada em 2026-10-01; Plano A concluído; Plano B Task 1 concluída, iniciando Task 2
+- **Status**: Execução nativa retomada em 2026-10-01; Plano A concluído; Plano B Tasks 1-2 concluídas, iniciando Task 3
 - **Branch**: `agent/codex/security-remediation`
 - **Início**: 2026-09-29
 - **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migrations versionadas necessárias à remediação
 - **Worktree**: `.worktrees/security/security-remediation`
 - **Plano atual**: `docs/superpowers/plans/2026-09-29-security-remediation-b-frontend-persistence-xss.md`
-- **Próximo gate**: pedidos de exames e listagem/exclusão de exames com ownership e contratos validados
+- **Próximo gate**: substituir metas locais por queries e mutations assíncronas na API
 - **Coordenação**: o status do Antigravity ainda cita uma tarefa iniciada em 2026-09-22, mas não há branch/worktree detectável para ela; confirmar antes de alterar auth, package files ou `.gitignore` fora deste worktree
 
 ---
@@ -47,6 +47,7 @@
 
 ### Remediação — retomada em 2026-09-30
 
+- Plano B Task 2: pedidos persistidos e exames agregados/listagem/exclusão por Client/autor; 39/39 testes focais e 12/12 HTTP PostgreSQL aprovados, build API e lint focal aprovados.
 - Plano B Task 1: API de metas persistidas por Client/autor, hábitos aninhados e DTOs limitados; 27/27 testes, build API e lint focal aprovados.
 - Task 9: matriz HTTP PostgreSQL 10/10, testes web 25/25 e Cypress 7/7 aprovados; build de produção e lint focal aprovados. Conectados modal fisioterapêutico e overview já migrado ao prontuário. Plano A concluído; B-D em andamento.
 - Task 8: superfície legada retirada; 14 testes unitários focais e 15 E2E de runtime/domínios/agenda profissional aprovados; build API, typecheck web e lint aprovados.
