@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import './globals.css'
 import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/contexts/auth-context'
@@ -11,9 +12,17 @@ const inter = Inter({
   variable: '--font-safemove',
 })
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'SafeMove | Workspace profissional',
   description: 'Gestão privada de clientes para profissionais de saúde e movimento.',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.png', type: 'image/png' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/apple-icon.png',
+  },
 }
 
 export default function RootLayout({

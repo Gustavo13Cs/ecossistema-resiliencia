@@ -2,6 +2,7 @@
 
 import type { FormEvent } from "react"
 import { useState } from "react"
+import Image from "next/image"
 import axios from "axios"
 import Link from "next/link"
 import { ArrowLeft, LockKeyhole } from "lucide-react"
@@ -111,9 +112,17 @@ export default function LoginPage() {
       <aside className="hidden border-r border-[var(--sm-border)] bg-[var(--sm-ink)] px-10 py-12 text-[var(--sm-on-brand)] lg:flex lg:flex-col lg:justify-between">
         <Link
           href="/"
-          className="inline-flex min-h-11 items-center text-xl font-bold tracking-[-0.02em]"
+          className="inline-flex min-h-11 items-center gap-3 text-xl font-bold tracking-[-0.02em]"
         >
-          SafeMove
+          <Image
+            src="/logo.png"
+            alt=""
+            width={36}
+            height={36}
+            className="size-9 object-contain"
+            priority
+          />
+          <span>SafeMove</span>
         </Link>
         <div className="max-w-md">
           <LockKeyhole
@@ -139,7 +148,14 @@ export default function LoginPage() {
             className="mb-10 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--sm-muted)] transition-colors hover:text-[var(--sm-ink)] lg:hidden"
           >
             <ArrowLeft aria-hidden="true" className="size-4" />
-            SafeMove
+            <Image
+              src="/logo.png"
+              alt=""
+              width={24}
+              height={24}
+              className="size-6 object-contain"
+            />
+            <span>SafeMove</span>
           </Link>
 
           <div className="border border-[var(--sm-border)] bg-[var(--sm-surface)] p-6 shadow-[var(--sm-shadow-elevated)] sm:p-8">
