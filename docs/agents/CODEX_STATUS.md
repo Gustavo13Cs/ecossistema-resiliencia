@@ -9,13 +9,13 @@
 ## Current Task
 
 - **Tarefa**: Remediação ponta a ponta dos 15 achados de segurança e qualidade
-- **Status**: Execução nativa retomada em 2026-10-01; Planos A e B concluídos; Plano C Task 6 concluída; iniciando Task 7
+- **Status**: Execução nativa retomada em 2026-10-01; Planos A, B e C concluídos; iniciando Plano D Task 1
 - **Branch**: `agent/codex/security-remediation`
 - **Início**: 2026-09-29
 - **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migrations versionadas necessárias à remediação
 - **Worktree**: `.worktrees/security/security-remediation`
-- **Plano atual**: `docs/superpowers/plans/2026-09-29-security-remediation-c-sessions-supply-chain.md`
-- **Próximo gate**: lifecycle HTTP PostgreSQL e Cypress real de expiração, refresh, replay e logout
+- **Plano atual**: `docs/superpowers/plans/2026-09-29-security-remediation-d-operations-quality.md`
+- **Próximo gate**: autenticação global fail-closed, depois alertas transacionais e hardening PostgreSQL
 - **Coordenação**: o status do Antigravity ainda cita uma tarefa iniciada em 2026-09-22, mas não há branch/worktree detectável para ela; confirmar antes de alterar auth, package files ou `.gitignore` fora deste worktree
 
 ---

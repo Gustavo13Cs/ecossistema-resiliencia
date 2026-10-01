@@ -91,5 +91,5 @@
 ### Remediação de segurança — Codex
 - [x] Plano A: ownership por Client, schema e retirada do runtime legado — concluído no worktree de segurança.
 - [x] Plano B: persistência server-only, impressão escapada e CSP — concluído (Codex); jornada real e gate de HTML dinâmico aprovados.
-- [ ] Plano C: sessões revogáveis e dependências — em andamento (Codex); iniciando schema de sessão.
-- [ ] Plano D: operação, índices e gates de qualidade — pendente (Codex).
+- [x] Plano C: sessões revogáveis e dependências — concluído (Codex); 11 testes HTTP reais e jornada Cypress aprovados.
+- [ ] Plano D: operação, índices e gates de qualidade — em andamento (Codex).
