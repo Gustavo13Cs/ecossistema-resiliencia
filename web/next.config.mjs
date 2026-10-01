@@ -24,6 +24,7 @@ export function resolvePublicApiUrl(environment = process.env) {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
   env: {
     NEXT_PUBLIC_API_URL: PUBLIC_API_PATH,
   },
