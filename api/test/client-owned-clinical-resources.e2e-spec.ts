@@ -8,7 +8,7 @@ import { Test } from '@nestjs/testing';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from '../src/app.module';
+import { AppModule, GLOBAL_JWT_AUTH_GUARD } from '../src/app.module';
 import { JwtAuthGuard } from '../src/common/guards/jwt-auth.guard';
 import { AuthUser } from '../src/common/types/auth-user';
 import { PrismaService } from '../src/infra/database/prisma.service';
@@ -45,6 +45,8 @@ describe('Client-owned clinical resources (PostgreSQL HTTP)', () => {
     assertIsolationDatabase();
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideGuard(JwtAuthGuard)
+      .useClass(FixtureAuthGuard)
+      .overrideProvider(GLOBAL_JWT_AUTH_GUARD)
       .useClass(FixtureAuthGuard)
       .overrideGuard(ThrottlerGuard)
       .useValue({ canActivate: () => true })

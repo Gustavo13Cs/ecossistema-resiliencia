@@ -17,7 +17,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { Throttle } from '@nestjs/throttler';
-import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AuthUser } from '../../common/types/auth-user';
 import {
   generateCsrfToken,
@@ -45,7 +45,7 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Header('Cache-Control', 'no-store')
   me(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const authenticatedUser = req.user as AuthUser;

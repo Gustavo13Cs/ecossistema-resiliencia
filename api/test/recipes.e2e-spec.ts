@@ -8,7 +8,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RecipeCategory, Role } from '@prisma/client';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from '../src/app.module';
+import { AppModule, GLOBAL_JWT_AUTH_GUARD } from '../src/app.module';
 import { JwtAuthGuard } from '../src/common/guards/jwt-auth.guard';
 import { PrismaService } from '../src/infra/database/prisma.service';
 
@@ -184,6 +184,8 @@ describe('Recipes HTTP isolation and versioning (e2e)', () => {
       imports: [AppModule],
     })
       .overrideGuard(JwtAuthGuard)
+      .useClass(TestJwtAuthGuard)
+      .overrideProvider(GLOBAL_JWT_AUTH_GUARD)
       .useClass(TestJwtAuthGuard)
       .compile();
 

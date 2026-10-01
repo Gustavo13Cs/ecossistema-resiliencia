@@ -25,6 +25,9 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { RecipesModule } from './modules/recipes/recipes.module';
 import { ClientGoalsModule } from './modules/client-goals/client-goals.module';
 import { LabOrdersModule } from './modules/lab-orders/lab-orders.module';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+
+export const GLOBAL_JWT_AUTH_GUARD = 'GLOBAL_JWT_AUTH_GUARD';
 
 @Module({
   imports: [
@@ -57,6 +60,8 @@ import { LabOrdersModule } from './modules/lab-orders/lab-orders.module';
   ],
   controllers: [AppController],
   providers: [
+    { provide: GLOBAL_JWT_AUTH_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useExisting: GLOBAL_JWT_AUTH_GUARD },
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
