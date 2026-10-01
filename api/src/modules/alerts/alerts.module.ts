@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { AlertsController } from './alerts.controller';
 import { AlertsCronService } from './alerts.cron.service';
-import { PrismaService } from '../../infra/database/prisma.service';
+import { DatabaseModule } from '../../infra/database/database.module';
 
 @Module({
+  imports: [DatabaseModule],
   controllers: [AlertsController],
-  providers: [AlertsCronService, PrismaService],
+  providers: [AlertsCronService],
 })
 export class AlertsModule {}

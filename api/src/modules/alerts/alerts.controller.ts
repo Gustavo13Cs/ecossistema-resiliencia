@@ -1,29 +1,26 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, UseGuards, Request, Header } from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { AuthUser } from '../../common/types/auth-user';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('PERSONAL')
 @Controller('alerts')
 export class AlertsController {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   @Get('dashboard')
-  async getProfessionalAlerts(@Request() req) {
-    // Busca os alertas vinculados ao ID do profissional logado
-    // O JWT garante que um personal não veja os alertas de outro
+  @Header('Cache-Control', 'no-store')
+  getProfessionalAlerts(@Request() req: { user: AuthUser }) {
     return this.prisma.patientAlert.findMany({
-      where: { professionalId: req.user.sub },
-      include: {
-        patient: {
-          select: { id: true, name: true, email: true, phone: true }
-        }
+      where: {
+        professionalId: req.user.sub,
+        client: { professionalId: req.user.sub, status: 'ACTIVE' },
       },
-      orderBy: [
-        { severity: 'asc' }, // HIGH primeiro
-        { createdAt: 'desc' }
-      ]
+      include: { client: { select: { id: true, name: true, phone: true } } },
+      orderBy: [{ severity: 'asc' }, { createdAt: 'desc' }],
     });
   }
 }

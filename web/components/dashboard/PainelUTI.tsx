@@ -52,7 +52,7 @@ export function PainelUTI() {
               <div className="flex items-start gap-3">
                 <div className="mt-1">{getAlertIcon(alert.type)}</div>
                 <div>
-                  <h4 className="font-bold text-slate-800">{alert.patient.name}</h4>
+                  <h4 className="font-bold text-slate-800">{alert.client.name}</h4>
                   <p className="text-sm font-medium text-slate-600">{alert.message}</p>
                 </div>
               </div>
@@ -61,11 +61,15 @@ export function PainelUTI() {
                 <Button 
                   variant="outline" 
                   className="bg-white border-slate-200 text-slate-600 hover:text-green-600 hover:border-green-300"
-                  onClick={() => window.open(`https://wa.me/${alert.patient.phone.replace(/\D/g, '')}`, '_blank')}
+                  disabled={!alert.client.phone?.replace(/\D/g, '')}
+                  onClick={() => {
+                    const phone = alert.client.phone?.replace(/\D/g, '')
+                    if (phone) window.open(`https://wa.me/${phone}`, '_blank', 'noopener,noreferrer')
+                  }}
                 >
                   <Phone className="w-4 h-4 mr-2" /> Cobrar Aluno
                 </Button>
-                <Link href={`/clientes/${alert.patient.id}`}>
+                <Link href={`/clientes/${alert.client.id}`}>
                   <Button className="bg-slate-800 hover:bg-slate-700 text-white">
                     Ajustar Treino <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>

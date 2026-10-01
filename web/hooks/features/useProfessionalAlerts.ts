@@ -10,7 +10,7 @@ interface PatientAlert {
   type: "INACTIVE_5_DAYS" | "PLATEAU_3_WEEKS" | "OVERTRAINING_RISK"
   severity: "HIGH" | "MEDIUM" | "LOW"
   message: string
-  patient: { id: string; name: string; phone: string }
+  client: { id: string; name: string; phone: string | null }
   createdAt: string
 }
 
@@ -19,7 +19,7 @@ export const useProfessionalAlerts = () => {
   const query = useQuery({
     queryKey: queryKeys.professionalAlerts(user?.sub ?? "anonymous"),
     queryFn: async () => (await api.get<PatientAlert[]>("/alerts/dashboard")).data,
-    enabled: Boolean(user?.sub),
+    enabled: Boolean(user?.sub) && user?.role === "PERSONAL",
   })
 
   useEffect(() => {
