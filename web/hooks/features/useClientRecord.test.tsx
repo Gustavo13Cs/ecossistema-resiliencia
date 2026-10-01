@@ -86,12 +86,15 @@ describe("useClientRecord", () => {
     [503, "server-error"],
   ] as const)("maps HTTP %s to %s without a legacy fallback", async (statusCode, expectedStatus) => {
     http.onGet("/clients/client-one").reply(statusCode)
+    http.onGet("/auth/csrf").reply(200, { csrfToken: "a".repeat(43) })
+    http.onPost("/auth/refresh").reply(401)
     const { result } = renderRecordHook()
 
     await waitFor(() => expect(result.current.status).toBe(expectedStatus))
 
     expect(result.current.client).toBeNull()
-    expect(http.history.get.map((request) => request.url)).toEqual(["/clients/client-one"])
+    expect(http.history.get.map((request) => request.url)).toEqual(statusCode === 401 ? ["/clients/client-one", "/auth/csrf"] : ["/clients/client-one"])
+    expect(http.history.post.map((request) => request.url)).toEqual(statusCode === 401 ? ["/auth/refresh"] : [])
   })
 
   it("preserves network failure instead of converting it to empty data", async () => {

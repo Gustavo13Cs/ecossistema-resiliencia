@@ -151,12 +151,14 @@ describe("diet page legacy draft recovery", () => {
     localStorage.setItem(key, JSON.stringify(validDraft))
     http.reset()
     http.onGet("/clients/client-one").reply(status)
+    http.onGet("/auth/csrf").reply(200, { csrfToken: "a".repeat(43) })
+    http.onPost("/auth/refresh").reply(401)
 
     renderPage()
 
     expect(await screen.findByRole("alert", { name: title })).toBeInTheDocument()
-    expect(http.history.get.map((request) => request.url)).toEqual(["/clients/client-one"])
-    expect(http.history.post).toHaveLength(0)
+    expect(http.history.get.map((request) => request.url)).toEqual(status === 401 ? ["/clients/client-one", "/auth/csrf"] : ["/clients/client-one"])
+    expect(http.history.post.map((request) => request.url)).toEqual(status === 401 ? ["/auth/refresh"] : [])
     expect(localStorage.getItem(key)).not.toBeNull()
     expect(screen.queryByRole("button", { name: "Finalizar" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Usar Template" })).not.toBeInTheDocument()

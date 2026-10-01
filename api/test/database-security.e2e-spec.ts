@@ -27,6 +27,10 @@ const APPLICATION_TABLES = [
   'recipes',
   'recipe_versions',
   'recipe_ingredients',
+  'consultation_notes',
+  'client_goals',
+  'lab_orders',
+  'auth_sessions',
   'foods',
   'food_preferences',
   'meal_logs',
@@ -193,6 +197,20 @@ describe('Database defensive RLS hardening (e2e)', () => {
       CREATE FUNCTION rls_hardening_future_schema.rls_hardening_future_function()
       RETURNS integer LANGUAGE sql AS $$ SELECT 1 $$;
     `);
+  });
+
+  it('does not leave any public application table outside defensive RLS', async () => {
+    const tables = await pool.query<{
+      relname: string;
+      relrowsecurity: boolean;
+    }>(
+      `SELECT relname, relrowsecurity FROM pg_class WHERE relnamespace='public'::regnamespace
+       AND relkind='r' AND relname <> '_prisma_migrations' AND relname NOT LIKE 'rls_hardening_%'`,
+    );
+    expect(tables.rows.map((row) => row.relname).sort()).toEqual(
+      [...APPLICATION_TABLES].sort(),
+    );
+    expect(tables.rows.filter((row) => !row.relrowsecurity)).toEqual([]);
   });
 
   it('pins exact recipe function search paths and preserves invoker semantics and migration history', async () => {

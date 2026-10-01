@@ -10,6 +10,7 @@ import { App } from 'supertest/types';
 import { JwtAuthGuard } from '../src/common/guards/jwt-auth.guard';
 import { RolesGuard } from '../src/common/guards/roles.guard';
 import { JwtStrategy } from '../src/common/strategies/jwt.strategy';
+import { AuthSessionService } from '../src/modules/auth/auth-session.service';
 import { AnamnesesController } from '../src/modules/anamneses/anamneses.controller';
 import { AnamnesesService } from '../src/modules/anamneses/anamneses.service';
 import { AssessmentsController } from '../src/modules/assessments/assessments.controller';
@@ -124,6 +125,11 @@ describe('Professional domain boundaries (e2e)', () => {
       controllers: [AssessmentsController, RecipesController],
       providers: [
         JwtStrategy,
+        // Sem credencial, Passport nega antes de consultar a sessão.
+        {
+          provide: AuthSessionService,
+          useValue: { validateAccess: jest.fn() },
+        },
         { provide: AssessmentsService, useValue: assessmentsService },
         JwtAuthGuard,
         RolesGuard,
