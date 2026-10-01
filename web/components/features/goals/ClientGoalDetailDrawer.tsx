@@ -1,4 +1,5 @@
 "use client"
+import { useRef, useState } from "react"
 
 import {
   Dialog,
@@ -32,8 +33,8 @@ interface ClientGoalDetailDrawerProps {
   isOpen: boolean
   onClose: () => void
   onEdit: (item: ClientWithGoalSummary) => void
-  onDelete: (goalId: string) => void
-  onMarkAchieved: (goalId: string) => void
+  onDelete: (clientId: string) => Promise<void>
+  onMarkAchieved: (clientId: string) => Promise<unknown>
 }
 
 export function ClientGoalDetailDrawer({
@@ -44,6 +45,16 @@ export function ClientGoalDetailDrawer({
   onDelete,
   onMarkAchieved,
 }: ClientGoalDetailDrawerProps) {
+  const operation = useRef(false)
+  const [pending, setPending] = useState(false)
+  const runAction = async (action: () => Promise<unknown>) => {
+    if (operation.current) return
+    operation.current = true
+    setPending(true)
+    try { await action(); onClose() }
+    catch { return }
+    finally { operation.current = false; setPending(false) }
+  }
   if (!item || !item.goal || !item.progress) return null
 
   const { client, goal, progress, alerts } = item
@@ -59,7 +70,7 @@ export function ClientGoalDetailDrawer({
       : null
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && !pending && onClose()}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -104,10 +115,10 @@ export function ClientGoalDetailDrawer({
               <div className="rounded-lg border-2 border-[var(--sm-brand)] bg-[var(--sm-surface)] p-3">
                 <p className="text-[11px] font-bold text-[var(--sm-brand)]">Peso Atual</p>
                 <p className="mt-1 text-lg font-black text-[var(--sm-brand)]">
-                  {progress.currentWeightKg} kg
+                  {progress.currentWeightKg === null ? "Sem avaliação" : `${progress.currentWeightKg} kg`}
                 </p>
                 <p className={`text-[11px] font-bold ${progress.weightDeltaKg && progress.weightDeltaKg < 0 ? "text-emerald-600" : "text-amber-600"}`}>
-                  {progress.weightDeltaKg && progress.weightDeltaKg > 0 ? `+${progress.weightDeltaKg}` : progress.weightDeltaKg} kg
+                  {progress.weightDeltaKg === null ? "Sem comparativo" : `${progress.weightDeltaKg > 0 ? "+" : ""}${progress.weightDeltaKg} kg`}
                 </p>
               </div>
 
@@ -143,6 +154,7 @@ export function ClientGoalDetailDrawer({
           </div>
 
           {/* Adesão aos Hábitos */}
+          {progress.habitsAdherence ? (
           <div className="rounded-[var(--sm-radius-md)] border border-[var(--sm-border)] bg-[var(--sm-surface)] p-4 shadow-[var(--sm-shadow-rest)]">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--sm-ink)]">
               Adesão aos Hábitos Diários ({progress.habitsAdherence.overall}%)
@@ -213,6 +225,7 @@ export function ClientGoalDetailDrawer({
             )}
           </div>
 
+          ) : <p className="text-xs text-[var(--sm-muted)]">Adesão aos hábitos: sem registros. Metas: {goal.habits.waterTargetMl} mL de água; {goal.habits.sleepTargetHours} h de sono; {goal.habits.mealsAdherencePercent}% das refeições; {goal.habits.dailyStepsTarget} passos.</p>}
           {/* Observações Clínicas */}
           {goal.clinicalNotes && (
             <div className="rounded-lg border border-[var(--sm-border)] bg-[var(--sm-surface)] p-3 text-xs">
@@ -251,9 +264,9 @@ export function ClientGoalDetailDrawer({
             {!isAchieved && (
               <Button
                 size="sm"
+                disabled={pending}
                 onClick={() => {
-                  onMarkAchieved(goal.id)
-                  onClose()
+                  void runAction(() => onMarkAchieved(goal.clientId))
                 }}
                 className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
               >
@@ -264,6 +277,7 @@ export function ClientGoalDetailDrawer({
             <Button
               size="sm"
               variant="outline"
+              disabled={pending}
               onClick={() => {
                 onClose()
                 onEdit(item)
@@ -276,10 +290,10 @@ export function ClientGoalDetailDrawer({
             <Button
               size="sm"
               variant="ghost"
+              disabled={pending}
               onClick={() => {
                 if (confirm("Tem certeza que deseja excluir esta meta?")) {
-                  onDelete(goal.id)
-                  onClose()
+                  void runAction(() => onDelete(goal.clientId))
                 }
               }}
               className="gap-1.5 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/40"

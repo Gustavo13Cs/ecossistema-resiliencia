@@ -56,12 +56,12 @@ export function GoalsKpiSummary({ summary, loading = false }: GoalsKpiSummaryPro
     },
     {
       title: "Adesão aos Hábitos",
-      value: `${summary.averageHabitsAdherence}%`,
+      value: summary.averageHabitsAdherence === null ? "Sem registros" : `${summary.averageHabitsAdherence}%`,
       subtext: "Água, sono, refeições e passos",
       icon: Droplet,
       iconBg: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
       iconColor: "text-blue-600 dark:text-blue-400",
-      badge: summary.averageHabitsAdherence >= 80 ? "Alta adesão" : "Atenção a hábitos",
+      badge: summary.averageHabitsAdherence === null ? "Adesão não aferida" : summary.averageHabitsAdherence >= 80 ? "Alta adesão" : "Atenção a hábitos",
     },
     {
       title: "Metas Atingidas",
