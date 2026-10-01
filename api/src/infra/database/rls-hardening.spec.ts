@@ -1,10 +1,31 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const MIGRATION_PATH = resolve(
   __dirname,
   '../../../prisma/migrations/20260915133000_harden_supabase_data_api_rls/migration.sql',
 );
+
+describe('Forward-only recipe function hardening', () => {
+  it('alters exactly three no-argument search paths without replacing functions', () => {
+    const path = resolve(
+      __dirname,
+      '../../../prisma/migrations/20260929130000_harden_recipe_function_search_paths/migration.sql',
+    );
+    const sql = existsSync(path) ? readFileSync(path, 'utf8') : '';
+    expect(sql.match(/ALTER FUNCTION/g)).toHaveLength(3);
+    for (const name of [
+      'prevent_recipe_version_mutation',
+      'publish_recipe_version_snapshot',
+      'protect_published_recipe_ingredients',
+    ]) {
+      expect(sql).toContain(
+        `ALTER FUNCTION public.${name}() SET search_path = pg_catalog, public;`,
+      );
+    }
+    expect(sql).not.toMatch(/CREATE|SECURITY|OWNER|VOLATILE|LANGUAGE/i);
+  });
+});
 
 const APPLICATION_TABLES = [
   'User',
@@ -46,9 +67,11 @@ describe('Supabase Data API RLS hardening migration', () => {
   const sql = readFileSync(MIGRATION_PATH, 'utf8');
 
   it('enumerates every physical application table exactly once for RLS', () => {
-    const tables = [...sql.matchAll(
-      /ALTER TABLE "public"\."([^"]+)" ENABLE ROW LEVEL SECURITY;/g,
-    )].map((match) => match[1]);
+    const tables = [
+      ...sql.matchAll(
+        /ALTER TABLE "public"\."([^"]+)" ENABLE ROW LEVEL SECURITY;/g,
+      ),
+    ].map((match) => match[1]);
 
     expect(tables).toEqual(APPLICATION_TABLES);
     expect(tables).not.toContain('_prisma_migrations');
@@ -56,17 +79,17 @@ describe('Supabase Data API RLS hardening migration', () => {
   });
 
   it('creates one restrictive deny policy for every managed table', () => {
-    const policyTables = [...sql.matchAll(
-      /CREATE POLICY "deny_data_api_access" ON "public"\."([^"]+)" AS RESTRICTIVE FOR ALL TO PUBLIC USING \(false\) WITH CHECK \(false\);/g,
-    )].map((match) => match[1]);
+    const policyTables = [
+      ...sql.matchAll(
+        /CREATE POLICY "deny_data_api_access" ON "public"\."([^"]+)" AS RESTRICTIVE FOR ALL TO PUBLIC USING \(false\) WITH CHECK \(false\);/g,
+      ),
+    ].map((match) => match[1]);
 
     expect(policyTables).toEqual(APPLICATION_TABLES);
   });
 
   it('revokes current and default Data API privileges without auth helpers', () => {
-    expect(sql).toContain(
-      "ARRAY['anon', 'authenticated', 'service_role']",
-    );
+    expect(sql).toContain("ARRAY['anon', 'authenticated', 'service_role']");
     expect(sql).toContain(
       'REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public',
     );
