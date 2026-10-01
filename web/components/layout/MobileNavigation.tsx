@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { LockKeyhole, LogOut, Menu, X } from "lucide-react"
@@ -53,14 +54,23 @@ export function MobileNavigation({ user, role, roleLabel }: MobileNavigationProp
 
         <div className="flex h-full flex-col">
           <div className="flex items-start justify-between border-b border-[var(--sm-border)] px-5 py-5">
-            <div>
-              <p className="text-lg font-extrabold tracking-[-0.025em] text-[var(--sm-ink)]">
-                SafeMove
-              </p>
-              <p className="mt-2 text-sm font-semibold text-[var(--sm-brand)]">
-                Área de {workspace.areaLabel}
-              </p>
-              <p className="mt-1 text-sm text-[var(--sm-muted)]">{roleLabel}</p>
+            <div className="flex items-center gap-3">
+              <Image
+                src="/logo.png"
+                alt=""
+                width={36}
+                height={36}
+                className="size-9 shrink-0 object-contain drop-shadow-sm"
+              />
+              <div>
+                <p className="text-lg font-extrabold tracking-[-0.025em] text-[var(--sm-ink)]">
+                  SafeMove
+                </p>
+                <p className="text-xs font-semibold text-[var(--sm-brand)]">
+                  Área de {workspace.areaLabel}
+                </p>
+                <p className="text-xs text-[var(--sm-muted)]">{roleLabel}</p>
+              </div>
             </div>
             <DialogClose asChild>
               <button

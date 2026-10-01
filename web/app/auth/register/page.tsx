@@ -2,6 +2,7 @@
 
 import type { FormEvent } from "react"
 import { useState } from "react"
+import Image from "next/image"
 import axios from "axios"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -171,7 +172,14 @@ export default function RegisterPage() {
           className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--sm-muted)] transition-colors hover:text-[var(--sm-ink)]"
         >
           <ArrowLeft aria-hidden="true" className="size-4" />
-          SafeMove
+          <Image
+            src="/logo.png"
+            alt=""
+            width={24}
+            height={24}
+            className="size-6 object-contain"
+          />
+          <span>SafeMove</span>
         </Link>
 
         <div className="mt-6 border border-[var(--sm-border)] bg-[var(--sm-surface)] p-6 shadow-[var(--sm-shadow-elevated)] sm:p-8 lg:p-10">

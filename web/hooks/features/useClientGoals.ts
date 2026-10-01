@@ -326,18 +326,19 @@ export function useClientGoals() {
   }, [user?.sub, clients])
 
   // Save changes to localStorage
+  const userSub = user?.sub
   const persistGoals = useCallback(
     (nextGoals: ClientGoalCommitment[]) => {
       setGoals(nextGoals)
-      if (user?.sub) {
+      if (userSub) {
         try {
-          localStorage.setItem(getStorageKey(user.sub), JSON.stringify(nextGoals))
+          localStorage.setItem(getStorageKey(userSub), JSON.stringify(nextGoals))
         } catch {
           // ignore
         }
       }
     },
-    [user?.sub],
+    [userSub],
   )
 
   // 4. Group assessments by client

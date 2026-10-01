@@ -64,6 +64,7 @@
 | 4.5 | Documentação de API (Swagger/OpenAPI) | ⏳ | — |
 | 4.6 | Monitoramento de performance (bundle size, query time) | ⏳ | — |
 | 4.7 | Endurecer Data API, grants e RLS defensivo no Supabase | ✅ | Codex |
+| 4.8 | Análise profunda Codex Security da revisão `dcca5e5` (scan `59ed9fc0-0027-42b9-8530-7c8c47cdba48`) | 🔄 Em andamento | Codex |
 
 ---
 
