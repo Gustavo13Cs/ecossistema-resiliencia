@@ -73,12 +73,28 @@ async function refreshCsrfToken() {
 
 async function refreshAuthSession() {
   if (!authRefreshPromise) {
-    authRefreshPromise = (async () => {
+    const rotate = async () => {
       await refreshCsrfToken()
       const { data } = await api.post<{ csrfToken: string }>("/auth/refresh")
       if (typeof data.csrfToken !== "string" || !data.csrfToken) throw new Error("Sessão sem token CSRF válido")
       setCsrfToken(data.csrfToken)
-    })().catch((error: unknown) => {
+    }
+    const recover = async () => {
+      if (typeof navigator === "undefined" || !navigator.locks) return rotate()
+
+      await navigator.locks.request("safemove-auth-refresh", async () => {
+        // Outra aba pode ter renovado os cookies enquanto aguardávamos o lock.
+        const session = await api.get<{ csrfToken?: string }>("/auth/me", { validateStatus: () => true })
+        if (session.status === 200) {
+          if (typeof session.data.csrfToken === "string" && session.data.csrfToken) setCsrfToken(session.data.csrfToken)
+          else await refreshCsrfToken()
+          return
+        }
+        if (session.status !== 401) throw new Error("Não foi possível verificar a sessão")
+        await rotate()
+      })
+    }
+    authRefreshPromise = recover().catch((error: unknown) => {
       setCsrfToken(null)
       throw error
     }).finally(() => { authRefreshPromise = null })
