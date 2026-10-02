@@ -51,6 +51,7 @@ describe("Clinical persistence and print security over real HTTP", () => {
     cy.on("window:confirm", () => true)
     openGoals()
     cy.findByRole("button", { name: "Pactuar Nova Meta" }).click()
+    cy.get("#client-select").select(persistedClientId)
     cy.get("#start-weight").clear().type("90")
     cy.get("#target-weight").clear().type("80")
     cy.get("#clinical-notes").type("Synthetic goal")
@@ -58,6 +59,7 @@ describe("Clinical persistence and print security over real HTTP", () => {
     cy.findByRole("button", { name: "Salvar Meta Clínica" }).click()
     cy.wait("@saveGoal").then(({ request, response }) => {
       expect(response?.statusCode).to.equal(200)
+      expect(response!.body.clientId).to.equal(persistedClientId)
       expect(request.body).not.to.have.property("professionalId")
       goalId = response!.body.id
     })
@@ -79,6 +81,7 @@ describe("Clinical persistence and print security over real HTTP", () => {
 
     openLabs()
     cy.findByRole("button", { name: "Registrar Novo Laudo" }).click()
+    cy.get('[role="dialog"] select').first().select(persistedClientId)
     cy.get('[role="dialog"] input[type="number"]').first().type("89")
     cy.get('[role="dialog"] textarea').type("Synthetic exam")
     cy.intercept("POST", "**/lab-exams").as("createExam")
@@ -95,6 +98,7 @@ describe("Clinical persistence and print security over real HTTP", () => {
     cy.contains("Synthetic exam").should("be.visible")
 
     cy.findByRole("button", { name: "Emitir Pedido de Exame" }).click()
+    cy.get('[role="dialog"] select').first().select(persistedClientId)
     cy.get('[role="dialog"] input[placeholder^="Digitar outro"]').type(printAttack, { parseSpecialCharSequences: false })
     cy.findByRole("button", { name: "Adicionar" }).click()
     cy.get('[role="dialog"] textarea').clear().type(printAttack, { parseSpecialCharSequences: false })
@@ -158,6 +162,7 @@ describe("Clinical persistence and print security over real HTTP", () => {
       },
     })
     cy.findByRole("button", { name: "Pactuar Nova Meta" }).click()
+    cy.get("#client-select").select(persistedClientId)
     cy.get("#start-weight").clear().type("90")
     cy.get("#target-weight").clear().type("80")
     cy.get("#clinical-notes").type("Synthetic failed goal")
@@ -172,6 +177,7 @@ describe("Clinical persistence and print security over real HTTP", () => {
 
     openLabs()
     cy.findByRole("button", { name: "Registrar Novo Laudo" }).click()
+    cy.get('[role="dialog"] select').first().select(persistedClientId)
     cy.get('[role="dialog"] input[type="number"]').first().type("89")
     cy.get('[role="dialog"] textarea').type("Synthetic failed exam")
     cy.intercept("POST", "**/lab-exams", { statusCode: 500, body: { message: "Synthetic failure" } }).as("failedExam")
@@ -181,6 +187,7 @@ describe("Clinical persistence and print security over real HTTP", () => {
     cy.get('[role="dialog"] textarea').should("have.value", "Synthetic failed exam")
     cy.findByRole("button", { name: "Cancelar" }).click()
     cy.findByRole("button", { name: "Emitir Pedido de Exame" }).click()
+    cy.get('[role="dialog"] select').first().select(persistedClientId)
     cy.intercept("POST", "**/lab-orders", { statusCode: 500, body: { message: "Synthetic failure" } }).as("failedOrder")
     cy.findByRole("button", { name: "Registrar Pedido" }).click()
     cy.wait("@failedOrder")
