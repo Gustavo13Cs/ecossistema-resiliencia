@@ -31,6 +31,7 @@ describe('RehabPlansService Client ownership', () => {
   const user: AuthUser = { sub: 'professional-1', role: 'PHYSIO' };
   const client = { id: dto.clientId, professionalId: user.sub };
   const tx = {
+    $queryRaw: jest.fn().mockResolvedValue([{ id: dto.clientId }]),
     rehabPlan: {
       updateMany: jest.fn(),
       create: jest.fn<Promise<unknown>, [unknown]>(),

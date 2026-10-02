@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ClientAccessService } from '../../common/client-access/client-access.service';
+import { lockOwnedClient } from '../../common/client-access/lock-owned-client';
 import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { CreateWorkoutDto } from './dto/create-workout.dto';
@@ -19,6 +20,7 @@ export class WorkoutsService {
     this.assertTrainingProfessional(user);
     const client = await this.clientAccess.getOwnedClient(user, data.clientId);
     return this.prisma.$transaction(async (tx) => {
+      await lockOwnedClient(tx, client.id, user.sub);
       await tx.workout.updateMany({
         where: { clientId: client.id, creatorId: user.sub, isActive: true },
         data: { isActive: false },
