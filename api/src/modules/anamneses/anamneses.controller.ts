@@ -13,9 +13,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { DOMAIN_ROLES } from '../../common/policies/professional-domain-roles';
-import { AuthUser } from '../../common/types/auth-user';
-
-type AuthenticatedRequest = { user: AuthUser };
+import { AuthenticatedRequest } from '../../common/types/auth-user';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(...DOMAIN_ROLES.nutrition)
@@ -28,11 +26,14 @@ export class AnamnesesController {
     @Request() request: AuthenticatedRequest,
     @Body() createDto: CreateAnamnesisDto,
   ) {
-    return this.anamnesesService.create(createDto, request.user.sub);
+    return this.anamnesesService.create(request.user, createDto);
   }
 
-  @Get('user/:patientId')
-  findByPatient(@Param('patientId') patientId: string) {
-    return this.anamnesesService.findByPatient(patientId);
+  @Get('client/:clientId')
+  findByClient(
+    @Request() request: AuthenticatedRequest,
+    @Param('clientId') clientId: string,
+  ) {
+    return this.anamnesesService.findByClient(request.user, clientId);
   }
 }

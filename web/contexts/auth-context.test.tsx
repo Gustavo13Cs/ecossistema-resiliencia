@@ -114,13 +114,28 @@ describe("AuthProvider session lifecycle", () => {
     await api.post("/clients", { name: "Cliente" })
   })
 
-  it("clears cached and in-memory session state after an unrelated 401", async () => {
+  it("recovers an expired access token during hydration before clearing cached data", async () => {
+    queryClient.setQueryData(["clients"], [{ id: "c1" }])
+    mock.onGet("/auth/me").replyOnce(401).onGet("/auth/me").reply(200, { user: professional, csrfToken: "recovered-csrf" })
+    mock.onGet("/auth/csrf").reply(200, { csrfToken: "bootstrap-csrf" })
+    mock.onPost("/auth/refresh").reply(200, { csrfToken: "recovered-csrf" })
+    renderAuthProvider(queryClient, <SessionProbe />)
+    expect(await screen.findByText("pro-1")).toBeInTheDocument()
+    expect(queryClient.getQueryData(["clients"])).toEqual([{ id: "c1" }])
+    expect(mock.history.post.filter(({ url }) => url === "/auth/refresh")).toHaveLength(1)
+    expect(mock.history.get.map(({ url }) => url)).toEqual(["/auth/me", "/auth/csrf", "/auth/me"])
+    expect(navigation.replace).not.toHaveBeenCalled()
+  })
+
+  it("clears cached and in-memory session state after a definitively rejected refresh", async () => {
     queryClient.setQueryData(["clients"], [{ id: "c1" }])
     mock.onGet("/auth/me").reply(200, {
       user: professional,
       csrfToken: "csrf-from-session",
     })
     mock.onGet("/clients").reply(401)
+    mock.onGet("/auth/csrf").reply(200, { csrfToken: "bootstrap-csrf" })
+    mock.onPost("/auth/refresh").reply(401)
     mock.onPost("/records").reply((config) => {
       expect(config.headers?.["X-CSRF-Token"]).toBeUndefined()
       return [201, {}]
@@ -149,6 +164,8 @@ describe("AuthProvider session lifecycle", () => {
       csrfToken: "csrf-from-session",
     })
     mock.onGet("/clients").reply(401)
+    mock.onGet("/auth/csrf").reply(200, { csrfToken: "bootstrap-csrf" })
+    mock.onPost("/auth/refresh").reply(401)
     renderAuthProvider(queryClient, <SessionProbe />)
     expect(await screen.findByText("pro-1")).toBeInTheDocument()
 
@@ -173,5 +190,26 @@ describe("AuthProvider session lifecycle", () => {
     await waitFor(() => {
       expect(navigation.replace).toHaveBeenCalledTimes(2)
     })
+  })
+
+  it("preserves the active user and clinical cache when refresh returns 500", async () => {
+    const key = ["lab-exams", professional.sub, "synthetic-client"]
+    const exams = [{ id: "synthetic-exam" }]
+    queryClient.setQueryData(key, exams)
+    mock.onGet("/auth/me").reply(200, { user: professional, csrfToken: "csrf-from-session" })
+    mock.onGet("/clients").reply(401)
+    mock.onGet("/auth/csrf").reply(200, { csrfToken: "bootstrap-csrf" })
+    mock.onPost("/auth/refresh").reply(500)
+    renderAuthProvider(queryClient, <SessionProbe />)
+    expect(await screen.findByText("pro-1")).toBeInTheDocument()
+
+    await act(async () => {
+      await expect(api.get("/clients")).rejects.toMatchObject({ response: { status: 500 } })
+    })
+
+    expect(screen.getByText("pro-1")).toBeInTheDocument()
+    expect(queryClient.getQueryData(key)).toEqual(exams)
+    expect(navigation.replace).not.toHaveBeenCalled()
+    expect(mock.history.post.filter(({ url }) => url === "/auth/refresh")).toHaveLength(1)
   })
 })

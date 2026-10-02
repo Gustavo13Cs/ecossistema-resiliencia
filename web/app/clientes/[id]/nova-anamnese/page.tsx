@@ -10,9 +10,10 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
+import type { Client } from "@/types/client"
 
 export default function NovaAnamnesePage() {
-  const params = useParams()
+  const params = useParams<{ id: string }>()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [patientName, setPatientName] = useState("A carregar...")
@@ -32,18 +33,15 @@ export default function NovaAnamnesePage() {
     alcoholAndSmoking: ""
   })
 
-  const [client, setClient] = useState<any>(null)
-
-  useEffect(() => {
+useEffect(() => {
     const fetchPatient = async () => {
       try {
-        const res = await api.get(`/clients/${params.id}`)
-        setClient(res.data)
+        const res = await api.get<Client>(`/clients/${params.id}`)
         setPatientName(res.data.name)
         if (res.data.pathologies) {
           setFormData((prev) => ({ ...prev, pathologies: res.data.pathologies || "" }))
         }
-      } catch (error) {
+      } catch {
         toast.error("Erro ao carregar prontuário do cliente.")
       }
     }
@@ -56,7 +54,7 @@ export default function NovaAnamnesePage() {
     setLoading(true)
     try {
       const payload = {
-        patientId: params.id,
+        clientId: params.id,
         clinicalHistory: formData.clinicalHistory,
         medications: formData.medications,
         pathologies: formData.pathologies,
@@ -69,41 +67,11 @@ export default function NovaAnamnesePage() {
         alcoholAndSmoking: formData.alcoholAndSmoking,
       }
 
-      try {
-        await api.post('/anamneses', payload)
-      } catch {
-        // Fallback: garante a persistência clínica completa no prontuário do Client
-        if (client?.updatedAt) {
-          const anamnesisNote = [
-            `[Anamnese Geral - ${new Date().toLocaleDateString('pt-BR')}]`,
-            formData.clinicalHistory ? `Histórico Clínico: ${formData.clinicalHistory}` : null,
-            formData.medications ? `Medicamentos: ${formData.medications}` : null,
-            formData.pathologies ? `Patologias: ${formData.pathologies}` : null,
-            formData.bowelMovement ? `Função Intestinal: ${formData.bowelMovement}` : null,
-            formData.bristolScale ? `Escala de Bristol: ${formData.bristolScale}` : null,
-            formData.urineColor ? `Coloração Urina: ${formData.urineColor}` : null,
-            formData.symptoms ? `Sintomas: ${formData.symptoms}` : null,
-            formData.familyHistory ? `Histórico Familiar: ${formData.familyHistory}` : null,
-            formData.waterIntake ? `Ingestão de Água: ${formData.waterIntake}L` : null,
-            formData.alcoholAndSmoking ? `Álcool/Tabaco: ${formData.alcoholAndSmoking}` : null,
-          ].filter(Boolean).join('\n')
-
-          const existingNotes = client.professionalNotes?.trim() || ""
-          const updatedNotes = existingNotes ? `${anamnesisNote}\n\n${existingNotes}` : anamnesisNote
-
-          await api.patch(`/clients/${params.id}`, {
-            expectedUpdatedAt: client.updatedAt,
-            pathologies: formData.pathologies || client.pathologies,
-            professionalNotes: updatedNotes,
-          })
-        } else {
-          throw new Error("Cliente não disponível")
-        }
-      }
+      await api.post('/anamneses', payload)
 
       toast.success("Anamnese guardada com sucesso! Documento selado.")
       router.push(`/clientes/${params.id}`)
-    } catch (error) {
+    } catch {
       toast.error("Erro ao guardar a Anamnese.")
     } finally {
       setLoading(false)

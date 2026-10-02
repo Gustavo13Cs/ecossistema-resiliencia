@@ -1,3 +1,4 @@
+import { expect } from '@jest/globals';
 import {
   BadRequestException,
   ForbiddenException,
@@ -79,6 +80,7 @@ describe('DietPlansService professional ownership', () => {
     food: { findFirst: jest.fn(), create: jest.fn() },
     foodPreference: { upsert: jest.fn() },
     recipeVersion: { findMany: jest.fn() },
+    $queryRaw: jest.fn().mockResolvedValue([{ id: CLIENT_ID }]),
     $transaction: jest.fn(),
   };
   let service: DietPlansService;

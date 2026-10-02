@@ -1,81 +1,59 @@
 import {
-  Controller, Post, Body, Get, Param,
-  Delete, Query, NotFoundException, Patch,
-  Request, ForbiddenException,
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Param,
+  Patch,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import {
+  AuthenticatedRequest,
+  AuthUser,
+  CLINICAL_PROFESSIONAL_ROLES,
+} from '../../common/types/auth-user';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UseGuards } from '@nestjs/common';
+import { UsersService } from './users.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // Só PERSONAL, NUTRITIONIST e ADMIN podem buscar por email
-  @Roles('PERSONAL', 'NUTRITIONIST', 'ADMIN')
-  @Get('check-email')
-  async checkEmail(@Query('email') email: string) {
-    const user = await this.usersService.findByEmail(email);
-    if (!user) throw new NotFoundException('Usuário não encontrado');
-    return user;
-  }
-
-  // Só profissionais criam pacientes
-  @Roles('PERSONAL', 'NUTRITIONIST', 'ADMIN')
-  @Post()
-  create(@Request() req, @Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto, req.user.sub);
-  }
-
-  // Lista apenas os pacientes vinculados ao profissional logado
-  @Roles('PERSONAL', 'NUTRITIONIST', 'ADMIN')
-  @Get()
-  findAll(@Request() req) {
-    return this.usersService.findAll(req.user.sub);
-  }
-
-  // Visão 360°: dados agregados de todas as áreas do paciente
-  @Get(':id/overview')
-  getPatientOverview(@Request() req, @Param('id') id: string) {
-    return this.usersService.getPatientOverview(id, req.user.sub);
-  }
-
-  // Profissional vê perfil completo; paciente vê só o próprio (sem notas clínicas)
   @Get(':id')
-  findOne(@Request() req, @Param('id') id: string) {
-    const isProfessional = ['PERSONAL', 'NUTRITIONIST', 'ADMIN'].includes(req.user.role);
+  findOne(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
+    this.assertSelf(request.user, id, 'Acesso negado');
+    const canAccessClinicalFields =
+      CLINICAL_PROFESSIONAL_ROLES.includes(request.user.role) ||
+      request.user.role === 'ADMIN';
 
-    if (!isProfessional && req.user.sub !== id) {
-      throw new ForbiddenException('Acesso negado');
-    }
-
-    return this.usersService.findOne(id, isProfessional);
+    return this.usersService.findOne(id, canAccessClinicalFields);
   }
 
-  // Só o próprio paciente ou profissional vinculado pode atualizar
   @Patch(':id')
-  async update(
-    @Request() req,
+  update(
+    @Request() request: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    const isProfessional = ['PERSONAL', 'NUTRITIONIST', 'ADMIN'].includes(req.user.role);
+    this.assertSelf(
+      request.user,
+      id,
+      'Você não pode editar dados de outro usuário',
+    );
+    const canUpdateClinicalFields =
+      CLINICAL_PROFESSIONAL_ROLES.includes(request.user.role) ||
+      request.user.role === 'ADMIN';
 
-    if (!isProfessional && req.user.sub !== id) {
-      throw new ForbiddenException('Você não pode editar dados de outro usuário');
-    }
-
-    return this.usersService.update(id, updateUserDto, isProfessional);
+    return this.usersService.update(id, updateUserDto, canUpdateClinicalFields);
   }
 
-  @Roles('PERSONAL', 'NUTRITIONIST', 'ADMIN')
-  @Delete(':id')
-  remove(@Request() req, @Param('id') id: string) {
-    return this.usersService.unlinkPatient(req.user.sub, id);
+  private assertSelf(user: AuthUser, requestedUserId: string, message: string) {
+    if (user.sub !== requestedUserId) {
+      throw new ForbiddenException(message);
+    }
   }
 }

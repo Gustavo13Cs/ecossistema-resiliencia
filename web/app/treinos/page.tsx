@@ -10,12 +10,13 @@ import { Dumbbell, Plus, Search, Activity, ArrowRight, X, Clock, Edit, Trash2, B
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { useUsers } from "@/hooks/features/useUsers"
+import { useClients } from "@/hooks/features/useClients"
+import type { WorkoutSummary } from "@/types/workout"
 
 export default function TreinosHubPage() {
   const router = useRouter()
-  const [workouts, setWorkouts] = useState<any[]>([])
-  const { users: patients, loading: usersLoading } = useUsers()
+  const [workouts, setWorkouts] = useState<WorkoutSummary[]>([])
+  const { data: patients = [], isPending: usersLoading } = useClients("ACTIVE")
   const [loadingWorkouts, setLoadingWorkouts] = useState(true)
   
   // Estados para o Modal de Seleção de Aluno
@@ -33,7 +34,7 @@ export default function TreinosHubPage() {
   const fetchDashboardData = async () => {
     setLoadingWorkouts(true)
     try {
-      const workoutsRes = await api.get("/workouts")
+      const workoutsRes = await api.get<WorkoutSummary[]>("/workouts")
       setWorkouts(workoutsRes.data || [])
     } catch (error) {
       setWorkouts([])
@@ -167,7 +168,7 @@ export default function TreinosHubPage() {
                     workouts.map((treino) => (
                       <TableRow key={treino.id} className="hover:bg-slate-50 transition-colors">
                         <TableCell className="font-semibold text-slate-700 py-4 px-6">
-                          {treino.user?.name || "Aluno Removido"}
+                          {treino.client?.name || "Aluno indisponível"}
                         </TableCell>
                         <TableCell className="text-slate-500 px-6">
                           {new Date(treino.createdAt).toLocaleDateString('pt-PT')}
@@ -194,14 +195,14 @@ export default function TreinosHubPage() {
                             </Button>
                             <Button 
                               variant="outline" size="sm" 
-                              onClick={() => router.push(`/clientes/${treino.userId}/novo-treino`)}
+                              onClick={() => router.push(`/clientes/${treino.clientId}/novo-treino`)}
                               className="text-blue-600 border-blue-200 hover:bg-blue-50"
                             >
                               <Edit className="w-4 h-4 mr-1" /> Abrir Ficha
                             </Button>
                             <Button 
                               variant="outline" size="icon" 
-                              onClick={() => setWorkoutToDelete({ id: treino.id, name: treino.user?.name || "Aluno" })}
+                              onClick={() => setWorkoutToDelete({ id: treino.id, name: treino.client?.name || "Aluno" })}
                               className="text-rose-500 border-rose-200 hover:bg-rose-50 h-9 w-9"
                             >
                               <Trash2 className="w-4 h-4" />

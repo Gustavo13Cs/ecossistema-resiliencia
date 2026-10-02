@@ -1,3 +1,4 @@
+import { AuthenticatedRequest } from '../../common/types/auth-user';
 import { AppointmentsController } from './appointments.controller';
 
 describe('AppointmentsController', () => {
@@ -5,7 +6,7 @@ describe('AppointmentsController', () => {
     sub: 'professional-1',
     role: 'PHYSIO',
   } as const;
-  const request = { user: professional };
+  const request = { user: professional } as AuthenticatedRequest;
   const service = {
     create: jest.fn(),
     list: jest.fn(),

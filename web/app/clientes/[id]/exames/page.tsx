@@ -15,7 +15,7 @@ import { toast } from "sonner"
 export default function ExamesLaboratoriaisPage() {
   const params = useParams()
   const patientId = params.id as string
-  const { loading, saving, exams, uniqueMarkers, selectedChartMarker, setSelectedChartMarker, chartData, saveExam } = useLabExams(patientId)
+  const { loading, saving, error, exams, uniqueMarkers, selectedChartMarker, setSelectedChartMarker, chartData, saveExam } = useLabExams(patientId)
 
   const [activeTab, setActiveTab] = useState<'chart' | 'new'>('chart')
   
@@ -60,7 +60,7 @@ export default function ExamesLaboratoriaisPage() {
           </div>
         </div>
 
-        {activeTab === 'chart' ? (
+        {error && activeTab === 'chart' ? <p role="alert" className="text-rose-700">{error}</p> : activeTab === 'chart' ? (
           <div className="space-y-6 animate-in fade-in">
              {exams.length === 0 ? (
                 <div className="bg-white p-12 text-center rounded-2xl border border-slate-200">

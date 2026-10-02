@@ -28,6 +28,19 @@ const input = { clientName: "Ana", dateLabel: "28 de setembro de 2026", dietInfo
 const parse = (html: string) => new DOMParser().parseFromString(html, "text/html")
 
 describe("diet print documents", () => {
+  it.each(['<script>alert(1)</script>', '<svg onload="alert(2)">', '</style><img src=x onerror=alert(3)>', 'quotes " & \' plus\nsecond line'])("keeps title and clinical text inert: %s", attack => {
+    const dangerous = { ...input, clientName: attack, dateLabel: attack, dietInfo: { ...input.dietInfo, title: attack, goal: attack, notes: attack }, meals: [{ ...meals[0], name: attack, time: attack, notes: attack, items: [{ ...recipe, recipeVersion: { ...recipe.recipeVersion, name: attack, instructions: attack, ingredients: [{ ...recipe.recipeVersion.ingredients[0], measure: attack, food: { ...oat, name: attack } }] } }] }] }
+    for (const html of [buildDietPrintHtml(dangerous), buildShoppingListPrintHtml({ ...dangerous, shoppingDays: 2 })]) {
+      const document = parse(html)
+      expect(document.querySelector("script,svg,img,[onload],[onerror]")).toBeNull()
+      expect(document.querySelector(".client-name")?.textContent).toBe(attack)
+      expect(document.querySelector(".doc-subtitle")?.textContent).toContain(attack)
+      expect(document.querySelector("title")?.textContent).toContain(attack)
+    }
+    const doc = parse(buildDietPrintHtml(dangerous))
+    expect(doc.querySelector(".meal-time")?.textContent).toBe(attack)
+    expect(doc.querySelector(".recipe-instructions")?.textContent).toBe(attack.replace(/\r?\n/g, ""))
+  })
   it("prints mixed meals with food amounts and macros from the prescribed recipe snapshot", () => {
     const doc = parse(buildDietPrintHtml(input))
     expect(doc.querySelector(".brand")?.textContent).toBe("SafeMove · Nutrição")

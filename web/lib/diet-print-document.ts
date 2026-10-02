@@ -1,3 +1,4 @@
+import { buildPrintDocument, escapeHtml, multiline } from "./print-document"
 import type { DietMeal, DietMealItem } from "@/types/diet"
 import type { RecipeNutrition } from "@/types/recipe"
 import { buildShoppingList, getMealItemNutrition } from "./diet-meal-items"
@@ -16,11 +17,6 @@ export interface ShoppingListPrintInput extends DietPrintInput {
 
 const numberFormat = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 6 })
 const formatNumber = (value: number) => numberFormat.format(value)
-const escapeHtml = (value: string) => value.replace(/[&<>"']/g, character => ({
-  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-})[character]!)
-const multiline = (value: string) => escapeHtml(value).replace(/\r?\n/g, "<br>")
-
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -96,7 +92,7 @@ const styles = `
 `
 
 function documentHtml(title: string, body: string) {
-  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8" /><title>${escapeHtml(title)}</title><style>${styles}</style></head><body>${body}</body></html>`
+  return buildPrintDocument({ title, css: styles, body })
 }
 
 function header(input: DietPrintInput, title: string, subtitle: string, meta: string) {

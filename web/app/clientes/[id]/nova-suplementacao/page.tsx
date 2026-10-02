@@ -13,7 +13,7 @@ export default function NovaSuplementacaoPage() {
   const params = useParams()
   
   const { 
-    patientName, loading, planInfo, setPlanInfo, items, 
+    patientName, loading, error, planInfo, setPlanInfo, items,
     addItem, removeItem, updateItem, savePlan, handlePrint 
   } = useSuplementos(params.id as string)
 
@@ -41,6 +41,7 @@ export default function NovaSuplementacaoPage() {
           </div>
         </div>
 
+        {error && <p role="alert" className="text-rose-700">{error}</p>}
         <div className="space-y-6">
           {items.map((item, index) => (
             <Card key={item.id} className="border border-slate-200 shadow-md overflow-hidden">

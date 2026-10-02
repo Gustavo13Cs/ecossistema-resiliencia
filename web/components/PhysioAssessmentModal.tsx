@@ -5,18 +5,18 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { X, Activity, Save, Stethoscope } from "lucide-react"
+import { X, Save, Stethoscope } from "lucide-react"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 
 interface PhysioAssessmentModalProps {
   isOpen: boolean
   onClose: () => void
-  patientId: string
+  clientId: string
   onSuccess: () => void
 }
 
-export function PhysioAssessmentModal({ isOpen, onClose, patientId, onSuccess }: PhysioAssessmentModalProps) {
+export function PhysioAssessmentModal({ isOpen, onClose, clientId, onSuccess }: PhysioAssessmentModalProps) {
   const [loading, setLoading] = useState(false)
   
   // Estado para os campos da Fisioterapia
@@ -36,7 +36,7 @@ export function PhysioAssessmentModal({ isOpen, onClose, patientId, onSuccess }:
     setLoading(true)
     try {
       const payload = {
-        userId: patientId,
+        clientId,
         ...formData,
         painLevel: formData.painLevel ? Number(formData.painLevel) : null
       }
@@ -45,7 +45,7 @@ export function PhysioAssessmentModal({ isOpen, onClose, patientId, onSuccess }:
       toast.success("Avaliação Fisioterapêutica salva!")
       onSuccess()
       onClose()
-    } catch (error) {
+    } catch {
       toast.error("Erro ao salvar avaliação.")
     } finally {
       setLoading(false)

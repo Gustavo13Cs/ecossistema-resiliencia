@@ -13,13 +13,11 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { DOMAIN_ROLES } from '../../common/policies/professional-domain-roles';
-import { AuthUser } from '../../common/types/auth-user';
+import { AuthenticatedRequest } from '../../common/types/auth-user';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { ListRecipesQueryDto } from './dto/list-recipes-query.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
 import { RecipesService } from './recipes.service';
-
-type AuthenticatedRequest = { user: AuthUser };
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(...DOMAIN_ROLES.nutrition)

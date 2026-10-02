@@ -10,6 +10,7 @@ import { App } from 'supertest/types';
 import { JwtAuthGuard } from '../src/common/guards/jwt-auth.guard';
 import { RolesGuard } from '../src/common/guards/roles.guard';
 import { JwtStrategy } from '../src/common/strategies/jwt.strategy';
+import { AuthSessionService } from '../src/modules/auth/auth-session.service';
 import { AnamnesesController } from '../src/modules/anamneses/anamneses.controller';
 import { AnamnesesService } from '../src/modules/anamneses/anamneses.service';
 import { AssessmentsController } from '../src/modules/assessments/assessments.controller';
@@ -22,8 +23,6 @@ import { FoodsController } from '../src/modules/foods/foods.controller';
 import { FoodsService } from '../src/modules/foods/foods.service';
 import { LabExamsController } from '../src/modules/lab-exams/lab-exams.controller';
 import { LabExamsService } from '../src/modules/lab-exams/lab-exams.service';
-import { MetricsController } from '../src/modules/metrics/metrics.controller';
-import { MetricsService } from '../src/modules/metrics/metrics.service';
 import { PhysioAssessmentsController } from '../src/modules/physio-assessments/physio-assessments.controller';
 import { PhysioAssessmentsService } from '../src/modules/physio-assessments/physio-assessments.service';
 import { RehabPlansController } from '../src/modules/rehab-plans/rehab-plans.controller';
@@ -69,8 +68,8 @@ describe('Professional domain boundaries (e2e)', () => {
   const rehabPlansService = {
     saveAsTemplate: jest.fn().mockResolvedValue({ id: 'rehab-template' }),
   };
-  const metricsService = {
-    getTodayLogs: jest.fn().mockResolvedValue([]),
+  const assessmentsService = {
+    findByClient: jest.fn().mockResolvedValue([]),
   };
   const recipesService = {
     list: jest.fn().mockResolvedValue([]),
@@ -97,13 +96,12 @@ describe('Professional domain boundaries (e2e)', () => {
         WorkoutsController,
         RehabPlansController,
         ConsultationNotesController,
-        MetricsController,
         RecipesController,
       ],
       providers: [
         RolesGuard,
         { provide: FoodsService, useValue: {} },
-        { provide: AssessmentsService, useValue: {} },
+        { provide: AssessmentsService, useValue: assessmentsService },
         { provide: AnamnesesService, useValue: {} },
         { provide: LabExamsService, useValue: {} },
         { provide: PhysioAssessmentsService, useValue: {} },
@@ -112,7 +110,6 @@ describe('Professional domain boundaries (e2e)', () => {
         { provide: WorkoutsService, useValue: workoutsService },
         { provide: RehabPlansService, useValue: rehabPlansService },
         { provide: ConsultationNotesService, useValue: {} },
-        { provide: MetricsService, useValue: metricsService },
         { provide: RecipesService, useValue: recipesService },
       ],
     })
@@ -125,12 +122,17 @@ describe('Professional domain boundaries (e2e)', () => {
 
     const realJwtModule = await Test.createTestingModule({
       imports: [PassportModule.register({ defaultStrategy: 'jwt' })],
-      controllers: [MetricsController, RecipesController],
+      controllers: [AssessmentsController, RecipesController],
       providers: [
         JwtStrategy,
+        // Sem credencial, Passport nega antes de consultar a sessão.
+        {
+          provide: AuthSessionService,
+          useValue: { validateAccess: jest.fn() },
+        },
+        { provide: AssessmentsService, useValue: assessmentsService },
         JwtAuthGuard,
         RolesGuard,
-        { provide: MetricsService, useValue: metricsService },
         { provide: RecipesService, useValue: recipesService },
       ],
     }).compile();
@@ -197,9 +199,9 @@ describe('Professional domain boundaries (e2e)', () => {
       deniedRoles: ['ADMIN', 'PATIENT'] as TestRole[],
       invoke: (role: TestRole) =>
         request(app.getHttpServer())
-          .get('/metrics/today/patient-1')
+          .get('/assessments/client/client-1')
           .set(asRole(role)),
-      serviceMethod: metricsService.getTodayLogs,
+      serviceMethod: assessmentsService.findByClient,
     },
   ])(
     '$domain permits only its policy roles before invoking service logic',
@@ -219,12 +221,12 @@ describe('Professional domain boundaries (e2e)', () => {
     },
   );
 
-  it('rejects unauthenticated metrics requests through the real JWT guard', async () => {
+  it('rejects unauthenticated assessment requests through the real JWT guard', async () => {
     await request(realJwtApp.getHttpServer())
-      .get('/metrics/today/patient-1')
+      .get('/assessments/client/client-1')
       .expect(401);
 
-    expect(metricsService.getTodayLogs).not.toHaveBeenCalled();
+    expect(assessmentsService.findByClient).not.toHaveBeenCalled();
   });
 
   it('rejects unauthenticated recipe requests through the real JWT guard', async () => {

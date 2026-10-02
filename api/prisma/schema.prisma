@@ -8,11 +8,12 @@ datasource db {
 
 // Tabela 1: Usuários (Pacientes e Profissionais)
 model User {
-  id       String @id @default(uuid())
-  name     String
-  email    String @unique
-  password String
-  role     Role   @default(PATIENT)
+  id          String @id @default(uuid())
+  name        String
+  email       String @unique
+  password    String
+  role        Role   @default(PATIENT)
+  authVersion Int    @default(0)
 
   phone       String?
   birthDate   DateTime?
@@ -50,11 +51,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  workouts          Workout[]          @relation("UserWorkouts")
-  createdWorkouts   Workout[]          @relation("CreatedWorkouts")
-  physioAssessments PhysioAssessment[] @relation("UserPhysioAssessments")
-  rehabs            RehabPlan[]        @relation("UserRehabs")
-  createdRehabs     RehabPlan[]        @relation("CreatedRehabs")
+  workouts                 Workout[]          @relation("UserWorkouts")
+  createdWorkouts          Workout[]          @relation("CreatedWorkouts")
+  physioAssessments        PhysioAssessment[] @relation("UserPhysioAssessments")
+  createdPhysioAssessments PhysioAssessment[] @relation("CreatedPhysioAssessments")
+  rehabs                   RehabPlan[]        @relation("UserRehabs")
+  createdRehabs            RehabPlan[]        @relation("CreatedRehabs")
 
   diets DietPlan[] @relation("UserDiets")
 
@@ -64,7 +66,8 @@ model User {
 
   assessments PhysicalAssessment[] @relation("UserAssessments")
 
-  trackings DailyTracking[]
+  patientTrackings      DailyTracking[] @relation("PatientTrackings")
+  professionalTrackings DailyTracking[] @relation("ProfessionalTrackings")
 
   patients          ProfessionalPatientLink[] @relation("ProfessionalLink")
   professionals     ProfessionalPatientLink[] @relation("PatientLink")
@@ -83,6 +86,8 @@ model User {
 
   patientAlerts      PatientAlert[] @relation("PatientAlerts")
   professionalAlerts PatientAlert[] @relation("ProfessionalAlerts")
+  clientGoals        ClientGoal[]   @relation("ProfessionalClientGoals")
+  labOrders          LabOrder[]     @relation("ProfessionalLabOrders")
 
   workoutLogs WorkoutLog[] @relation("PatientWorkoutLogs")
   mealLogs    MealLog[]    @relation("PatientMealLogs")
@@ -95,6 +100,23 @@ model User {
   healthCheckIns           HealthCheckIn[]        @relation("PatientHealthCheckIns")
   patientConsultationNotes ConsultationNote[]     @relation("PatientConsultationNotes")
   createdConsultationNotes ConsultationNote[]     @relation("CreatedConsultationNotes")
+  authSessions             AuthSession[]
+}
+
+model AuthSession {
+  id               String    @id @default(uuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash String
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  lastUsedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([userId, revokedAt, expiresAt])
+  @@index([expiresAt])
+  @@map("auth_sessions")
 }
 
 model ProfessionalPatientLink {
@@ -212,6 +234,17 @@ model Client {
   diets             DietPlan[]           @relation("ClientDiets")
   assessments       PhysicalAssessment[] @relation("ClientAssessments")
   appointments      Appointment[]        @relation("ClientAppointments")
+  workouts          Workout[]            @relation("ClientWorkouts")
+  physioAssessments PhysioAssessment[]   @relation("ClientPhysioAssessments")
+  rehabPlans        RehabPlan[]          @relation("ClientRehabPlans")
+  trackings         DailyTracking[]      @relation("ClientTrackings")
+  anamneses         Anamnesis[]          @relation("ClientAnamneses")
+  consultationNotes ConsultationNote[]   @relation("ClientConsultationNotes")
+  supplementPlans   SupplementPlan[]     @relation("ClientSupplementPlans")
+  labExams          LabExam[]            @relation("ClientLabExams")
+  alerts            PatientAlert[]       @relation("ClientAlerts")
+  currentGoal       ClientGoal?          @relation("ClientCurrentGoal")
+  labOrders         LabOrder[]           @relation("ClientLabOrders")
 
   @@unique([professionalId, email])
   @@index([professionalId, status, createdAt])
@@ -467,6 +500,7 @@ model Meal {
   isConsumed Boolean    @default(false)
   logs       MealLog[]
 
+  @@index([dietPlanId])
   @@map("meals")
 }
 
@@ -488,6 +522,8 @@ model MealItem {
   recipeVersionId String?
   recipeVersion   RecipeVersion? @relation(fields: [recipeVersionId], references: [id], onDelete: Restrict)
 
+  @@index([mealId])
+  @@index([foodId])
   @@map("meal_items")
 }
 
@@ -570,8 +606,11 @@ model Workout {
   notes         String? @db.Text
 
   // 🔗 Relações
-  userId String // O Aluno
-  user   User   @relation("UserWorkouts", fields: [userId], references: [id], onDelete: Cascade)
+  userId String? // Identificador legado do aluno
+  user   User?   @relation("UserWorkouts", fields: [userId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  client   Client? @relation("ClientWorkouts", fields: [clientId], references: [id], onDelete: Restrict)
 
   creatorId String // O Personal Trainer
   creator   User   @relation("CreatedWorkouts", fields: [creatorId], references: [id])
@@ -584,6 +623,8 @@ model Workout {
   splits WorkoutSplit[] @relation("WorkoutToSplits")
   logs   WorkoutLog[]
 
+  @@index([creatorId, clientId, isActive])
+  @@index([clientId])
   @@map("workouts")
 }
 
@@ -599,6 +640,7 @@ model WorkoutSplit {
   exercises WorkoutExercise[] @relation("SplitToExercises")
   logs      WorkoutLog[]
 
+  @@index([workoutId])
   @@map("workout_splits")
 }
 
@@ -616,6 +658,7 @@ model WorkoutExercise {
 
   logSets WorkoutLogSet[]
 
+  @@index([splitId])
   @@map("workout_exercises")
 }
 
@@ -639,12 +682,20 @@ model PhysioAssessment {
 
   treatmentPlan String? @db.Text // Conduta / Plano de Tratamento
 
-  userId String
-  user   User   @relation("UserPhysioAssessments", fields: [userId], references: [id], onDelete: Cascade)
+  userId String?
+  user   User?   @relation("UserPhysioAssessments", fields: [userId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  client   Client? @relation("ClientPhysioAssessments", fields: [clientId], references: [id], onDelete: Restrict)
+
+  creatorId String?
+  creator   User?   @relation("CreatedPhysioAssessments", fields: [creatorId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([creatorId, clientId, date])
+  @@index([clientId, date])
   @@map("physio_assessments")
 }
 
@@ -656,8 +707,11 @@ model RehabPlan {
   durationWeeks Int?
   notes         String? @db.Text // Orientações para casa
 
-  userId String
-  user   User   @relation("UserRehabs", fields: [userId], references: [id], onDelete: Cascade)
+  userId String?
+  user   User?   @relation("UserRehabs", fields: [userId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  client   Client? @relation("ClientRehabPlans", fields: [clientId], references: [id], onDelete: Restrict)
 
   creatorId String
   creator   User   @relation("CreatedRehabs", fields: [creatorId], references: [id])
@@ -669,6 +723,8 @@ model RehabPlan {
 
   sessions RehabSession[] @relation("PlanToSessions")
 
+  @@index([creatorId, clientId, isActive])
+  @@index([clientId])
   @@map("rehab_plans")
 }
 
@@ -683,6 +739,7 @@ model RehabSession {
 
   exercises RehabExercise[] @relation("SessionToExercises")
 
+  @@index([rehabPlanId])
   @@map("rehab_sessions")
 }
 
@@ -697,6 +754,7 @@ model RehabExercise {
   sessionId String
   session   RehabSession @relation("SessionToExercises", fields: [sessionId], references: [id], onDelete: Cascade)
 
+  @@index([sessionId])
   @@map("rehab_exercises")
 }
 
@@ -770,9 +828,15 @@ model MealLog {
 }
 
 model DailyTracking {
-  id        String @id @default(uuid())
-  patientId String
-  patient   User   @relation(fields: [patientId], references: [id])
+  id        String  @id @default(uuid())
+  patientId String?
+  patient   User?   @relation("PatientTrackings", fields: [patientId], references: [id], onDelete: Restrict)
+
+  clientId String?
+  client   Client? @relation("ClientTrackings", fields: [clientId], references: [id], onDelete: Restrict)
+
+  professionalId String?
+  professional   User?   @relation("ProfessionalTrackings", fields: [professionalId], references: [id], onDelete: Restrict)
 
   type     String // Vai guardar "MEAL" ou "WORKOUT"
   itemName String // Ex: "Café da Manhã" ou "Treino A" (Salvamos o nome direto pra poupar processamento na hora de mostrar pro Nutri)
@@ -781,6 +845,9 @@ model DailyTracking {
 
   // Um index para deixar a busca do Nutricionista ultra rápida quando ele filtrar por mês/semana
   @@index([patientId, completedAt])
+  @@index([clientId, completedAt])
+  @@index([professionalId, completedAt])
+  @@index([professionalId, clientId, type, completedAt])
 }
 
 // Tabela 16: Anamnese Geral (Documento Intocável)
@@ -885,8 +952,11 @@ model Anamnesis {
   alcoholAndSmoking String? @db.Text
 
   // Relações
-  patientId String
-  patient   User   @relation("PatientAnamneses", fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String?
+  patient   User?   @relation("PatientAnamneses", fields: [patientId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  client   Client? @relation("ClientAnamneses", fields: [clientId], references: [id], onDelete: Restrict)
 
   creatorId String
   creator   User   @relation("CreatedAnamneses", fields: [creatorId], references: [id])
@@ -894,6 +964,8 @@ model Anamnesis {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([creatorId, clientId, createdAt])
+  @@index([clientId, createdAt])
   @@map("anamneses")
 }
 
@@ -905,8 +977,11 @@ model ConsultationNote {
   tags      String? // Ex: "aumento-proteina,retorno-30d" (CSV)
   nextSteps String? @db.Text // Próximos passos / follow-up
 
-  patientId String
-  patient   User   @relation("PatientConsultationNotes", fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String?
+  patient   User?   @relation("PatientConsultationNotes", fields: [patientId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  client   Client? @relation("ClientConsultationNotes", fields: [clientId], references: [id], onDelete: Restrict)
 
   creatorId String
   creator   User   @relation("CreatedConsultationNotes", fields: [creatorId], references: [id])
@@ -915,6 +990,8 @@ model ConsultationNote {
   updatedAt DateTime @updatedAt
 
   @@index([patientId, createdAt])
+  @@index([creatorId, clientId, createdAt])
+  @@index([clientId, createdAt])
   @@map("consultation_notes")
 }
 
@@ -923,8 +1000,11 @@ model SupplementPlan {
   title String // ex: Receituário Nutricional
   notes String? @db.Text
 
-  patientId String
-  patient   User   @relation("PatientSupplements", fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String?
+  patient   User?   @relation("PatientSupplements", fields: [patientId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  client   Client? @relation("ClientSupplementPlans", fields: [clientId], references: [id], onDelete: Restrict)
 
   creatorId String
   creator   User   @relation("CreatedSupplements", fields: [creatorId], references: [id])
@@ -934,6 +1014,8 @@ model SupplementPlan {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([creatorId, clientId, createdAt])
+  @@index([clientId, createdAt])
   @@map("supplement_plans")
 }
 
@@ -947,6 +1029,7 @@ model SupplementItem {
   planId String
   plan   SupplementPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
+  @@index([planId])
   @@map("supplement_items")
 }
 
@@ -956,8 +1039,11 @@ model LabExam {
   date  DateTime // Data da coleta do sangue
   notes String?  @db.Text
 
-  patientId String
-  patient   User   @relation("PatientLabExams", fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String?
+  patient   User?   @relation("PatientLabExams", fields: [patientId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  client   Client? @relation("ClientLabExams", fields: [clientId], references: [id], onDelete: Restrict)
 
   creatorId String
   creator   User   @relation("CreatedLabExams", fields: [creatorId], references: [id])
@@ -967,6 +1053,8 @@ model LabExam {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([creatorId, clientId, date])
+  @@index([clientId, date])
   @@map("lab_exams")
 }
 
@@ -980,6 +1068,7 @@ model LabMarker {
   examId String
   exam   LabExam @relation(fields: [examId], references: [id], onDelete: Cascade)
 
+  @@index([examId])
   @@map("lab_markers")
 }
 
@@ -1001,8 +1090,11 @@ model PatientAlert {
   severity AlertSeverity
   message  String // Ex: "Nenhum treino registrado há 6 dias."
 
-  patientId String
-  patient   User   @relation("PatientAlerts", fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String?
+  patient   User?   @relation("PatientAlerts", fields: [patientId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  client   Client? @relation("ClientAlerts", fields: [clientId], references: [id], onDelete: Restrict)
 
   professionalId String
   professional   User   @relation("ProfessionalAlerts", fields: [professionalId], references: [id], onDelete: Cascade)
@@ -1010,5 +1102,73 @@ model PatientAlert {
   createdAt DateTime @default(now())
 
   @@index([professionalId])
+  @@index([clientId, createdAt])
   @@map("patient_alerts")
+}
+
+enum ClientGoalCategory {
+  WEIGHT_LOSS
+  HYPERTROPHY
+  RECOMPOSITION
+  HEALTH_MAINTENANCE
+  PERFORMANCE
+}
+
+enum ClientGoalStatus {
+  ON_TRACK
+  AT_RISK
+  ACHIEVED
+  STAGNANT
+  PENDING
+}
+
+model ClientGoal {
+  id             String             @id @default(uuid())
+  clientId       String             @unique
+  client         Client             @relation("ClientCurrentGoal", fields: [clientId], references: [id], onDelete: Restrict)
+  professionalId String
+  professional   User               @relation("ProfessionalClientGoals", fields: [professionalId], references: [id], onDelete: Restrict)
+  category       ClientGoalCategory
+  status         ClientGoalStatus   @default(PENDING)
+  startDate      DateTime
+  targetDate     DateTime
+
+  targetWeightKg        Float?
+  targetBodyFatPercent  Float?
+  targetMuscleMassKg    Float?
+  startWeightKg         Float?
+  startBodyFatPercent   Float?
+  waterTargetMl         Int
+  sleepTargetHours      Float
+  mealsAdherencePercent Int
+  dailyStepsTarget      Int
+  habitsNotes           String? @db.Text
+  clinicalNotes         String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([professionalId, status, targetDate])
+  @@index([professionalId, updatedAt])
+  @@map("client_goals")
+}
+
+model LabOrder {
+  id                      String   @id @default(uuid())
+  clientId                String
+  client                  Client   @relation("ClientLabOrders", fields: [clientId], references: [id], onDelete: Restrict)
+  professionalId          String
+  professional            User     @relation("ProfessionalLabOrders", fields: [professionalId], references: [id], onDelete: Restrict)
+  title                   String?
+  markers                 String[]
+  clinicalIndication      String?  @db.Text
+  preparationInstructions String?  @db.Text
+  issuedAt                DateTime @default(now())
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([professionalId, clientId, issuedAt])
+  @@index([clientId, issuedAt])
+  @@index([professionalId, issuedAt])
+  @@map("lab_orders")
 }

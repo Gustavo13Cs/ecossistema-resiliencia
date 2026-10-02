@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { lockOwnedClient } from '../../common/client-access/lock-owned-client';
 import { PrismaService } from '../../infra/database/prisma.service';
 import {
   CreateDietPlanDto,
@@ -73,6 +74,7 @@ export class DietPlansService {
         createDietDto,
         creatorId,
       );
+      await lockOwnedClient(tx, target.clientId, creatorId);
       const preparedMeals = await this.prepareMeals(
         tx,
         createDietDto.meals,
@@ -609,6 +611,7 @@ export class DietPlansService {
       : null;
 
     return this.prisma.$transaction(async (tx) => {
+      await lockOwnedClient(tx, dto.clientId, creatorId);
       const preparedMeals: MealSourceInput[] = [];
 
       for (const meal of templateData.meals) {

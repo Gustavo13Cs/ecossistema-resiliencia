@@ -29,13 +29,13 @@
 | 2.2 | Navegação profissional no Sidebar (filtrar por role) | 🔄 | Codex |
 | 2.3 | Dashboard por atuação profissional | 🔄 | Codex |
 | 2.4 | Migrar dietas de User para Client | ✅ | Codex |
-| 2.5 | Migrar treinos de User para Client | ⏳ | — |
+| 2.5 | Migrar treinos de User para Client | 🔄 | Codex |
 | 2.6 | Migrar avaliações de User para Client | 🔄 | Codex |
-| 2.7 | Migrar reabilitação de User para Client | ⏳ | — |
-| 2.8 | Migrar anamnese de User para Client | ⏳ | — |
-| 2.9 | Migrar suplementos de User para Client | ⏳ | — |
-| 2.10 | Migrar exames lab de User para Client | ⏳ | — |
-| 2.11 | Remover fluxos legados de paciente (ProfessionalPatientLink, /membros, /paciente) | ⏳ | — |
+| 2.7 | Migrar reabilitação de User para Client | 🔄 | Codex |
+| 2.8 | Migrar anamnese de User para Client | 🔄 | Codex |
+| 2.9 | Migrar suplementos de User para Client | 🔄 | Codex |
+| 2.10 | Migrar exames lab de User para Client | 🔄 | Codex |
+| 2.11 | Remover fluxos legados de paciente (ProfessionalPatientLink, /membros, /paciente) | 🔄 | Codex |
 | 2.12 | Agenda profissional de atendimentos vinculada a Client | ✅ | Codex |
 
 ---
@@ -64,7 +64,7 @@
 | 4.5 | Documentação de API (Swagger/OpenAPI) | ⏳ | — |
 | 4.6 | Monitoramento de performance (bundle size, query time) | ⏳ | — |
 | 4.7 | Endurecer Data API, grants e RLS defensivo no Supabase | ✅ | Codex |
-| 4.8 | Análise profunda Codex Security da revisão `dcca5e5` (scan `59ed9fc0-0027-42b9-8530-7c8c47cdba48`) | 🔄 Em andamento | Codex |
+| 4.8 | Remediar os 15 achados da auditoria de segurança e qualidade | ✅ | Codex |
 
 ---
 
@@ -87,3 +87,12 @@
 2. **Ao iniciar**: mude o status para 🔄 e coloque seu nome na coluna "Agente"
 3. **Ao concluir**: mude o status para ✅
 4. **Se bloqueado**: mude para ❌ e descreva o impedimento em `docs/agents/<SEU_STATUS>.md`
+
+### Remediação de segurança — Codex
+- ✅ Review final do PR #22 (Codex): cache do protocolo invalidado antes de navegar; criação/substituição com o mesmo QueryClient real em menos de 60 segundos, consulta ativa e erro cobertos. 9 testes focais, tipos/lint/build aprovados localmente; conferir checks após push.
+- ✅ Correção do CI do PR #22 (Codex): gate standalone compatível com o artefato do Vercel, preservando os checks local/Docker; 44 testes, tipos/lint/build aprovados localmente. Conferir o deployment do novo HEAD após push.
+- ✅ Review do PR #22 (Codex): índice legado sem reescrever histórico, refresh resiliente a 500 e invalidação da central de exames; [validação e limites](runbooks/pr22-review-corrections.md).
+- [x] Plano A: ownership por Client, schema e retirada do runtime legado — concluído no worktree de segurança.
+- [x] Plano B: persistência server-only, impressão escapada e CSP — concluído (Codex); jornada real e gate de HTML dinâmico aprovados.
+- [x] Plano C: sessões revogáveis e dependências — concluído (Codex); 11 testes HTTP reais e jornada Cypress aprovados.
+- [x] Plano D: operação, índices e gates de qualidade — concluído no worktree (Codex). Evidência e limites: [verificação final](runbooks/security-remediation-verification.md). Sem publicação ou migrations em produção.

@@ -1,18 +1,33 @@
-import { IsString, IsNotEmpty, IsArray, ValidateNested, IsNumber, IsDateString, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsArray,
+  ValidateNested,
+  IsNumber,
+  IsDateString,
+  IsOptional,
+  IsUUID,
+  MaxLength,
+  ArrayMinSize,
+  ArrayMaxSize,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
-class MarkerDto {
-  @IsString() @IsNotEmpty() name!: string;
-  @IsNumber() @IsNotEmpty() value!: number;
-  @IsString() @IsNotEmpty() unit!: string;
+export class MarkerDto {
+  @IsString() @IsNotEmpty() @MaxLength(200) name!: string;
+  @IsNumber() @Min(-1e12) @Max(1e12) value!: number;
+  @IsString() @IsNotEmpty() @MaxLength(100) unit!: string;
 }
 
 export class CreateLabExamDto {
-  @IsString() @IsNotEmpty() patientId!: string;
+  @IsUUID() clientId!: string;
   @IsDateString() @IsNotEmpty() date!: string;
-  @IsOptional() @IsString() notes?: string;
-
+  @IsOptional() @IsString() @MaxLength(10000) notes?: string;
   @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(200)
   @ValidateNested({ each: true })
   @Type(() => MarkerDto)
   markers!: MarkerDto[];

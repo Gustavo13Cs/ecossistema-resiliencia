@@ -1,14 +1,14 @@
-import { IsString, IsOptional, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsUUID,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateConsultationNoteDto {
-  @IsString()
-  @IsNotEmpty()
-  patientId: string;
-
-  @IsString()
-  @IsNotEmpty()
-  content: string;
-
-  @IsOptional() @IsString() tags?: string;
-  @IsOptional() @IsString() nextSteps?: string;
+  @IsUUID() clientId!: string;
+  @IsString() @MinLength(1) @MaxLength(20000) content!: string;
+  @IsOptional() @IsString() @MaxLength(1000) tags?: string;
+  @IsOptional() @IsString() @MaxLength(10000) nextSteps?: string;
 }

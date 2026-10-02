@@ -40,7 +40,9 @@ describe('AssessmentsService professional Client ownership', () => {
   });
 
   it('creates an assessment only after resolving an owned Client', async () => {
-    const create = service.create.bind(service) as unknown as ProfessionalCreate;
+    const create = service.create.bind(
+      service,
+    ) as unknown as ProfessionalCreate;
 
     await create(
       { clientId: CLIENT_ID, weight: 72.4 } as unknown as CreateAssessmentDto,
@@ -62,7 +64,9 @@ describe('AssessmentsService professional Client ownership', () => {
 
   it('rejects a Client owned by another professional before writing', async () => {
     prisma.client.findFirst.mockResolvedValue(null);
-    const create = service.create.bind(service) as unknown as ProfessionalCreate;
+    const create = service.create.bind(
+      service,
+    ) as unknown as ProfessionalCreate;
 
     await expect(
       create(
@@ -89,7 +93,9 @@ describe('AssessmentsService professional Client ownership', () => {
 
   it('does not delete an assessment owned by another professional', async () => {
     prisma.physicalAssessment.findFirst.mockResolvedValue(null);
-    const remove = service.remove.bind(service) as unknown as ProfessionalRemove;
+    const remove = service.remove.bind(
+      service,
+    ) as unknown as ProfessionalRemove;
 
     await expect(
       remove('assessment-1', PROFESSIONAL_ID),

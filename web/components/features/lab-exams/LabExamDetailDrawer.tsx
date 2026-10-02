@@ -1,11 +1,12 @@
 "use client"
 
-import React from "react"
+import React, { useRef, useState } from "react"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import {
@@ -28,7 +29,7 @@ interface LabExamDetailDrawerProps {
   exam: ConsolidatedLabExam | null
   isOpen: boolean
   onClose: () => void
-  onDelete?: (examId: string) => void
+  onDelete?: (examId: string) => Promise<void>
   onOpenChart?: (clientId: string) => void
 }
 
@@ -39,6 +40,9 @@ export const LabExamDetailDrawer: React.FC<LabExamDetailDrawerProps> = ({
   onDelete,
   onOpenChart,
 }) => {
+  const pending = useRef(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   if (!exam) return null
 
   // Group markers by category
@@ -67,15 +71,26 @@ export const LabExamDetailDrawer: React.FC<LabExamDetailDrawerProps> = ({
     (m) => m.status === "ALERT" || m.status === "BORDERLINE"
   ).length
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
+    if (pending.current || !onDelete) return
     if (confirm(`Tem certeza que deseja excluir este laudo do paciente ${exam.clientName}?`)) {
-      if (onDelete) onDelete(exam.id)
-      onClose()
+      pending.current = true
+      setDeleting(true)
+      setDeleteError(null)
+      try {
+        await onDelete(exam.id)
+        onClose()
+      } catch {
+        setDeleteError("Não foi possível excluir o exame.")
+      } finally {
+        pending.current = false
+        setDeleting(false)
+      }
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !pending.current) onClose() }}>
       <DialogContent className="sm:max-w-5xl md:max-w-6xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-8">
         <DialogHeader className="space-y-3 pb-5 border-b border-border">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -101,6 +116,7 @@ export const LabExamDetailDrawer: React.FC<LabExamDetailDrawerProps> = ({
             <DialogTitle className="text-2xl font-bold tracking-tight text-foreground">
               {exam.clientName}
             </DialogTitle>
+            <DialogDescription className="sr-only">Resultados laboratoriais registrados para este cliente.</DialogDescription>
 
             <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
               <div className="flex items-center gap-1.5 bg-secondary/60 px-2.5 py-1 rounded-md border border-border/50">
@@ -130,6 +146,7 @@ export const LabExamDetailDrawer: React.FC<LabExamDetailDrawerProps> = ({
         </DialogHeader>
 
         <div className="space-y-6 pt-4">
+          {deleteError && <p role="alert" className="text-sm text-destructive">{deleteError}</p>}
           {/* PDF Attachment Banner */}
           {exam.pdfAttachment && (
             <div className="rounded-xl bg-secondary/40 border border-border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -302,6 +319,7 @@ export const LabExamDetailDrawer: React.FC<LabExamDetailDrawerProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={handleDelete}
+                  disabled={deleting}
                   className="text-muted-foreground hover:text-rose-500 text-xs gap-1.5 cursor-pointer flex-1 sm:flex-none"
                 >
                   <Trash2 className="h-3.5 w-3.5" /> Excluir Laudo
@@ -313,6 +331,7 @@ export const LabExamDetailDrawer: React.FC<LabExamDetailDrawerProps> = ({
               type="button"
               variant="outline"
               onClick={onClose}
+              disabled={deleting}
               className="cursor-pointer text-xs w-full sm:w-auto"
             >
               Fechar

@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import AxiosMockAdapter from "axios-mock-adapter"
@@ -91,6 +91,16 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe("professional Client record", () => {
+  it("opens and saves the physiotherapy assessment for the current Client", async () => {
+    http.onPost("/physio-assessments").reply(201, { id: "assessment-one" })
+    renderPage()
+    fireEvent.click(screen.getByRole("button", { name: "Nova avaliação fisioterapêutica" }))
+    fireEvent.change(screen.getByPlaceholderText(/dor no joelho/i), { target: { value: "Queixa sintética" } })
+    fireEvent.click(screen.getByRole("button", { name: "Salvar Avaliação Fisioterapêutica" }))
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Salvar Avaliação Fisioterapêutica" })).not.toBeInTheDocument())
+    expect(JSON.parse(http.history.post[0].data as string)).toMatchObject({ clientId: "client-one", chiefComplaint: "Queixa sintética" })
+  })
+
   it.each([
     ["NUTRITIONIST", "Área de Nutrição", "Contexto nutricional", "Alergias e restrições", "Planos alimentares em migração"],
     ["PERSONAL", "Área de Treinamento", "Contexto de treinamento", "Acompanhamento com personal", "Planilhas de treino em migração"],

@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { DatabaseModule } from '../../infra/database/database.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '../../common/strategies/jwt.strategy';
+import { AuthSessionService } from './auth-session.service';
 
 @Module({
   imports: [
@@ -22,13 +23,14 @@ import { JwtStrategy } from '../../common/strategies/jwt.strategy';
         return {
           global: true,
           secret,
-          signOptions: { expiresIn: '7d' },
+          signOptions: { expiresIn: '15m' },
         };
       },
     }),
     DatabaseModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy], // ← JwtStrategy registrada aqui
+  providers: [AuthService, AuthSessionService, JwtStrategy],
+  exports: [AuthSessionService],
 })
 export class AuthModule {}

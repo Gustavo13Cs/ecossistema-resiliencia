@@ -121,7 +121,7 @@ describe("SafeMove professional phase one over real HTTP", () => {
         ))
         .join("\n")
 
-      expect(persisted).not.to.match(/access_token|csrf|Cliente privado A|diet_draft_/i)
+      expect(persisted).not.to.match(/access_token|refresh_token|csrf|Cliente privado A|diet_draft_|safemove_client_goals|safemove_central_lab_exams|safemove_issued_lab_orders/i)
     })
   })
 
@@ -149,12 +149,13 @@ describe("SafeMove professional phase one over real HTTP", () => {
     })
   })
 
-  it("clears rendered clinical state after session expiration", () => {
+  it("clears rendered clinical state when both access and refresh credentials are gone", () => {
     cy.loginAs("NUTRITIONIST")
     cy.visit("/clientes/41000000-0000-4000-8000-000000000001")
     cy.findByText("Cliente privado A").should("be.visible")
 
     cy.clearCookie("access_token")
+    cy.clearCookie("refresh_token")
     cy.reload()
     cy.location("pathname", { timeout: 20_000 }).should("eq", "/auth/login")
     cy.contains("Cliente privado A").should("not.exist")

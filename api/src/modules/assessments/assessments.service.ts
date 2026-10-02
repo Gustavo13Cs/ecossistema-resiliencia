@@ -96,7 +96,9 @@ export class AssessmentsService {
     if (!userId) throw new NotFoundException('Cliente não encontrado');
 
     const legacyLink = await this.prisma.professionalPatientLink.findUnique({
-      where: { professionalId_patientId: { professionalId, patientId: userId } },
+      where: {
+        professionalId_patientId: { professionalId, patientId: userId },
+      },
       select: { id: true, isActive: true },
     });
     if (!legacyLink?.isActive) {
@@ -119,5 +121,4 @@ export class AssessmentsService {
     });
     if (!client) throw new NotFoundException('Cliente não encontrado');
   }
-
 }

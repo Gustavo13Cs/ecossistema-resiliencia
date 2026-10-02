@@ -1,8 +1,7 @@
 import { resolve } from "node:path"
-import { assertDirectionContractArtifacts } from "./direction-contract-artifacts.mjs"
+import { assertProductionDirectionContracts } from "./direction-contract-production.mjs"
 
-const artifactsRoot = resolve(process.cwd(), ".next/server/app")
-const result = assertDirectionContractArtifacts(artifactsRoot)
+const result = await assertProductionDirectionContracts(resolve(process.cwd()))
 console.log(
-  `Native-safe exact direction contract validated in ${result.checkedArtifacts}/${result.checkedArtifacts} root-layout production HTML artifacts; _global-error.html explicitly excluded.`,
+  `Exact direction contract and CSP nonces validated in ${result.checkedRoutes}/${result.checkedRoutes} served production pages; internal error pages explicitly excluded.`,
 )

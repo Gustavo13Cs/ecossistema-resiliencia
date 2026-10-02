@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useRef } from "react"
 import {
   Dialog,
   DialogContent,
@@ -14,8 +14,6 @@ import { Textarea } from "@/components/ui/textarea"
 import {
   Plus,
   Trash2,
-  Upload,
-  FileText,
   FlaskConical,
   CheckCircle2,
   AlertTriangle,
@@ -25,6 +23,8 @@ import {
   CLINICAL_MARKERS_DICTIONARY,
   evaluateMarkerValue,
   ClientOption,
+  CreateExamInput,
+  ConsolidatedLabExam,
 } from "@/types/lab-exam"
 import { toast } from "sonner"
 
@@ -33,15 +33,7 @@ interface ExamRegistryModalProps {
   onClose: () => void
   clients: ClientOption[]
   defaultClientId?: string
-  onSubmit: (data: {
-    clientId: string
-    clientName: string
-    date: string
-    laboratoryName?: string
-    notes?: string
-    markers: { name: string; value: number; unit: string }[]
-    pdfAttachment?: { name: string; sizeBytes: number; uploadedAt: string }
-  }) => Promise<any>
+  onSubmit: (data: CreateExamInput) => Promise<ConsolidatedLabExam>
 }
 
 interface MarkerRow {
@@ -61,37 +53,20 @@ export const ExamRegistryModal: React.FC<ExamRegistryModalProps> = ({
     defaultClientId || (clients[0]?.id ?? "")
   )
   const [date, setDate] = useState<string>(new Date().toISOString().split("T")[0])
-  const [laboratoryName, setLaboratoryName] = useState<string>("")
   const [notes, setNotes] = useState<string>("")
   const [submitting, setSubmitting] = useState<boolean>(false)
 
+  const submissionPending = useRef(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   // Markers state
   const [markers, setMarkers] = useState<MarkerRow[]>([
-    { name: "Glicemia de Jejum", value: "89", unit: "mg/dL" },
-    { name: "Hemoglobina Glicada (HbA1c)", value: "5.2", unit: "%" },
-    { name: "Colesterol Total", value: "185", unit: "mg/dL" },
-    { name: "HDL Colesterol", value: "54", unit: "mg/dL" },
-    { name: "LDL Colesterol", value: "105", unit: "mg/dL" },
-    { name: "Triglicerídeos", value: "120", unit: "mg/dL" },
+    { name: "Glicemia de Jejum", value: "", unit: "mg/dL" },
+    { name: "Hemoglobina Glicada (HbA1c)", value: "", unit: "%" },
+    { name: "Colesterol Total", value: "", unit: "mg/dL" },
+    { name: "HDL Colesterol", value: "", unit: "mg/dL" },
+    { name: "LDL Colesterol", value: "", unit: "mg/dL" },
+    { name: "Triglicerídeos", value: "", unit: "mg/dL" },
   ])
-
-  // PDF upload simulation
-  const [attachedPdf, setAttachedPdf] = useState<{
-    name: string
-    sizeBytes: number
-    uploadedAt: string
-  } | null>(null)
-
-  // Reset when opened
-  React.useEffect(() => {
-    if (isOpen) {
-      if (defaultClientId) {
-        setSelectedClientId(defaultClientId)
-      } else if (clients.length > 0 && !selectedClientId) {
-        setSelectedClientId(clients[0].id)
-      }
-    }
-  }, [isOpen, defaultClientId, clients, selectedClientId])
 
   const handleMarkerChange = (index: number, field: keyof MarkerRow, val: string) => {
     const updated = [...markers]
@@ -146,24 +121,9 @@ export const ExamRegistryModal: React.FC<ExamRegistryModalProps> = ({
     }
   }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      if (!file.name.endsWith(".pdf") && !file.type.includes("pdf")) {
-        toast.error("Por favor, selecione um arquivo em formato PDF.")
-        return
-      }
-      setAttachedPdf({
-        name: file.name,
-        sizeBytes: file.size,
-        uploadedAt: new Date().toISOString().split("T")[0],
-      })
-      toast.success(`Laudo anexado: ${file.name}`)
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submissionPending.current) return
 
     if (!selectedClientId) {
       toast.error("Selecione um cliente.")
@@ -183,24 +143,22 @@ export const ExamRegistryModal: React.FC<ExamRegistryModalProps> = ({
       return
     }
 
-    const client = clients.find((c) => c.id === selectedClientId)
-    const clientName = client ? client.name : "Paciente"
+    submissionPending.current = true
+    setSaveError(null)
 
     setSubmitting(true)
     try {
       await onSubmit({
         clientId: selectedClientId,
-        clientName,
         date,
-        laboratoryName: laboratoryName.trim() || undefined,
         notes: notes.trim() || undefined,
         markers: validMarkers,
-        pdfAttachment: attachedPdf || undefined,
       })
       onClose()
     } catch {
-      // Handled in hook
+      setSaveError("Não foi possível salvar o exame. Seus dados continuam neste formulário.")
     } finally {
+      submissionPending.current = false
       setSubmitting(false)
     }
   }
@@ -208,7 +166,7 @@ export const ExamRegistryModal: React.FC<ExamRegistryModalProps> = ({
   const dictionaryOptions = Object.keys(CLINICAL_MARKERS_DICTIONARY).sort()
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !submissionPending.current) onClose() }}>
       <DialogContent className="sm:max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader className="space-y-1 pb-3 border-b border-border">
           <div className="flex items-center gap-2 text-primary">
@@ -221,7 +179,7 @@ export const ExamRegistryModal: React.FC<ExamRegistryModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-5 pt-2">
+        <form onSubmit={handleSubmit} className="pt-2"><fieldset disabled={submitting} className="space-y-5">
           {/* Header Row: Client, Date, Lab */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
@@ -258,17 +216,7 @@ export const ExamRegistryModal: React.FC<ExamRegistryModalProps> = ({
               />
             </div>
 
-            <div>
-              <label className="text-xs font-semibold text-foreground block mb-1">
-                Laboratório
-              </label>
-              <Input
-                placeholder="Ex: Fleury, Dasa, Sabin..."
-                value={laboratoryName}
-                onChange={(e) => setLaboratoryName(e.target.value)}
-                className="text-sm"
-              />
-            </div>
+
           </div>
 
           {/* Quick preset buttons */}
@@ -412,55 +360,6 @@ export const ExamRegistryModal: React.FC<ExamRegistryModalProps> = ({
             </datalist>
           </div>
 
-          {/* PDF Upload Simulator */}
-          <div className="rounded-lg border border-dashed border-border p-4 bg-muted/20">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
-                  <Upload className="h-5 w-5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-semibold text-foreground">Anexo de Laudo Digital (PDF)</h4>
-                  <p className="text-[11px] text-muted-foreground">
-                    Armazenamento seguro do laudo escaneado ou original emitido pelo laboratório
-                  </p>
-                </div>
-              </div>
-
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-secondary hover:bg-secondary/80 text-foreground px-3 py-1.5 rounded-md border border-border transition-colors">
-                  <FileText className="h-3.5 w-3.5" />
-                  {attachedPdf ? "Trocar Arquivo" : "Selecionar PDF"}
-                </span>
-              </label>
-            </div>
-
-            {attachedPdf && (
-              <div className="mt-3 flex items-center justify-between bg-card rounded-md p-2.5 border border-border text-xs">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-emerald-500" />
-                  <span className="font-medium text-foreground">{attachedPdf.name}</span>
-                  <span className="text-[11px] text-muted-foreground">
-                    ({Math.round(attachedPdf.sizeBytes / 1024)} KB)
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setAttachedPdf(null)}
-                  className="text-muted-foreground hover:text-rose-500 text-xs cursor-pointer"
-                >
-                  Remover
-                </button>
-              </div>
-            )}
-          </div>
-
           {/* Notes */}
           <div>
             <label className="text-xs font-semibold text-foreground block mb-1">
@@ -475,6 +374,7 @@ export const ExamRegistryModal: React.FC<ExamRegistryModalProps> = ({
             />
           </div>
 
+          {saveError && <p role="alert" className="text-sm text-destructive">{saveError}</p>}
           {/* Footer actions */}
           <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border">
             <Button
@@ -494,7 +394,7 @@ export const ExamRegistryModal: React.FC<ExamRegistryModalProps> = ({
               {submitting ? "Salvando..." : "Registrar Laudo"}
             </Button>
           </div>
-        </form>
+        </fieldset></form>
       </DialogContent>
     </Dialog>
   )

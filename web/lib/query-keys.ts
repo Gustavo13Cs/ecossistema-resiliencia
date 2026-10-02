@@ -3,6 +3,12 @@ import type { AppointmentStatus } from "@/types/appointment"
 import type { RecipeFilters } from "@/types/recipe"
 
 export const queryKeys = {
+  centralLabExams: (sessionUserId: string) => ["central-lab-exams", sessionUserId] as const,
+  labOrders: (sessionUserId: string) => ["lab-orders", sessionUserId] as const,
+  clientGoals: (sessionUserId: string) => ["client-goals", sessionUserId] as const,
+  supplements: (sessionUserId: string, clientId: string) => ["supplements", sessionUserId, clientId] as const,
+  labExams: (sessionUserId: string, clientId: string) => ["lab-exams", sessionUserId, clientId] as const,
+  rehabPlan: (sessionUserId: string, clientId: string) => ["rehab-plan", sessionUserId, clientId] as const,
   users: (sessionUserId: string) => ["users", sessionUserId] as const,
   clients: (sessionUserId: string, status: ClientStatus) =>
     ["clients", sessionUserId, status] as const,
@@ -11,7 +17,7 @@ export const queryKeys = {
   assessments: (sessionUserId: string, patientId: string) => ["assessments", sessionUserId, patientId] as const,
   anamneses: (sessionUserId: string, patientId: string) => ["anamneses", sessionUserId, patientId] as const,
   diet: (sessionUserId: string, patientId: string) => ["diet", sessionUserId, patientId] as const,
-  patientOverview: (sessionUserId: string, patientId: string) => ["patient-overview", sessionUserId, patientId] as const,
+  patientOverview: (sessionUserId: string, clientId: string) => ["patient-overview", sessionUserId, clientId] as const,
   professionalAlerts: (sessionUserId: string) => ["professional-alerts", sessionUserId] as const,
   agenda: (sessionUserId: string, patientId: string, from: string, to: string) => ["agenda", sessionUserId, patientId, from, to] as const,
   appointmentsRoot: (sessionUserId: string) => ["appointments", sessionUserId] as const,

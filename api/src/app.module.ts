@@ -9,7 +9,6 @@ import { DatabaseModule } from './infra/database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { WorkoutsModule } from './modules/workouts/workouts.module';
-import { MetricsModule } from './modules/metrics/metrics.module';
 import { DietPlansModule } from './modules/diet-plans/diet-plans.module';
 import { FoodsModule } from './modules/foods/foods.module';
 import { AssessmentsModule } from './modules/assessments/assessments.module';
@@ -19,12 +18,16 @@ import { AnamnesesModule } from './modules/anamneses/anamneses.module';
 import { SupplementsModule } from './modules/supplements/supplements.module';
 import { LabExamsModule } from './modules/lab-exams/lab-exams.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
-import { AgendaModule } from './modules/agenda/agenda.module';
 import { ConsultationNotesModule } from './modules/consultation-notes/consultation-notes.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { AppController } from '../app.controller';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { RecipesModule } from './modules/recipes/recipes.module';
+import { ClientGoalsModule } from './modules/client-goals/client-goals.module';
+import { LabOrdersModule } from './modules/lab-orders/lab-orders.module';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+
+export const GLOBAL_JWT_AUTH_GUARD = 'GLOBAL_JWT_AUTH_GUARD';
 
 @Module({
   imports: [
@@ -39,7 +42,6 @@ import { RecipesModule } from './modules/recipes/recipes.module';
     AuthModule,
     UsersModule,
     WorkoutsModule,
-    MetricsModule,
     DietPlansModule,
     FoodsModule,
     AssessmentsModule,
@@ -49,14 +51,17 @@ import { RecipesModule } from './modules/recipes/recipes.module';
     SupplementsModule,
     LabExamsModule,
     AlertsModule,
-    AgendaModule,
     ConsultationNotesModule,
     ClientsModule,
     AppointmentsModule,
     RecipesModule,
+    ClientGoalsModule,
+    LabOrdersModule,
   ],
   controllers: [AppController],
   providers: [
+    { provide: GLOBAL_JWT_AUTH_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useExisting: GLOBAL_JWT_AUTH_GUARD },
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

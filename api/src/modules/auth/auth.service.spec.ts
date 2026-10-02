@@ -1,4 +1,4 @@
-import { JwtService } from '@nestjs/jwt';
+import { AuthSessionService } from './auth-session.service';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { RegisterDto } from './dto/register.dto';
@@ -18,7 +18,7 @@ describe('AuthService registration', () => {
       create: jest.fn<Promise<MockUser>, [unknown]>(),
     },
   };
-  const jwtService = { signAsync: jest.fn() };
+  const sessions = { create: jest.fn() };
   let service: AuthService;
   let capturedUserCreateArgs: unknown;
 
@@ -32,7 +32,7 @@ describe('AuthService registration', () => {
     });
     service = new AuthService(
       prisma as unknown as PrismaService,
-      jwtService as unknown as JwtService,
+      sessions as unknown as AuthSessionService,
     );
   });
 
@@ -80,7 +80,7 @@ describe('AuthService registration', () => {
       password,
       role: 'PHYSIO',
     });
-    jwtService.signAsync.mockResolvedValue('signed-token');
+    sessions.create.mockResolvedValue({ access_token: 'signed-token' });
 
     await service.login({
       email: '  PHYSIO@Example.Test  ',
@@ -89,7 +89,18 @@ describe('AuthService registration', () => {
 
     expect(prisma.user.findUnique).toHaveBeenCalledWith({
       where: { email: 'physio@example.test' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        password: true,
+        authVersion: true,
+      },
     });
+    expect(sessions.create).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'pro-1' }),
+    );
   });
 
   it('does not replace a missing role with PATIENT', async () => {

@@ -8,19 +8,15 @@
 
 ## Current Task
 
-- **Tarefa em andamento**: Continuação do Codex Security Deep Scan `59ed9fc0-0027-42b9-8530-7c8c47cdba48`
-- **Status da análise**: Em andamento; contexto oficial carregado para todo o repositório na revisão `dcca5e591e9ebda2dd57fb94a40153af99355767`. Execução e artefatos sob responsabilidade do plugin Codex Security.
-- **Branch de acompanhamento**: `agent/codex/security-scan-2026-09-30`
-- **Início da análise**: 2026-09-30
-
-### Entrega anterior
-
-- **Tarefa**: Banco de Receitas versionado, macros por porção, filtros de restrição e associação a planos alimentares
-- **Status**: Implementação e merge local concluídos no commit `154bac9`, com impressão A4 conciliada e revisão independente sem Critical/Important pendentes. Gates da funcionalidade aprovados; publicação e aplicação da migration de receitas em produção não realizadas.
-- **Branch**: `codex/BancodeReceitas`
-- **Início**: 2026-09-21
-- **Conclusão**: 2026-09-28
-- **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migration versionada desta funcionalidade
+- **Tarefa**: Corrigir cache desatualizado do protocolo de reabilitação no PR #22
+- **Status**: Correção concluída e verificada localmente em 2026-10-02: 9 testes focais, tipos/lint/build aprovados; criação/substituição, consulta ativa, isolamento de cache e falha de salvamento cobertos. Validação remota após push.
+- **Branch**: `agent/codex/security-remediation`
+- **Início**: 2026-09-29
+- **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migrations versionadas necessárias à remediação
+- **Worktree**: `.worktrees/security/security-remediation`
+- **Plano atual**: Invalidar a chave por profissional/Client após salvar; testar criação/substituição no mesmo QueryClient real, consulta ativa e erro de salvamento; validar e publicar.
+- **Próximo gate**: verificar os checks do PR #22 após publicar a correção. Sem merge ou comandos de banco.
+- **Coordenação**: o status do Antigravity ainda cita uma tarefa iniciada em 2026-09-22, mas não há branch/worktree detectável para ela; confirmar antes de alterar auth, package files ou `.gitignore` fora deste worktree
 
 ---
 
@@ -28,6 +24,10 @@
 
 | Data | Tarefa | Branch |
 |------|--------|--------|
+| 2026-10-02 | PR #22: cache do protocolo invalidado por profissional/Client antes de navegar; 9 testes focais com QueryClient real, tipos/lint/build aprovados | `agent/codex/security-remediation` |
+| 2026-10-02 | PR #22: gate standalone compatível com o output do Vercel; 44 regressões/configuração, tipos/lint/build e CSP em 28 páginas aprovados localmente | `agent/codex/security-remediation` |
+| 2026-10-02 | PR #22: índice legado com histórico preservado, refresh resiliente a 500 e cache da central de exames; 472 API/374 web/12 PostgreSQL e builds/tipos/lint aprovados | `agent/codex/security-remediation` |
+| 2026-10-02 | Remediação dos 15 achados: Client ownership, persistência, XSS/CSP, sessões, runtime, operação e qualidade; verificação completa local | `agent/codex/security-remediation` |
 | 2026-09-03 | Dashboard profissional com dados reais, terminologia por profissão e filtro de arquivados | `codex/safemove-professional-frontend-phase-1` |
 | 2026-09-04 | Diretório responsivo e cadastro de prontuário orientado por profissão | `codex/safemove-professional-frontend-phase-1` |
 | 2026-09-04 | Prontuário modular por profissão e remoção segura de rascunhos clínicos locais | `codex/safemove-professional-frontend-phase-1` |
@@ -43,11 +43,64 @@
 
 ## Blocked
 
-- Gates globais do frontend têm pendências preexistentes fora do Banco de Receitas: ESLint em `useClientGoals.ts` (`react-hooks/preserve-manual-memoization`) e Cypress de `professional-agenda.cy.ts` (botão de fechamento recortado pelo overflow). Não foram adicionadas supressões nem alterados esses fluxos nesta entrega.
+- Nenhum gate local bloqueado na conclusão de 2026-10-02. As pendências antigas de lint em `useClientGoals.ts` e fechamento da agenda foram resolvidas; suites completas aprovadas sem adicionar supressões, force-click ou aumento de timeouts.
 
 ---
 
 ## Notes
+
+### PR #22 — cache do protocolo de reabilitação em 2026-10-02
+
+- Causa confirmada no HEAD `ef34f9b`: `useFisio` usa a chave `rehabPlan` com staleTime de 60 segundos; o editor fazia POST/sucesso/navegação sem invalidá-la. A correção pertence ao salvamento, mantendo o hook e a configuração global.
+- Após POST concluído, aguarda invalidação exata por profissional/Client antes do toast e da navegação. Consulta inativa refaz GET ao reabrir; consulta ativa é atualizada antes de navegar. Erro no POST preserva protocolo/cache e mantém o editor.
+- Três regressões falharam antes da correção e passaram depois: primeiro protocolo após cache null, substituição com exercícios/orientações novos e consumidor já montado. As duas jornadas reabrem `/reabilitacao` no mesmo QueryClient de produção, antes de 60 segundos, sem invalidar outros clientes/profissionais.
+- 9/9 testes focais (6 contratos + 3 do hook), typecheck, lint e build aprovados; pós-build valida CSP nas 28 páginas e standalone sem dev packages/arquivos de ambiente. HTTP simulado nos testes de integração; nenhum comando de banco ou merge. O CI/Vercel anterior passou no commit `ef34f9b`; conferir os checks do novo HEAD após push.
+
+### PR #22 — correção do CI Vercel em 2026-10-02
+
+- `gh pr checks` apontou somente o Vercel como falha no HEAD `8e15c8d`; os quatro jobs Actions passaram (run `37021935878`). A CLI autenticada recuperou os logs de `dpl_61skD2NdsPS69hL5W7Acs5gL3Kn7` após o conector de build logs retornar Tool not found.
+- Causa: compilação/tipos/CSP concluídos, mas `assert-standalone-runtime.mjs` exigia `server.js` no artefato gerenciado pelo Vercel. A validação agora reconhece `VERCEL=1` somente quando não há standalone nem caminho explícito; artefatos emitidos continuam inspecionados.
+- Regressão reproduzida antes da correção; depois, 44/44 testes dos scripts/configuração, lint, typecheck e build aprovados. Pós-build: 28/28 páginas com CSP e 297 diretórios standalone sem dev packages/arquivos de ambiente. Sem alterações de dependências, workflow ou banco.
+- Este registro acompanha o commit da correção; conferir o deployment/check do novo HEAD após push antes de considerar o gate remoto aprovado.
+
+### PR #22 — correções de review em 2026-10-02
+
+- Base atualizada por fast-forward até `341931e`, preservando os commits externos e trabalho anterior.
+- Nova migration anterior à original: valida B-tree/colunas/ordem/tabela e renomeia índice legado; no-op se a original já constar como concluída. SQL antigo e registros/checksums intactos. Sem DROP de objetos; o legado conservado implica índice equivalente adicional e possível drift em bancos antigos.
+- Refresh 401 continua limpando cookies/sessão; 500/rede preservam cookies, CSRF, usuário e cache clínico. Interceptor propaga o erro transitório e aceita uma tentativa posterior; Web Locks continua coordenando abas.
+- Cadastro de laudo pelo prontuário invalida a central no mesmo QueryClient e na sessão correta; integração preserva cache de outro profissional.
+- API 45 suítes/472 testes, web 57 arquivos/374 testes, PostgreSQL 12/12, tipos/lint/builds e Prisma validate aprovados. E2E geral não executado porque fixtures usam DROP DATABASE/exclusões; nenhuma escrita em produção. [Detalhes e limites](../runbooks/pr22-review-corrections.md).
+- A revisão automática rejeitou uma proposta inicial com DROP INDEX. Essa operação foi retirada integralmente antes da validação final.
+
+### Remediação — conclusão local em 2026-10-02
+
+- 45 suítes/470 unitários e 20 suítes/102 E2E API; 57 arquivos/368 testes web; Cypress configurado 17/17 e real 14/14. Typecheck estrito, lint, builds, schema/migrations e audits runtime aprovados.
+- Revisão independente da branch e ajustes finais sem Critical/Important/Minor pendentes. Concorrência de planos provada em PostgreSQL e recuperação entre abas coberta por duas instâncias independentes do API client.
+- 40 tabelas com RLS, 40 policies restritivas, zero grants atuais/default nas superfícies verificadas. 20 índices justificados; 17 FKs históricas residuais documentadas.
+- Imagens API/web como UID 1000, sem dev packages/arquivos de ambiente; job de migration separado, assets/proxy/CSP/cookies verificados contra o banco sintético. Evidência reproduzível no [runbook](../runbooks/security-remediation-verification.md).
+- Sem push, merge, deploy ou acesso ao banco de produção. Arquivos protegidos fora do schema/migrations autorizados permanecem intactos.
+
+### Remediação — retomada em 2026-10-01
+
+- Plano B Task 7: jornada real create/update/reload/delete de metas e create/reload/delete de exames/pedidos, erros 500 e payload malicioso inerte na impressão; Cypress 2/2 + hidratação 1/1. Chaves clínicas legadas descartadas sem leitura; 54 testes focais + 4 auth, matriz HTTP 15/15, builds API/web, typecheck e lint aprovados. Controllers novos retornam no-store para limitar cache a memória.
+- Plano B Task 6: CSP com nonce de 128 bits por requisição, scripts sem unsafe-inline/eval em produção; 47/47 testes focais, typecheck/lint e build aprovados. Gate pós-build adaptado à renderização dinâmica, contrato exato e nonces validados nas 28 páginas reais.
+- Plano B Task 5: builders compartilhados com escaping de títulos/texto/valores, impressão sem scripts inline e único writer revisado. 28/28 testes de impressão, typecheck e lint focal aprovados.
+- Plano B Task 4: central sem storage, seeds, valores clínicos fictícios ou upload PDF simulado; listagem agregada e mutações server-only isoladas por sessão. Falhas mantêm dados/formulários; exportação somente de pedidos salvos. 18/18 testes, typecheck e lint focal aprovados.
+- Plano B Task 3: metas sem storage, seed ou adesão simulada; operações assíncronas preservam cache/formulário em erro. Medidas ausentes não geram progresso/platô inventado. 12/12 testes web, typecheck e lint focal aprovados.
+- Plano B Task 2: pedidos persistidos e exames agregados/listagem/exclusão por Client/autor; 39/39 testes focais e 12/12 HTTP PostgreSQL aprovados, build API e lint focal aprovados.
+- Plano B Task 1: API de metas persistidas por Client/autor, hábitos aninhados e DTOs limitados; 27/27 testes, build API e lint focal aprovados.
+- Task 9: matriz HTTP PostgreSQL 10/10, testes web 25/25 e Cypress 7/7 aprovados; build de produção e lint focal aprovados. Conectados modal fisioterapêutico e overview já migrado ao prontuário. Plano A concluído; B-D em andamento.
+- Task 8: superfície legada retirada; 14 testes unitários focais e 15 E2E de runtime/domínios/agenda profissional aprovados; build API, typecheck web e lint aprovados.
+- Task 7: suplementos/exames por Client, DTOs aninhados e hooks isolados por sessão/cliente; 34 testes API e 7 web, typecheck web e lint focal aprovados.
+- Task 6: anamneses/notas por Client e autor; fallback da anamnese removido; 31 testes API e 2 web, typecheck web e lint focal aprovados.
+- Task 5: PhysioAssessment corrigido, acesso por Client e autor; 24 testes API e 2 web aprovados, typecheck web e lint focal API/web aprovados.
+- Task 4: reabilitação por Client com criação transacional; 26 testes API, 2 PostgreSQL de rollback e 6 web aprovados; build API, typecheck e lint API/web aprovados.
+- Task 3: treinos vinculados a Client, escrita transacional e rotas legadas removidas; API 318 unitários/35 E2E, web 279 testes, typecheck, builds e lint focal aprovados.
+- Task 1 preservada no commit `8f2c26b`; nenhuma migration aplicada em produção.
+- Task 2: overview por Client, perfil próprio e remoção das rotas legadas de pacientes; 26 suítes/292 unitários API, 11 suítes/33 E2E API, 40 arquivos/276 testes web, typecheck web e builds API/web aprovados. Lint focal API/web sem erros ou warnings.
+- Corrigido teardown do E2E da aplicação: `app.close()` encerra conexões/jobs, sem `forceExit`. A repetição completa encerrou com exit 0.
+- Banco temporário recriado pelo Docker: 11 migrations reaplicadas somente em `localhost:5434/ecossistema_resiliencia_test`.
+- Execução dos planos A-D ainda em andamento; nenhum push ou deploy realizado.
 
 ### Banco de Receitas — evidência local de 2026-09-28
 

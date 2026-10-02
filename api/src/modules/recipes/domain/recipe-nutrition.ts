@@ -64,7 +64,10 @@ export function calculateRecipeNutrition(
 
 function assertPositiveFinite(
   value: number,
-  field: Extract<RecipeNutritionValidationField, 'servings' | 'quantity' | 'baseAmount'>,
+  field: Extract<
+    RecipeNutritionValidationField,
+    'servings' | 'quantity' | 'baseAmount'
+  >,
 ): void {
   if (!Number.isFinite(value) || value <= 0) {
     throw new RecipeNutritionValidationError(field);

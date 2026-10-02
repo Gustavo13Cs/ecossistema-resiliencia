@@ -24,6 +24,7 @@ export function resolvePublicApiUrl(environment = process.env) {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
   env: {
     NEXT_PUBLIC_API_URL: PUBLIC_API_PATH,
   },
@@ -31,34 +32,10 @@ const nextConfig = {
     unoptimized: true,
   },
   async headers() {
-    const isDev = process.env.NODE_ENV === "development"
-    const scriptSrc = isDev
-      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
-      : "script-src 'self' 'unsafe-inline'"
-    const connectSrc = isDev
-      ? "connect-src 'self' ws: wss: http: https:"
-      : "connect-src 'self'"
-
-    const contentSecurityPolicy = [
-      "default-src 'self'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "frame-ancestors 'none'",
-      "object-src 'none'",
-      scriptSrc,
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
-      "font-src 'self' data:",
-      connectSrc,
-      "worker-src 'self' blob:",
-      "manifest-src 'self'",
-    ].join("; ")
-
     return [
       {
         source: "/(.*)",
         headers: [
-          { key: "Content-Security-Policy", value: contentSecurityPolicy },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-Frame-Options", value: "DENY" },

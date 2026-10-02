@@ -30,6 +30,7 @@ import { invalidatePatientDiet } from "@/lib/query-invalidation"
 import { RecipePicker } from "@/components/features/diet/RecipePickerPanel"
 import { buildShoppingList, getMealItemNutrition, hydrateMealItem, toMealItemPayload } from "@/lib/diet-meal-items"
 import { buildDietPrintHtml, buildShoppingListPrintHtml } from "@/lib/diet-print-document"
+import { openPrintWindow } from "@/lib/print-document"
 import type { ApiMealItem, DietMeal, DietMealItem, FoodNutrition } from "@/types/diet"
 import type { RecipeVersion } from "@/types/recipe"
 import { useRecipe } from "@/hooks/features/useRecipes"
@@ -411,15 +412,6 @@ export default function NovaDietaPage() {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
   }
 
-  const openPrintDocument = (html: string) => {
-    const win = window.open('', '_blank', 'width=900,height=700')
-    if (!win) return
-    win.document.write(html)
-    win.document.close()
-    win.focus()
-    setTimeout(() => win.print(), 600)
-  }
-
   const getPrintInput = () => ({
     clientName: patientProfile?.name || 'Paciente',
     dateLabel: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
@@ -429,12 +421,12 @@ export default function NovaDietaPage() {
 
   const handlePrintDiet = () => {
     setShowShareModal(false)
-    openPrintDocument(buildDietPrintHtml(getPrintInput()))
+    if (!openPrintWindow(buildDietPrintHtml(getPrintInput()), "width=900,height=700")) toast.error("Permita pop-ups no navegador para imprimir.")
   }
 
   const handlePrintList = () => {
     setShowShareModal(false)
-    openPrintDocument(buildShoppingListPrintHtml({ ...getPrintInput(), shoppingDays }))
+    if (!openPrintWindow(buildShoppingListPrintHtml({ ...getPrintInput(), shoppingDays }), "width=900,height=700")) toast.error("Permita pop-ups no navegador para imprimir.")
   }
 
   const handleOpenTemplateModal = async () => {

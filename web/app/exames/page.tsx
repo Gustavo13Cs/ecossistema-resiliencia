@@ -36,6 +36,8 @@ import { ExamOrderIssuerModal } from "@/components/features/lab-exams/ExamOrderI
 import { LabExamDetailDrawer } from "@/components/features/lab-exams/LabExamDetailDrawer"
 import { ConsolidatedLabExam, ConsolidatedLabMarker, IssuedLabOrder, MarkerCategory, MarkerStatus } from "@/types/lab-exam"
 import { toast } from "sonner"
+import { buildLabOrderPrintHtml } from "@/lib/lab-print-document"
+import { openPrintWindow } from "@/lib/print-document"
 
 type MainTab = "exams" | "longitudinal" | "orders"
 
@@ -54,6 +56,8 @@ const categoryLabels: Record<string, string> = {
 export default function ExamesPage() {
   const {
     loading,
+    error,
+    deleting,
     clients,
     exams,
     orders,
@@ -124,70 +128,14 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
   }
 
   const handlePrintOrder = (order: IssuedLabOrder) => {
-    const printWindow = window.open("", "_blank")
-    if (!printWindow) {
+    const dateLabel = new Date(`${order.issuedAt}T12:00:00`).toLocaleDateString("pt-BR")
+    if (!openPrintWindow(buildLabOrderPrintHtml(order, dateLabel))) {
       toast.error("Permita pop-ups no navegador para imprimir a requisição.")
-      return
     }
-
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Pedido de Exames - ${order.clientName}</title>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #1e293b; }
-          .header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
-          .logo { font-size: 20px; font-weight: 800; color: #0f172a; }
-          .patient-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px; font-size: 14px; }
-          .section-title { font-size: 14px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px; margin-top: 24px; margin-bottom: 12px; }
-          ol { margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.8; }
-          .instructions { font-size: 13px; color: #475569; background: #f1f5f9; padding: 12px; border-radius: 6px; line-height: 1.5; }
-          .footer { margin-top: 60px; display: flex; justify-content: space-between; align-items: flex-end; }
-          .signature-line { border-top: 1px solid #64748b; width: 240px; text-align: center; padding-top: 8px; font-size: 13px; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div>
-            <div class="logo">SAFEMOVE HEALTH & CLINICAL NUTRITION</div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Requisição Laboratorial Padronizada</div>
-          </div>
-          <div style="font-size: 12px; text-align: right;">
-            Data: ${new Date(`${order.issuedAt}T12:00:00`).toLocaleDateString("pt-BR")}
-          </div>
-        </div>
-
-        <div class="patient-box">
-          <div><strong>Paciente:</strong> ${order.clientName}</div>
-          <div style="margin-top: 4px;"><strong>Indicação Clínica:</strong> ${order.clinicalIndication}</div>
-          ${order.templateTitle ? `<div style="margin-top: 4px; font-size: 12px; color: #64748b;">Protocolo: ${order.templateTitle}</div>` : ""}
-        </div>
-
-        <div class="section-title">EXAMES SOLICITADOS</div>
-        <ol>
-          ${order.markers.map((m) => `<li><strong>${m}</strong></li>`).join("")}
-        </ol>
-
-        <div class="section-title">ORIENTAÇÕES AO PACIENTE / LABORATÓRIO</div>
-        <div class="instructions">${order.preparationInstructions}</div>
-
-        <div class="footer">
-          <div style="font-size: 11px; color: #94a3b8;">Emitido digitalmente via SafeMove</div>
-          <div class="signature-line">Assinatura / Carimbo Profissional</div>
-        </div>
-
-        <script>
-          window.onload = function() { window.print(); }
-        </script>
-      </body>
-      </html>
-    `
-
-    printWindow.document.write(htmlContent)
-    printWindow.document.close()
   }
-
+  if (error) {
+    return <div className="p-6"><AsyncState kind="error" title="Não foi possível carregar os exames" description="Tente novamente quando a conexão com o servidor estiver disponível." /></div>
+  }
   if (loading) {
     return (
       <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -691,9 +639,10 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
                         <div className="pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
                           <button
                             type="button"
-                            onClick={() => {
+                            disabled={deleting}
+                            onClick={async () => {
                               if (confirm(`Excluir este laudo do paciente ${exam.clientName}?`)) {
-                                deleteExam(exam.id)
+                                try { await deleteExam(exam.id) } catch { /* Erro exibido pelo hook. */ }
                               }
                             }}
                             className="text-muted-foreground hover:text-rose-500 flex items-center gap-1 cursor-pointer transition-colors"
@@ -926,7 +875,8 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
 
                       <button
                         type="button"
-                        onClick={() => deleteOrder(order.id)}
+                        disabled={deleting}
+                        onClick={async () => { try { await deleteOrder(order.id) } catch { /* Erro exibido pelo hook. */ } }}
                         className="text-muted-foreground hover:text-rose-500 p-1 cursor-pointer transition-colors"
                         title="Excluir requisição"
                       >
@@ -991,23 +941,24 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
       )}
 
       {/* Modals & Detail Drawer */}
-      <ExamRegistryModal
+      {isRegistryModalOpen && <ExamRegistryModal
         isOpen={isRegistryModalOpen}
         onClose={() => setIsRegistryModalOpen(false)}
         clients={clients}
         defaultClientId={selectedClientId !== "ALL" ? selectedClientId : undefined}
         onSubmit={registerExam}
-      />
+      />}
 
-      <ExamOrderIssuerModal
+      {isOrderModalOpen && <ExamOrderIssuerModal
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}
         clients={clients}
         defaultClientId={selectedClientId !== "ALL" ? selectedClientId : undefined}
         onSubmit={issueOrder}
-      />
+      />}
 
-      <LabExamDetailDrawer
+      {selectedExamForDetail && <LabExamDetailDrawer
+        key={selectedExamForDetail.id}
         exam={selectedExamForDetail}
         isOpen={!!selectedExamForDetail}
         onClose={() => setSelectedExamForDetail(null)}
@@ -1016,7 +967,7 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
           setSelectedClientId(clientId)
           setActiveTab("longitudinal")
         }}
-      />
+      />}
     </div>
   )
 }

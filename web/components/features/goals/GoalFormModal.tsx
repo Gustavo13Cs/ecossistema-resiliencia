@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import {
   Dialog,
   DialogContent,
@@ -15,12 +15,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Sparkles, Calculator, AlertCircle, Droplets, Target } from "lucide-react"
 import type { Client } from "@/types/client"
-import type { ClientGoalCommitment, GoalCategory, ClientWithGoalSummary } from "@/types/goal"
+import type { ClientGoalCommitment, ClientGoalInput, GoalCategory, ClientWithGoalSummary } from "@/types/goal"
 
 interface GoalFormModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (goal: Omit<ClientGoalCommitment, "id" | "createdAt" | "updatedAt"> & { id?: string }) => void
+  onSave: (goal: ClientGoalInput) => Promise<ClientGoalCommitment>
   clients: Client[]
   initialData?: ClientWithGoalSummary | null
   preSelectedClientId?: string | null
@@ -57,6 +57,9 @@ export function GoalFormModal({
   const [dailyStepsTarget, setDailyStepsTarget] = useState("8000")
   const [clinicalNotes, setClinicalNotes] = useState("")
   const [habitsNotes, setHabitsNotes] = useState("")
+  const submission = useRef(false)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   // Populate form on open / initialData change
   useEffect(() => {
@@ -85,11 +88,11 @@ export function GoalFormModal({
       setClientId(selectedId)
 
       const client = clients.find((c) => c.id === selectedId)
-      const baseWeight = client?.initialWeight?.toString() ?? "75"
+      const baseWeight = client?.initialWeight?.toString() ?? ""
       setStartWeightKg(baseWeight)
-      setTargetWeightKg((parseFloat(baseWeight) - 5).toString())
-      setStartBodyFatPercent("24")
-      setTargetBodyFatPercent("18")
+      setTargetWeightKg(baseWeight ? (parseFloat(baseWeight) - 5).toString() : "")
+      setStartBodyFatPercent("")
+      setTargetBodyFatPercent("")
       setTargetMuscleMassKg("")
 
       const today = new Date()
@@ -99,8 +102,8 @@ export function GoalFormModal({
       setTargetDate(defaultDeadline.toISOString().split("T")[0])
 
       // Auto water 35ml/kg
-      const numWeight = parseFloat(baseWeight) || 70
-      setWaterTargetMl((Math.round((numWeight * 35) / 100) * 100).toString())
+      const numWeight = parseFloat(baseWeight)
+      setWaterTargetMl(Number.isFinite(numWeight) ? (Math.round((numWeight * 35) / 100) * 100).toString() : "2500")
 
       setSleepTargetHours("8")
       setMealsAdherencePercent("90")
@@ -114,17 +117,21 @@ export function GoalFormModal({
   const handleClientChange = (newClientId: string) => {
     setClientId(newClientId)
     const client = clients.find((c) => c.id === newClientId)
-    if (client?.initialWeight && !initialData?.goal) {
-      setStartWeightKg(client.initialWeight.toString())
-      const targetCalc = category === "WEIGHT_LOSS" ? client.initialWeight - 5 : client.initialWeight + 3
-      setTargetWeightKg(targetCalc.toString())
-      setWaterTargetMl((Math.round((client.initialWeight * 35) / 100) * 100).toString())
+    if (!initialData?.goal) {
+      const weight = client?.initialWeight
+      setStartWeightKg(weight?.toString() ?? "")
+      const targetCalc = weight != null ? category === "WEIGHT_LOSS" ? weight - 5 : weight + 3 : null
+      setTargetWeightKg(targetCalc?.toString() ?? "")
+      setStartBodyFatPercent("")
+      setTargetBodyFatPercent("")
+      setWaterTargetMl(weight != null ? (Math.round((weight * 35) / 100) * 100).toString() : "2500")
     }
   }
 
   // Calculate water from weight button
   const handleCalculateWater = () => {
-    const weight = parseFloat(startWeightKg) || 70
+    const weight = parseFloat(startWeightKg)
+    if (!Number.isFinite(weight) || weight <= 0) return
     const calculated = Math.round((weight * 35) / 100) * 100
     setWaterTargetMl(calculated.toString())
   }
@@ -163,11 +170,15 @@ export function GoalFormModal({
     return { weeklyRate, weeks: Math.round(weeks), feasibility, message }
   }, [startWeightKg, targetWeightKg, startDate, targetDate, category])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!clientId) return
+    if (!clientId || submission.current) return
+    submission.current = true
+    setSaving(true)
+    setSaveError(null)
 
-    onSave({
+    try {
+    await onSave({
       id: initialData?.goal?.id,
       clientId,
       category,
@@ -179,21 +190,27 @@ export function GoalFormModal({
       startDate: new Date(startDate).toISOString(),
       targetDate: new Date(targetDate).toISOString(),
       habits: {
-        waterTargetMl: parseInt(waterTargetMl, 10) || 2500,
-        sleepTargetHours: parseFloat(sleepTargetHours) || 8,
-        mealsAdherencePercent: parseInt(mealsAdherencePercent, 10) || 90,
-        dailyStepsTarget: parseInt(dailyStepsTarget, 10) || 8000,
+        waterTargetMl: Number(waterTargetMl),
+        sleepTargetHours: Number(sleepTargetHours),
+        mealsAdherencePercent: Number(mealsAdherencePercent),
+        dailyStepsTarget: Number(dailyStepsTarget),
         habitsNotes: habitsNotes.trim() || undefined,
       },
       clinicalNotes: clinicalNotes.trim() || undefined,
-      status: initialData?.goal?.status ?? "ON_TRACK",
+      status: initialData?.goal?.status ?? "PENDING",
     })
 
     onClose()
+    } catch {
+      setSaveError("Não foi possível salvar a meta. Seus dados foram mantidos para tentar novamente.")
+    } finally {
+      submission.current = false
+      setSaving(false)
+    }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && !saving && onClose()}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <div className="flex items-center gap-2 text-[var(--sm-brand)]">
@@ -473,12 +490,13 @@ export function GoalFormModal({
             />
           </div>
 
+          {saveError && <p role="alert" className="text-sm text-rose-700">{saveError}</p>}
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
               Cancelar
             </Button>
-            <Button type="submit" className="bg-[var(--sm-brand)] text-white hover:bg-[var(--sm-brand-hover)]">
-              Salvar Meta Clínica
+            <Button type="submit" disabled={saving} className="bg-[var(--sm-brand)] text-white hover:bg-[var(--sm-brand-hover)]">
+              {saving ? "Salvando…" : "Salvar Meta Clínica"}
             </Button>
           </DialogFooter>
         </form>

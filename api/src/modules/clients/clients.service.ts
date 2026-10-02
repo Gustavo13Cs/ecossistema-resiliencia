@@ -179,23 +179,29 @@ export class ClientsService {
     });
   }
 
-  private toUpdateData(dto: UpdateClientDto): Prisma.ClientUncheckedUpdateInput {
+  private toUpdateData(
+    dto: UpdateClientDto,
+  ): Prisma.ClientUncheckedUpdateInput {
     return {
       name: hasOwn(dto, 'name') ? dto.name?.trim() : undefined,
       email: hasOwn(dto, 'email')
         ? normalizeOptionalEmail(dto.email ?? undefined)
         : undefined,
-      phone: hasOwn(dto, 'phone') ? normalizeOptionalString(dto.phone) : undefined,
+      phone: hasOwn(dto, 'phone')
+        ? normalizeOptionalString(dto.phone)
+        : undefined,
       birthDate: hasOwn(dto, 'birthDate')
         ? dto.birthDate
           ? new Date(dto.birthDate)
           : null
         : undefined,
-      gender: hasOwn(dto, 'gender') ? normalizeOptionalString(dto.gender) : undefined,
+      gender: hasOwn(dto, 'gender')
+        ? normalizeOptionalString(dto.gender)
+        : undefined,
       goal: hasOwn(dto, 'goal') ? normalizeOptionalString(dto.goal) : undefined,
-      height: hasOwn(dto, 'height') ? dto.height ?? null : undefined,
+      height: hasOwn(dto, 'height') ? (dto.height ?? null) : undefined,
       initialWeight: hasOwn(dto, 'initialWeight')
-        ? dto.initialWeight ?? null
+        ? (dto.initialWeight ?? null)
         : undefined,
       allergies: hasOwn(dto, 'allergies')
         ? normalizeOptionalString(dto.allergies)
@@ -206,7 +212,9 @@ export class ClientsService {
       typicalSleep: hasOwn(dto, 'typicalSleep')
         ? normalizeOptionalString(dto.typicalSleep)
         : undefined,
-      stressLevel: hasOwn(dto, 'stressLevel') ? dto.stressLevel ?? null : undefined,
+      stressLevel: hasOwn(dto, 'stressLevel')
+        ? (dto.stressLevel ?? null)
+        : undefined,
       foodRelationship: hasOwn(dto, 'foodRelationship')
         ? normalizeOptionalString(dto.foodRelationship)
         : undefined,
@@ -242,7 +250,9 @@ export class ClientsService {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2002'
     ) {
-      throw new ConflictException('E-mail já cadastrado para este profissional');
+      throw new ConflictException(
+        'E-mail já cadastrado para este profissional',
+      );
     }
 
     throw error;

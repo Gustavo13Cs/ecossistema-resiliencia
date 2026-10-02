@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/auth-context"
 import { queryKeys } from "@/lib/query-keys"
 
-export interface PatientOverview {
-  patient: {
+export interface ClientOverview {
+  client: {
     id: string
     name: string
     goal?: string | null
@@ -90,17 +90,17 @@ export interface PatientOverview {
   }[]
 }
 
-export function usePatientOverview(patientId?: string) {
+export function usePatientOverview(clientId?: string) {
   const { user } = useAuth()
   const query = useQuery({
-    queryKey: queryKeys.patientOverview(user?.sub ?? "anonymous", patientId ?? "missing"),
-    queryFn: async () => (await api.get<PatientOverview>(`/users/${patientId}/overview`)).data,
-    enabled: Boolean(user?.sub && patientId),
+    queryKey: queryKeys.patientOverview(user?.sub ?? "anonymous", clientId ?? "missing"),
+    queryFn: async () => (await api.get<ClientOverview>(`/clients/${clientId}/overview`)).data,
+    enabled: Boolean(user?.sub && clientId),
   })
 
   return {
     overview: query.data ?? null,
     loading: query.isPending,
-    error: query.error && !query.data ? "Falha ao carregar a visão geral do paciente." : null,
+    error: query.error && !query.data ? "Falha ao carregar a visão geral do cliente." : null,
   }
 }

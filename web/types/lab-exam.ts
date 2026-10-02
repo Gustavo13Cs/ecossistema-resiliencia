@@ -30,6 +30,42 @@ export interface ConsolidatedLabMarker {
   reference: MarkerReference | null
 }
 
+export interface CreateExamInput {
+  clientId: string
+  date: string
+  notes?: string
+  markers: { name: string; value: number; unit: string }[]
+}
+
+export interface IssueOrderInput {
+  clientId: string
+  templateTitle?: string
+  markers: string[]
+  clinicalIndication: string
+  preparationInstructions: string
+}
+
+export interface ServerLabExam {
+  id: string
+  clientId: string
+  client: ClientOption
+  date: string
+  notes?: string | null
+  createdAt: string
+  markers: { id: string; name: string; value: number; unit: string }[]
+}
+
+export interface ServerLabOrder {
+  id: string
+  clientId: string
+  client: ClientOption
+  title?: string | null
+  issuedAt: string
+  markers: string[]
+  clinicalIndication?: string | null
+  preparationInstructions?: string | null
+}
+
 export interface AttachedPdf {
   name: string
   sizeBytes: number

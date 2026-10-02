@@ -10,6 +10,7 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
+import type { WorkoutPrescription } from "@/types/workout"
 
 export default function NovoTreinoPage() {
   const params = useParams()
@@ -40,10 +41,10 @@ export default function NovoTreinoPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const userRes = await api.get(`/users/${params.id}`)
+        const userRes = await api.get<{ name: string }>(`/clients/${params.id}`)
         setPatientName(userRes.data.name)
 
-        const workoutRes = await api.get(`/workouts/user/${params.id}/active`)
+        const workoutRes = await api.get<WorkoutPrescription | null>(`/workouts/client/${params.id}/active`)
         if (workoutRes.data) {
           const active = workoutRes.data
           
@@ -55,11 +56,11 @@ export default function NovoTreinoPage() {
           })
 
           if (active.splits && active.splits.length > 0) {
-            setSplits(active.splits.map((s: any) => ({
+            setSplits(active.splits.map((s) => ({
               id: s.id || `s${Date.now() + Math.random()}`,
               name: s.name,
               focus: s.focus || "",
-              exercises: s.exercises.map((e: any) => ({
+              exercises: s.exercises.map((e) => ({
                 id: e.id || `e${Date.now() + Math.random()}`,
                 name: e.name,
                 sets: e.sets,
@@ -70,8 +71,8 @@ export default function NovoTreinoPage() {
             })))
           }
         }
-      } catch (error) {
-        console.error("Erro ao carregar dados", error)
+      } catch {
+        toast.error("Erro ao carregar os dados do treino.")
       }
     }
     loadData()
@@ -145,7 +146,7 @@ export default function NovoTreinoPage() {
         goal: workoutInfo.goal,
         durationWeeks: workoutInfo.durationWeeks,
         notes: workoutInfo.notes,
-        userId: params.id,
+        clientId: params.id,
         splits: splits.map(split => ({
           name: split.name,
           focus: split.focus,
@@ -164,8 +165,8 @@ export default function NovoTreinoPage() {
       toast.success("Plano de Treino salvo com sucesso! 💪")
       router.push(`/clientes/${params.id}`)
       
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Erro ao salvar treino.")
+    } catch {
+      toast.error("Erro ao salvar treino.")
     } finally {
       setLoading(false)
     }

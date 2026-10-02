@@ -108,7 +108,7 @@ type RecipeUpdateManyArguments = {
 };
 type RecipeFindFirstArguments = {
   where: { id: string; professionalId: string };
-  include?: { versions?: unknown };
+  include?: { versions?: { orderBy?: { version?: 'asc' | 'desc' } } };
 };
 type RecipeVersionFilter = {
   name?: { contains: string; mode: 'insensitive' };
@@ -168,6 +168,18 @@ const validRecipeInput: CreateRecipeDto = {
   ],
 };
 
+function fakeQuery<Input, Output>(operation: (input: Input) => Output) {
+  return (input: Input): Promise<Output> => {
+    try {
+      return Promise.resolve(operation(input));
+    } catch (error) {
+      return Promise.reject(
+        error instanceof Error ? error : new Error('Fixture query failed'),
+      );
+    }
+  };
+}
+
 class RecipePrismaFake {
   state: FakeState;
   forceCompareAndSwapConflict = false;
@@ -186,32 +198,34 @@ class RecipePrismaFake {
     };
   }
 
-  food = {
-    findMany: (_arguments: FoodFindManyArguments): Promise<FoodFixture[]> =>
-      Promise.reject(new Error('Fake not initialized')),
-  };
+  food: { findMany: (args: FoodFindManyArguments) => Promise<FoodFixture[]> } =
+    {
+      findMany: (): Promise<FoodFixture[]> =>
+        Promise.reject(new Error('Fake not initialized')),
+    };
 
-  recipe = {
-    create: (_arguments: RecipeCreateArguments): Promise<RecipeFixture> =>
-      Promise.reject(new Error('Fake not initialized')),
+  recipe: {
+    create: (args: RecipeCreateArguments) => Promise<RecipeFixture>;
     findFirst: (
-      _arguments: RecipeFindFirstArguments,
-    ): Promise<HydratedRecipe | null> =>
+      args: RecipeFindFirstArguments,
+    ) => Promise<HydratedRecipe | null>;
+    findMany: (args: RecipeFindManyArguments) => Promise<HydratedRecipe[]>;
+    updateMany: (args: RecipeUpdateManyArguments) => Promise<{ count: number }>;
+  } = {
+    create: (): Promise<RecipeFixture> =>
       Promise.reject(new Error('Fake not initialized')),
-    findMany: (
-      _arguments: RecipeFindManyArguments,
-    ): Promise<HydratedRecipe[]> =>
+    findFirst: (): Promise<HydratedRecipe | null> =>
       Promise.reject(new Error('Fake not initialized')),
-    updateMany: (
-      _arguments: RecipeUpdateManyArguments,
-    ): Promise<{ count: number }> =>
+    findMany: (): Promise<HydratedRecipe[]> =>
+      Promise.reject(new Error('Fake not initialized')),
+    updateMany: (): Promise<{ count: number }> =>
       Promise.reject(new Error('Fake not initialized')),
   };
 
-  recipeVersion = {
-    create: (
-      _arguments: RecipeVersionCreateArguments,
-    ): Promise<HydratedVersion> =>
+  recipeVersion: {
+    create: (args: RecipeVersionCreateArguments) => Promise<HydratedVersion>;
+  } = {
+    create: (): Promise<HydratedVersion> =>
       Promise.reject(new Error('Fake not initialized')),
   };
 
@@ -230,11 +244,11 @@ class RecipePrismaFake {
   };
 
   initialize(): this {
-    this.food.findMany = async ({ where }: any) => {
+    this.food.findMany = fakeQuery(({ where }: FoodFindManyArguments) => {
       const ids: string[] = where.id.in;
       return this.state.foods.filter((food) => ids.includes(food.id));
-    };
-    this.recipe.create = async ({ data }: any) => {
+    });
+    this.recipe.create = fakeQuery(({ data }: RecipeCreateArguments) => {
       const now = new Date('2026-09-22T12:00:00.000Z');
       const recipe: RecipeFixture = {
         id: this.nextId('recipe'),
@@ -246,95 +260,99 @@ class RecipePrismaFake {
       };
       this.state.recipes.push(recipe);
       return { ...recipe };
-    };
-    this.recipeVersion.create = async ({ data }: any) => {
-      if (this.recipeVersionCreateError) {
-        throw this.recipeVersionCreateError;
-      }
-      if (
-        this.state.versions.some(
-          (version) =>
-            version.recipeId === data.recipeId &&
-            version.version === data.version,
-        )
-      ) {
-        throw new Prisma.PrismaClientKnownRequestError(
-          'Unique constraint failed on recipeId and version',
-          {
-            code: 'P2002',
-            clientVersion: '7.10.0',
-            meta: { modelName: 'RecipeVersion' },
-          },
-        );
-      }
-      const version: VersionFixture = {
-        id: this.nextId('version'),
-        recipeId: data.recipeId,
-        version: data.version,
-        name: data.name,
-        description: data.description ?? null,
-        category: data.category,
-        servings: data.servings,
-        instructions: data.instructions ?? null,
-        isGlutenFree: data.isGlutenFree,
-        isLactoseFree: data.isLactoseFree,
-        isVegan: data.isVegan,
-        kcal: data.kcal,
-        protein: data.protein,
-        carbs: data.carbs,
-        fat: data.fat,
-        fiber: data.fiber,
-        sodium: data.sodium,
-        calcium: data.calcium,
-        iron: data.iron,
-        createdAt: new Date('2026-09-22T12:00:00.000Z'),
-        publishedAt: null,
-      };
-      this.state.versions.push(version);
-      for (const ingredient of data.ingredients.create) {
-        this.state.ingredients.push({
-          id: this.nextId('ingredient'),
-          recipeVersionId: version.id,
-          foodId: ingredient.foodId,
-          quantity: ingredient.quantity,
-          measure: ingredient.measure,
-        });
-      }
-      return this.hydrateVersion(version);
-    };
-    this.recipe.updateMany = async ({ where, data }: any) => {
-      this.lastRecipeUpdateManyArgs = { where, data };
-      if (
-        (this.forceCompareAndSwapConflict &&
-          typeof where.currentVersionId === 'string') ||
-        (this.forceInitialPublishConflict && where.currentVersionId === null)
-      ) {
-        return { count: 0 };
-      }
-      const recipes = this.state.recipes.filter(
-        (recipe) =>
-          (where.id === undefined || recipe.id === where.id) &&
-          (where.professionalId === undefined ||
-            recipe.professionalId === where.professionalId) &&
-          (where.currentVersionId === undefined ||
-            recipe.currentVersionId === where.currentVersionId) &&
-          (where.status === undefined ||
-            typeof where.status !== 'object' ||
-            recipe.status !== where.status.not),
-      );
-      for (const recipe of recipes) {
-        Object.assign(recipe, data);
-        if (data.currentVersionId) {
-          const version = this.state.versions.find(
-            (candidate) => candidate.id === data.currentVersionId,
-          );
-          if (version)
-            version.publishedAt = new Date('2026-09-22T12:00:00.000Z');
+    });
+    this.recipeVersion.create = fakeQuery(
+      ({ data }: RecipeVersionCreateArguments) => {
+        if (this.recipeVersionCreateError) {
+          throw this.recipeVersionCreateError;
         }
-      }
-      return { count: recipes.length };
-    };
-    this.recipe.findFirst = async (args: any) => {
+        if (
+          this.state.versions.some(
+            (version) =>
+              version.recipeId === data.recipeId &&
+              version.version === data.version,
+          )
+        ) {
+          throw new Prisma.PrismaClientKnownRequestError(
+            'Unique constraint failed on recipeId and version',
+            {
+              code: 'P2002',
+              clientVersion: '7.10.0',
+              meta: { modelName: 'RecipeVersion' },
+            },
+          );
+        }
+        const version: VersionFixture = {
+          id: this.nextId('version'),
+          recipeId: data.recipeId,
+          version: data.version,
+          name: data.name,
+          description: data.description ?? null,
+          category: data.category,
+          servings: data.servings,
+          instructions: data.instructions ?? null,
+          isGlutenFree: data.isGlutenFree,
+          isLactoseFree: data.isLactoseFree,
+          isVegan: data.isVegan,
+          kcal: data.kcal,
+          protein: data.protein,
+          carbs: data.carbs,
+          fat: data.fat,
+          fiber: data.fiber,
+          sodium: data.sodium,
+          calcium: data.calcium,
+          iron: data.iron,
+          createdAt: new Date('2026-09-22T12:00:00.000Z'),
+          publishedAt: null,
+        };
+        this.state.versions.push(version);
+        for (const ingredient of data.ingredients.create) {
+          this.state.ingredients.push({
+            id: this.nextId('ingredient'),
+            recipeVersionId: version.id,
+            foodId: ingredient.foodId,
+            quantity: ingredient.quantity,
+            measure: ingredient.measure,
+          });
+        }
+        return this.hydrateVersion(version);
+      },
+    );
+    this.recipe.updateMany = fakeQuery(
+      ({ where, data }: RecipeUpdateManyArguments) => {
+        this.lastRecipeUpdateManyArgs = { where, data };
+        if (
+          (this.forceCompareAndSwapConflict &&
+            typeof where.currentVersionId === 'string') ||
+          (this.forceInitialPublishConflict && where.currentVersionId === null)
+        ) {
+          return { count: 0 };
+        }
+        const recipes = this.state.recipes.filter(
+          (recipe) =>
+            (where.id === undefined || recipe.id === where.id) &&
+            (where.professionalId === undefined ||
+              recipe.professionalId === where.professionalId) &&
+            (where.currentVersionId === undefined ||
+              recipe.currentVersionId === where.currentVersionId) &&
+            (where.status === undefined ||
+              typeof where.status !== 'object' ||
+              recipe.status !== where.status.not),
+        );
+        for (const recipe of recipes) {
+          Object.assign(recipe, data);
+          if (data.currentVersionId) {
+            const version = this.state.versions.find(
+              (candidate) => candidate.id === data.currentVersionId,
+            );
+            if (version)
+              version.publishedAt = new Date('2026-09-22T12:00:00.000Z');
+          }
+        }
+        return { count: recipes.length };
+      },
+    );
+    this.recipe.findFirst = fakeQuery((args: RecipeFindFirstArguments) => {
       const { where } = args;
       const recipe = this.state.recipes.find(
         (candidate) =>
@@ -348,13 +366,13 @@ class RecipePrismaFake {
             args.include?.versions?.orderBy?.version,
           )
         : null;
-    };
-    this.recipe.findMany = async (args: any) => {
+    });
+    this.recipe.findMany = fakeQuery((args: RecipeFindManyArguments) => {
       this.lastRecipeFindManyArgs = args;
       return this.state.recipes
         .filter((recipe) => this.matchesRecipeWhere(recipe, args.where))
         .map((recipe) => this.hydrateRecipe(recipe));
-    };
+    });
     return this;
   }
 
@@ -465,7 +483,10 @@ class RecipePrismaFake {
     return hydrated;
   }
 
-  private matchesRecipeWhere(recipe: RecipeFixture, where: any): boolean {
+  private matchesRecipeWhere(
+    recipe: RecipeFixture,
+    where: RecipeFindManyArguments['where'],
+  ): boolean {
     if (
       recipe.professionalId !== where.professionalId ||
       recipe.status !== where.status

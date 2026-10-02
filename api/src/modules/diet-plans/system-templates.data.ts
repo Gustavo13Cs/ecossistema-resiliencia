@@ -21,7 +21,13 @@ export interface SystemDietTemplate {
   id: string;
   title: string;
   goal: string;
-  category: 'HIPERTROFIA' | 'EMAGRECIMENTO' | 'LOW_CARB' | 'CETOGENICA' | 'MANUTENCAO' | 'VEGETARIANO';
+  category:
+    | 'HIPERTROFIA'
+    | 'EMAGRECIMENTO'
+    | 'LOW_CARB'
+    | 'CETOGENICA'
+    | 'MANUTENCAO'
+    | 'VEGETARIANO';
   targetKcal: number;
   proteinG: number;
   fatG: number;
@@ -49,7 +55,8 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
     fatG: 53,
     fiberG: 30,
     durationDays: 30,
-    notes: 'Priorizar mastigação lenta, ingestão hídrica mínima de 35ml/kg e inclusão de vegetais verdes escuros livres no almoço e jantar.',
+    notes:
+      'Priorizar mastigação lenta, ingestão hídrica mínima de 35ml/kg e inclusão de vegetais verdes escuros livres no almoço e jantar.',
     isTemplate: true,
     isSystem: true,
     isActive: true,
@@ -61,44 +68,106 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         time: '07:30',
         notes: 'Omelete com aveia para liberação lenta de glicose.',
         items: [
-          { name: 'Ovo de galinha inteiro', quantity: 2, measure: 'unidades', notes: 'Preparado sem óleo ou com spray' },
-          { name: 'Clara de ovo pasteurizada', quantity: 100, measure: 'g', notes: 'Adicionar à omelete' },
+          {
+            name: 'Ovo de galinha inteiro',
+            quantity: 2,
+            measure: 'unidades',
+            notes: 'Preparado sem óleo ou com spray',
+          },
+          {
+            name: 'Clara de ovo pasteurizada',
+            quantity: 100,
+            measure: 'g',
+            notes: 'Adicionar à omelete',
+          },
           { name: 'Farelo de aveia', quantity: 30, measure: 'g' },
           { name: 'Morangos frescos', quantity: 120, measure: 'g' },
-          { name: 'Café preto ou chá sem açúcar', quantity: 150, measure: 'ml' },
+          {
+            name: 'Café preto ou chá sem açúcar',
+            quantity: 150,
+            measure: 'ml',
+          },
         ],
       },
       {
         name: 'Almoço Sacietogênico',
         time: '12:30',
-        notes: 'Iniciar a refeição pelo prato de folhas e vegetais crus temperados com azeite.',
+        notes:
+          'Iniciar a refeição pelo prato de folhas e vegetais crus temperados com azeite.',
         items: [
-          { name: 'Peito de frango grelhado', quantity: 150, measure: 'g', notes: 'Pesado pronto' },
+          {
+            name: 'Peito de frango grelhado',
+            quantity: 150,
+            measure: 'g',
+            notes: 'Pesado pronto',
+          },
           { name: 'Arroz integral cozido', quantity: 100, measure: 'g' },
-          { name: 'Feijão carioca cozido', quantity: 80, measure: 'g', notes: 'Apenas grãos e caldo ralo' },
+          {
+            name: 'Feijão carioca cozido',
+            quantity: 80,
+            measure: 'g',
+            notes: 'Apenas grãos e caldo ralo',
+          },
           { name: 'Brócolis cozido no vapor', quantity: 120, measure: 'g' },
-          { name: 'Mix de folhas verdes (alface, rúcula)', quantity: 80, measure: 'g', notes: 'À vontade' },
-          { name: 'Azeite de oliva extravirgem', quantity: 8, measure: 'ml', notes: '1 colher de sobremesa' },
+          {
+            name: 'Mix de folhas verdes (alface, rúcula)',
+            quantity: 80,
+            measure: 'g',
+            notes: 'À vontade',
+          },
+          {
+            name: 'Azeite de oliva extravirgem',
+            quantity: 8,
+            measure: 'ml',
+            notes: '1 colher de sobremesa',
+          },
         ],
       },
       {
         name: 'Lanche da Tarde Proteico',
         time: '16:00',
-        notes: 'Combinação de proteína e gordura boa para evitar picos de fome ao fim da tarde.',
+        notes:
+          'Combinação de proteína e gordura boa para evitar picos de fome ao fim da tarde.',
         items: [
-          { name: 'Iogurte natural desnatado ou grego zero', quantity: 160, measure: 'g' },
-          { name: 'Whey Protein Isolado ou Concentrado', quantity: 20, measure: 'g' },
-          { name: 'Castanha-do-pará ou nozes', quantity: 15, measure: 'g', notes: 'Aprox. 3 unidades' },
+          {
+            name: 'Iogurte natural desnatado ou grego zero',
+            quantity: 160,
+            measure: 'g',
+          },
+          {
+            name: 'Whey Protein Isolado ou Concentrado',
+            quantity: 20,
+            measure: 'g',
+          },
+          {
+            name: 'Castanha-do-pará ou nozes',
+            quantity: 15,
+            measure: 'g',
+            notes: 'Aprox. 3 unidades',
+          },
         ],
       },
       {
         name: 'Jantar Leve & Reparador',
         time: '19:30',
-        notes: 'Menor carga glicêmica noturna para otimização da oxidação lipídica durante o sono.',
+        notes:
+          'Menor carga glicêmica noturna para otimização da oxidação lipídica durante o sono.',
         items: [
-          { name: 'Filé de tilápia ou peixe branco grelhado', quantity: 160, measure: 'g' },
-          { name: 'Abóbora cabotiá cozida/assada', quantity: 150, measure: 'g' },
-          { name: 'Abobrinha e cenoura raladas ao vapor', quantity: 120, measure: 'g' },
+          {
+            name: 'Filé de tilápia ou peixe branco grelhado',
+            quantity: 160,
+            measure: 'g',
+          },
+          {
+            name: 'Abóbora cabotiá cozida/assada',
+            quantity: 150,
+            measure: 'g',
+          },
+          {
+            name: 'Abobrinha e cenoura raladas ao vapor',
+            quantity: 120,
+            measure: 'g',
+          },
           { name: 'Azeite de oliva extravirgem', quantity: 7, measure: 'ml' },
         ],
       },
@@ -115,7 +184,8 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
     fatG: 62,
     fiberG: 34,
     durationDays: 45,
-    notes: 'Distribuir a ingestão de carboidratos com ênfase no pré e pós-treino para suporte de glicogênio.',
+    notes:
+      'Distribuir a ingestão de carboidratos com ênfase no pré e pós-treino para suporte de glicogênio.',
     isTemplate: true,
     isSystem: true,
     isActive: true,
@@ -127,10 +197,29 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         time: '07:00',
         items: [
           { name: 'Ovos inteiros mexidos', quantity: 3, measure: 'unidades' },
-          { name: 'Pão 100% integral', quantity: 60, measure: 'g', notes: '2 fatias' },
-          { name: 'Queijo cottage ou minas frescal', quantity: 40, measure: 'g' },
-          { name: 'Banana prata fatiada', quantity: 100, measure: 'g', notes: '1 unidade média' },
-          { name: 'Pasta de amendoim integral', quantity: 15, measure: 'g', notes: '1 colher de sopa' },
+          {
+            name: 'Pão 100% integral',
+            quantity: 60,
+            measure: 'g',
+            notes: '2 fatias',
+          },
+          {
+            name: 'Queijo cottage ou minas frescal',
+            quantity: 40,
+            measure: 'g',
+          },
+          {
+            name: 'Banana prata fatiada',
+            quantity: 100,
+            measure: 'g',
+            notes: '1 unidade média',
+          },
+          {
+            name: 'Pasta de amendoim integral',
+            quantity: 15,
+            measure: 'g',
+            notes: '1 colher de sopa',
+          },
         ],
       },
       {
@@ -140,7 +229,11 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
           { name: 'Patinho moído ou bife magro', quantity: 160, measure: 'g' },
           { name: 'Arroz branco ou parboilizado', quantity: 180, measure: 'g' },
           { name: 'Feijão preto cozido', quantity: 100, measure: 'g' },
-          { name: 'Legumes cozidos (cenoura, vagem)', quantity: 100, measure: 'g' },
+          {
+            name: 'Legumes cozidos (cenoura, vagem)',
+            quantity: 100,
+            measure: 'g',
+          },
           { name: 'Salada mista com azeite', quantity: 80, measure: 'g' },
           { name: 'Azeite de oliva extravirgem', quantity: 10, measure: 'ml' },
         ],
@@ -151,7 +244,12 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         items: [
           { name: 'Iogurte natural integral', quantity: 170, measure: 'g' },
           { name: 'Aveia em flocos grossos', quantity: 40, measure: 'g' },
-          { name: 'Mel puro de abelha', quantity: 15, measure: 'g', notes: '1 colher de sobremesa' },
+          {
+            name: 'Mel puro de abelha',
+            quantity: 15,
+            measure: 'g',
+            notes: '1 colher de sobremesa',
+          },
           { name: 'Whey protein concentrado', quantity: 25, measure: 'g' },
         ],
       },
@@ -159,9 +257,21 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         name: 'Jantar Pós-Treino',
         time: '19:30',
         items: [
-          { name: 'Peito de frango desfiado ou grelhado', quantity: 170, measure: 'g' },
-          { name: 'Batata doce ou mandioca cozida', quantity: 200, measure: 'g' },
-          { name: 'Salada de folhas verdes com tomate', quantity: 100, measure: 'g' },
+          {
+            name: 'Peito de frango desfiado ou grelhado',
+            quantity: 170,
+            measure: 'g',
+          },
+          {
+            name: 'Batata doce ou mandioca cozida',
+            quantity: 200,
+            measure: 'g',
+          },
+          {
+            name: 'Salada de folhas verdes com tomate',
+            quantity: 100,
+            measure: 'g',
+          },
           { name: 'Azeite de oliva extravirgem', quantity: 8, measure: 'ml' },
         ],
       },
@@ -169,8 +279,16 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         name: 'Ceia Recuperadora',
         time: '22:00',
         items: [
-          { name: 'Queijo cottage ou proteína de caseína/whey', quantity: 100, measure: 'g' },
-          { name: 'Castanhas ou amêndoas torradas', quantity: 15, measure: 'g' },
+          {
+            name: 'Queijo cottage ou proteína de caseína/whey',
+            quantity: 100,
+            measure: 'g',
+          },
+          {
+            name: 'Castanhas ou amêndoas torradas',
+            quantity: 15,
+            measure: 'g',
+          },
         ],
       },
     ],
@@ -186,7 +304,8 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
     fatG: 75,
     fiberG: 28,
     durationDays: 30,
-    notes: 'Manter carboidratos predominantemente de hortaliças, sementes e frutas de baixo índice glicêmico (frutas vermelhas, abacate).',
+    notes:
+      'Manter carboidratos predominantemente de hortaliças, sementes e frutas de baixo índice glicêmico (frutas vermelhas, abacate).',
     isTemplate: true,
     isSystem: true,
     isActive: true,
@@ -197,7 +316,11 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         name: 'Café da Manhã Low Carb',
         time: '08:00',
         items: [
-          { name: 'Ovos mexidos com espinafre', quantity: 2, measure: 'unidades' },
+          {
+            name: 'Ovos mexidos com espinafre',
+            quantity: 2,
+            measure: 'unidades',
+          },
           { name: 'Queijo parmesão ralado', quantity: 15, measure: 'g' },
           { name: 'Abacate fatiado', quantity: 70, measure: 'g' },
           { name: 'Café preto com canela em pó', quantity: 150, measure: 'ml' },
@@ -207,9 +330,21 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         name: 'Almoço Equilibrado',
         time: '12:30',
         items: [
-          { name: 'Sobrecoxa de frango sem pele assada', quantity: 160, measure: 'g' },
-          { name: 'Purê de couve-flor com azeite', quantity: 150, measure: 'g' },
-          { name: 'Salada de rúcula, tomate cereja e pepino', quantity: 120, measure: 'g' },
+          {
+            name: 'Sobrecoxa de frango sem pele assada',
+            quantity: 160,
+            measure: 'g',
+          },
+          {
+            name: 'Purê de couve-flor com azeite',
+            quantity: 150,
+            measure: 'g',
+          },
+          {
+            name: 'Salada de rúcula, tomate cereja e pepino',
+            quantity: 120,
+            measure: 'g',
+          },
           { name: 'Azeite de oliva extravirgem', quantity: 12, measure: 'ml' },
         ],
       },
@@ -217,7 +352,11 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         name: 'Lanche da Tarde Saciedade',
         time: '16:30',
         items: [
-          { name: 'Iogurte grego natural sem açúcar', quantity: 140, measure: 'g' },
+          {
+            name: 'Iogurte grego natural sem açúcar',
+            quantity: 140,
+            measure: 'g',
+          },
           { name: 'Semente de chia', quantity: 15, measure: 'g' },
           { name: 'Mirtilos ou amoras', quantity: 60, measure: 'g' },
         ],
@@ -226,8 +365,16 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         name: 'Jantar Cetogênico Suave',
         time: '20:00',
         items: [
-          { name: 'Salmão grelhado ou carne magra grelhada', quantity: 150, measure: 'g' },
-          { name: 'Aspargos ou brócolis salteados no azeite', quantity: 140, measure: 'g' },
+          {
+            name: 'Salmão grelhado ou carne magra grelhada',
+            quantity: 150,
+            measure: 'g',
+          },
+          {
+            name: 'Aspargos ou brócolis salteados no azeite',
+            quantity: 140,
+            measure: 'g',
+          },
           { name: 'Mix de folhas verdes', quantity: 80, measure: 'g' },
           { name: 'Azeite de oliva extravirgem', quantity: 10, measure: 'ml' },
         ],
@@ -245,7 +392,8 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
     fatG: 130,
     fiberG: 20,
     durationDays: 30,
-    notes: 'Ingerir eletrólitos (sódio, magnésio, potássio) adequadamente para prevenir a fase de adaptação cetogênica.',
+    notes:
+      'Ingerir eletrólitos (sódio, magnésio, potássio) adequadamente para prevenir a fase de adaptação cetogênica.',
     isTemplate: true,
     isSystem: true,
     isActive: true,
@@ -256,18 +404,38 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         name: 'Primeira Refeição Cetogênica',
         time: '09:00',
         items: [
-          { name: 'Ovos caipiras fritos no azeite ou ghee', quantity: 3, measure: 'unidades' },
+          {
+            name: 'Ovos caipiras fritos no azeite ou ghee',
+            quantity: 3,
+            measure: 'unidades',
+          },
           { name: 'Bacon artesanal grelhado', quantity: 30, measure: 'g' },
-          { name: 'Abacate maduro com sal marinho', quantity: 90, measure: 'g' },
+          {
+            name: 'Abacate maduro com sal marinho',
+            quantity: 90,
+            measure: 'g',
+          },
         ],
       },
       {
         name: 'Almoço Densidade Lipídica',
         time: '13:30',
         items: [
-          { name: 'Costelinha de porco ou corte bovino gordo', quantity: 160, measure: 'g' },
-          { name: 'Couve refogada no alho e azeite', quantity: 120, measure: 'g' },
-          { name: 'Salada de agrião com azeitonas pretas', quantity: 80, measure: 'g' },
+          {
+            name: 'Costelinha de porco ou corte bovino gordo',
+            quantity: 160,
+            measure: 'g',
+          },
+          {
+            name: 'Couve refogada no alho e azeite',
+            quantity: 120,
+            measure: 'g',
+          },
+          {
+            name: 'Salada de agrião com azeitonas pretas',
+            quantity: 80,
+            measure: 'g',
+          },
           { name: 'Azeite de oliva extravirgem', quantity: 15, measure: 'ml' },
         ],
       },
@@ -276,14 +444,22 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         time: '17:00',
         items: [
           { name: 'Castanha de caju e nozes pecã', quantity: 30, measure: 'g' },
-          { name: 'Queijo gouda ou prato em cubos', quantity: 40, measure: 'g' },
+          {
+            name: 'Queijo gouda ou prato em cubos',
+            quantity: 40,
+            measure: 'g',
+          },
         ],
       },
       {
         name: 'Jantar Cetogênico',
         time: '20:30',
         items: [
-          { name: 'Sobrecoxa de frango com pele assada', quantity: 170, measure: 'g' },
+          {
+            name: 'Sobrecoxa de frango com pele assada',
+            quantity: 170,
+            measure: 'g',
+          },
           { name: 'Abobrinha salteada com ervas', quantity: 130, measure: 'g' },
           { name: 'Azeite de oliva extravirgem', quantity: 12, measure: 'ml' },
         ],
@@ -301,7 +477,8 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
     fatG: 58,
     fiberG: 32,
     durationDays: 60,
-    notes: 'Cardápio balanceado com fontes integrais e variedade de fitoquímicos coloridos.',
+    notes:
+      'Cardápio balanceado com fontes integrais e variedade de fitoquímicos coloridos.',
     isTemplate: true,
     isSystem: true,
     isActive: true,
@@ -312,21 +489,41 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         name: 'Café da Manhã Completo',
         time: '07:30',
         items: [
-          { name: 'Pão integral ou tapioca com aveia', quantity: 50, measure: 'g' },
-          { name: 'Ovos mexidos com queijo branco', quantity: 2, measure: 'unidades' },
+          {
+            name: 'Pão integral ou tapioca com aveia',
+            quantity: 50,
+            measure: 'g',
+          },
+          {
+            name: 'Ovos mexidos com queijo branco',
+            quantity: 2,
+            measure: 'unidades',
+          },
           { name: 'Mamão papaia com aveia', quantity: 140, measure: 'g' },
-          { name: 'Café com leite desnatado ou vegetal', quantity: 150, measure: 'ml' },
+          {
+            name: 'Café com leite desnatado ou vegetal',
+            quantity: 150,
+            measure: 'ml',
+          },
         ],
       },
       {
         name: 'Almoço Tradicional Saudável',
         time: '12:30',
         items: [
-          { name: 'Filé de frango ou carne magra grelhada', quantity: 140, measure: 'g' },
+          {
+            name: 'Filé de frango ou carne magra grelhada',
+            quantity: 140,
+            measure: 'g',
+          },
           { name: 'Arroz branco ou integral', quantity: 140, measure: 'g' },
           { name: 'Feijão preto ou carioca', quantity: 90, measure: 'g' },
           { name: 'Salada mista crua abundante', quantity: 100, measure: 'g' },
-          { name: 'Legume cozido (chuchu, abobrinha)', quantity: 100, measure: 'g' },
+          {
+            name: 'Legume cozido (chuchu, abobrinha)',
+            quantity: 100,
+            measure: 'g',
+          },
           { name: 'Azeite de oliva extravirgem', quantity: 10, measure: 'ml' },
         ],
       },
@@ -344,8 +541,16 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         time: '19:30',
         items: [
           { name: 'Filé de pescada ou tilápia', quantity: 150, measure: 'g' },
-          { name: 'Batata inglesa cozida ou assada', quantity: 160, measure: 'g' },
-          { name: 'Salada verde com tomate e pepino', quantity: 100, measure: 'g' },
+          {
+            name: 'Batata inglesa cozida ou assada',
+            quantity: 160,
+            measure: 'g',
+          },
+          {
+            name: 'Salada verde com tomate e pepino',
+            quantity: 100,
+            measure: 'g',
+          },
           { name: 'Azeite de oliva extravirgem', quantity: 8, measure: 'ml' },
         ],
       },
@@ -362,7 +567,8 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
     fatG: 53,
     fiberG: 40,
     durationDays: 30,
-    notes: 'Garantir consumo de vitamina C junto às fontes de ferro vegetal (ex: limão espremido nas folhas e leguminosas).',
+    notes:
+      'Garantir consumo de vitamina C junto às fontes de ferro vegetal (ex: limão espremido nas folhas e leguminosas).',
     isTemplate: true,
     isSystem: true,
     isActive: true,
@@ -373,9 +579,17 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         name: 'Café da Manhã Plant-Based',
         time: '07:30',
         items: [
-          { name: 'Mingau de aveia com leite de soja enriquecido', quantity: 200, measure: 'ml' },
+          {
+            name: 'Mingau de aveia com leite de soja enriquecido',
+            quantity: 200,
+            measure: 'ml',
+          },
           { name: 'Farelo de aveia', quantity: 35, measure: 'g' },
-          { name: 'Proteína vegetal de ervilha/arroz', quantity: 20, measure: 'g' },
+          {
+            name: 'Proteína vegetal de ervilha/arroz',
+            quantity: 20,
+            measure: 'g',
+          },
           { name: 'Frutas vermelhas ou banana', quantity: 100, measure: 'g' },
           { name: 'Sementes de linhaça moída', quantity: 10, measure: 'g' },
         ],
@@ -384,10 +598,26 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         name: 'Almoço Rico em Leguminosas',
         time: '12:30',
         items: [
-          { name: 'Tofu grelhado com cúrcuma e gengibre', quantity: 160, measure: 'g' },
-          { name: 'Quinoa cozida ou arroz integral', quantity: 120, measure: 'g' },
-          { name: 'Lentilha ou grão-de-bico cozido', quantity: 110, measure: 'g' },
-          { name: 'Couve e folhas escuras com limão', quantity: 100, measure: 'g' },
+          {
+            name: 'Tofu grelhado com cúrcuma e gengibre',
+            quantity: 160,
+            measure: 'g',
+          },
+          {
+            name: 'Quinoa cozida ou arroz integral',
+            quantity: 120,
+            measure: 'g',
+          },
+          {
+            name: 'Lentilha ou grão-de-bico cozido',
+            quantity: 110,
+            measure: 'g',
+          },
+          {
+            name: 'Couve e folhas escuras com limão',
+            quantity: 100,
+            measure: 'g',
+          },
           { name: 'Azeite de oliva extravirgem', quantity: 10, measure: 'ml' },
         ],
       },
@@ -396,7 +626,11 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         time: '16:00',
         items: [
           { name: 'Pasta de grão-de-bico (Homus)', quantity: 50, measure: 'g' },
-          { name: 'Palitinhos de cenoura e pepino', quantity: 100, measure: 'g' },
+          {
+            name: 'Palitinhos de cenoura e pepino',
+            quantity: 100,
+            measure: 'g',
+          },
           { name: 'Torradas integrais', quantity: 30, measure: 'g' },
         ],
       },
@@ -404,9 +638,21 @@ export const SYSTEM_DIET_TEMPLATES: SystemDietTemplate[] = [
         name: 'Jantar Confortável',
         time: '19:30',
         items: [
-          { name: 'Hambúrguer de lentilha ou feijão artesanal', quantity: 140, measure: 'g' },
-          { name: 'Purê de abóbora com noz-moscada', quantity: 150, measure: 'g' },
-          { name: 'Salada de brócolis, tomate e sementes de girassol', quantity: 120, measure: 'g' },
+          {
+            name: 'Hambúrguer de lentilha ou feijão artesanal',
+            quantity: 140,
+            measure: 'g',
+          },
+          {
+            name: 'Purê de abóbora com noz-moscada',
+            quantity: 150,
+            measure: 'g',
+          },
+          {
+            name: 'Salada de brócolis, tomate e sementes de girassol',
+            quantity: 120,
+            measure: 'g',
+          },
           { name: 'Azeite de oliva extravirgem', quantity: 8, measure: 'ml' },
         ],
       },

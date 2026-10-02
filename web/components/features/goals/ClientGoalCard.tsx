@@ -196,11 +196,11 @@ export function ClientGoalCard({ item, onSelect, onEdit, onNewGoal }: ClientGoal
               <div>
                 <span className="text-[var(--sm-muted)]">Atual:</span>{" "}
                 <strong className="text-sm font-black text-[var(--sm-brand)]">
-                  {progress.currentWeightKg} kg
+                  {progress.currentWeightKg === null ? "Sem avaliação" : `${progress.currentWeightKg} kg`}
                 </strong>{" "}
-                <span className={`font-semibold ${progress.weightDeltaKg && progress.weightDeltaKg < 0 ? "text-emerald-600" : "text-amber-600"}`}>
-                  ({progress.weightDeltaKg && progress.weightDeltaKg > 0 ? `+${progress.weightDeltaKg}` : progress.weightDeltaKg} kg)
-                </span>
+                {progress.weightDeltaKg !== null && <span className={`font-semibold ${progress.weightDeltaKg < 0 ? "text-emerald-600" : "text-amber-600"}`}>
+                  ({progress.weightDeltaKg > 0 ? `+${progress.weightDeltaKg}` : progress.weightDeltaKg} kg)
+                </span>}
               </div>
               <div>
                 <span className="text-[var(--sm-muted)]">Meta:</span>{" "}
@@ -238,13 +238,14 @@ export function ClientGoalCard({ item, onSelect, onEdit, onNewGoal }: ClientGoal
                 → Meta: <strong>{goal.targetBodyFatPercent}%</strong>
               </span>
               <span>
-                Faltam {Math.abs(progress.weightRemainingKg ?? 0)} kg
+                {progress.weightRemainingKg === null ? "Sem comparativo de peso" : `Faltam ${Math.abs(progress.weightRemainingKg)} kg`}
               </span>
             </div>
           )}
         </div>
 
         {/* Daily Habits Adherence Chips */}
+        {progress.habitsAdherence ? (
         <div className="mt-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--sm-muted)]">
             Adesão aos Hábitos Pactuados ({progress.habitsAdherence.overall}%)
@@ -308,6 +309,7 @@ export function ClientGoalCard({ item, onSelect, onEdit, onNewGoal }: ClientGoal
           </div>
         </div>
 
+        ) : <p className="mt-4 text-xs text-[var(--sm-muted)]">Adesão aos hábitos: sem registros. Metas: {goal.habits.waterTargetMl} mL de água; {goal.habits.sleepTargetHours} h de sono; {goal.habits.mealsAdherencePercent}% das refeições; {goal.habits.dailyStepsTarget} passos.</p>}
         {/* Clinical Alert Callout if present */}
         {hasAlert && (
           <div className="mt-3 flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">

@@ -1,17 +1,25 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength, IsNumber, IsEnum } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MinLength,
+  IsNumber,
+  IsEnum,
+} from 'class-validator';
 import { Role } from '@prisma/client';
 
 export class CreateUserDto {
   @IsString()
   @IsNotEmpty({ message: 'O nome é obrigatório' })
-  name!: string; 
+  name!: string;
 
   @IsEmail({}, { message: 'E-mail inválido' })
-  email!: string; 
+  email!: string;
 
   @IsString()
   @MinLength(6)
-  password!: string; 
+  password!: string;
 
   @IsEnum(Role)
   @IsOptional()
@@ -26,7 +34,7 @@ export class CreateUserDto {
   phone?: string;
 
   @IsOptional()
-  @IsString() 
+  @IsString()
   birthDate?: string;
 
   @IsOptional()
@@ -61,33 +69,43 @@ export class CreateUserDto {
   @IsString()
   pathologies?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   typicalSleep?: string;
 
-  @IsOptional() @IsNumber()
+  @IsOptional()
+  @IsNumber()
   stressLevel?: number;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   foodRelationship?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   psychologyHistory?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   exerciseType?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   exerciseFrequency?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   exerciseDuration?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   hasPersonal?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   workActivityLevel?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   nutritionistNotes?: string;
 }

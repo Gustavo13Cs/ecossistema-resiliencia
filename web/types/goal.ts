@@ -23,7 +23,7 @@ export interface HabitTargets {
   sleepTargetHours: number
   mealsAdherencePercent: number
   dailyStepsTarget: number
-  habitsNotes?: string
+  habitsNotes?: string | null
 }
 
 export interface ClientGoalCommitment {
@@ -38,11 +38,13 @@ export interface ClientGoalCommitment {
   startDate: string
   targetDate: string
   habits: HabitTargets
-  clinicalNotes?: string
+  clinicalNotes?: string | null
   status: GoalStatus
   createdAt: string
   updatedAt: string
 }
+
+export type ClientGoalInput = Omit<ClientGoalCommitment, "id" | "createdAt" | "updatedAt"> & { id?: string }
 
 export interface HabitsAdherenceBreakdown {
   water: number // 0 - 100%
@@ -65,7 +67,7 @@ export interface GoalProgress {
   requiredWeeklyRateKg: number
   actualWeeklyRateKg: number | null
   rateFeasibility: RateFeasibility
-  habitsAdherence: HabitsAdherenceBreakdown
+  habitsAdherence: HabitsAdherenceBreakdown | null
 }
 
 export interface GoalAlert {
@@ -89,7 +91,7 @@ export interface GoalsKpiSummary {
   atRiskCount: number
   atRiskPercent: number
   achievedCount: number
-  averageHabitsAdherence: number
+  averageHabitsAdherence: number | null
 }
 
 export interface ClientWithGoalSummary {

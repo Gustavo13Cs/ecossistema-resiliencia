@@ -67,6 +67,7 @@ export default function MetasPage() {
       if (statusFilter === "no_goal" && item.goal !== null) return false
       if (statusFilter === "on_track") {
         if (!item.goal || !item.progress) return false
+        if (item.goal.status !== "ON_TRACK" && item.progress.actualWeeklyRateKg === null) return false
         if (item.alerts.length > 0 || item.progress.percentAchieved >= 100) return false
       }
       if (statusFilter === "at_risk") {
@@ -105,7 +106,7 @@ export default function MetasPage() {
         <AsyncState
           kind="error"
           title="Erro ao carregar metas clínicas"
-          description="Não foi possível consultar os dados da base de clientes. Verifique a conexão e tente novamente."
+          description="Não foi possível consultar as metas e avaliações da sua base. Verifique a conexão e tente novamente."
         />
       </div>
     )

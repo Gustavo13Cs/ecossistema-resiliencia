@@ -55,45 +55,74 @@ describe('calculateRecipeNutrition', () => {
     });
   });
 
-  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
-    'rejects servings outside the positive finite range: %p',
-    (servings) => {
-      expect(() => calculateRecipeNutrition([validIngredient], servings)).toThrow(
-        RecipeNutritionValidationError,
-      );
-      expect(() => calculateRecipeNutrition([validIngredient], servings)).toThrow('servings');
-    },
-  );
+  it.each([
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    Number.NEGATIVE_INFINITY,
+  ])('rejects servings outside the positive finite range: %p', (servings) => {
+    expect(() => calculateRecipeNutrition([validIngredient], servings)).toThrow(
+      RecipeNutritionValidationError,
+    );
+    expect(() => calculateRecipeNutrition([validIngredient], servings)).toThrow(
+      'servings',
+    );
+  });
 
   it('rejects an empty ingredient list', () => {
-    expect(() => calculateRecipeNutrition([], 1)).toThrow(RecipeNutritionValidationError);
+    expect(() => calculateRecipeNutrition([], 1)).toThrow(
+      RecipeNutritionValidationError,
+    );
     expect(() => calculateRecipeNutrition([], 1)).toThrow('ingredients');
   });
 
-  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+  it.each([
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    Number.NEGATIVE_INFINITY,
+  ])(
     'rejects ingredient quantities outside the positive finite range: %p',
     (quantity) => {
       expect(() =>
         calculateRecipeNutrition([{ ...validIngredient, quantity }], 1),
       ).toThrow(RecipeNutritionValidationError);
-      expect(() => calculateRecipeNutrition([{ ...validIngredient, quantity }], 1)).toThrow(
-        'quantity',
-      );
+      expect(() =>
+        calculateRecipeNutrition([{ ...validIngredient, quantity }], 1),
+      ).toThrow('quantity');
     },
   );
 
-  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+  it.each([
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    Number.NEGATIVE_INFINITY,
+  ])(
     'rejects food base amounts outside the positive finite range: %p',
     (baseAmount) => {
       expect(() =>
         calculateRecipeNutrition(
-          [{ ...validIngredient, food: { ...validIngredient.food, baseAmount } }],
+          [
+            {
+              ...validIngredient,
+              food: { ...validIngredient.food, baseAmount },
+            },
+          ],
           1,
         ),
       ).toThrow(RecipeNutritionValidationError);
       expect(() =>
         calculateRecipeNutrition(
-          [{ ...validIngredient, food: { ...validIngredient.food, baseAmount } }],
+          [
+            {
+              ...validIngredient,
+              food: { ...validIngredient.food, baseAmount },
+            },
+          ],
           1,
         ),
       ).toThrow('baseAmount');
@@ -112,13 +141,23 @@ describe('calculateRecipeNutrition', () => {
   ])('rejects invalid %s nutrient values', (nutrient, value) => {
     expect(() =>
       calculateRecipeNutrition(
-        [{ ...validIngredient, food: { ...validIngredient.food, [nutrient]: value } }],
+        [
+          {
+            ...validIngredient,
+            food: { ...validIngredient.food, [nutrient]: value },
+          },
+        ],
         1,
       ),
     ).toThrow(RecipeNutritionValidationError);
     expect(() =>
       calculateRecipeNutrition(
-        [{ ...validIngredient, food: { ...validIngredient.food, [nutrient]: value } }],
+        [
+          {
+            ...validIngredient,
+            food: { ...validIngredient.food, [nutrient]: value },
+          },
+        ],
         1,
       ),
     ).toThrow('nutrients');

@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { Pool } from 'pg';
 
@@ -26,6 +27,10 @@ const APPLICATION_TABLES = [
   'recipes',
   'recipe_versions',
   'recipe_ingredients',
+  'consultation_notes',
+  'client_goals',
+  'lab_orders',
+  'auth_sessions',
   'foods',
   'food_preferences',
   'meal_logs',
@@ -192,6 +197,57 @@ describe('Database defensive RLS hardening (e2e)', () => {
       CREATE FUNCTION rls_hardening_future_schema.rls_hardening_future_function()
       RETURNS integer LANGUAGE sql AS $$ SELECT 1 $$;
     `);
+  });
+
+  it('does not leave any public application table outside defensive RLS', async () => {
+    const tables = await pool.query<{
+      relname: string;
+      relrowsecurity: boolean;
+    }>(
+      `SELECT relname, relrowsecurity FROM pg_class WHERE relnamespace='public'::regnamespace
+       AND relkind='r' AND relname <> '_prisma_migrations' AND relname NOT LIKE 'rls_hardening_%'`,
+    );
+    expect(tables.rows.map((row) => row.relname).sort()).toEqual(
+      [...APPLICATION_TABLES].sort(),
+    );
+    expect(tables.rows.filter((row) => !row.relrowsecurity)).toEqual([]);
+  });
+
+  it('pins exact recipe function search paths and preserves invoker semantics and migration history', async () => {
+    const functions = await pool.query<{
+      proname: string;
+      proconfig: string[];
+      prosecdef: boolean;
+      language: string;
+      arguments: number;
+    }>(
+      `SELECT p.proname, p.proconfig, p.prosecdef, l.lanname AS language, p.pronargs AS arguments
+       FROM pg_proc p JOIN pg_language l ON l.oid=p.prolang
+       WHERE p.pronamespace='public'::regnamespace AND p.proname=ANY($1::text[])`,
+      [
+        [
+          'prevent_recipe_version_mutation',
+          'publish_recipe_version_snapshot',
+          'protect_published_recipe_ingredients',
+        ],
+      ],
+    );
+    expect(functions.rows).toHaveLength(3);
+    for (const row of functions.rows) {
+      expect(row).toMatchObject({
+        proconfig: ['search_path=pg_catalog, public'],
+        prosecdef: false,
+        language: 'plpgsql',
+        arguments: 0,
+      });
+    }
+    const historical = readFileSync(RECIPE_MIGRATION_PATH, 'utf8').replaceAll(
+      '\r\n',
+      '\n',
+    );
+    expect(createHash('sha256').update(historical).digest('hex')).toBe(
+      '2e1c6949926609c6428d3c7bbec894b5b3b1d98730e2abcc7d8d05c13b1fe4a7',
+    );
   });
 
   afterAll(async () => {

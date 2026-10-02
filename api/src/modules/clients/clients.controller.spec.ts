@@ -1,8 +1,10 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { App } from 'supertest/types';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { ClientOverviewService } from './client-overview.service';
 import { ClientsController } from './clients.controller';
 import { ClientsService } from './clients.service';
 
@@ -18,13 +20,19 @@ describe('ClientsController', () => {
     update: jest.fn(),
     setStatus: jest.fn(),
   };
+  const clientOverviewService = {
+    getOverview: jest.fn(),
+  };
 
-  let app: INestApplication;
+  let app: INestApplication<App>;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [ClientsController],
-      providers: [{ provide: ClientsService, useValue: clientsService }],
+      providers: [
+        { provide: ClientsService, useValue: clientsService },
+        { provide: ClientOverviewService, useValue: clientOverviewService },
+      ],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({
@@ -60,6 +68,9 @@ describe('ClientsController', () => {
       id: 'client-1',
       name: 'Ana',
       status: 'ARCHIVED',
+    });
+    clientOverviewService.getOverview.mockResolvedValue({
+      client: { id: 'client-1', name: 'Ana' },
     });
   });
 
@@ -131,6 +142,17 @@ describe('ClientsController', () => {
     await request(app.getHttpServer()).get('/clients/client-1').expect(200);
 
     expect(clientsService.findOne).toHaveBeenCalledWith(
+      authenticatedProfessional,
+      'client-1',
+    );
+  });
+
+  it('passes authenticated ownership to the Client overview', async () => {
+    await request(app.getHttpServer())
+      .get('/clients/client-1/overview')
+      .expect(200);
+
+    expect(clientOverviewService.getOverview).toHaveBeenCalledWith(
       authenticatedProfessional,
       'client-1',
     );

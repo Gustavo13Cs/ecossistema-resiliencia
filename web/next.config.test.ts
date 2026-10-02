@@ -31,10 +31,7 @@ describe("Next.js response security headers", () => {
       (header) => header.key === "Content-Security-Policy",
     )?.value
 
-    expect(contentSecurityPolicy).toContain("default-src 'self'")
-    expect(contentSecurityPolicy).toContain("frame-ancestors 'none'")
-    expect(contentSecurityPolicy).toContain("connect-src 'self'")
-    expect(contentSecurityPolicy).not.toContain("https://api.safemove.example")
+    expect(contentSecurityPolicy).toBeUndefined()
     expect(nextConfig.env?.NEXT_PUBLIC_API_URL).toBe("/api")
 
     expect(nextConfig.rewrites).toBeTypeOf("function")
@@ -110,7 +107,7 @@ describe("Next.js response security headers", () => {
     ])
   })
 
-  it("includes unsafe-eval and websocket in connect-src during development mode", async () => {
+  it("leaves CSP to the per-request proxy in every environment", async () => {
     vi.stubEnv("NODE_ENV", "development")
     vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:3000")
 
@@ -118,7 +115,6 @@ describe("Next.js response security headers", () => {
     const catchAll = routes.find((route) => route.source === "/(.*)")
     const csp = catchAll?.headers.find((header) => header.key === "Content-Security-Policy")?.value
 
-    expect(csp).toContain("'unsafe-eval'")
-    expect(csp).toContain("ws:")
+    expect(csp).toBeUndefined()
   })
 })

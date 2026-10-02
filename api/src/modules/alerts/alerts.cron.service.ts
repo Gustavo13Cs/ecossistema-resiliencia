@@ -1,136 +1,106 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../infra/database/prisma.service';
+
+export const ALERT_SNAPSHOT_LOCK = 0x534146454d4f5645n;
+const DAY = 86_400_000;
 
 @Injectable()
 export class AlertsCronService {
   private readonly logger = new Logger(AlertsCronService.name);
+  constructor(private readonly prisma: PrismaService) {}
 
-  constructor(private prisma: PrismaService) {}
-
-  // Roda todos os dias às 02:00 AM
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
-  async generateDailyAlerts() {
-    this.logger.log('Iniciando processamento analítico de alertas...');
-
-    // 1. Limpa os alertas do dia anterior para não acumular
-    await this.prisma.patientAlert.deleteMany({});
-
-    // 2. Busca pacientes vinculados a profissionais ativos
-    const links = await this.prisma.professionalPatientLink.findMany({
-      where: { isActive: true },
-      select: { professionalId: true, patientId: true },
-    });
-
-    const alertsToInsert: any[] = [];
-    const fiveDaysAgo = new Date();
-    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-
-    const fourteenDaysAgo = new Date();
-    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-
-    for (const link of links) {
-      // ─────────────────────────────────────────────────────────────────────
-      // REGRA 1: Inatividade — sem treino registrado nos últimos 5 dias
-      // Fonte de dados: DailyTracking com type = 'WORKOUT'
-      // ─────────────────────────────────────────────────────────────────────
-      const lastWorkout = await this.prisma.dailyTracking.findFirst({
-        where: {
-          patientId: link.patientId,
-          type: 'WORKOUT',
+  async generateDailyAlerts(
+    now = new Date(),
+  ): Promise<{ generated: number; skipped: boolean }> {
+    try {
+      const result = await this.prisma.$transaction(
+        async (tx) => {
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(${ALERT_SNAPSHOT_LOCK}::bigint)`;
+          // As regras de treino são aplicadas somente aos prontuários ativos de personal.
+          const clients = await tx.client.findMany({
+            where: { status: 'ACTIVE', professional: { role: 'PERSONAL' } },
+            select: { id: true, professionalId: true },
+          });
+          const alerts: Prisma.PatientAlertCreateManyInput[] = [];
+          const fiveDaysAgo = new Date(now.getTime() - 5 * DAY);
+          const fourteenDaysAgo = new Date(now.getTime() - 14 * DAY);
+          const twentyOneDaysAgo = new Date(now.getTime() - 21 * DAY);
+          for (const client of clients) {
+            const where = {
+              professionalId: client.professionalId,
+              clientId: client.id,
+              type: 'WORKOUT',
+            };
+            const recent = await tx.dailyTracking.findMany({
+              where: {
+                ...where,
+                completedAt: { gte: twentyOneDaysAgo, lte: now },
+              },
+              select: { completedAt: true },
+              orderBy: { completedAt: 'desc' },
+            });
+            const past = await tx.dailyTracking.findFirst({
+              where: { ...where, completedAt: { lt: twentyOneDaysAgo } },
+              select: { id: true },
+            });
+            const identity = {
+              clientId: client.id,
+              professionalId: client.professionalId,
+              patientId: null,
+              createdAt: now,
+            };
+            if (!recent[0] || recent[0].completedAt < fiveDaysAgo) {
+              alerts.push({
+                ...identity,
+                type: 'INACTIVE_5_DAYS',
+                severity: 'HIGH',
+                message: 'Nenhum treino registrado nos últimos 5 dias.',
+              });
+            }
+            const days = new Map<string, number>();
+            for (const workout of recent) {
+              if (workout.completedAt < fourteenDaysAgo) continue;
+              const day = workout.completedAt.toISOString().slice(0, 10);
+              days.set(day, (days.get(day) ?? 0) + 1);
+            }
+            const overloadedDays = [...days.values()].filter(
+              (count) => count > 1,
+            ).length;
+            if (overloadedDays >= 3) {
+              alerts.push({
+                ...identity,
+                type: 'OVERTRAINING_RISK',
+                severity: 'HIGH',
+                message: `Múltiplos treinos no mesmo dia detectados em ${overloadedDays} dias nas últimas 2 semanas. Risco de overtraining.`,
+              });
+            }
+            if (recent.length === 0 && past) {
+              alerts.push({
+                ...identity,
+                type: 'PLATEAU_3_WEEKS',
+                severity: 'MEDIUM',
+                message:
+                  'Nenhum treino registrado nas últimas 3 semanas. Possível abandono do plano.',
+              });
+            }
+          }
+          // Somente o snapshot Client é substituído; o histórico legado fica preservado.
+          await tx.patientAlert.deleteMany({
+            where: { clientId: { not: null } },
+          });
+          if (alerts.length) await tx.patientAlert.createMany({ data: alerts });
+          return { generated: alerts.length, skipped: false };
         },
-        orderBy: { completedAt: 'desc' },
-      });
-
-      if (!lastWorkout || lastWorkout.completedAt < fiveDaysAgo) {
-        alertsToInsert.push({
-          type: 'INACTIVE_5_DAYS',
-          severity: 'HIGH',
-          message: 'Nenhum treino registrado nos últimos 5 dias.',
-          patientId: link.patientId,
-          professionalId: link.professionalId,
-        });
-      }
-
-      // ─────────────────────────────────────────────────────────────────────
-      // REGRA 2: Risco de Overtraining — mais de 2 treinos por dia em
-      // pelo menos 3 dias distintos nas últimas 2 semanas.
-      // Fonte de dados: DailyTracking com type = 'WORKOUT'
-      // ─────────────────────────────────────────────────────────────────────
-      const recentWorkouts = await this.prisma.dailyTracking.findMany({
-        where: {
-          patientId: link.patientId,
-          type: 'WORKOUT',
-          completedAt: { gte: fourteenDaysAgo },
-        },
-        select: { completedAt: true },
-      });
-
-      // Agrupa treinos por dia (YYYY-MM-DD) e conta quantos dias tiveram > 1 treino
-      const workoutsByDay = recentWorkouts.reduce<Record<string, number>>(
-        (acc, w) => {
-          const day = w.completedAt.toISOString().split('T')[0];
-          acc[day] = (acc[day] ?? 0) + 1;
-          return acc;
-        },
-        {},
+        { maxWait: 30_000, timeout: 60_000 },
       );
-
-      const overloadedDays = Object.values(workoutsByDay).filter(
-        (count) => count > 1,
-      ).length;
-
-      if (overloadedDays >= 3) {
-        alertsToInsert.push({
-          type: 'OVERTRAINING_RISK',
-          severity: 'HIGH',
-          message: `Múltiplos treinos no mesmo dia detectados em ${overloadedDays} dias nas últimas 2 semanas. Risco de overtraining.`,
-          patientId: link.patientId,
-          professionalId: link.professionalId,
-        });
-      }
-
-      // ─────────────────────────────────────────────────────────────────────
-      // REGRA 3: Platô de volume — sem nenhum treino nas últimas 3 semanas
-      // mas havia treinos antes disso (paciente ativo que parou).
-      // ─────────────────────────────────────────────────────────────────────
-      const twentyOneDaysAgo = new Date();
-      twentyOneDaysAgo.setDate(twentyOneDaysAgo.getDate() - 21);
-
-      const recentActivity = await this.prisma.dailyTracking.count({
-        where: {
-          patientId: link.patientId,
-          type: 'WORKOUT',
-          completedAt: { gte: twentyOneDaysAgo },
-        },
-      });
-
-      const anyPastActivity = await this.prisma.dailyTracking.count({
-        where: {
-          patientId: link.patientId,
-          type: 'WORKOUT',
-          completedAt: { lt: twentyOneDaysAgo },
-        },
-      });
-
-      if (recentActivity === 0 && anyPastActivity > 0) {
-        alertsToInsert.push({
-          type: 'PLATEAU_3_WEEKS',
-          severity: 'MEDIUM',
-          message:
-            'Nenhum treino registrado nas últimas 3 semanas. Possível abandono do plano.',
-          patientId: link.patientId,
-          professionalId: link.professionalId,
-        });
-      }
+      this.logger.log(result);
+      return result;
+    } catch {
+      this.logger.error({ generated: 0, skipped: false });
+      throw new Error('Alert snapshot generation failed');
     }
-
-    if (alertsToInsert.length > 0) {
-      await this.prisma.patientAlert.createMany({ data: alertsToInsert });
-    }
-
-    this.logger.log(
-      `Processamento concluído. ${alertsToInsert.length} alertas gerados.`,
-    );
   }
 }

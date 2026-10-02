@@ -16,9 +16,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { DOMAIN_ROLES } from '../../common/policies/professional-domain-roles';
-import { AuthUser } from '../../common/types/auth-user';
-
-type AuthenticatedRequest = { user: AuthUser };
+import { AuthenticatedRequest } from '../../common/types/auth-user';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(...DOMAIN_ROLES.nutrition)
@@ -31,12 +29,15 @@ export class ConsultationNotesController {
     @Request() request: AuthenticatedRequest,
     @Body() dto: CreateConsultationNoteDto,
   ) {
-    return this.service.create(dto, request.user.sub);
+    return this.service.create(request.user, dto);
   }
 
-  @Get('patient/:patientId')
-  findByPatient(@Param('patientId') patientId: string) {
-    return this.service.findByPatient(patientId);
+  @Get('client/:clientId')
+  findByClient(
+    @Request() request: AuthenticatedRequest,
+    @Param('clientId') clientId: string,
+  ) {
+    return this.service.findByClient(request.user, clientId);
   }
 
   @Patch(':id')
@@ -45,11 +46,11 @@ export class ConsultationNotesController {
     @Param('id') id: string,
     @Body() dto: UpdateConsultationNoteDto,
   ) {
-    return this.service.update(id, dto, request.user.sub);
+    return this.service.update(request.user, id, dto);
   }
 
   @Delete(':id')
   remove(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
-    return this.service.remove(id, request.user.sub);
+    return this.service.remove(request.user, id);
   }
 }

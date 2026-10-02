@@ -1,70 +1,59 @@
-import { useState, useEffect, useMemo } from "react"
+"use client"
+
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useAuth } from "@/contexts/auth-context"
 import { api } from "@/lib/api"
+import { queryKeys } from "@/lib/query-keys"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
-export const useLabExams = (patientId: string) => {
+export interface LabMarkerInput { name: string; value: number; unit: string }
+export interface LabExamInput { date: string; notes?: string; markers: LabMarkerInput[] }
+export interface LabExamRecord extends Omit<LabExamInput, "notes"> {
+  id: string
+  notes?: string | null
+  markers: (LabMarkerInput & { id?: string })[]
+}
+
+export const useLabExams = (clientId: string) => {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [exams, setExams] = useState<any[]>([])
-  
-  // Lista unificada de todos os marcadores já registrados para preencher o select do gráfico
-  const [uniqueMarkers, setUniqueMarkers] = useState<string[]>([])
-  const [selectedChartMarker, setSelectedChartMarker] = useState<string>("")
+  const { user } = useAuth()
+  const cache = useQueryClient()
+  const queryKey = queryKeys.labExams(user?.sub ?? "anonymous", clientId)
+  const query = useQuery({
+    queryKey,
+    enabled: Boolean(user?.sub && clientId),
+    queryFn: async () => (await api.get<LabExamRecord[]>(`/lab-exams/client/${clientId}`)).data,
+  })
+  const exams = user?.sub ? query.data ?? [] : []
+  const uniqueMarkers = Array.from(new Set(exams.flatMap(exam => exam.markers.map(marker => marker.name)))).sort()
+  const [selected, setSelectedChartMarker] = useState("")
+  const selectedChartMarker = uniqueMarkers.includes(selected) ? selected : uniqueMarkers[0] ?? ""
+  const chartData = exams.flatMap(exam => {
+    const marker = exam.markers.find(entry => entry.name === selectedChartMarker)
+    return marker ? [{ date: new Date(exam.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), fullDate: exam.date, value: marker.value, unit: marker.unit }] : []
+  })
+  const mutation = useMutation({ mutationFn: (payload: LabExamInput & { clientId: string }) => api.post('/lab-exams', payload) })
 
-  useEffect(() => {
-    const fetchExams = async () => {
-      try {
-        const res = await api.get(`/lab-exams/user/${patientId}`)
-        setExams(res.data)
-        
-        // Extrai nomes únicos de marcadores
-        const markersSet = new Set<string>()
-        res.data.forEach((exam: any) => {
-          exam.markers.forEach((m: any) => markersSet.add(m.name))
-        })
-        const markersArray = Array.from(markersSet).sort()
-        setUniqueMarkers(markersArray)
-        if (markersArray.length > 0) setSelectedChartMarker(markersArray[0])
-      } catch (e) {
-        toast.error("Erro ao carregar histórico de exames.")
-      } finally {
-        setLoading(false)
-      }
-    }
-    if (patientId) fetchExams()
-  }, [patientId])
-
-  const chartData = useMemo(() => {
-    if (!selectedChartMarker) return []
-    
-    return exams.filter(exam => exam.markers.some((m: any) => m.name === selectedChartMarker))
-      .map(exam => {
-        const marker = exam.markers.find((m: any) => m.name === selectedChartMarker)
-        return {
-          date: new Date(exam.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
-          fullDate: exam.date,
-          value: marker.value,
-          unit: marker.unit
-        }
-      })
-  }, [exams, selectedChartMarker])
-
-  const saveExam = async (payload: any) => {
-    setSaving(true)
+  const saveExam = async (payload: LabExamInput) => {
+    if (!user?.sub || !clientId) return
     try {
-      await api.post('/lab-exams', { patientId, ...payload })
+      await mutation.mutateAsync({ date: payload.date, notes: payload.notes, markers: payload.markers.map(marker => ({ name: marker.name, value: marker.value, unit: marker.unit })), clientId })
+      await Promise.all([
+        cache.invalidateQueries({ queryKey }),
+        cache.invalidateQueries({ queryKey: queryKeys.centralLabExams(user.sub) }),
+      ])
       toast.success("Exames registrados com sucesso!")
-      router.push(`/clientes/${patientId}`)
-    } catch (e) {
+      router.push(`/clientes/${clientId}`)
+    } catch {
       toast.error("Erro ao salvar exames.")
-    } finally {
-      setSaving(false)
     }
   }
 
   return {
-    loading, saving, exams, uniqueMarkers, selectedChartMarker, setSelectedChartMarker, chartData, saveExam
+    loading: Boolean(user?.sub && clientId) && query.isPending, saving: mutation.isPending,
+    error: query.isError ? "Erro ao carregar histórico de exames." : null,
+    exams, uniqueMarkers, selectedChartMarker, setSelectedChartMarker, chartData, saveExam,
   }
 }
