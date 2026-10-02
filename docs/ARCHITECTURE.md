@@ -1,6 +1,6 @@
 # Arquitetura — SafeMove (ecossistema-resiliencia)
 
-> Última atualização: Setembro 2026
+> Última atualização: 2 de outubro de 2026
 
 ---
 
@@ -18,7 +18,7 @@
 ┌────────────────────────────┴─────────────────────────────────────┐
 │                        BACKEND (api/)                            │
 │  NestJS 11 + TypeScript strict                                   │
-│  Guards (JWT, Throttler, ClientAccess)                            │
+│  Guards (JWT, Throttler, Roles) + ClientAccessService                            │
 │  class-validator + class-transformer                              │
 │  ScheduleModule (alertas automáticos)                             │
 └────────────────────────────┬─────────────────────────────────────┘
@@ -45,16 +45,15 @@ api/src/
 │   ├── guards/             # JwtAuthGuard, ThrottlerGuard
 │   ├── decorators/         # @Public(), @Roles(), @CurrentUser()
 │   ├── strategies/         # JwtStrategy (Passport)
-│   ├── client-access/      # ClientAccessGuard — verifica ownership de Client
-│   ├── patient-access/     # PatientAccessGuard — legado, para ProfessionalPatientLink
+│   ├── client-access/      # ClientAccessService — verifica ownership de Client
 │   └── types/              # Tipos compartilhados
 ├── infra/
 │   └── database/
 │       ├── prisma.service.ts   # PrismaClient singleton com lifecycle hooks
 │       └── database.module.ts  # @Global() — exporta PrismaService
 └── modules/
-    ├── auth/               # POST /auth/login, POST /auth/register, GET /auth/me
-    ├── users/              # CRUD de perfis profissionais
+    ├── auth/               # Login, registro, me, csrf, refresh e logout; sessões revogáveis
+    ├── users/              # Perfil próprio e overview por Client
     ├── clients/            # CRUD + archive/restore de Client
     ├── workouts/           # Planos de treino (Workout → Split → Exercise)
     ├── diet-plans/         # Planos dietéticos (DietPlan → Meal → MealItem)
@@ -67,13 +66,10 @@ api/src/
     ├── supplements/        # Planos de suplementação
     ├── lab-exams/          # Exames laboratoriais + marcadores
     ├── alerts/             # Alertas automáticos (inatividade, platô, overtraining)
-    ├── metrics/            # Cálculos metabólicos (TMB, GET)
-    ├── agenda/             # Agenda diária (tasks + occurrences)
+    ├── client-goals/       # Metas e hábitos persistidos por Client
+    ├── appointments/       # Agenda profissional vinculada a Client
     ├── consultation-notes/ # Notas de consulta
-    ├── consents/           # Consentimentos de paciente
-    ├── health-check-ins/   # Check-ins de saúde
-    ├── meal-logs/          # Logs de refeição
-    └── workout-logs/       # Logs de treino
+    ├── lab-orders/         # Pedidos laboratoriais persistidos por Client
 ```
 
 ### Padrão por Módulo
@@ -92,14 +88,15 @@ modules/<nome>/
 
 ### Autenticação & Autorização
 
-1. **JWT + Passport**: `JwtStrategy` valida o token do cookie `access_token`
-2. **JwtAuthGuard** (global): protege todas as rotas; rotas públicas usam `@Public()`
-3. **ClientAccessGuard**: verifica que o `Client` pertence ao `req.user.id`
-4. **ThrottlerGuard** (global): 20 req/min por IP
-5. **Isolamento**: todo query que toca `Client` filtra por `professionalId = req.user.id`
+1. `JwtStrategy` valida access JWT de 15 minutos e consulta a sessão e identidade atuais no banco. Refresh opaco rotativo tem validade fixa de 30 dias; apenas seu hash é persistido.
+2. `JwtAuthGuard` global exige autenticação por padrão. `@Public()` delimita health checks e rotas de autenticação, sem remover throttling.
+3. `ThrottlerGuard` limita 60 requisições/minuto por IP; login limita 5/minuto. Guards de papel restringem cada domínio.
+4. `ClientAccessService` e queries com `professionalId = req.user.sub` verificam ownership. Nenhum papel contorna esse filtro; recursos alheios retornam 404.
+5. Mutações por cookie exigem origem permitida e par CSRF. O proxy Next.js `/api` mantém a sessão same-origin; o refresh cookie usa `/api/auth`.
+
+Os módulos de agenda diária antiga, métricas de paciente, consentimentos, check-ins e logs de paciente permanecem no histórico do código/schema, mas não estão montados. A agenda profissional usa `AppointmentsModule`.
 
 ---
-
 ## 3. Frontend — Organização
 
 ### Diretório `web/`
@@ -131,21 +128,21 @@ web/
 │
 ├── hooks/
 │   ├── core/                 # useProfile, usePacienteDashboard
-│   └── features/             # useClients, useAgenda, useLabExams, etc.
+│   └── features/             # useClients, useAppointments, useLabExams, etc.
 │
 ├── contexts/
-│   └── auth-context.tsx      # AuthProvider (JWT, login, logout, user state)
+│   └── auth-context.tsx      # AuthProvider (sessão, login, logout e limpeza de caches)
 │
 ├── lib/
-│   ├── api.ts                # Axios instance com interceptors
+│   ├── api.ts                # Axios, bootstrap CSRF e renovação única concorrente
 │   ├── query-client.ts       # TanStack Query config
-│   ├── query-keys.ts         # Chaves de cache centralizadas
+│   ├── query-keys.ts         # Chaves de cache centralizadas por sessão e Client
 │   ├── query-invalidation.ts # Helpers de invalidação
 │   └── utils.ts              # cn(), formatters
 │
 ├── types/
 │   ├── client.ts             # Tipos de Client
-│   └── agenda.ts             # Tipos de Agenda
+│   └── appointment.ts        # Tipos da agenda profissional
 │
 ├── cypress/                  # Testes E2E
 └── scripts/                  # Scripts utilitários
@@ -190,16 +187,20 @@ erDiagram
 |-------------------|-----------------------------------------|--------------------|
 | `User`            | Identidade autenticável (profissional)  | —                  |
 | `Client`          | Prontuário sem login                    | `User` (owner)     |
-| `DietPlan`        | Prescrição nutricional                  | `User` (creator)   |
+| `DietPlan`        | Prescrição nutricional                  | `Client` + `User` (creator) |
 | `Recipe`          | Identidade privada e estado da receita | `User` (owner)     |
 | `RecipeVersion`   | Conteúdo e nutrientes por porção imutáveis | `Recipe`       |
 | `RecipeIngredient`| Alimento e quantidade da versão        | `RecipeVersion`    |
-| `Workout`         | Plano de treino                         | `User` (creator)   |
-| `RehabPlan`       | Plano de reabilitação                   | `User` (creator)   |
-| `PhysioAssessment`| Avaliação fisioterapêutica              | `User` (patient)   |
-| `Anamnesis`       | Ficha clínica completa                  | `User` (patient)   |
-| `LabExam`         | Exame laboratorial                      | `User` (patient)   |
-| `AgendaTask`      | Tarefa na agenda diária                 | `User` (both)      |
+| `Workout`         | Plano de treino                         | `Client` + `User` (creator) |
+| `RehabPlan`       | Plano de reabilitação                   | `Client` + `User` (creator) |
+| `PhysioAssessment`| Avaliação fisioterapêutica              | `Client` + autor profissional |
+| `Anamnesis`       | Ficha clínica completa                  | `Client` + autor profissional |
+| `LabExam`         | Exame laboratorial                      | `Client` + autor profissional |
+| `Appointment` | Agenda profissional | `Client` + profissional |
+| `ClientGoal` | Metas e hábitos | `Client` + profissional |
+| `LabOrder` | Pedido laboratorial | `Client` + profissional |
+| `AuthSession` | Sessão revogável e hash de refresh | `User` |
+| `PatientAlert` | Snapshot de alertas de treino | `Client` + profissional; Patient histórico |
 
 `MealItem` referencia exatamente um alimento ou uma versão de receita (constraint
 XOR). Na receita, a quantidade do item representa porções. O cálculo nutricional
@@ -217,9 +218,13 @@ continua sendo aplicado nos services NestJS.
 
 | Arquivo                    | Propósito                              |
 |---------------------------|----------------------------------------|
-| `Dockerfile`              | Build da API (NestJS)                  |
-| `docker-compose.yml`      | Dev: API + Web + DB (porta 3000/3001)  |
+| `Dockerfile` | Targets API production (sem ferramentas dev) e migration (Prisma CLI) |
+| `docker-compose.runtime.yml` | API/web de runtime e job separado de migrations; banco externo |
 | `docker-compose.test.yml` | Testes: DB isolado (porta 5434)        |
+
+A web usa `.next/standalone`, assets estáticos e usuário não-root. A API final contém somente JavaScript compilado e dependências de produção. Migrations executam em job separado antes da API. O Compose runtime não monta fontes nem usa `env_file` das aplicações; exige configuração explícita e HTTPS por proxy. O Compose antigo permanece histórico e não é compatível com essas imagens.
+
+O CSP recebe nonce por requisição no proxy e no layout raiz assíncrono; todas as páginas são dinâmicas. Impressões usam escaping compartilhado e não executam scripts inline. Dados clínicos usam cache apenas em memória, sem persistência no navegador.
 
 ### CI/CD
 
@@ -233,7 +238,7 @@ O workflow `.github/workflows/ci.yml` roda em push/PR para `main`:
 ### Deploy
 
 - **Frontend**: Vercel (https://ecossistema-resiliencia.vercel.app/)
-- **API + DB**: Configurado via Docker Compose
+- **API/web em containers**: `docker-compose.runtime.yml`, com banco externo aprovado e HTTPS por proxy. Consulte o runbook antes de publicar.
 
 ---
 
@@ -245,7 +250,7 @@ O workflow `.github/workflows/ci.yml` roda em push/PR para `main`:
 2. Criar `<nome>.module.ts`, `<nome>.controller.ts`, `<nome>.service.ts`
 3. Adicionar DTOs em `dto/`
 4. Registrar no `app.module.ts`
-5. Proteger com `JwtAuthGuard` (já é global) + `ClientAccessGuard` se toca `Client`
+5. Preservar o `JwtAuthGuard` global, aplicar papel do domínio e verificar ownership com `ClientAccessService`/queries se toca `Client`
 
 ### Adicionando uma nova rota no frontend:
 

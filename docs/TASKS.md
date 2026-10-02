@@ -64,7 +64,7 @@
 | 4.5 | Documentação de API (Swagger/OpenAPI) | ⏳ | — |
 | 4.6 | Monitoramento de performance (bundle size, query time) | ⏳ | — |
 | 4.7 | Endurecer Data API, grants e RLS defensivo no Supabase | ✅ | Codex |
-| 4.8 | Remediar os 15 achados da auditoria de segurança e qualidade | 🔄 | Codex |
+| 4.8 | Remediar os 15 achados da auditoria de segurança e qualidade | ✅ | Codex |
 
 ---
 
@@ -92,4 +92,4 @@
 - [x] Plano A: ownership por Client, schema e retirada do runtime legado — concluído no worktree de segurança.
 - [x] Plano B: persistência server-only, impressão escapada e CSP — concluído (Codex); jornada real e gate de HTML dinâmico aprovados.
 - [x] Plano C: sessões revogáveis e dependências — concluído (Codex); 11 testes HTTP reais e jornada Cypress aprovados.
-- [ ] Plano D: operação, índices e gates de qualidade — em andamento (Codex).
+- [x] Plano D: operação, índices e gates de qualidade — concluído no worktree (Codex). Evidência e limites: [verificação final](runbooks/security-remediation-verification.md). Sem publicação ou migrations em produção.

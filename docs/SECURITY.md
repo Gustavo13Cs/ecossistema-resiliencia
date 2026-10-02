@@ -1,173 +1,77 @@
 # Segurança — SafeMove
 
-> Modelo de segurança do SafeMove. Todo agente ou desenvolvedor que toque em
-> autenticação, autorização ou dados clínicos **deve** ler este documento.
+Atualizado em 2026-10-02. A evidência desta remediação é local; o código entregue não confirma aplicação de migrations em produção. Consulte o [runbook de verificação](runbooks/security-remediation-verification.md).
 
----
+## Autenticação e sessões
 
-## 1. Autenticação
+Senhas usam bcrypt com 12 rounds. O registro profissional cria a conta; o login cria uma `AuthSession` no PostgreSQL. O access JWT dura 15 minutos e contém `{ sub, jti, authVersion }`; o papel e a identidade atuais são carregados do banco em cada validação. Sessões expiradas/revogadas e versões de autenticação divergentes retornam 401.
 
-### Fluxo
+O refresh token opaco possui entropia de 256 bits e validade fixa de 30 dias a partir da criação da sessão. Somente seu hash SHA-256 é persistido. A renovação troca esse hash atomicamente e mantém a expiração original. Reutilizar um token anterior revoga a sessão; o logout também revoga no servidor. Mudança de papel ou credenciais incrementa `authVersion` e revoga as sessões na mesma transação.
 
-```
-┌─────────┐    POST /auth/login     ┌──────────┐
-│ Browser │ ──────────────────────→  │  NestJS  │
-│         │  { email, password }    │          │
-│         │ ←──────────────────────  │          │
-│         │  Set-Cookie: access_token│          │
-│         │  (HttpOnly, Secure)     │          │
-└─────────┘                         └──────────┘
-```
+O cliente web coordena uma única renovação por aba e usa Web Locks para serializar renovações entre abas da mesma origem. Após adquirir o lock, consulta a sessão para aproveitar cookies já renovados por outra aba. Web Locks está disponível em HTTPS e localhost; sem essa API, permanece a coordenação na mesma aba. Uma requisição comum é repetida no máximo uma vez. Uma falha definitiva encerra a sessão e limpa os caches de usuário e dados clínicos.
 
-### Implementação
+| Cookie | Validade | Path padrão | Atributos |
+|--------|----------|-------------|-----------|
+| `access_token` | 15 minutos | `/` | HttpOnly, Secure configurado, SameSite configurado |
+| `refresh_token` | Tempo restante da sessão, até 30 dias | `/api/auth` | HttpOnly, mesmos Secure/SameSite/Domain |
+| `csrf_token` | 30 dias | `/` | HttpOnly, mesmos Secure/SameSite/Domain |
 
-| Componente        | Localização                                |
-|-------------------|--------------------------------------------|
-| Login/Register    | `api/src/modules/auth/auth.controller.ts`  |
-| JWT Strategy      | `api/src/common/strategies/jwt.strategy.ts`|
-| Auth Guard        | `api/src/common/guards/`                   |
-| Auth Context (FE) | `web/contexts/auth-context.tsx`            |
+A aplicação exige `AUTH_COOKIE_SECURE=true` em produção; ausência ou `false` impede o bootstrap. `SameSite=None` também exige Secure. O path de refresh padrão corresponde ao proxy same-origin `/api/auth` da web. Um consumidor que acesse a API diretamente deve configurar `AUTH_REFRESH_COOKIE_PATH=/auth`. Criação e remoção dos cookies usam o mesmo Domain, Path, Secure e SameSite.
 
-### Regras
+## CSRF, origens e autorização
 
-- **Senhas**: hashadas com **bcrypt** (12 salt rounds)
-- **Token**: JWT com payload `{ sub: userId, role: userRole }`
-- **Armazenamento**: cookie `HttpOnly` + `Secure` + `SameSite=Lax`
-- **Expiração**: configurável via `JWT_SECRET` no `.env`
-- **Renovação**: não implementada (sessão única por login)
+Mutações autenticadas por cookie exigem uma origem presente em `ALLOWED_ORIGINS` e um par válido cookie/header `X-CSRF-Token`. `GET /auth/csrf` fornece o token ao cliente, sem expor credenciais. Login e registro exigem origem permitida; refresh e logout exigem também o par CSRF mesmo quando o access JWT expirou. Mutações comuns autenticadas somente por Bearer continuam suportadas.
 
----
+O `JwtAuthGuard` está registrado globalmente via `APP_GUARD`: uma rota nova é privada por padrão. Apenas health checks, login, registro, bootstrap CSRF, refresh e logout são públicos; estes últimos possuem suas próprias verificações de credenciais e origem. `@Public()` não desabilita o throttling. O limite global é 60 requisições/minuto por IP e o login possui limite de 5/minuto.
 
-## 2. Autorização
+Guards de papel restringem domínios a `NUTRITIONIST`, `PERSONAL` ou `PHYSIO`. `ADMIN` não contorna ownership. A identidade disponível em `AuthenticatedRequest.user.sub` vem da validação de sessão no banco. O papel legado `PATIENT` não recebe acesso aos prontuários profissionais.
 
-### Camadas
+## Isolamento por Client
 
-```
-Request → ThrottlerGuard → JwtAuthGuard → @Roles() → ClientAccessGuard → Controller
-```
+`User` é a identidade autenticável; `Client` é o prontuário privado, sem login. Toda operação clínica resolve o Client com `professionalId` derivado da sessão. Recursos alheios retornam 404. DTOs não aceitam substituir proprietário, autor, paciente legado ou identificadores internos de recursos aninhados.
 
-1. **ThrottlerGuard** (global): 20 req/min por IP — `ThrottlerModule` no `app.module.ts`
-2. **JwtAuthGuard** (global): exige token válido em toda rota
-   - Rotas públicas: marcadas com `@Public()` decorator
-3. **@Roles() decorator**: restringe por role (`NUTRITIONIST`, `PERSONAL`, `PHYSIO`)
-4. **ClientAccessGuard**: verifica que `Client.professionalId === req.user.id`
+Treinos, reabilitações, avaliações fisioterapêuticas, anamneses, notas, suplementos e exames usam Client e autor profissional. Metas e pedidos laboratoriais são persistidos pela API. Substituição de plano ativo e criação dos seus filhos ocorrem em uma transação: uma falha mantém o plano anterior. Treinos, reabilitações e os dois caminhos de criação de dietas travam o Client pertencente ao profissional dentro dessa transação, impedindo dois planos ativos em criações simultâneas. Avaliações físicas e dietas conservam apenas compatibilidade de leitura legada com vínculo de ownership comprovado.
 
-### Roles
+`ClientAccessService` e filtros de queries implementam o acesso; não existe um bypass administrativo. Novos endpoints precisam preservar também a autorização do domínio. Módulos antigos de agenda diária, métricas de paciente, consentimentos, check-ins e logs de paciente não estão montados no runtime. Tabelas e linhas históricas permanecem preservadas.
 
-| Role           | Permissões                                     |
-|----------------|------------------------------------------------|
-| `NUTRITIONIST` | Dietas, alimentos, suplementos, exames lab     |
-| `PERSONAL`     | Treinos, avaliações físicas, alertas           |
-| `PHYSIO`       | Avaliações fisio, planos reabilitação          |
-| `ADMIN`        | Todas (reservado, não usado em produção)       |
-| `PATIENT`      | Legado — acesso limitado a dados próprios      |
+Alertas de treino consideram somente Clients ativos de contas PERSONAL, com tracking filtrado pelo mesmo profissional e Client. O cron calcula e substitui os alertas de Client numa transação protegida por advisory lock. Uma falha preserva o snapshot anterior; duas instâncias não duplicam o resultado. Alertas antigos de Patient são históricos e não aparecem no dashboard. Logs do cron contêm apenas contagens.
 
----
+## Defesa da Data API
 
-## 3. Isolamento de Dados
+O frontend acessa a API NestJS, sem acesso direto aos dados clínicos pelo Supabase. As migrations desta branch deixam as 40 tabelas de aplicação com RLS e policy restritiva `deny_data_api_access`, incluindo `consultation_notes`. Revogam grants de PUBLIC e, quando existentes, `anon`, `authenticated` e `service_role`. `_prisma_migrations` é metadado do ORM e não integra essas 40 tabelas.
 
-### Princípio
-> Cada profissional vê **somente** seus próprios prontuários. Recurso de outro
-> profissional é tratado como **não encontrado** (404), não como **proibido** (403).
+O histórico de 2026-09-16 registra a Data API de produção desabilitada e o hardening então aplicado. Esta entrega não verificou novamente o ambiente remoto nem aplicou migrations nele. O gate isolado verifica tabelas, sequences, funções e default ACLs sem retornar conteúdo clínico.
 
-### Implementação
+A conexão Prisma privilegiada pode contornar RLS. Portanto, RLS defensivo protege a superfície Data API e não substitui os filtros de ownership da API. Qualquer exposição futura precisa de grants mínimos e policies aprovadas; o JWT próprio não equivale a `auth.uid()` do Supabase.
 
-```typescript
-// Em qualquer service que toque Client:
-async findOne(id: string, professionalId: string) {
-  const client = await this.prisma.client.findFirst({
-    where: { id, professionalId }, // SEMPRE filtra por owner
-  });
-  if (!client) throw new NotFoundException();
-  return client;
-}
-```
+As três funções dos triggers de receitas fixam `search_path=pg_catalog, public`, preservando corpo, ownership e comportamento invoker. Índices acompanham os filtros de Client, autor, estado e ordenação reais. As 17 FKs históricas sem consumidor atual estão justificadas no runbook; não foram indexadas apenas para eliminar avisos do advisor.
 
-### Checklist para novos endpoints
+## Validação, impressão e armazenamento
 
-- [ ] O endpoint filtra por `professionalId` derivado do JWT?
-- [ ] O `ClientAccessGuard` está aplicado nas rotas de Client?
-- [ ] O endpoint retorna 404 (não 403) para recursos de outro profissional?
-- [ ] Logs e erros NÃO contêm dados clínicos do prontuário?
+`ValidationPipe` usa `whitelist`, `forbidNonWhitelisted` e `transform`. Campos desconhecidos são rejeitados. DTOs validam UUIDs, enums, datas, limites numéricos e objetos aninhados. `class-transformer` transforma valores e não é sanitizador HTML. TypeScript strict permanece obrigatório, sem `any` ou assinatura ampla no PrismaService.
 
-### Defesa no banco Supabase
+Todos os builders de impressão escapam valores de texto, título e números antes de gerar HTML. A impressão usa um writer compartilhado, remove `opener` e aguarda o carregamento antes de imprimir; não injeta scripts inline. O CSP de produção usa nonce de 128 bits por requisição e não permite `unsafe-inline` ou `unsafe-eval` em scripts. Os scripts do framework recebem o mesmo nonce. Isso exige renderização dinâmica; não habilite cache compartilhado de HTML com nonce reutilizado.
 
-- A Data API REST/GraphQL está desabilitada; o frontend usa somente a API NestJS.
-- `anon`, `authenticated` e `service_role` não possuem grants sobre tabelas públicas.
-- As 33 tabelas físicas de aplicação usam RLS com policy restritiva
-  `deny_data_api_access`.
-- `consultation_notes` e `_prisma_migrations` permanecem fora dessas 33 tabelas.
-- O Prisma conecta como `postgres` com `BYPASSRLS`; portanto, o RLS atual protege a
-  superfície Data API, mas não aplica isolamento entre profissionais à API NestJS.
-- Ownership por `professionalId`, guards e testes negativos continuam obrigatórios.
-- A migration `20260921193053_add_versioned_recipe_bank` acrescenta `recipes`,
-  `recipe_versions` e `recipe_ingredients` com RLS defensivo e grants revogados.
-  Sua validação é local; a entrega do código não confirma aplicação em produção.
-- Qualquer exposição futura exige migration com grant mínimo e policy de ownership
-  aprovada. Policies com `auth.uid()` são incompatíveis com o JWT próprio atual.
-- O preflight histórico não capturou sequences, functions, `PUBLIC EXECUTE` nem
-  default ACLs antes do deploy. O estado anterior não pode ser reconstruído; o
-  runbook foi corrigido e a verificação pós-deploy confirmou zero em toda essa
-  superfície.
+Estilos inline permanecem permitidos para componentes Radix. `unsafe-eval` em scripts existe somente no modo de desenvolvimento. Essas concessões não liberam scripts inline na impressão.
 
----
+Dados clínicos não são persistidos em localStorage/sessionStorage. Chaves clínicas legadas são descartadas sem recuperar seu conteúdo. O cache TanStack Query fica em memória e é isolado por sessão/Client. Falhas HTTP preservam o estado anterior e rascunhos em memória; não geram dados fictícios, seeds ou upload PDF simulado. Respostas clínicas relevantes usam `Cache-Control: no-store`.
 
-## 4. Validação de Input
+Nunca registre dados clínicos, credenciais ou tokens em logs. Nunca retorne hashes de senha. Não versione arquivos `.env`, gravações com dados reais ou chaves. Imagens finais contêm somente runtime: a API inicia o JavaScript compilado; Prisma CLI fica no target separado `migration`, e a web executa o output standalone como usuário não-root.
 
-### Backend
+## Configuração
 
-- **class-validator**: decorators nos DTOs (`@IsString()`, `@IsEmail()`, `@Min()`, etc.)
-- **class-transformer**: `plainToInstance()` para sanitização
-- **ValidationPipe** (global): configurado no `main.ts` com `whitelist: true`
-  - Remove propriedades não declaradas no DTO (proteção contra mass assignment)
+| Variável | Uso |
+|----------|-----|
+| `DATABASE_URL` | Conexão da API; segredo, somente servidor |
+| `DIRECT_URL` | Conexão direta das migrations; segredo, somente servidor |
+| `JWT_SECRET` | Assinatura dos access JWTs; segredo |
+| `ALLOWED_ORIGINS` | Lista separada por vírgulas de origens permitidas, incluindo a origem da web |
+| `AUTH_COOKIE_SECURE` | `true` obrigatório em produção |
+| `AUTH_COOKIE_SAME_SITE` | `lax` padrão; `strict` ou `none` explícitos |
+| `AUTH_COOKIE_DOMAIN` | Opcional; omitir produz cookie restrito ao host |
+| `AUTH_REFRESH_COOKIE_PATH` | `/api/auth` padrão; `/auth` para acesso direto à API |
+| `INTERNAL_API_URL` | Destino privado do proxy Next.js, necessário no build; não é variável pública |
+| `NODE_ENV` | Seleciona as regras de produção/desenvolvimento |
+| `TZ` | Fuso do processo, UTC recomendado |
 
-### Frontend
-
-- **Zod**: schemas de validação para forms
-- **React Hook Form**: integração com Zod via `zodResolver`
-
----
-
-## 5. Proteção contra Ataques Comuns
-
-| Ameaça              | Mitigação                                           |
-|---------------------|-----------------------------------------------------|
-| SQL Injection       | Prisma ORM (prepared statements automáticos)        |
-| XSS                 | JWT em HttpOnly cookie (JS não acessa o token)      |
-| CSRF                | `SameSite=Lax` no cookie                            |
-| Brute Force         | Rate limiting: 20 req/min por IP                    |
-| Mass Assignment     | `whitelist: true` no ValidationPipe                 |
-| Data Leakage        | Isolamento por `professionalId` em todo query       |
-| Privilege Escalation| `@Roles()` guard + verificação de ownership         |
-
----
-
-## 6. Dados Sensíveis
-
-### O que é sensível
-
-- Dados clínicos (anamnese, exames, avaliações, prescrições)
-- Dados pessoais (nome, email, telefone, data de nascimento)
-- Notas do profissional (`professionalNotes`, `privacyNotes`)
-- Credenciais (senhas hashadas, JWT secret)
-
-### Regras de manuseio
-
-1. **NUNCA** logar dados clínicos em plaintext
-2. **NUNCA** retornar senha (mesmo hashada) em responses
-3. **NUNCA** armazenar dados clínicos em localStorage/sessionStorage
-4. **NUNCA** incluir dados sensíveis em URLs (query params)
-5. **NUNCA** commitar `.env` ou `.env.local`
-
----
-
-## 7. Variáveis de Ambiente
-
-| Variável            | Onde          | Descrição                        | Sensível? |
-|---------------------|---------------|----------------------------------|-----------|
-| `DATABASE_URL`      | `api/.env`    | Connection string PostgreSQL     | ✅ Sim     |
-| `DIRECT_URL`        | `api/.env`    | Direct connection (sem pooling)  | ✅ Sim     |
-| `JWT_SECRET`        | `api/.env`    | Chave de assinatura JWT          | ✅ Sim     |
-| `ALLOWED_ORIGINS`   | `api/.env`    | CORS origins permitidos          | ❌ Não     |
-| `NODE_ENV`          | `api/.env`    | development / production         | ❌ Não     |
-| `NEXT_PUBLIC_API_URL`| `web/.env.local`| URL da API                    | ❌ Não     |
+A publicação exige migrations aplicadas antes de iniciar a API, HTTPS para cookies Secure e correspondência entre proxy, origem e paths. O [runbook](runbooks/security-remediation-verification.md) documenta a ordem, validação isolada e recuperação.

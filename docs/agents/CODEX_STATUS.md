@@ -9,13 +9,13 @@
 ## Current Task
 
 - **Tarefa**: Remediação ponta a ponta dos 15 achados de segurança e qualidade
-- **Status**: Execução nativa retomada em 2026-10-01; Planos A, B e C concluídos; Plano D Task 5 concluída; iniciando Task 6 (gate final)
+- **Status**: Execução nativa concluída em 2026-10-02; Planos A-D implementados e verificados (API 470 unitários/102 E2E; web 368 testes; Cypress 31/31)
 - **Branch**: `agent/codex/security-remediation`
 - **Início**: 2026-09-29
 - **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migrations versionadas necessárias à remediação
 - **Worktree**: `.worktrees/security/security-remediation`
 - **Plano atual**: `docs/superpowers/plans/2026-09-29-security-remediation-d-operations-quality.md`
-- **Próximo gate**: suítes completas API/web, Cypress e inspeção final das imagens
+- **Próximo gate**: decisão do mantenedor sobre integração/publicação. Branch/worktree preservados; nenhuma publicação, merge ou migration em produção executada.
 - **Coordenação**: o status do Antigravity ainda cita uma tarefa iniciada em 2026-09-22, mas não há branch/worktree detectável para ela; confirmar antes de alterar auth, package files ou `.gitignore` fora deste worktree
 
 ---
@@ -24,6 +24,7 @@
 
 | Data | Tarefa | Branch |
 |------|--------|--------|
+| 2026-10-02 | Remediação dos 15 achados: Client ownership, persistência, XSS/CSP, sessões, runtime, operação e qualidade; verificação completa local | `agent/codex/security-remediation` |
 | 2026-09-03 | Dashboard profissional com dados reais, terminologia por profissão e filtro de arquivados | `codex/safemove-professional-frontend-phase-1` |
 | 2026-09-04 | Diretório responsivo e cadastro de prontuário orientado por profissão | `codex/safemove-professional-frontend-phase-1` |
 | 2026-09-04 | Prontuário modular por profissão e remoção segura de rascunhos clínicos locais | `codex/safemove-professional-frontend-phase-1` |
@@ -39,11 +40,19 @@
 
 ## Blocked
 
-- Gates globais do frontend têm pendências preexistentes fora do Banco de Receitas: ESLint em `useClientGoals.ts` (`react-hooks/preserve-manual-memoization`) e Cypress de `professional-agenda.cy.ts` (botão de fechamento recortado pelo overflow). Não foram adicionadas supressões nem alterados esses fluxos nesta entrega.
+- Nenhum gate local bloqueado na conclusão de 2026-10-02. As pendências antigas de lint em `useClientGoals.ts` e fechamento da agenda foram resolvidas; suites completas aprovadas sem adicionar supressões, force-click ou aumento de timeouts.
 
 ---
 
 ## Notes
+
+### Remediação — conclusão local em 2026-10-02
+
+- 45 suítes/470 unitários e 20 suítes/102 E2E API; 57 arquivos/368 testes web; Cypress configurado 17/17 e real 14/14. Typecheck estrito, lint, builds, schema/migrations e audits runtime aprovados.
+- Revisão independente da branch e ajustes finais sem Critical/Important/Minor pendentes. Concorrência de planos provada em PostgreSQL e recuperação entre abas coberta por duas instâncias independentes do API client.
+- 40 tabelas com RLS, 40 policies restritivas, zero grants atuais/default nas superfícies verificadas. 20 índices justificados; 17 FKs históricas residuais documentadas.
+- Imagens API/web como UID 1000, sem dev packages/arquivos de ambiente; job de migration separado, assets/proxy/CSP/cookies verificados contra o banco sintético. Evidência reproduzível no [runbook](../runbooks/security-remediation-verification.md).
+- Sem push, merge, deploy ou acesso ao banco de produção. Arquivos protegidos fora do schema/migrations autorizados permanecem intactos.
 
 ### Remediação — retomada em 2026-10-01
 

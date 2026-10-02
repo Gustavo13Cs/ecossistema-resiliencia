@@ -1,4 +1,4 @@
-# 🏥 Ecossistema Resiliência 
+# 🏥 Ecossistema Resiliência
 
 LINK - https://ecossistema-resiliencia.vercel.app/
 
@@ -55,12 +55,12 @@ Na Fase 1, cada conta escolhe uma única atuação profissional e administra som
 
 | Camada | Tecnologia | Versão | Por quê? |
 |--------|-----------|--------|---------|
-| Frontend | Next.js | 16.2.7 | SSR + Geração estática; Excelente DX |
+| Frontend | Next.js | 16.3.8 | SSR + Geração estática; Excelente DX |
 | Runtime | React | 19.1.0 | Novo compiler, melhor performance |
-| Backend | NestJS | 11.0.1 | Arquitetura enterprise, modular, TypeScript first |
-| ORM | Prisma | 7.5.0 | Type-safe, queries legíveis, migrations simples |
-| Database | PostgreSQL | latest | Confiável, performance, suporta JSON |
-| Auth | JWT + Passport | - | Stateless, seguro, standard na indústria |
+| Backend | NestJS | 11.2.7 | Arquitetura enterprise, modular, TypeScript first |
+| ORM | Prisma | 7.10.0 | Type-safe, queries legíveis, migrations simples |
+| Database | PostgreSQL | 16 | Confiável, performance, suporta JSON |
+| Auth | JWT + Passport | - | Access JWT curto e sessões revogáveis no servidor |
 | Styling | Tailwind CSS | 4.1.9 | Utility-first, temas customizáveis |
 | UI Components | Radix UI | latest | Headless, acessível, sem styles opinados |
 | Forms | React Hook Form + Zod | latest | Validação forte, performance |
@@ -98,7 +98,10 @@ ecossistema-resiliencia/
 │   │   │   ├── lab-exams/            # Exames laboratoriais
 │   │   │   ├── alerts/               # Sistema de alertas
 │   │   │   ├── anamneses/            # Fichas de anamnese
-│   │   │   └── metrics/              # Cálculos metabólicos
+│   │   │   ├── clients/              # Prontuários privados por profissional
+│   │   │   ├── appointments/         # Agenda profissional
+│   │   │   ├── client-goals/         # Metas e hábitos persistidos
+│   │   │   └── lab-orders/           # Pedidos laboratoriais
 │   │   └── ...
 │   ├── prisma/
 │   │   ├── schema.prisma             # Definição do banco
@@ -116,8 +119,8 @@ ecossistema-resiliencia/
 │   │   ├── dietas/                   # Rotas Nutricionista
 │   │   ├── treinos/                  # Rotas Personal Trainer
 │   │   ├── reabilitacao/             # Rotas Fisioterapeuta
-│   │   ├── paciente/                 # Rotas Paciente
-│   │   └── membros/                  # Admin/Gestão
+│   │   ├── clientes/                 # Prontuários e prescrições por Client
+│   │   └── agenda/                   # Agenda profissional
 │   ├── components/
 │   │   ├── Sidebar.tsx               # Navegação principal
 │   │   ├── LayoutWrapper.tsx         # Wrapper com padding/responsive
@@ -147,7 +150,7 @@ ecossistema-resiliencia/
 - **User**: identidade autenticável. Novos cadastros públicos aceitam uma única atuação profissional: `NUTRITIONIST`, `PERSONAL` ou `PHYSIO`.
 - **Client**: prontuário sem login, privado da conta profissional proprietária. A Fase 1 oferece cadastro, consulta, atualização, arquivamento e restauração.
 - **Isolamento**: a API deriva o proprietário da autenticação e trata recursos de outra conta como não encontrados.
-- **Legados temporários**: `PATIENT`, `ProfessionalPatientLink`, `/membros` e `/paciente` permanecem apenas enquanto consumidores antigos são migrados; não representam o destino do produto profissional-first.
+- **Histórico**: `PATIENT` e `ProfessionalPatientLink` permanecem no schema para preservar dados. Rotas de paciente e seus módulos de agenda, métricas e logs não estão montados no runtime.
 
 ### Nutrição
 - **DietPlan**: Prescrição nutricional com macros (proteína, carbos, gordura, fibra)
@@ -171,17 +174,17 @@ ecossistema-resiliencia/
 - **LabExam + LabMarker**: Exames de sangue com marcadores (glicemia, colesterol, etc)
 - **SupplementPlan + SupplementItem**: Receituário de suplementos
 - **Anamnesis**: Ficha clínica (histórico, patologias, medicações, hábitos)
-- **DailyTracking**: Log de atividades completadas
-- **PatientAlert**: Alertas automáticos (inatividade, platô, overtraining)
+- **DailyTracking**: Atividades com ownership por profissional e Client
+- **PatientAlert**: Snapshot transacional de alertas de treino para Clients ativos de PERSONAL; Patient permanece somente no histórico
 
 ---
 
 ## 🚀 Como Instalar & Executar
 
 ### Pré-requisitos
-- **Node.js** ≥ 18.x (recomendo 20.x)
+- **Node.js** 22.x (mesma versão das imagens Docker)
 - **npm** ou **yarn**
-- **PostgreSQL** 14+ (local ou Docker)
+- **PostgreSQL** 16 (local ou Docker)
 - **Git**
 
 ### 1️⃣ Clone o Repositório
@@ -199,38 +202,43 @@ Se já tem PostgreSQL rodando localmente, crie um banco:
 createdb ecossistema_resiliencia
 ```
 
-#### Opção B: Docker (Recomendado)
+#### Opção B: imagens de runtime
+
+O `docker-compose.runtime.yml` executa a API compilada, a web standalone e um job separado de migrations. Usa um banco externo configurado explicitamente e exige HTTPS terminado por proxy, pois os cookies de produção são Secure. Não monta fontes nem usa `env_file` das aplicações.
+
+Depois de configurar `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET` e `ALLOWED_ORIGINS` no ambiente do processo e revisar o banco de destino:
+
 ```powershell
-docker compose up --build -d
+docker compose -f docker-compose.runtime.yml config --quiet
+docker compose -f docker-compose.runtime.yml up --build -d
 ```
 
-O Compose inicia o serviço local `db`, aplica as migrations versionadas antes
-de subir a aplicação, publica a API em `http://localhost:3000` e a web em
-`http://localhost:3001`.
+A API e a web são publicadas apenas no loopback, nas portas 3000 e 3001. O job aplica migrations antes da API iniciar; não use esse comando contra produção sem a revisão operacional correspondente. O Compose antigo permanece histórico e é incompatível com as imagens que excluem Prisma CLI e ferramentas de desenvolvimento.
 
-Para reconciliar um banco remoto com o baseline, siga somente
-[`docs/database-baseline.md`](docs/database-baseline.md). Não execute comandos
-de reconciliação remota a partir deste fluxo local.
-
+Para desenvolvimento HTTP local, use os passos abaixo. Para validar com dados sintéticos, siga o [runbook de remediação](docs/runbooks/security-remediation-verification.md), com PostgreSQL isolado na porta 5434. Para reconciliar um banco remoto com o baseline, consulte [database-baseline](docs/database-baseline.md).
 ### 3️⃣ Setup do Backend (API)
 
 ```bash
 cd api
 
 # 1. Instalar dependências
-npm install
+npm ci
 
 # 2. Configurar variáveis de ambiente
 cp .env.example .env
 # Editar .env com suas credenciais PostgreSQL e JWT_SECRET
 cat > .env << EOF
 DATABASE_URL="postgresql://user:password@localhost:5432/ecossistema_resiliencia"
+DIRECT_URL="postgresql://user:password@localhost:5432/ecossistema_resiliencia"
 JWT_SECRET="sua_chave_super_secreta_aqui"
 NODE_ENV="development"
+AUTH_COOKIE_SECURE="false"
+AUTH_COOKIE_SAME_SITE="lax"
+ALLOWED_ORIGINS="http://localhost:3001"
 EOF
 
-# 3. Executar migrations
-npx prisma migrate dev
+# 3. Aplicar migrations existentes apenas no banco local
+npx prisma migrate deploy
 
 # 4. (Opcional) Seed inicial de dados
 npx prisma db seed
@@ -246,11 +254,11 @@ npm run start:dev
 cd ../web
 
 # 1. Instalar dependências
-npm install
+npm ci --legacy-peer-deps
 
 # 2. Configurar variáveis de ambiente
 cat > .env.local << EOF
-NEXT_PUBLIC_API_URL="http://localhost:3000"
+INTERNAL_API_URL="http://localhost:3000"
 EOF
 
 # 3. Iniciar em desenvolvimento
@@ -331,9 +339,12 @@ npm run dev
 ## 🔒 Segurança & Boas Práticas
 
 ### Autenticação & Autorização
-- JWT armazenado em **HttpOnly Cookies** (proteção contra XSS)
+- Access JWT de 15 minutos em cookie HttpOnly; sessões revogáveis e refresh rotativo com validade fixa de 30 dias
+- Mutações por cookie exigem origem permitida e token CSRF; cookies Secure são obrigatórios em produção
+- Impressões escapam HTML; scripts usam nonce CSP por requisição, sem scripts inline em produção
+- Dados clínicos ficam na API e no cache em memória, sem localStorage/sessionStorage
 - Guards por role (RBAC)
-- Rate limiting: 20 req/min por IP
+- Rate limiting: 60 req/min por IP; login 5/minuto
 - Senhas hashadas com **bcrypt** (salt rounds: 12)
 
 ### Database
@@ -382,7 +393,7 @@ cd web
 
 npm run dev          # Desenvolvimento
 npm run build        # Build para produção
-npm run start        # Rodar build de produção
+node .next/standalone/server.js # Runtime de produção (copiar public e .next/static; definir PORT=3001)
 npm run lint         # ESLint
 ```
 
@@ -426,8 +437,8 @@ JWT_SECRET="gerem-uma-chave-segura"
 
 ### Erro: "CORS bloqueado"
 ```bash
-# Certificar que NEXT_PUBLIC_API_URL está correto em web/.env.local
-NEXT_PUBLIC_API_URL="http://localhost:3000"  # ou seu domínio
+# Conferir INTERNAL_API_URL no build da web e ALLOWED_ORIGINS na API
+INTERNAL_API_URL="http://localhost:3000"  # ou seu domínio
 ```
 
 ### Porta 3000/3001 já em uso
@@ -458,6 +469,8 @@ TZ="UTC"
 
 # Environment
 NODE_ENV="development"
+AUTH_COOKIE_SECURE="false"
+AUTH_COOKIE_SAME_SITE="lax"
 
 # (Futuro) Email, Twilio, etc
 # SMTP_HOST=""
@@ -468,7 +481,7 @@ NODE_ENV="development"
 ### Frontend (`web/.env.local`)
 ```env
 # API
-NEXT_PUBLIC_API_URL="http://localhost:3000"
+INTERNAL_API_URL="http://localhost:3000"
 
 # (Futuro) Analytics, Auth0, etc
 # NEXT_PUBLIC_SENTRY_DSN=""
@@ -516,5 +529,5 @@ Agradecimentos especiais às comunidades open-source de:
 
 ---
 
-**Última atualização:** Julho 2026  
-**Status:** MVP em desenvolvimento ativo 🚀
+**Última atualização:** 2 de outubro de 2026
+**Status:** MVP em desenvolvimento ativo. Sessões, isolamento por Client e remediação documentados em [SECURITY](docs/SECURITY.md) e no [runbook](docs/runbooks/security-remediation-verification.md).
