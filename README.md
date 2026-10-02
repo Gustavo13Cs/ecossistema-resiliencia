@@ -75,12 +75,17 @@ ecossistema-resiliencia/
 │
 ├── api/                              # Backend NestJS
 │   ├── src/
-│   │   ├── app.module.ts             # Módulo principal (imports)
-│   │   ├── app.controller.ts         # Rota health check
+│   │   ├── main.ts                   # Bootstrap, CORS e validação global
+│   │   ├── app.module.ts             # Módulo raiz da API
 │   │   ├── common/
-│   │   │   ├── guards/               # JWT, Roles, Rate Limiting
-│   │   │   ├── decorators/           # @Public, @Roles
-│   │   │   └── exceptions/           # Exception filters customizados
+│   │   │   ├── decorators/           # Rotas públicas e papéis
+│   │   │   ├── guards/               # Autenticação e autorização
+│   │   │   ├── client-access/         # Acesso ao prontuário Client
+│   │   │   ├── patient-access/        # Compatibilidade com fluxos legados
+│   │   │   ├── policies/              # Regras de domínio profissional
+│   │   │   ├── security/              # Proteções compartilhadas
+│   │   │   ├── strategies/            # Estratégias Passport/JWT
+│   │   │   └── types/                 # Tipos compartilhados da API
 │   │   ├── infra/
 │   │   │   └── database/
 │   │   │       ├── prisma.service.ts # PrismaClient singleton
@@ -122,24 +127,64 @@ ecossistema-resiliencia/
 │   │   ├── clientes/                 # Prontuários e prescrições por Client
 │   │   └── agenda/                   # Agenda profissional
 │   ├── components/
-│   │   ├── Sidebar.tsx               # Navegação principal
-│   │   ├── LayoutWrapper.tsx         # Wrapper com padding/responsive
-│   │   ├── ui/                       # Componentes base (Button, Modal, etc)
-│   │   └── features/                 # Componentes de negócio
-│   ├── contexts/
-│   │   └── auth-context.tsx          # Provedor de autenticação
+│   │   ├── auth/                      # Limites e proteção de rotas
+│   │   ├── dashboard/                 # Painéis profissionais
+│   │   ├── design/                    # Contratos e direção visual
+│   │   ├── features/                  # Componentes por domínio
+│   │   │   ├── agenda/                # Agenda e progresso
+│   │   │   ├── appointments/           # Calendários e atendimentos
+│   │   │   ├── clients/                # Diretório e prontuários
+│   │   │   ├── dashboard/              # Resumo profissional
+│   │   │   ├── diet/                   # Planos e modelos alimentares
+│   │   │   ├── evolution/              # Evolução do cliente
+│   │   │   ├── follow-ups/             # Retornos e acompanhamento
+│   │   │   ├── goals/                  # Metas e alertas
+│   │   │   ├── lab-exams/              # Exames e marcadores
+│   │   │   ├── management/             # Indicadores da carteira
+│   │   │   ├── placeholder/            # Estados de funcionalidades futuras
+│   │   │   └── recipes/                # Receitas e versões
+│   │   ├── feedback/                  # Estados de carregamento e erro
+│   │   ├── layout/                    # Estrutura, sidebar e navegação
+│   │   ├── marketing/                 # Apresentação das áreas profissionais
+│   │   ├── providers/                 # Providers globais
+│   │   └── ui/                        # Primitivos de interface reutilizáveis
+│   ├── contexts/                      # Contexto de autenticação
 │   ├── hooks/
-│   │   ├── ui/                       # useToast, etc
-│   │   └── features/                 # useCalculoEnergetico, useLabExams, etc
-│   ├── lib/
-│   │   ├── api.ts                    # Axios instance com interceptors
-│   │   └── utils.ts                  # Helpers (cn, formatters)
-│   ├── package.json
-│   └── .env.local
-│
-├── .gitignore
-├── README.md (este arquivo!)
-└── docker-compose.yml (opcional)
+│   │   ├── core/                      # Hooks de perfil e infraestrutura
+│   │   ├── features/                  # Hooks por domínio/funcionalidade
+│   │   └── ui/                        # Hooks de interface
+│   ├── lib/                           # API, cache, regras e utilitários
+│   ├── types/                         # Tipos de domínio do frontend
+│   ├── styles/                        # Estilos globais
+│   ├── public/                        # Logos, ícones e arquivos estáticos
+│   ├── scripts/                       # Verificações e utilitários
+│   ├── test/                          # Setup dos testes unitários
+│   ├── cypress/
+│   │   ├── e2e/                       # Fluxos automatizados no navegador
+│   │   ├── fixtures/                  # Dados de apoio aos testes
+│   │   └── support/                   # Comandos e configuração E2E
+│   ├── .env.example                   # Modelo de configuração local
+│   └── package.json                   # Scripts e dependências da web
+├── docs/
+│   ├── agents/                        # Registros de trabalho dos agentes
+│   ├── app/guides/                    # Guias da aplicação
+│   ├── assets/readme/                 # Capturas usadas neste README
+│   ├── runbooks/                      # Procedimentos operacionais
+│   ├── superpowers/
+│   │   ├── plans/                     # Planos de implementação
+│   │   └── specs/                     # Especificações de funcionalidades
+│   ├── ARCHITECTURE.md
+│   ├── database-baseline.md
+│   ├── DECISIONS.md
+│   ├── SECURITY.md
+│   └── TASKS.md
+├── .github/workflows/                 # CI
+├── scripts/                           # Scripts operacionais da raiz
+├── docker-compose.yml                 # Serviços locais da API e web
+├── docker-compose.test.yml            # PostgreSQL isolado para testes
+├── Dockerfile                         # Imagem de produção da API
+├── AGENTS.md                          # Orientações para agentes
+└── PRODUCT.md                         # Visão, usuários e princípios do produto
 ```
 
 ---
@@ -187,20 +232,14 @@ ecossistema-resiliencia/
 - **PostgreSQL** 16 (local ou Docker)
 - **Git**
 
-### 1️⃣ Clone o Repositório
+- Node.js 22 ou compatível com Next.js 16 e NestJS 11
+- npm
+- PostgreSQL 16 acessível pela máquina
+- Docker Compose, caso prefira executar a API e a web em containers
 
-```bash
-git clone https://github.com/Gustavo13Cs/ecossistema-resiliencia.git
-cd ecossistema-resiliencia
-```
+### Configurar as variáveis de ambiente
 
-### 2️⃣ Setup do Banco de Dados
-
-#### Opção A: PostgreSQL Local
-Se já tem PostgreSQL rodando localmente, crie um banco:
-```bash
-createdb ecossistema_resiliencia
-```
+Na raiz do repositório, crie os arquivos locais a partir dos exemplos:
 
 #### Opção B: imagens de runtime
 
@@ -218,8 +257,7 @@ A API e a web são publicadas apenas no loopback, nas portas 3000 e 3001. O job 
 Para desenvolvimento HTTP local, use os passos abaixo. Para validar com dados sintéticos, siga o [runbook de remediação](docs/runbooks/security-remediation-verification.md), com PostgreSQL isolado na porta 5434. Para reconciliar um banco remoto com o baseline, consulte [database-baseline](docs/database-baseline.md).
 ### 3️⃣ Setup do Backend (API)
 
-```bash
-cd api
+Em um terminal:
 
 # 1. Instalar dependências
 npm ci
@@ -245,10 +283,9 @@ npx prisma db seed
 
 # 5. Iniciar em desenvolvimento
 npm run start:dev
-# Acessa em http://localhost:3000
 ```
 
-### 4️⃣ Setup do Frontend (Web)
+Em outro terminal:
 
 ```bash
 cd ../web
@@ -428,12 +465,8 @@ docker ps | grep postgres
 psql -U postgres -l  # Listar DBs
 ```
 
-### Erro: "JWT Secret não configurado"
-```bash
-# Adicionar em api/.env
-JWT_SECRET="gerem-uma-chave-segura"
-# Pode usar: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
+A web ficará disponível em `http://localhost:3001` e a API em
+`http://localhost:3000`.
 
 ### Erro: "CORS bloqueado"
 ```bash
@@ -441,18 +474,16 @@ JWT_SECRET="gerem-uma-chave-segura"
 INTERNAL_API_URL="http://localhost:3000"  # ou seu domínio
 ```
 
-### Porta 3000/3001 já em uso
-```bash
-# Trocar porta no backend
-cd api && npm run start:dev -- --port 3002
+Depois de configurar `api/.env` e `web/.env.local`, execute na raiz:
 
-# Trocar porta no frontend (web/package.json)
-"dev": "next dev -p 3002"
+```powershell
+docker compose up --build
 ```
 
----
-
-## 💬 Variáveis de Ambiente
+O Compose inicia a API e a web; **não cria um serviço PostgreSQL**. O banco deve
+estar disponível separadamente e ser acessível de dentro dos containers. Se o
+banco estiver na máquina host, use um hostname acessível a partir do Docker em
+vez de `localhost` nas URLs configuradas para a API.
 
 ### Backend (`api/.env`)
 ```env
@@ -483,51 +514,38 @@ AUTH_COOKIE_SAME_SITE="lax"
 # API
 INTERNAL_API_URL="http://localhost:3000"
 
-# (Futuro) Analytics, Auth0, etc
-# NEXT_PUBLIC_SENTRY_DSN=""
+# Web: testes unitários, tipos e lint
+cd ..\web
+npm test
+npm run typecheck
+npm run lint
 ```
 
----
+Os testes E2E da API e da web dependem de serviços configurados; para a base
+PostgreSQL isolada dos testes, consulte `docker-compose.test.yml` e as
+instruções dos projetos em `api/` e `web/`.
 
-## 🤝 Contribuindo
+## Privacidade e segurança
 
-1. Crie uma branch: `git checkout -b feature/minha-feature`
-2. Commit com padrão: `git commit -m "feat: adicione minha feature"`
-3. Push: `git push origin feature/minha-feature`
-4. Abra um PR com descrição clara
+O backend protege rotas por autenticação e valida autorização e propriedade do
+prontuário no servidor. A sessão usa JWT em cookie HttpOnly; dados clínicos não
+devem ser persistidos no armazenamento local do navegador. Ocultar uma ação na
+interface não substitui a autorização na API.
 
-**Code Style:**
-- TypeScript strict
-- Sem `any` types
-- Componentes funcionais com hooks
-- Nomeação clara (sem abbreviações)
-- Testes unitários para lógica crítica
+Leia [`docs/SECURITY.md`](docs/SECURITY.md) antes de alterar autenticação,
+autorização ou dados clínicos. O SafeMove não declara certificação regulatória
+ou conformidade clínica a partir da implementação técnica descrita neste
+repositório.
 
----
+## Documentação
 
-## 📄 Licença
+- [Visão do produto](PRODUCT.md)
+- [Arquitetura](docs/ARCHITECTURE.md)
+- [Modelo de segurança](docs/SECURITY.md)
+- [Tarefas e evolução](docs/TASKS.md)
+- [Baseline e migrações do banco](docs/database-baseline.md)
 
-MIT - Livre para usar em projetos pessoais e comerciais.
-
----
-
-## 📞 Contato & Suporte
-
-- **Criador:** Gustavo Cunha
-- **GitHub:** [@Gustavo13Cs](https://github.com/Gustavo13Cs)
-- **Issues & Sugestões:** [GitHub Issues](https://github.com/Gustavo13Cs/ecossistema-resiliencia/issues)
-
----
-
-## ⭐ Créditos
-
-Agradecimentos especiais às comunidades open-source de:
-- **NestJS** - Excelente arquitetura backend
-- **Next.js & React** - Frontend moderno
-- **Prisma** - ORM type-safe
-- **Tailwind CSS & Radix UI** - Design system elegante
-
----
+## Contribuição
 
 **Última atualização:** 2 de outubro de 2026
 **Status:** MVP em desenvolvimento ativo. Sessões, isolamento por Client e remediação documentados em [SECURITY](docs/SECURITY.md) e no [runbook](docs/runbooks/security-remediation-verification.md).

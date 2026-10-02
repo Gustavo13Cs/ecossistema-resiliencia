@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -71,12 +72,14 @@ export function ProfessionalSidebar({
           href="/home"
           className="inline-flex items-center gap-3 text-[var(--sm-ink)] no-underline"
         >
-          <span
-            aria-hidden="true"
-            className="grid size-9 place-items-center rounded-[var(--sm-radius-sm)] bg-[var(--sm-brand)] text-sm font-extrabold text-[var(--sm-on-brand)]"
-          >
-            S
-          </span>
+          <Image
+            src="/logo.png"
+            alt=""
+            width={36}
+            height={36}
+            className="size-9 shrink-0 object-contain drop-shadow-sm transition-transform hover:scale-105"
+            priority
+          />
           <span className="text-xl font-extrabold tracking-[-0.025em]">SafeMove</span>
         </Link>
         <p className="mt-5 text-sm font-semibold text-[var(--sm-brand)]">

@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, LockKeyhole } from "lucide-react"
 import { ProfessionalAreas } from "@/components/marketing/ProfessionalAreas"
@@ -18,9 +19,17 @@ export default function LandingPage() {
         >
           <Link
             href="/"
-            className="inline-flex min-h-11 items-center text-lg font-bold tracking-[-0.02em]"
+            className="inline-flex min-h-11 items-center gap-3 text-lg font-bold tracking-[-0.02em]"
           >
-            SafeMove
+            <Image
+              src="/logo.png"
+              alt=""
+              width={32}
+              height={32}
+              className="size-8 object-contain"
+              priority
+            />
+            <span>SafeMove</span>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
@@ -136,8 +145,15 @@ export default function LandingPage() {
       </main>
 
       <footer className="bg-[var(--sm-ink)] px-4 pb-8 text-sm text-[var(--sm-inverse-muted)] sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-[76rem] border-t border-[var(--sm-inverse-border)] pt-6">
-          SafeMove · Workspace profissional
+        <div className="mx-auto flex w-full max-w-[76rem] items-center gap-2.5 border-t border-[var(--sm-inverse-border)] pt-6">
+          <Image
+            src="/logo.png"
+            alt=""
+            width={20}
+            height={20}
+            className="size-5 object-contain"
+          />
+          <span>SafeMove · Workspace profissional</span>
         </div>
       </footer>
     </div>
