@@ -4,7 +4,9 @@ import AxiosMockAdapter from "axios-mock-adapter"
 import type { ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { api } from "@/lib/api"
+import { queryKeys } from "@/lib/query-keys"
 import { useLabExams } from "./useLabExams"
+import { useCentralLabExams } from "./useCentralLabExams"
 
 const navigation = vi.hoisted(() => ({ push: vi.fn() }))
 const notices = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
@@ -54,5 +56,38 @@ describe("useLabExams Client contract", () => {
     rerender({ id: "client-2" })
     expect(result.current.exams).toEqual([])
     expect(result.current.chartData).toEqual([])
+  })
+
+  it("refreshes chart and central exams together through the same QueryClient after creation", async () => {
+    const cache = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } })
+    const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={cache}>{children}</QueryClientProvider>
+    const client = { id: "client-1", name: "Synthetic Client" }
+    const created = { id: "exam-2", ...body, clientId: client.id, client, createdAt: "2026-10-02T12:00:00.000Z" }
+    let saved = false
+    http.onGet("/clients").reply(200, [client])
+    http.onGet("/lab-orders").reply(200, [])
+    http.onGet("/lab-exams").reply(() => [200, saved ? [created] : []])
+    http.onGet("/lab-exams/client/client-1").reply(() => [200, saved ? [exam, created] : [exam]])
+    http.onPost("/lab-exams").reply(() => { saved = true; return [201, created] })
+    const unrelatedKey = queryKeys.centralLabExams("another-professional")
+    cache.setQueryData(unrelatedKey, [{ id: "unrelated-exam" }])
+
+    const { result } = renderHook(() => ({ chart: useLabExams(client.id), central: useCentralLabExams() }), { wrapper })
+    await waitFor(() => expect(result.current.central.loading).toBe(false))
+    await waitFor(() => expect(result.current.chart.exams).toEqual([exam]))
+    expect(result.current.central.rawExams).toEqual([])
+
+    await act(() => result.current.chart.saveExam(body))
+
+    await waitFor(() => expect(result.current.central.rawExams).toMatchObject([{ id: "exam-2", clientName: client.name }]))
+    expect(result.current.chart.exams).toEqual([exam, created])
+    expect(cache.getQueryData(queryKeys.centralLabExams("professional-1"))).toEqual([created])
+    expect(cache.getQueryData(queryKeys.labExams("professional-1", client.id))).toEqual([exam, created])
+    expect(http.history.get.filter(entry => entry.url === "/lab-exams")).toHaveLength(2)
+    expect(http.history.get.filter(entry => entry.url === "/lab-exams/client/client-1")).toHaveLength(2)
+    expect(cache.getQueryState(unrelatedKey)?.isInvalidated).toBe(false)
+    expect(cache.getQueryData(unrelatedKey)).toEqual([{ id: "unrelated-exam" }])
+    expect(notices.success).toHaveBeenCalledOnce()
+    cache.clear()
   })
 })

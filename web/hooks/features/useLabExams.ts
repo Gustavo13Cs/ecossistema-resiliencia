@@ -40,7 +40,10 @@ export const useLabExams = (clientId: string) => {
     if (!user?.sub || !clientId) return
     try {
       await mutation.mutateAsync({ date: payload.date, notes: payload.notes, markers: payload.markers.map(marker => ({ name: marker.name, value: marker.value, unit: marker.unit })), clientId })
-      await cache.invalidateQueries({ queryKey })
+      await Promise.all([
+        cache.invalidateQueries({ queryKey }),
+        cache.invalidateQueries({ queryKey: queryKeys.centralLabExams(user.sub) }),
+      ])
       toast.success("Exames registrados com sucesso!")
       router.push(`/clientes/${clientId}`)
     } catch {
