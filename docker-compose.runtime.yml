@@ -1,0 +1,57 @@
+# Runtime com banco externo e HTTPS terminado por proxy.
+# Sem env_file das aplicações. Injete variáveis explicitamente e revise o banco de destino.
+# Validação/configuração: docker compose -f docker-compose.runtime.yml config --quiet
+services:
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migration
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Defina DATABASE_URL para o banco aprovado}
+      DIRECT_URL: ${DIRECT_URL:?Defina DIRECT_URL para o banco aprovado}
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?Defina DATABASE_URL para o banco aprovado}
+      JWT_SECRET: ${JWT_SECRET:?Defina uma chave de assinatura segura}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?Defina a origem HTTPS da web}
+      AUTH_COOKIE_SECURE: "true"
+      AUTH_COOKIE_SAME_SITE: ${AUTH_COOKIE_SAME_SITE:-lax}
+      AUTH_COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN:-}
+      AUTH_REFRESH_COOKIE_PATH: /api/auth
+      TZ: UTC
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/ping').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        INTERNAL_API_URL: http://api:3000
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      HOSTNAME: 0.0.0.0
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3001:3001"
+    restart: unless-stopped
