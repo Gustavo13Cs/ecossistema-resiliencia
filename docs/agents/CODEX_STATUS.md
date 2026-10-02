@@ -8,14 +8,14 @@
 
 ## Current Task
 
-- **Tarefa**: Correções dos três apontamentos do review do PR #22
-- **Status**: Correções concluídas e verificadas em 2026-10-02: API 472 unitários, PostgreSQL 12 regressões sem remoção de objetos, web 374 testes; tipos/lint/builds aprovados
+- **Tarefa**: Corrigir o deployment Vercel do PR #22
+- **Status**: Correção concluída e verificada localmente em 2026-10-02: 44 testes, tipos/lint/build aprovados; CSP em 28 páginas e standalone local preservados. Validação remota após push.
 - **Branch**: `agent/codex/security-remediation`
 - **Início**: 2026-09-29
 - **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migrations versionadas necessárias à remediação
 - **Worktree**: `.worktrees/security/security-remediation`
-- **Plano atual**: Escopo do mantenedor no PR #22; investigação antes de alterações e regressões dos três cenários
-- **Próximo gate**: nova revisão do PR #22 pelo mantenedor. SQL/checksum histórico intacto; nenhuma integração ou escrita em produção.
+- **Plano atual**: Correção mínima do gate conforme o artefato do Vercel, preservando a validação standalone local/Docker; regressões, build, commit e push.
+- **Próximo gate**: verificar os checks do PR #22 após publicar a correção. Sem merge ou comandos de banco.
 - **Coordenação**: o status do Antigravity ainda cita uma tarefa iniciada em 2026-09-22, mas não há branch/worktree detectável para ela; confirmar antes de alterar auth, package files ou `.gitignore` fora deste worktree
 
 ---
@@ -24,6 +24,7 @@
 
 | Data | Tarefa | Branch |
 |------|--------|--------|
+| 2026-10-02 | PR #22: gate standalone compatível com o output do Vercel; 44 regressões/configuração, tipos/lint/build e CSP em 28 páginas aprovados localmente | `agent/codex/security-remediation` |
 | 2026-10-02 | PR #22: índice legado com histórico preservado, refresh resiliente a 500 e cache da central de exames; 472 API/374 web/12 PostgreSQL e builds/tipos/lint aprovados | `agent/codex/security-remediation` |
 | 2026-10-02 | Remediação dos 15 achados: Client ownership, persistência, XSS/CSP, sessões, runtime, operação e qualidade; verificação completa local | `agent/codex/security-remediation` |
 | 2026-09-03 | Dashboard profissional com dados reais, terminologia por profissão e filtro de arquivados | `codex/safemove-professional-frontend-phase-1` |
@@ -46,6 +47,13 @@
 ---
 
 ## Notes
+
+### PR #22 — correção do CI Vercel em 2026-10-02
+
+- `gh pr checks` apontou somente o Vercel como falha no HEAD `8e15c8d`; os quatro jobs Actions passaram (run `37021935878`). A CLI autenticada recuperou os logs de `dpl_61skD2NdsPS69hL5W7Acs5gL3Kn7` após o conector de build logs retornar Tool not found.
+- Causa: compilação/tipos/CSP concluídos, mas `assert-standalone-runtime.mjs` exigia `server.js` no artefato gerenciado pelo Vercel. A validação agora reconhece `VERCEL=1` somente quando não há standalone nem caminho explícito; artefatos emitidos continuam inspecionados.
+- Regressão reproduzida antes da correção; depois, 44/44 testes dos scripts/configuração, lint, typecheck e build aprovados. Pós-build: 28/28 páginas com CSP e 297 diretórios standalone sem dev packages/arquivos de ambiente. Sem alterações de dependências, workflow ou banco.
+- Este registro acompanha o commit da correção; conferir o deployment/check do novo HEAD após push antes de considerar o gate remoto aprovado.
 
 ### PR #22 — correções de review em 2026-10-02
 

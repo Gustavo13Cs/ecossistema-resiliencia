@@ -3,6 +3,11 @@ import { existsSync, readdirSync } from "node:fs"
 import { basename, join, resolve } from "node:path"
 
 const root = resolve(process.argv[2] ?? ".next/standalone")
+// O Vercel empacota seu próprio runtime; um artefato standalone explícito continua obrigatório.
+if (process.env.VERCEL === "1" && process.argv[2] === undefined && !existsSync(join(root, "server.js"))) {
+  console.log("Standalone runtime check not applicable to Vercel-managed output.")
+  process.exit(0)
+}
 assert.ok(existsSync(join(root, "server.js")), "Missing standalone server.js")
 const forbidden = /^(?:cypress|vitest|eslint|typescript|prisma|eslint-.+|@vitest|@eslint)$/
 let directories = 0
