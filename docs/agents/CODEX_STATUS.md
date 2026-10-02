@@ -8,13 +8,13 @@
 
 ## Current Task
 
-- **Tarefa**: Corrigir o deployment Vercel do PR #22
-- **Status**: Correção concluída e verificada localmente em 2026-10-02: 44 testes, tipos/lint/build aprovados; CSP em 28 páginas e standalone local preservados. Validação remota após push.
+- **Tarefa**: Corrigir cache desatualizado do protocolo de reabilitação no PR #22
+- **Status**: Correção concluída e verificada localmente em 2026-10-02: 9 testes focais, tipos/lint/build aprovados; criação/substituição, consulta ativa, isolamento de cache e falha de salvamento cobertos. Validação remota após push.
 - **Branch**: `agent/codex/security-remediation`
 - **Início**: 2026-09-29
 - **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migrations versionadas necessárias à remediação
 - **Worktree**: `.worktrees/security/security-remediation`
-- **Plano atual**: Correção mínima do gate conforme o artefato do Vercel, preservando a validação standalone local/Docker; regressões, build, commit e push.
+- **Plano atual**: Invalidar a chave por profissional/Client após salvar; testar criação/substituição no mesmo QueryClient real, consulta ativa e erro de salvamento; validar e publicar.
 - **Próximo gate**: verificar os checks do PR #22 após publicar a correção. Sem merge ou comandos de banco.
 - **Coordenação**: o status do Antigravity ainda cita uma tarefa iniciada em 2026-09-22, mas não há branch/worktree detectável para ela; confirmar antes de alterar auth, package files ou `.gitignore` fora deste worktree
 
@@ -24,6 +24,7 @@
 
 | Data | Tarefa | Branch |
 |------|--------|--------|
+| 2026-10-02 | PR #22: cache do protocolo invalidado por profissional/Client antes de navegar; 9 testes focais com QueryClient real, tipos/lint/build aprovados | `agent/codex/security-remediation` |
 | 2026-10-02 | PR #22: gate standalone compatível com o output do Vercel; 44 regressões/configuração, tipos/lint/build e CSP em 28 páginas aprovados localmente | `agent/codex/security-remediation` |
 | 2026-10-02 | PR #22: índice legado com histórico preservado, refresh resiliente a 500 e cache da central de exames; 472 API/374 web/12 PostgreSQL e builds/tipos/lint aprovados | `agent/codex/security-remediation` |
 | 2026-10-02 | Remediação dos 15 achados: Client ownership, persistência, XSS/CSP, sessões, runtime, operação e qualidade; verificação completa local | `agent/codex/security-remediation` |
@@ -47,6 +48,13 @@
 ---
 
 ## Notes
+
+### PR #22 — cache do protocolo de reabilitação em 2026-10-02
+
+- Causa confirmada no HEAD `ef34f9b`: `useFisio` usa a chave `rehabPlan` com staleTime de 60 segundos; o editor fazia POST/sucesso/navegação sem invalidá-la. A correção pertence ao salvamento, mantendo o hook e a configuração global.
+- Após POST concluído, aguarda invalidação exata por profissional/Client antes do toast e da navegação. Consulta inativa refaz GET ao reabrir; consulta ativa é atualizada antes de navegar. Erro no POST preserva protocolo/cache e mantém o editor.
+- Três regressões falharam antes da correção e passaram depois: primeiro protocolo após cache null, substituição com exercícios/orientações novos e consumidor já montado. As duas jornadas reabrem `/reabilitacao` no mesmo QueryClient de produção, antes de 60 segundos, sem invalidar outros clientes/profissionais.
+- 9/9 testes focais (6 contratos + 3 do hook), typecheck, lint e build aprovados; pós-build valida CSP nas 28 páginas e standalone sem dev packages/arquivos de ambiente. HTTP simulado nos testes de integração; nenhum comando de banco ou merge. O CI/Vercel anterior passou no commit `ef34f9b`; conferir os checks do novo HEAD após push.
 
 ### PR #22 — correção do CI Vercel em 2026-10-02
 

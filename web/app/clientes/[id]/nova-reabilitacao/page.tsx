@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,6 +10,8 @@ import { ArrowLeft, Plus, Trash2, CheckCircle2, Target, Printer, Stethoscope, Ti
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/api"
+import { useAuth } from "@/contexts/auth-context"
+import { queryKeys } from "@/lib/query-keys"
 import { toast } from "sonner"
 import type { Client } from "@/types/client"
 import type { RehabPlan } from "@/hooks/features/useFisio"
@@ -16,6 +19,8 @@ import type { RehabPlan } from "@/hooks/features/useFisio"
 export default function NovaReabilitacaoPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
+  const cache = useQueryClient()
+  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [patientName, setPatientName] = useState("Carregando...")
 
@@ -148,6 +153,7 @@ export default function NovaReabilitacaoPage() {
       }
 
       await api.post('/rehab-plans', payload)
+      await cache.invalidateQueries({ queryKey: queryKeys.rehabPlan(user?.sub ?? "anonymous", params.id), exact: true })
       toast.success("Plano de Reabilitação salvo com sucesso! 🩺")
       router.push(`/clientes/${params.id}`)
     } catch {

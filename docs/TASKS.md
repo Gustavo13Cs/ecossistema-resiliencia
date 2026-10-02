@@ -89,6 +89,7 @@
 4. **Se bloqueado**: mude para ❌ e descreva o impedimento em `docs/agents/<SEU_STATUS>.md`
 
 ### Remediação de segurança — Codex
+- ✅ Review final do PR #22 (Codex): cache do protocolo invalidado antes de navegar; criação/substituição com o mesmo QueryClient real em menos de 60 segundos, consulta ativa e erro cobertos. 9 testes focais, tipos/lint/build aprovados localmente; conferir checks após push.
 - ✅ Correção do CI do PR #22 (Codex): gate standalone compatível com o artefato do Vercel, preservando os checks local/Docker; 44 testes, tipos/lint/build aprovados localmente. Conferir o deployment do novo HEAD após push.
 - ✅ Review do PR #22 (Codex): índice legado sem reescrever histórico, refresh resiliente a 500 e invalidação da central de exames; [validação e limites](runbooks/pr22-review-corrections.md).
 - [x] Plano A: ownership por Client, schema e retirada do runtime legado — concluído no worktree de segurança.
