@@ -1,4 +1,4 @@
-import axios, { type InternalAxiosRequestConfig } from "axios";
+import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 
 const UNSAFE_METHODS = new Set(["post", "put", "patch", "delete"])
 const AUTH_401_PATHS = new Set(["/auth/me", "/auth/login", "/auth/logout"])
@@ -32,6 +32,10 @@ function requestPath(url?: string) {
   }
 }
 
+function isUnauthorized(error: unknown) {
+  return axios.isAxiosError(error) && error.response?.status === 401
+}
+
 function isCsrfRejection(error: unknown): error is {
   config: RetriableRequestConfig
   response: { status: number; data?: { message?: unknown } }
@@ -60,7 +64,7 @@ async function refreshCsrfToken() {
         return data.csrfToken
       })
       .catch((error: unknown) => {
-        setCsrfToken(null)
+        if (isUnauthorized(error)) setCsrfToken(null)
         throw error
       })
       .finally(() => {
@@ -90,12 +94,12 @@ async function refreshAuthSession() {
           else await refreshCsrfToken()
           return
         }
-        if (session.status !== 401) throw new Error("Não foi possível verificar a sessão")
+        if (session.status !== 401) throw new AxiosError("Não foi possível verificar a sessão", AxiosError.ERR_BAD_RESPONSE, session.config, session.request, session)
         await rotate()
       })
     }
     authRefreshPromise = recover().catch((error: unknown) => {
-      setCsrfToken(null)
+      if (isUnauthorized(error)) setCsrfToken(null)
       throw error
     }).finally(() => { authRefreshPromise = null })
   }
@@ -138,9 +142,9 @@ api.interceptors.response.use(
         config._authRetry = true
         try {
           await refreshAuthSession()
-        } catch {
-          if (!AUTH_401_PATHS.has(requestPath(config.url))) unauthorizedHandler?.()
-          throw error
+        } catch (refreshError) {
+          if (isUnauthorized(refreshError) && !AUTH_401_PATHS.has(requestPath(config.url))) unauthorizedHandler?.()
+          throw refreshError
         }
         return api.request(config)
       }

@@ -41,14 +41,67 @@ describe("API session interceptors", () => {
     await api.get("/clients")
   })
 
-  it("calls the centralized handler once for a 401 outside auth endpoints", async () => {
+  it("calls the centralized handler once when refresh definitively denies the session with 401", async () => {
     const handler = vi.fn()
     setUnauthorizedHandler(handler)
     mock.onGet("/clients").reply(401)
+    mock.onGet("/auth/csrf").reply(200, { csrfToken: "bootstrap-csrf" })
+    mock.onPost("/auth/refresh").reply(401)
 
     await expect(api.get("/clients")).rejects.toBeDefined()
 
     expect(handler).toHaveBeenCalledTimes(1)
+  })
+
+  it("preserves the session and CSRF after refresh returns 500, then recovers on a later request", async () => {
+    const handler = vi.fn()
+    setUnauthorizedHandler(handler)
+    setCsrfToken("old-csrf")
+    mock.onGet("/clients").replyOnce(401)
+    mock.onGet("/auth/csrf").reply(200, { csrfToken: "bootstrap-csrf" })
+    mock.onPost("/auth/refresh").replyOnce(500)
+    mock.onPost("/later").reply(config => {
+      expect(config.headers?.["X-CSRF-Token"]).toBe("bootstrap-csrf")
+      return [200, {}]
+    })
+
+    await expect(api.get("/clients")).rejects.toMatchObject({ response: { status: 500 } })
+    expect(handler).not.toHaveBeenCalled()
+    expect(mock.history.get.filter(({ url }) => url === "/clients")).toHaveLength(1)
+    await api.post("/later")
+
+    mock.onGet("/clients").replyOnce(401)
+    mock.onGet("/clients").reply(200, [])
+    mock.onPost("/auth/refresh").reply(200, { csrfToken: "recovered-csrf" })
+    await expect(api.get("/clients")).resolves.toMatchObject({ status: 200 })
+    expect(mock.history.post.filter(({ url }) => url === "/auth/refresh")).toHaveLength(2)
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it("does not sign out when the CSRF bootstrap is temporarily unavailable", async () => {
+    const handler = vi.fn()
+    setUnauthorizedHandler(handler)
+    setCsrfToken("valid-csrf")
+    mock.onGet("/clients").reply(401)
+    mock.onGet("/auth/csrf").reply(500)
+    mock.onPost("/later").reply(config => {
+      expect(config.headers?.["X-CSRF-Token"]).toBe("valid-csrf")
+      return [200, {}]
+    })
+    await expect(api.get("/clients")).rejects.toMatchObject({ response: { status: 500 } })
+    expect(handler).not.toHaveBeenCalled()
+    expect(mock.history.post).toHaveLength(0)
+    await api.post("/later")
+  })
+
+  it("preserves the session on a network failure during refresh", async () => {
+    const handler = vi.fn()
+    setUnauthorizedHandler(handler)
+    mock.onGet("/clients").reply(401)
+    mock.onGet("/auth/csrf").reply(200, { csrfToken: "bootstrap-csrf" })
+    mock.onPost("/auth/refresh").networkError()
+    await expect(api.get("/clients")).rejects.toMatchObject({ message: "Network Error" })
+    expect(handler).not.toHaveBeenCalled()
   })
 
   it.each(["/auth/me", "/auth/login", "/auth/logout"])(

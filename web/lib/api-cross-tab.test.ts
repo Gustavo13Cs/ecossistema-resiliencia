@@ -3,6 +3,30 @@ import { afterEach, expect, it, vi } from "vitest"
 
 afterEach(() => { vi.unstubAllGlobals() })
 
+it("preserves the session and HTTP status when checking a session under the tab lock returns 500", async () => {
+  const request = vi.fn((_name: string, work: (lock: Lock) => Promise<void>) => work({ name: "safemove-auth-refresh", mode: "exclusive" } as Lock))
+  vi.stubGlobal("navigator", { locks: { request } })
+  vi.resetModules()
+  const tab = await import("./api")
+  const mock = new AxiosMockAdapter(tab.api)
+  const signedOut = vi.fn()
+  tab.setUnauthorizedHandler(signedOut)
+  tab.setCsrfToken("valid-csrf")
+  mock.onGet("/clients").reply(401)
+  mock.onGet("/auth/me").reply(500)
+  mock.onPost("/later").reply(config => {
+    expect(config.headers?.["X-CSRF-Token"]).toBe("valid-csrf")
+    return [200, {}]
+  })
+  try {
+    await expect(tab.api.get("/clients")).rejects.toMatchObject({ response: { status: 500 } })
+    expect(signedOut).not.toHaveBeenCalled()
+    expect(mock.history.post).toHaveLength(0)
+    expect(request).toHaveBeenCalledOnce()
+    await tab.api.post("/later")
+  } finally { mock.restore() }
+})
+
 it("coordinates independent tabs and reuses the access cookie rotated by the first tab", async () => {
   let queue: Promise<unknown> = Promise.resolve()
   const request = vi.fn((_name: string, work: (lock: Lock) => Promise<void>) => {

@@ -100,7 +100,9 @@ export class AuthController {
       const csrfToken = this.setSessionCookies(res, session);
       return { user: session.user, csrfToken };
     } catch (error) {
-      this.clearSessionCookies(res);
+      if (error instanceof UnauthorizedException) {
+        this.clearSessionCookies(res);
+      }
       throw error;
     }
   }

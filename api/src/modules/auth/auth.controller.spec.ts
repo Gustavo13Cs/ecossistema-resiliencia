@@ -1,5 +1,6 @@
 import {
   INestApplication,
+  InternalServerErrorException,
   UnauthorizedException,
   ValidationPipe,
 } from '@nestjs/common';
@@ -224,6 +225,38 @@ describe('AuthController registration contract', () => {
         expect.stringMatching(/^csrf_token=;/),
       ]),
     );
+  });
+
+  it.each([
+    new InternalServerErrorException('Temporary infrastructure failure'),
+    new Error('Temporary database connection failure'),
+  ])('preserves cookies when refresh returns 500 (%s)', async (error) => {
+    authService.refresh.mockRejectedValue(error);
+    const csrf = 'a'.repeat(43);
+    const result = await request(httpServer)
+      .post('/auth/refresh')
+      .set('Origin', 'http://localhost:3001')
+      .set('Cookie', ['refresh_token=valid-refresh', `csrf_token=${csrf}`])
+      .set('X-CSRF-Token', csrf)
+      .expect(500);
+
+    expect(authService.refresh).toHaveBeenCalledWith('valid-refresh');
+    expect(result.headers['set-cookie']).toBeUndefined();
+    expect(result.headers['cache-control']).toBe('no-store');
+
+    authService.refresh.mockResolvedValueOnce({
+      access_token: 'recovered-access',
+      refresh_token: 'recovered-refresh',
+      refresh_expires_at: new Date(Date.now() + 30 * 86_400_000),
+      user: { sub: 'pro-1', role: 'NUTRITIONIST' },
+    });
+    const retry = await request(httpServer)
+      .post('/auth/refresh')
+      .set('Origin', 'http://localhost:3001')
+      .set('Cookie', ['refresh_token=valid-refresh', `csrf_token=${csrf}`])
+      .set('X-CSRF-Token', csrf)
+      .expect(200);
+    expect(retry.headers['set-cookie']).toHaveLength(3);
   });
 
   it('returns the authenticated user plus a CSRF token without exposing the JWT', () => {
