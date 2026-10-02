@@ -8,14 +8,14 @@
 
 ## Current Task
 
-- **Tarefa**: Remediação ponta a ponta dos 15 achados de segurança e qualidade
-- **Status**: Execução nativa concluída em 2026-10-02; Planos A-D implementados e verificados (API 470 unitários/102 E2E; web 368 testes; Cypress 31/31)
+- **Tarefa**: Correções dos três apontamentos do review do PR #22
+- **Status**: Correções concluídas e verificadas em 2026-10-02: API 472 unitários, PostgreSQL 12 regressões sem remoção de objetos, web 374 testes; tipos/lint/builds aprovados
 - **Branch**: `agent/codex/security-remediation`
 - **Início**: 2026-09-29
 - **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migrations versionadas necessárias à remediação
 - **Worktree**: `.worktrees/security/security-remediation`
-- **Plano atual**: `docs/superpowers/plans/2026-09-29-security-remediation-d-operations-quality.md`
-- **Próximo gate**: branch publicada no origin em 2026-10-02 por solicitação do mantenedor; PR não solicitado. Worktree preservado; nenhuma integração ou operação em produção executada.
+- **Plano atual**: Escopo do mantenedor no PR #22; investigação antes de alterações e regressões dos três cenários
+- **Próximo gate**: nova revisão do PR #22 pelo mantenedor. SQL/checksum histórico intacto; nenhuma integração ou escrita em produção.
 - **Coordenação**: o status do Antigravity ainda cita uma tarefa iniciada em 2026-09-22, mas não há branch/worktree detectável para ela; confirmar antes de alterar auth, package files ou `.gitignore` fora deste worktree
 
 ---
@@ -24,6 +24,7 @@
 
 | Data | Tarefa | Branch |
 |------|--------|--------|
+| 2026-10-02 | PR #22: índice legado com histórico preservado, refresh resiliente a 500 e cache da central de exames; 472 API/374 web/12 PostgreSQL e builds/tipos/lint aprovados | `agent/codex/security-remediation` |
 | 2026-10-02 | Remediação dos 15 achados: Client ownership, persistência, XSS/CSP, sessões, runtime, operação e qualidade; verificação completa local | `agent/codex/security-remediation` |
 | 2026-09-03 | Dashboard profissional com dados reais, terminologia por profissão e filtro de arquivados | `codex/safemove-professional-frontend-phase-1` |
 | 2026-09-04 | Diretório responsivo e cadastro de prontuário orientado por profissão | `codex/safemove-professional-frontend-phase-1` |
@@ -45,6 +46,15 @@
 ---
 
 ## Notes
+
+### PR #22 — correções de review em 2026-10-02
+
+- Base atualizada por fast-forward até `341931e`, preservando os commits externos e trabalho anterior.
+- Nova migration anterior à original: valida B-tree/colunas/ordem/tabela e renomeia índice legado; no-op se a original já constar como concluída. SQL antigo e registros/checksums intactos. Sem DROP de objetos; o legado conservado implica índice equivalente adicional e possível drift em bancos antigos.
+- Refresh 401 continua limpando cookies/sessão; 500/rede preservam cookies, CSRF, usuário e cache clínico. Interceptor propaga o erro transitório e aceita uma tentativa posterior; Web Locks continua coordenando abas.
+- Cadastro de laudo pelo prontuário invalida a central no mesmo QueryClient e na sessão correta; integração preserva cache de outro profissional.
+- API 45 suítes/472 testes, web 57 arquivos/374 testes, PostgreSQL 12/12, tipos/lint/builds e Prisma validate aprovados. E2E geral não executado porque fixtures usam DROP DATABASE/exclusões; nenhuma escrita em produção. [Detalhes e limites](../runbooks/pr22-review-corrections.md).
+- A revisão automática rejeitou uma proposta inicial com DROP INDEX. Essa operação foi retirada integralmente antes da validação final.
 
 ### Remediação — conclusão local em 2026-10-02
 
