@@ -39,6 +39,9 @@ describe("Ciclo de vida de clientes (mocked)", () => {
         csrfToken: "csrf-e2e",
       },
     })
+    cy.intercept("GET", "**/assessments/client/client-snapshot", {
+      body: [],
+    }).as("snapshotAssessments")
     cy.intercept("GET", "**/clients/client-snapshot", (request) => {
       clientFetches += 1
 
@@ -101,7 +104,7 @@ describe("Ciclo de vida de clientes (mocked)", () => {
     }).as("snapshotUpdate")
 
     cy.visit("http://localhost:3001/clientes/client-snapshot")
-    cy.wait("@snapshotInitial")
+    cy.wait(["@snapshotInitial", "@snapshotAssessments"])
     cy.get('[name="name"]').should("have.value", "Ana inicial").clear().type("Rascunho 1")
     cy.contains("button", "Salvar alterações").click()
     cy.wait("@snapshotUpdate")

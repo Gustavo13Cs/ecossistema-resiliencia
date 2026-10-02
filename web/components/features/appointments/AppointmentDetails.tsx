@@ -104,8 +104,8 @@ export function AppointmentDetails({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto border-[var(--sm-border)] sm:max-w-xl">
-        <SheetHeader className="border-b border-[var(--sm-border)] px-5 pb-5 pt-6">
+      <SheetContent className="w-full border-[var(--sm-border)] sm:max-w-xl">
+        <SheetHeader className="shrink-0 border-b border-[var(--sm-border)] px-5 pb-5 pt-6">
           <div className="pr-8">
             <div role="status" aria-live="polite">
               <AppointmentStatusBadge status={appointment.status} />
@@ -119,7 +119,7 @@ export function AppointmentDetails({
           </div>
         </SheetHeader>
 
-        <div className="space-y-7 px-5 pb-8">
+        <div className="min-h-0 flex-1 space-y-7 overflow-y-auto px-5 pb-8">
           <section aria-labelledby="appointment-information-title">
             <h3
               id="appointment-information-title"
