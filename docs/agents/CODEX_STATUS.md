@@ -15,7 +15,7 @@
 - **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migrations versionadas necessárias à remediação
 - **Worktree**: `.worktrees/security/security-remediation`
 - **Plano atual**: `docs/superpowers/plans/2026-09-29-security-remediation-d-operations-quality.md`
-- **Próximo gate**: decisão do mantenedor sobre integração/publicação. Branch/worktree preservados; nenhuma publicação, merge ou migration em produção executada.
+- **Próximo gate**: branch publicada no origin em 2026-10-02 por solicitação do mantenedor; PR não solicitado. Worktree preservado; nenhuma integração ou operação em produção executada.
 - **Coordenação**: o status do Antigravity ainda cita uma tarefa iniciada em 2026-09-22, mas não há branch/worktree detectável para ela; confirmar antes de alterar auth, package files ou `.gitignore` fora deste worktree
 
 ---
