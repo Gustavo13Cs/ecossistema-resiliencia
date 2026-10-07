@@ -8,6 +8,10 @@
 
 ## Current Task
 
+- **Incidente 2026-10-07**: Render falhou na migration de papéis; diagnóstico confirmado no Supabase: falta de SET ROLE para safemove_catalog_lookup. Preparação local concluída: regressão NOSUPERUSER RED→GREEN, recovery Prisma deploy/P3009/resolve/redeploy comprovado; API475 e E2E188 PG17, lint/tipos/generate/build aprovados. Rechecagem: falha marcada rolled-back externamente; grupos/objetos novos ausentes. Operação remota pendente de aprovação; sem escrita em produção.
+- **Branch de recuperação**: agent/codex/render-tenant-migration-recovery. Roteiro: docs/runbooks/render-tenant-migration-recovery.md.
+
+
 - **Tarefa**: Auditoria de leitura v3 e isolamento por profissional no banco, com correções DR-001/002/003 preservadas.
 - **Status**: Implementação/prova locais concluídas e verificadas. Implantação operacional/produção pendentes.
 - **Branch**: agent/codex/security-followup; base main/934e183.
