@@ -1,89 +1,69 @@
 # Recuperação da migration de papéis no Render
 
-Incidente de 2026-10-07: o build de eebfab1 passou, mas a publicação da API falhou em 20261006120000_read_audit_tenant_roles. Este documento prepara a operação para aprovação; nenhuma alteração em produção foi executada nesta investigação.
+Incidente de 2026-10-07: o build de eebfab1 passou, mas a publicação da API falhou em `20261006120000_read_audit_tenant_roles`. O mantenedor autorizou a recuperação no Supabase e o ajuste das conexões/deploy no Render. A operação preserva a migration original.
 
-## Causa e estado observado
+## Causa confirmada
 
-O log do PostgreSQL às 16:43:53 UTC registra `must be able to SET ROLE "safemove_catalog_lookup"`. A mensagem seguinte, apresentada pelo Prisma/Render, é `current transaction is aborted`. O postgres gerenciado do Supabase é NOSUPERUSER, CREATEROLE e BYPASSRLS; CREATE ROLE não lhe concedeu automaticamente SET/INHERIT para transferir e ajustar as permissões da função. A migration original foi verificada anteriormente com owner superusuário local, que contornava essa restrição.
+O PostgreSQL registrou às 16:43:53 UTC `must be able to SET ROLE "safemove_catalog_lookup"`. A mensagem posterior `current transaction is aborted` ocultou esse erro. O postgres do Supabase é NOSUPERUSER, CREATEROLE e BYPASSRLS; precisa de SET para transferir a função e INHERIT para ajustar sua ACL depois da transferência. A prova anterior com owner superusuário local não detectava essa restrição.
 
-A consulta somente de metadados encontrou a migration com finished_at e rolled_back_at nulos e applied_steps_count=0. Os seis grupos SafeMove, os dois objetos de auditoria e safemove_private estavam ausentes. As 40 tabelas anteriores continuavam com RLS; a tabela adicional era _prisma_migrations. O bloco BEGIN/COMMIT não deixou o novo schema instalado. O Render registrou P3009 nas tentativas seguintes, inclusive na instância da versão anterior que possui 16 migrations. Repetir o deploy não corrige esse registro.
+O BEGIN/COMMIT falhou sem instalar os seis grupos, a trilha, a outbox ou o schema privado. O registro original foi marcado rolled-back por uma ação externa às 17:29:41 UTC. Esta recuperação não repetiu migrate resolve nem excluiu registros.
 
-Na rechecagem final, rolled_back_at já estava preenchido (2026-10-07T17:29:41 UTC), por uma ação externa a esta investigação. Os grupos, enums, schema, trilha e outbox continuavam ausentes. Portanto, não repetir migrate resolve para esse registro nem afirmar que P3009 permanece ativo; a falta de SET/INHERIT continua impedindo uma nova aplicação não preparada.
+O Render mantinha a API 934e183 como live e eebfab1 como update_failed. A página /auditoria nova exige o endpoint da API nova. A captura é compatível com essa diferença de versões; a requisição autenticada do navegador não foi inspecionada. /health retornou 404 e não foi tratado como verificação de saúde.
 
-O último deploy marcado live no Render permanece em 934e183; eebfab1 está update_failed. A página nova /auditoria exige o endpoint da API nova. A captura de erro é compatível com essa diferença de versões; não foi inspecionada a requisição autenticada do navegador. GET anônimo /health retornou 404, portanto não foi tratado como um teste de health ou do fluxo autenticado.
+Referências: [ALTER FUNCTION no PostgreSQL 17](https://www.postgresql.org/docs/17/sql-alterfunction.html) e [recuperação de migrations no Prisma](https://www.prisma.io/docs/orm/v7/prisma-migrate/workflows/patching-and-hotfixing).
 
-Fontes: [transferência de owner no PostgreSQL 17](https://www.postgresql.org/docs/17/sql-alterfunction.html) e [recuperação de migration no Prisma 7](https://www.prisma.io/docs/orm/v7/prisma-migrate/workflows/patching-and-hotfixing).
+## Operação aplicada no Supabase
 
-## Escopo da preparação
+Projeto aprovado: `zmjcxysenzrqycktckip`. Banco postgres, PostgreSQL 17.6, pooler em modo session na porta 5432. As conexões e senhas não constam neste documento.
 
-A migration e seu checksum são preservados. Os arquivos api/scripts/tenant-migration-prepare.sql e tenant-migration-cleanup.sql não são executados automaticamente pela aplicação.
+1. Backup do schema public via pg_dump 17, cifrado por streaming com AES-256-GCM. Chave protegida por Windows DPAPI CurrentUser; diretório temporário com ACL restrita. O backup não inclui auth/storage nem representa backup completo da plataforma.
+2. Restauração do backup por streaming em database aleatório de container PostgreSQL 17.11, com dados em tmpfs: 41 tabelas restauradas. A primeira tentativa falhou porque a database vazia já continha public; a segunda removeu somente esse schema vazio da fixture e passou.
+3. Preflight confirmou o owner direto postgres, ausência de grupos novos/falhas pendentes e nenhuma outra conexão de migration observada.
+4. Execução de api/scripts/tenant-migration-prepare.sql: permissão temporária SET/INHERIT de safemove_catalog_lookup ao owner.
+5. Prisma 7.10.0 migrate deploy aplicou a migration original; 17 migrations concluídas.
+6. Execução de api/scripts/tenant-migration-cleanup.sql: owner com SET=false e USAGE=false para o grupo de catálogo; função food_in_use pertencente ao grupo mínimo. CREATE no schema privado retirado.
 
-Prepare cria somente safemove_catalog_lookup se necessário, verifica o owner e as restrições do grupo e lhe concede temporariamente SET e INHERIT. SET permite ALTER FUNCTION OWNER; INHERIT permite ajustar os grants da função depois da transferência. O grupo continua NOLOGIN, NOSUPERUSER, NOBYPASSRLS, NOCREATEROLE, NOCREATEDB e NOREPLICATION.
+Checksum SHA256 preservado da migration: `66bbd17d21f8bddb4ad36df13e7e9fe2ac7cd64adb0ece2646cc659116adc407`.
 
-Cleanup, depois do commit, remove SET/INHERIT e CREATE no schema. A função permanece propriedade do grupo mínimo, sem ownership de tabela. O ADMIN da criação do grupo é preservado para o owner de migration; essa conta já possui autoridade administrativa e jamais deve ser usada pelo HTTP, auth ou cron. O teste comprova que o owner não consegue executar a função após cleanup.
-
-## Operação a aprovar
-
-Antes de executar, confirmar owner/session_user reais, backup e janela de manutenção. Executar comandos na pasta api de um checkout contendo a migration original de eebfab1, com DIRECT_URL do owner fornecida por mecanismo secreto. Não imprimir DSNs ou conteúdo clínico. Pausar tentativas concorrentes de migration/deploy.
-
-1. Reconsultar _prisma_migrations e a ausência dos objetos/grupos novos. Se houver estado diferente da observação, interromper a recuperação e revisar o inventário. Não marcar como aplicada uma migration ausente nem excluir seu registro.
-2. Resolver exclusivamente a falha confirmada **somente se finished_at e rolled_back_at continuarem nulos**. Na rechecagem final deste incidente rolled_back_at já está preenchido; pular este comando:
-
-~~~sh
-npx prisma migrate resolve --rolled-back 20261006120000_read_audit_tenant_roles
-~~~
-
-Esse comando atualiza o histórico; não executa rollback SQL. Aqui o rollback do BEGIN/COMMIT já foi observado. Se o objetivo imediato for restabelecer somente a API anterior, encerrar nesta etapa e validar/reiniciar a versão 934e183, que tem 16 migrations. Isso não disponibiliza o novo histórico de acessos. Não disparar o novo deploy sem a preparação seguinte.
-
-3. Para implantar a API nova, executar tenant-migration-prepare.sql como o owner aprovado, no mesmo banco. Revisar antes os LOGINs e o corte do runtime descritos abaixo.
-4. Aplicar a migration original:
-
-~~~sh
-npx prisma migrate deploy
-~~~
-
-5. Confirmar finished_at preenchido e ausência de falhas não resolvidas. Executar tenant-migration-cleanup.sql pelo mesmo owner. Verificar SET=false, USAGE=false, CREATE=false e food_in_use pertencente a safemove_catalog_lookup. Não executar cleanup por superusuário: esse papel sempre pode assumir outros papéis e o verificador rejeita o resultado.
-6. Somente depois da configuração do runtime e aprovação do corte, publicar/reiniciar a nova API e verificar o fluxo autenticado de auditoria com a própria conta.
-
-Se a nova tentativa falhar, parar o rollout, preservar os logs de erro sem dados clínicos e confirmar novamente o rollback. Enquanto o grupo de catálogo existir, retirar as permissões temporárias do owner real; neste incidente ele é postgres:
+Se uma tentativa futura falhar após prepare, interromper o rollout, inspecionar histórico/rollback e retirar somente a autoridade temporária do owner correto:
 
 ~~~sql
 GRANT safemove_catalog_lookup TO postgres WITH INHERIT FALSE, SET FALSE;
 ~~~
 
-Isso não substitui a inspeção do histórico e dos objetos. O script de cleanup normal exige a função instalada e não é um caminho para abortar uma migration sem commit.
+Cleanup normal exige a função instalada e não substitui a inspeção de uma falha. Não executar esses scripts no bootstrap da aplicação.
 
-## Configuração obrigatória do runtime
+## Conexões restritas no Render
 
-Os grupos NOLOGIN não provisionam senhas ou LOGINs de produção. Na inspeção os grupos ainda não existiam; não há prova de memberships/credenciais de runtime prontas. O conector do Render não forneceu uma operação de leitura dos nomes das variáveis; seus valores não foram coletados.
+Foram provisionados quatro LOGINs NOSUPERUSER/NOBYPASSRLS/NOCREATEROLE/NOCREATEDB/NOREPLICATION, sem ownership. Os três primeiros herdam somente o grupo indicado, com ADMIN=false e SET=false.
 
-A nova API exige três conexões independentes:
+| Variável | LOGIN | Grupo |
+|---|---|---|
+| CLINICAL_DATABASE_URL | safemove_runtime_clinical | safemove_clinical |
+| AUTH_DATABASE_URL | safemove_runtime_auth | safemove_auth |
+| JOBS_DATABASE_URL | safemove_runtime_jobs | safemove_jobs |
+| DIRECT_URL | safemove_migration_check | nenhum |
 
-| Variável | Grupo exclusivo do LOGIN |
-|---|---|
-| CLINICAL_DATABASE_URL | safemove_clinical |
-| AUTH_DATABASE_URL | safemove_auth |
-| JOBS_DATABASE_URL | safemove_jobs |
+Os três LOGINs passaram no assertDatabaseRole real da aplicação, conectados pelo pooler. DATABASE_URL foi esvaziada e DIRECT_URL administrativa substituída. O update do Render mesclou apenas essas cinco chaves; demais configurações foram preservadas.
 
-Cada LOGIN deve herdar seu grupo, sem superuser/BYPASSRLS/CREATEROLE/CREATEDB/REPLICATION, ownership ou memberships administrativas. Verificar current_user e session_user no processo real, incluindo o pooler. DATABASE_URL não fornece fallback e copiar a conexão postgres/owner para essas variáveis faz o bootstrap recusar o runtime.
+O conector disponível não altera build/start commands. Por isso, o start atual continua `npx prisma migrate deploy && node dist/src/main.js`, mas DIRECT_URL permite somente USAGE no schema public e SELECT em _prisma_migrations. O checker não pode criar tabelas, escrever no histórico ou ler clients. Prisma migrate deploy com esse LOGIN passou contra o banco atualizado: nenhuma migration pendente. Uma migration nova exige aplicação separada com o owner antes do próximo deploy; o checker não tem autoridade para aplicá-la.
 
-A operação de migration deve permanecer separada do processo HTTP. O start command atual do Render roda migrate deploy e node juntos; coordenar o comando e o fornecimento de DIRECT_URL para que a conexão administrativa não permaneça disponível ao processo HTTP. O build pode usar um DSN fictício somente no processo de build, pois generate não conecta ao banco. Configuração proposta, a aplicar junto ao corte aprovado:
+A separação definitiva recomendada continua sendo executar migrations fora do serviço HTTP e usar somente `node dist/src/main.js` no start. Enquanto os comandos atuais existirem, não recolocar uma credencial administrativa em DIRECT_URL para destravar um deploy.
 
-~~~sh
-# Build command do Render (Linux)
-DIRECT_URL='postgresql://build:build@127.0.0.1:5432/build' sh -c 'npm install --include=dev && npx prisma generate && npm run build'
-# Start command, depois de aplicar a migration separadamente
-node dist/src/main.js
-~~~
+## Certificado e TLS
 
-Retirar DIRECT_URL e qualquer DATABASE_URL administrativa das variáveis do runtime; o build recebe apenas o valor fictício acima. Configurar as três URLs restritas por mecanismo secreto, sem registrar seus valores. Não alterar credenciais ou configuração automaticamente como consequência de executar estes scripts.
+O certificado público Supabase Root 2021 CA foi adicionado a api/certs, incluindo a imagem Docker de produção. Não contém chave privada. Procedência, validade e fingerprint estão em api/certs/README.md.
 
-AUDIT_DELIVERY_DATABASE_URL/destino/adaptador independente e as demais decisões operacionais continuam descritos em read-audit-tenant-rls.md. Corrigir o deploy não encerra esses requisitos nem comprova a segurança inteira do ambiente.
+Runtime pg usa `sslmode=verify-full&sslrootcert=./certs/supabase-prod-ca-2021.crt`. O CLI Prisma usa `sslmode=require&sslaccept=strict&sslcert=./certs/supabase-prod-ca-2021.crt`. Os caminhos relativos foram testados a partir da pasta api; ../certs falhou nesta configuração. Verificação por Node: conexão TLS 1.3, encrypted=true e authorized=true.
 
-## Verificação local desta recuperação
+A consulta pg_stat_ssl pelo pooler retornou ssl=false para o backend PostgreSQL. Essa visão descreve a conexão interna pooler→Postgres, não o socket externo validado. Esta operação não comprova TLS nesse trecho interno; a configuração do provedor precisa de revisão própria. [Visão pg_stat_ssl](https://www.postgresql.org/docs/17/monitoring-stats.html#MONITORING-PG-STAT-SSL-VIEW).
 
-- Regressão real em PostgreSQL 17.11, owner LOGIN NOSUPERUSER/NOBYPASSRLS/CREATEROLE: RED com a falta de SET ROLE; GREEN com prepare/migration/cleanup, 42 tabelas com RLS, função restrita e nenhuma autoridade efetiva de catálogo herdada pelo owner.
-- Fluxo do Prisma 7.10.0 em banco sintético: as 16 migrations históricas foram aplicadas por postgres local; o owner da fixture foi transferido para um LOGIN sem superuser, evitando a dependência histórica de ALTER DEFAULT PRIVILEGES FOR ROLE postgres. migrate deploy reproduziu a falha, a nova tentativa reproduziu P3009, migrate resolve --rolled-back e prepare permitiram aplicar a mesma migration. Resultado: 17 migrations concluídas, SET=false e INHERIT=false após cleanup.
-- API: 47 suítes/475 unitários e 30 suítes/188 E2E completos em PostgreSQL 17.11; lint focal e typecheck aprovados. Prisma generate e build da API aprovados com DIRECT_URL ficticia, sem conexao ao banco.
-- Nenhuma mudança em schema.prisma, migrations históricas, guards, RLS, CI, compose ou segredos. O teste prepara e descarta somente databases e LOGINs aleatórios de fixtures locais; o container deste trabalho é isolado em 127.0.0.1:5435 e usa tmpfs.
-- Ainda não valida o pooler ou o processo de produção. Não houve merge, deploy, resolução remota ou provisionamento de LOGINs nesta investigação.
+## Evidência e limites
+
+- Backup cifrado e manifesto local: C:/Users/MICRO/AppData/Local/Temp/safemove-production-recovery-20261007. A chave depende do usuário Windows que a protegeu; conservar ambos os arquivos e definir custódia/backup independente.
+- Security Advisor depois da DDL: nenhum lint.
+- Regressão de owner gerenciado em PostgreSQL 17.11: RED por falta de SET ROLE, GREEN com prepare/migration/cleanup. 42 tabelas de aplicação com RLS; função restrita.
+- Validação local anterior do mesmo código: API 47 suítes/475 unitários, 30 suítes/188 E2E PG17; tipos, lint, generate e build aprovados. Não repetir as suítes sem mudança que justifique.
+- Deploy com certificado publicado e verificação HTTP: em andamento neste registro.
+- A sessão própria na página /auditoria ainda requer validação autenticada. Não foram consultados prontuários nem criados registros clínicos para testar em produção.
+- Destino/adaptador/cópia independente de auditoria, retenção/base legal, indisponibilidade/carga e demais decisões continuam no runbook read-audit-tenant-rls.md. Recuperar o deploy não encerra a segurança operacional do projeto.

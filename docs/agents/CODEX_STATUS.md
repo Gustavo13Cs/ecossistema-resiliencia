@@ -8,12 +8,12 @@
 
 ## Current Task
 
-- **Incidente 2026-10-07**: Render falhou na migration de papéis; diagnóstico confirmado no Supabase: falta de SET ROLE para safemove_catalog_lookup. Preparação local concluída: regressão NOSUPERUSER RED→GREEN, recovery Prisma deploy/P3009/resolve/redeploy comprovado; API475 e E2E188 PG17, lint/tipos/generate/build aprovados. Rechecagem: falha marcada rolled-back externamente; grupos/objetos novos ausentes. Operação remota pendente de aprovação; sem escrita em produção.
+- **Incidente 2026-10-07**: Recuperação autorizada em produção: backup cifrado/restauração de 41 tabelas, 17 migrations concluídas com checksum original, SET/INHERIT temporários retirados. Quatro LOGINs restritos provisionados; bootstrap clínico/auth/jobs e Prisma checker pelo pooler aprovados. Render recebeu três URLs de aplicação e DIRECT_URL somente de metadados; DATABASE_URL administrativa esvaziada. Security Advisor sem lints; CA pública validada. Publicação do certificado e deploy em andamento.
 - **Branch de recuperação**: agent/codex/render-tenant-migration-recovery. Roteiro: docs/runbooks/render-tenant-migration-recovery.md.
 
 
 - **Tarefa**: Auditoria de leitura v3 e isolamento por profissional no banco, com correções DR-001/002/003 preservadas.
-- **Status**: Implementação/prova locais concluídas e verificadas. Implantação operacional/produção pendentes.
+- **Status**: Implementação/prova locais concluídas e verificadas. Migration e conexões restritas aplicadas em produção; deploy com CA em andamento.
 - **Branch**: agent/codex/security-followup; base main/934e183.
 - **Worktree**: .worktrees/security/security-followup.
 - **Atualização**: 2026-10-07.
@@ -22,7 +22,7 @@
 - **Validação**: API 47 suítes/475 unitários; PG16.15 e PG17.11, 29 suítes/187 E2E por versão; comando padrão npm run test:e2e validado novamente com 187 testes PG16; web 59 arquivos/391 testes; Cypress real 1/1; tipos/lint/builds/Prisma aprovados; CSP/direção em 29 páginas e standalone verificado.
 - **Revisão**: Um reviewer independente; compatibilidade migrada/corrida de Food/overview corrigidos por RED→GREEN, com regressões adicionais de SET ROLE e cadastro auth. Suítes completas verdes; sem segunda revisão.
 - **Pendências**: Fase 0 no processo publicado, pooler/carga, D1/D2 retenção/base legal, D3 destino/adaptador/cópia independente, D5 homologação de indisponibilidade, D7 investigador e decisões D9/D10. Backlog de toolchain, scripts demo/seed e backups/restauração não encerrado; integração/deploy pendentes.
-- **Publicação**: Branch publicada e PR #23 aberto como rascunho para main em 2026-10-07: https://github.com/Gustavo13Cs/ecossistema-resiliencia/pull/23. Checks remotos em andamento; sem merge/deploy/SQL remoto ou alteração de segredos.
+- **Publicação**: PR #23 integrado em main/eebfab1. Recuperação na branch agent/codex/render-tenant-migration-recovery; publicação do certificado/deploy em andamento.
 - **Roteiro**: [operação e limites](C:/Users/MICRO/Documents/GitHub/ecossistema-resiliencia/.worktrees/security/security-followup/docs/runbooks/read-audit-tenant-rls.md).
 - **Evidência persistente**: [verificação local](C:/Users/MICRO/.codex/state/plugins/codex-security/scans/security-followup/artifacts-d24209c2e31a8c4d3117accee187585a6b91c1cb986256d555d4f2914bd67406/artifacts/2026-10-07-read-audit-tenant-rls-verification.md).
 
