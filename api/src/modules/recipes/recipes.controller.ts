@@ -1,3 +1,4 @@
+import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Body,
   Controller,
@@ -25,6 +26,7 @@ import { RecipesService } from './recipes.service';
 export class RecipesController {
   constructor(private readonly recipesService: RecipesService) {}
 
+  @ClinicalResponse({ exception: 'private-recipe' })
   @Get()
   list(
     @Request() request: AuthenticatedRequest,
@@ -33,6 +35,7 @@ export class RecipesController {
     return this.recipesService.list(query, request.user.sub);
   }
 
+  @ClinicalResponse({ exception: 'private-recipe' })
   @Post()
   create(
     @Request() request: AuthenticatedRequest,
@@ -41,11 +44,13 @@ export class RecipesController {
     return this.recipesService.create(dto, request.user.sub);
   }
 
+  @ClinicalResponse({ exception: 'private-recipe' })
   @Get(':id')
   findOne(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.recipesService.findOne(id, request.user.sub);
   }
 
+  @ClinicalResponse({ exception: 'private-recipe' })
   @Patch(':id')
   update(
     @Request() request: AuthenticatedRequest,
@@ -55,16 +60,19 @@ export class RecipesController {
     return this.recipesService.update(id, dto, request.user.sub);
   }
 
+  @ClinicalResponse({ exception: 'private-recipe' })
   @Post(':id/duplicate')
   duplicate(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.recipesService.duplicate(id, request.user.sub);
   }
 
+  @ClinicalResponse({ exception: 'private-recipe' })
   @Patch(':id/archive')
   archive(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.recipesService.archive(id, request.user.sub);
   }
 
+  @ClinicalResponse({ exception: 'private-recipe' })
   @Patch(':id/restore')
   restore(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.recipesService.restore(id, request.user.sub);

@@ -101,6 +101,8 @@ model User {
   patientConsultationNotes ConsultationNote[]     @relation("PatientConsultationNotes")
   createdConsultationNotes ConsultationNote[]     @relation("CreatedConsultationNotes")
   authSessions             AuthSession[]
+  tenantReadAudits ClientReadAuditEvent[] @relation("ReadAuditTenant")
+  actorReadAudits ClientReadAuditEvent[] @relation("ReadAuditActor")
 }
 
 model AuthSession {
@@ -231,6 +233,7 @@ model Client {
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
   auditEvents       ClientAuditEvent[]
+  readAuditEvents ClientReadAuditEvent[]
   diets             DietPlan[]           @relation("ClientDiets")
   assessments       PhysicalAssessment[] @relation("ClientAssessments")
   appointments      Appointment[]        @relation("ClientAppointments")
@@ -1171,4 +1174,64 @@ model LabOrder {
   @@index([clientId, issuedAt])
   @@index([professionalId, issuedAt])
   @@map("lab_orders")
+}
+
+enum ReadAuditActor {
+  PROFESSIONAL
+  SYSTEM
+}
+enum ReadAuditAction {
+  READ
+  LIST
+  EXPORT
+}
+enum ReadAuditDomain {
+  CLIENT
+  OVERVIEW
+  DIET
+  WORKOUT
+  REHAB
+  ASSESSMENT
+  PHYSIO_ASSESSMENT
+  ANAMNESIS
+  CONSULTATION_NOTE
+  SUPPLEMENT
+  LAB_EXAM
+  LAB_ORDER
+  CLIENT_GOAL
+  APPOINTMENT
+  ALERT
+  AUDIT
+}
+model ClientReadAuditEvent {
+  id String @id @default(uuid())
+  occurredAt DateTime @default(now()) @db.Timestamptz(6)
+  tenantProfessionalId String
+  tenantProfessional User @relation("ReadAuditTenant", fields: [tenantProfessionalId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  clientId String
+  client Client @relation(fields: [clientId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  actorType ReadAuditActor
+  actorProfessionalId String?
+  actorProfessional User? @relation("ReadAuditActor", fields: [actorProfessionalId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  sessionId String?
+  systemTaskId String?
+  action ReadAuditAction
+  domain ReadAuditDomain
+  requestId String
+  delivery AuditDeliveryState?
+  @@unique([requestId, clientId, action, domain])
+  @@index([tenantProfessionalId, occurredAt], map: "read_audit_tenant_time_idx")
+  @@index([clientId, occurredAt], map: "read_audit_client_time_idx")
+  @@index([actorProfessionalId, occurredAt], map: "read_audit_actor_time_idx")
+  @@map("client_read_audit_events")
+}
+model AuditDeliveryState {
+  eventId String @id
+  event ClientReadAuditEvent @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  attempts Int @default(0)
+  leaseUntil DateTime? @db.Timestamptz(6)
+  leaseToken String?
+  deliveredAt DateTime? @db.Timestamptz(6)
+  @@index([deliveredAt, leaseUntil], map: "audit_delivery_pending_idx")
+  @@map("audit_delivery_states")
 }

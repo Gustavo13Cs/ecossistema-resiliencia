@@ -1,3 +1,4 @@
+import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Body,
   Controller,
@@ -23,6 +24,7 @@ import { UsersService } from './users.service';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @ClinicalResponse({ exception: 'profile' })
   @Get(':id')
   findOne(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
     this.assertSelf(request.user, id, 'Acesso negado');
@@ -33,6 +35,7 @@ export class UsersController {
     return this.usersService.findOne(id, canAccessClinicalFields);
   }
 
+  @ClinicalResponse({ exception: 'profile' })
   @Patch(':id')
   update(
     @Request() request: AuthenticatedRequest,

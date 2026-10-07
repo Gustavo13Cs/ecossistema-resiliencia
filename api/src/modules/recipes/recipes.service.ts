@@ -239,6 +239,15 @@ export class RecipesService {
         'Cada alimento pode aparecer apenas uma vez na receita.',
       );
     }
+    // O snapshot e suas referências usam a mesma versão do catálogo até o commit.
+    // SHARE bloqueia alterações/exclusões, inclusive UPDATEs escalares comuns.
+    if (foodIds.length > 0) {
+      await tx.$queryRaw(Prisma.sql`
+        SELECT "id" FROM "foods"
+        WHERE "id" IN (${Prisma.join([...foodIds].sort())})
+        ORDER BY "id" FOR SHARE
+      `);
+    }
     const foods = await tx.food.findMany({
       where: { id: { in: foodIds } },
       select: {

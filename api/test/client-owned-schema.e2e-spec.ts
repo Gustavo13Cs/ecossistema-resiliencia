@@ -1,10 +1,10 @@
+import { isolationPort } from './fixtures/client-isolation';
 import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Pool, PoolClient } from 'pg';
 
-const ADMIN_DATABASE_URL =
-  'postgresql://postgres:postgres@localhost:5434/postgres';
+const ADMIN_DATABASE_URL = `postgresql://postgres:postgres@localhost:${isolationPort}/postgres`;
 const TARGET_MIGRATION = '20260929120000_add_client_owned_clinical_resources';
 const MIGRATIONS_DIR = resolve(__dirname, '../prisma/migrations');
 const TARGET_MIGRATION_PATH = resolve(
@@ -68,7 +68,7 @@ describe('Client-owned clinical schema migration (e2e)', () => {
   jest.setTimeout(60_000);
 
   const databaseName = `safemove_client_owned_${randomUUID().replaceAll('-', '')}`;
-  const databaseUrl = `postgresql://postgres:postgres@localhost:5434/${databaseName}`;
+  const databaseUrl = `postgresql://postgres:postgres@localhost:${isolationPort}/${databaseName}`;
   let adminPool: Pool;
   let pool: Pool;
 
@@ -341,7 +341,7 @@ describe('Client-owned clinical schema migration (e2e)', () => {
 function assertSafeLocalDatabase(connectionString: string) {
   const url = new URL(connectionString);
   expect(['localhost', '127.0.0.1']).toContain(url.hostname);
-  expect(url.port).toBe('5434');
+  expect(url.port).toBe(String(isolationPort));
   expect(url.pathname).toBe('/postgres');
 }
 

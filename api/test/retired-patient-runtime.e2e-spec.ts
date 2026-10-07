@@ -1,3 +1,4 @@
+import { isolationPort } from './fixtures/client-isolation';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -7,8 +8,7 @@ import { AppModule } from '../src/app.module';
 describe('Retired patient runtime (e2e)', () => {
   let app: INestApplication<App>;
   beforeAll(async () => {
-    const database =
-      'postgresql://postgres:postgres@localhost:5434/ecossistema_resiliencia_test';
+    const database = `postgresql://postgres:postgres@localhost:${isolationPort}/ecossistema_resiliencia_test`;
     expect(process.env.DATABASE_URL).toBe(database);
     expect(process.env.DIRECT_URL).toBe(database);
     const module = await Test.createTestingModule({

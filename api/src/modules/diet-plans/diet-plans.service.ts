@@ -107,7 +107,7 @@ export class DietPlansService {
           ironMg: createDietDto.ironMg,
           notes: createDietDto.notes,
           clientId: target.clientId,
-          userId: target.legacyPatientId,
+          userId: null,
           creatorId,
           meals: {
             create: preparedMeals.map((meal) => ({
@@ -791,14 +791,7 @@ export class DietPlansService {
       });
       if (!client) throw new NotFoundException('Cliente não encontrado');
 
-      const legacyLink = await tx.professionalPatientLink.findFirst({
-        where: { id: client.id, professionalId, isActive: true },
-        select: { patientId: true },
-      });
-      return {
-        clientId: client.id,
-        legacyPatientId: legacyLink?.patientId ?? null,
-      };
+      return { clientId: client.id };
     }
 
     if (!dto.userId) {
@@ -821,7 +814,7 @@ export class DietPlansService {
     });
     if (!client) throw new NotFoundException('Cliente não encontrado');
 
-    return { clientId: client.id, legacyPatientId: legacyLink.patientId };
+    return { clientId: client.id };
   }
 
   private async assertOwnedClient(clientId: string, professionalId: string) {

@@ -1,8 +1,8 @@
+import { isolationPort } from './fixtures/client-isolation';
 import { randomUUID } from 'node:crypto';
 import { Pool, PoolClient } from 'pg';
 
-const SAFE_TEST_DATABASE_URL =
-  'postgresql://postgres:postgres@localhost:5434/ecossistema_resiliencia_test';
+const SAFE_TEST_DATABASE_URL = `postgresql://postgres:postgres@localhost:${isolationPort}/ecossistema_resiliencia_test`;
 
 const RECIPE_TABLES = [
   'recipes',
@@ -16,7 +16,7 @@ describe('Versioned recipe schema (e2e)', () => {
   beforeAll(() => {
     const url = new URL(SAFE_TEST_DATABASE_URL);
     expect(['localhost', '127.0.0.1']).toContain(url.hostname);
-    expect(url.port).toBe('5434');
+    expect(url.port).toBe(String(isolationPort));
     expect(url.pathname).toBe('/ecossistema_resiliencia_test');
     expect(process.env.DATABASE_URL).toBe(SAFE_TEST_DATABASE_URL);
     expect(process.env.DIRECT_URL).toBe(SAFE_TEST_DATABASE_URL);
@@ -76,7 +76,7 @@ describe('Versioned recipe schema (e2e)', () => {
         'delete_referenced_food',
         'delete from public.foods where id = $1',
         [foodId],
-        '23503',
+        '42501',
       );
       await expectPgError(
         client,

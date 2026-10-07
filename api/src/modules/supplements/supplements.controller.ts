@@ -1,3 +1,4 @@
+import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Controller,
   Post,
@@ -20,6 +21,7 @@ import { AuthenticatedRequest } from '../../common/types/auth-user';
 @Controller('supplements')
 export class SupplementsController {
   constructor(private service: SupplementsService) {}
+  @ClinicalResponse({ domain: 'SUPPLEMENT', shape: 'resource' })
   @Post()
   create(
     @Request() request: AuthenticatedRequest,
@@ -27,6 +29,7 @@ export class SupplementsController {
   ) {
     return this.service.create(request.user, body);
   }
+  @ClinicalResponse({ domain: 'SUPPLEMENT', shape: 'resource' })
   @Get('client/:clientId/active')
   findActive(
     @Request() request: AuthenticatedRequest,

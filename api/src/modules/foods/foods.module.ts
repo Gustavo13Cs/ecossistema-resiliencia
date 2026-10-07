@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { FoodsService } from './foods.service';
 import { FoodsController } from './foods.controller';
-import { PrismaService } from '../../infra/database/prisma.service';
+import { DatabaseModule } from '../../infra/database/database.module';
 
 @Module({
+  imports: [DatabaseModule],
   controllers: [FoodsController],
-  providers: [FoodsService, PrismaService],
+  providers: [FoodsService],
 })
 export class FoodsModule {}

@@ -1,3 +1,5 @@
+import { isolationPort } from './fixtures/client-isolation';
+import { testAdminPrisma, clearTestReadAudits } from './fixtures/test-admin';
 import {
   CanActivate,
   ExecutionContext,
@@ -12,8 +14,7 @@ import { AppModule, GLOBAL_JWT_AUTH_GUARD } from '../src/app.module';
 import { JwtAuthGuard } from '../src/common/guards/jwt-auth.guard';
 import { PrismaService } from '../src/infra/database/prisma.service';
 
-const SAFE_TEST_DATABASE_URL =
-  'postgresql://postgres:postgres@localhost:5434/ecossistema_resiliencia_test';
+const SAFE_TEST_DATABASE_URL = `postgresql://postgres:postgres@localhost:${isolationPort}/ecossistema_resiliencia_test`;
 const PROFESSIONAL_A = '40000000-0000-4000-8000-000000000001';
 const PROFESSIONAL_B = '40000000-0000-4000-8000-000000000002';
 const FOOD_A = '40000000-0000-4000-8000-000000000003';
@@ -24,7 +25,7 @@ const FIXTURE_FOOD_IDS = [FOOD_A, FOOD_B];
 
 type TestRequest = {
   headers: Record<string, string | string[] | undefined>;
-  user?: { sub: string; role: Role };
+  user?: { sub: string; role: Role; sessionId?: string };
 };
 
 type RecipeResponse = {
@@ -80,6 +81,7 @@ class TestJwtAuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest<TestRequest>();
     req.user = {
+      sessionId: 'synthetic-guard-session',
       sub: String(req.headers['x-test-user-id']),
       role: String(req.headers['x-test-role']) as Role,
     };
@@ -116,13 +118,14 @@ describe('Recipes HTTP isolation and versioning (e2e)', () => {
   };
 
   const assertSafeTestDatabase = () => {
-    expect(SAFE_TEST_DATABASE_URL).toMatch(/localhost:5434\/.*_test$/);
+    expect(SAFE_TEST_DATABASE_URL).toMatch(/localhost:543[45]\/.*_test$/);
     expect(process.env.DATABASE_URL).toBe(SAFE_TEST_DATABASE_URL);
     expect(process.env.DIRECT_URL).toBe(SAFE_TEST_DATABASE_URL);
   };
 
   const deleteFixtures = async () => {
     assertSafeTestDatabase();
+    await clearTestReadAudits(prisma, FIXTURE_USER_IDS);
     await prisma.$transaction(async (tx) => {
       const recipes = await tx.recipe.findMany({
         where: { professionalId: { in: FIXTURE_USER_IDS } },
@@ -200,7 +203,8 @@ describe('Recipes HTTP isolation and versioning (e2e)', () => {
     await app.init();
 
     prismaServices = app.get(PrismaService, { each: true });
-    prisma = prismaServices[0];
+    prisma = testAdminPrisma();
+    prismaServices.push(prisma);
   });
 
   beforeEach(async () => {

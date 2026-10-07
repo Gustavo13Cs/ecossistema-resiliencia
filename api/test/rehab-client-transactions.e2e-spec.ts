@@ -1,3 +1,5 @@
+import { isolationPort } from './fixtures/client-isolation';
+import { testAdminPrisma } from './fixtures/test-admin';
 import { Test } from '@nestjs/testing';
 import { ClientAccessService } from '../src/common/client-access/client-access.service';
 import { AuthUser } from '../src/common/types/auth-user';
@@ -5,8 +7,7 @@ import { PrismaService } from '../src/infra/database/prisma.service';
 import { RehabPlansService } from '../src/modules/rehab-plans/rehab-plans.service';
 
 describe('Client rehab transactions (PostgreSQL)', () => {
-  const database =
-    'postgresql://postgres:postgres@localhost:5434/ecossistema_resiliencia_test';
+  const database = `postgresql://postgres:postgres@localhost:${isolationPort}/ecossistema_resiliencia_test`;
   const owner: AuthUser = {
     sub: '72000000-0000-4000-8000-000000000001',
     role: 'PHYSIO',
@@ -36,7 +37,11 @@ describe('Client rehab transactions (PostgreSQL)', () => {
     expect(process.env.DATABASE_URL).toBe(database);
     expect(process.env.DIRECT_URL).toBe(database);
     const module = await Test.createTestingModule({
-      providers: [PrismaService, ClientAccessService, RehabPlansService],
+      providers: [
+        { provide: PrismaService, useFactory: testAdminPrisma },
+        ClientAccessService,
+        RehabPlansService,
+      ],
     }).compile();
     prisma = module.get(PrismaService);
     service = module.get(RehabPlansService);

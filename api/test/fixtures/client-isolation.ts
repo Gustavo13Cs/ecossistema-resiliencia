@@ -1,8 +1,15 @@
+import { clearTestReadAudits } from './test-admin';
 import { AuthUser } from '../../src/common/types/auth-user';
 import { PrismaService } from '../../src/infra/database/prisma.service';
 
+const localPort = Number(process.env.LOCAL_TEST_PG_PORT ?? '5434');
+if (![5434, 5435].includes(localPort))
+  throw new Error('Synthetic fixture port must be 5434 or 5435');
+export const isolationPort = localPort;
 export const isolationDatabase =
-  'postgresql://postgres:postgres@localhost:5434/ecossistema_resiliencia_test';
+  'postgresql://postgres:postgres@localhost:' +
+  localPort +
+  '/ecossistema_resiliencia_test';
 
 const uuid = (suffix: number) =>
   `81000000-0000-4000-8000-${String(suffix).padStart(12, '0')}`;
@@ -47,6 +54,7 @@ export async function clearIsolationFixtures(prisma: PrismaService) {
   const professionalIds = Object.values(isolationFixtures).flatMap(
     ({ a, b }) => [a.sub, b.sub],
   );
+  await clearTestReadAudits(prisma, professionalIds);
   const clientIds = Object.values(isolationFixtures).flatMap(
     ({ clientA, clientB }) => [clientA, clientB],
   );

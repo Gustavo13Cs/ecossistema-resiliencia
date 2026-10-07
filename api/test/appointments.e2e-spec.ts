@@ -1,3 +1,5 @@
+import { isolationPort } from './fixtures/client-isolation';
+import { testAdminPrisma, clearTestReadAudits } from './fixtures/test-admin';
 import {
   CanActivate,
   ExecutionContext,
@@ -12,8 +14,7 @@ import { AppModule, GLOBAL_JWT_AUTH_GUARD } from '../src/app.module';
 import { JwtAuthGuard } from '../src/common/guards/jwt-auth.guard';
 import { PrismaService } from '../src/infra/database/prisma.service';
 
-const SAFE_TEST_DATABASE_URL =
-  'postgresql://postgres:postgres@localhost:5434/ecossistema_resiliencia_test';
+const SAFE_TEST_DATABASE_URL = `postgresql://postgres:postgres@localhost:${isolationPort}/ecossistema_resiliencia_test`;
 const PROFESSIONAL_A = '30000000-0000-4000-8000-000000000001';
 const PROFESSIONAL_B = '30000000-0000-4000-8000-000000000002';
 const CLIENT_A = '30000000-0000-4000-8000-000000000003';
@@ -23,7 +24,7 @@ const FIXTURE_CLIENT_IDS = [CLIENT_A, CLIENT_B];
 
 type TestRequest = {
   headers: Record<string, string | string[] | undefined>;
-  user?: { sub: string; role: Role };
+  user?: { sub: string; role: Role; sessionId?: string };
 };
 
 type AppointmentResponse = {
@@ -79,6 +80,7 @@ class TestJwtAuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<TestRequest>();
     request.user = {
+      sessionId: 'synthetic-guard-session',
       sub: String(request.headers['x-test-user-id']),
       role: String(request.headers['x-test-role']) as Role,
     };
@@ -107,6 +109,7 @@ describe('Professional appointments ownership and lifecycle (e2e)', () => {
 
   const deleteFixtures = async () => {
     assertSafeTestDatabase();
+    await clearTestReadAudits(prisma, FIXTURE_USER_IDS);
     await prisma.appointmentEvent.deleteMany({
       where: { professionalId: { in: FIXTURE_USER_IDS } },
     });
@@ -150,7 +153,8 @@ describe('Professional appointments ownership and lifecycle (e2e)', () => {
     await app.init();
 
     prismaServices = app.get(PrismaService, { each: true });
-    prisma = prismaServices[0];
+    prisma = testAdminPrisma();
+    prismaServices.push(prisma);
   });
 
   beforeEach(async () => {

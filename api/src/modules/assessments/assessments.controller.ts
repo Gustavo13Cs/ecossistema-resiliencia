@@ -1,3 +1,4 @@
+import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Controller,
   Get,
@@ -22,6 +23,7 @@ import { AuthenticatedRequest } from '../../common/types/auth-user';
 export class AssessmentsController {
   constructor(private readonly assessmentsService: AssessmentsService) {}
 
+  @ClinicalResponse({ domain: 'ASSESSMENT', shape: 'resource' })
   @Post()
   create(
     @Request() request: AuthenticatedRequest,
@@ -33,6 +35,7 @@ export class AssessmentsController {
     );
   }
 
+  @ClinicalResponse({ domain: 'ASSESSMENT', shape: 'resource' })
   @Get('user/:userId')
   findByUser(
     @Request() request: AuthenticatedRequest,
@@ -41,6 +44,7 @@ export class AssessmentsController {
     return this.assessmentsService.findByUser(userId, request.user.sub);
   }
 
+  @ClinicalResponse({ domain: 'ASSESSMENT', shape: 'resource' })
   @Get('client/:clientId')
   findByClient(
     @Request() request: AuthenticatedRequest,
@@ -49,11 +53,13 @@ export class AssessmentsController {
     return this.assessmentsService.findByClient(clientId, request.user.sub);
   }
 
+  @ClinicalResponse({ domain: 'ASSESSMENT', shape: 'resource' })
   @Delete(':id')
   remove(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.assessmentsService.remove(id, request.user.sub);
   }
 
+  @ClinicalResponse({ domain: 'ASSESSMENT', shape: 'resource' })
   @Get()
   findAll(@Request() request: AuthenticatedRequest) {
     return this.assessmentsService.findAll(request.user.sub);

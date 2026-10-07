@@ -1,3 +1,4 @@
+import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 // api/src/modules/workouts/workouts.controller.ts
 
 import {
@@ -25,6 +26,7 @@ import { AuthenticatedRequest } from '../../common/types/auth-user';
 export class WorkoutsController {
   constructor(private readonly workoutsService: WorkoutsService) {}
 
+  @ClinicalResponse({ domain: 'WORKOUT', shape: 'resource' })
   @Post()
   create(
     @Request() request: AuthenticatedRequest,
@@ -34,11 +36,13 @@ export class WorkoutsController {
   }
 
   // Lista treinos criados pelo profissional logado
+  @ClinicalResponse({ domain: 'WORKOUT', shape: 'resource' })
   @Get()
   findAll(@Request() request: AuthenticatedRequest) {
     return this.workoutsService.findAllByProfessional(request.user);
   }
 
+  @ClinicalResponse({ domain: 'WORKOUT', shape: 'resource' })
   @Get('client/:clientId/active')
   findActive(
     @Request() request: AuthenticatedRequest,
@@ -48,12 +52,19 @@ export class WorkoutsController {
   }
 
   // Só o criador do treino pode deletar
+  @ClinicalResponse({ domain: 'WORKOUT', shape: 'resource' })
   @Delete(':id')
   remove(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.workoutsService.remove(request.user, id);
   }
 
   // Salvar um treino existente como template reutilizável
+  @ClinicalResponse({
+    domain: 'WORKOUT',
+    shape: 'ack',
+    lookup: 'workout',
+    parameter: 'id',
+  })
   @Patch(':id/save-as-template')
   saveAsTemplate(
     @Request() request: AuthenticatedRequest,
@@ -63,6 +74,7 @@ export class WorkoutsController {
   }
 
   // Listar todos os templates do personal logado (com splits e exercícios para pré-preencher)
+  @ClinicalResponse({ domain: 'WORKOUT', shape: 'resource' })
   @Get('templates')
   listTemplates(@Request() request: AuthenticatedRequest) {
     return this.workoutsService.listTemplates(request.user);

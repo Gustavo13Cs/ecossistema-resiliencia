@@ -1,3 +1,4 @@
+import { isolationPort } from './fixtures/client-isolation';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -27,8 +28,7 @@ describe('Consultation notes legacy index compatibility (PostgreSQL)', () => {
   beforeAll(() => {
     // Fixtures exist only in this connection's temporary schema and are rolled back.
     pool = new Pool({
-      connectionString:
-        'postgresql://postgres:postgres@localhost:5434/postgres',
+      connectionString: `postgresql://postgres:postgres@localhost:${isolationPort}/postgres`,
       connectionTimeoutMillis: 3000,
     });
   });
@@ -165,8 +165,7 @@ describe('Complete Client ownership migration with legacy index (PostgreSQL)', (
     'replays the complete SQL with a pre-existing index: %s',
     async (legacy) => {
       const pool = new Pool({
-        connectionString:
-          'postgresql://postgres:postgres@localhost:5434/postgres',
+        connectionString: `postgresql://postgres:postgres@localhost:${isolationPort}/postgres`,
         connectionTimeoutMillis: 3000,
       });
       const connection = await pool.connect();

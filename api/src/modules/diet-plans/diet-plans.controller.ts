@@ -1,3 +1,4 @@
+import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Controller,
   Post,
@@ -30,6 +31,7 @@ import { AuthenticatedRequest } from '../../common/types/auth-user';
 export class DietPlansController {
   constructor(private readonly dietPlansService: DietPlansService) {}
 
+  @ClinicalResponse({ domain: 'DIET', shape: 'resource' })
   @Post()
   create(
     @Request() request: AuthenticatedRequest,
@@ -39,11 +41,13 @@ export class DietPlansController {
   }
 
   // Lista dietas criadas pelo profissional logado
+  @ClinicalResponse({ domain: 'DIET', shape: 'resource' })
   @Get()
   findAll(@Request() request: AuthenticatedRequest) {
     return this.dietPlansService.findAll(request.user.sub);
   }
 
+  @ClinicalResponse({ domain: 'DIET', shape: 'resource' })
   @Get('user/:userId/active')
   findActiveByUser(
     @Request() request: AuthenticatedRequest,
@@ -53,6 +57,7 @@ export class DietPlansController {
   }
 
   // Histórico completo de dietas do paciente (ativas + inativas)
+  @ClinicalResponse({ domain: 'DIET', shape: 'resource' })
   @Get('user/:userId/history')
   findAllByPatient(
     @Request() request: AuthenticatedRequest,
@@ -61,6 +66,7 @@ export class DietPlansController {
     return this.dietPlansService.findAllByPatient(userId, request.user.sub);
   }
 
+  @ClinicalResponse({ domain: 'DIET', shape: 'resource' })
   @Get('client/:clientId/active')
   findActiveByClient(
     @Request() request: AuthenticatedRequest,
@@ -69,6 +75,7 @@ export class DietPlansController {
     return this.dietPlansService.findActiveByClient(clientId, request.user.sub);
   }
 
+  @ClinicalResponse({ domain: 'DIET', shape: 'resource' })
   @Get('client/:clientId/history')
   findAllByClient(
     @Request() request: AuthenticatedRequest,
@@ -77,6 +84,12 @@ export class DietPlansController {
     return this.dietPlansService.findAllByClient(clientId, request.user.sub);
   }
 
+  @ClinicalResponse({
+    domain: 'DIET',
+    shape: 'ack',
+    lookup: 'meal',
+    parameter: 'mealId',
+  })
   @Patch('meal/:mealId/toggle')
   toggleMealStatus(
     @Request() request: AuthenticatedRequest,
@@ -86,6 +99,7 @@ export class DietPlansController {
   }
 
   // Listar templates do profissional (opções: ?status=all|active|archived)
+  @ClinicalResponse({ domain: 'DIET', shape: 'resource' })
   @Get('templates')
   listTemplates(
     @Request() request: AuthenticatedRequest,
@@ -95,12 +109,14 @@ export class DietPlansController {
   }
 
   // Templates curados padrão do SafeMove
+  @ClinicalResponse({ exception: 'private-template' })
   @Get('system-templates')
   listSystemTemplates() {
     return this.dietPlansService.getSystemTemplates();
   }
 
   // Criar novo modelo personalizado do profissional
+  @ClinicalResponse({ domain: 'DIET', shape: 'resource' })
   @Post('template')
   createTemplate(
     @Request() request: AuthenticatedRequest,
@@ -110,6 +126,7 @@ export class DietPlansController {
   }
 
   // Atualizar modelo personalizado do profissional
+  @ClinicalResponse({ domain: 'DIET', shape: 'resource' })
   @Put('template/:id')
   updateTemplate(
     @Request() request: AuthenticatedRequest,
@@ -120,6 +137,12 @@ export class DietPlansController {
   }
 
   // Duplicar modelo (gerar nova versão/cópia)
+  @ClinicalResponse({
+    domain: 'DIET',
+    shape: 'resource',
+    lookup: 'dietPlan',
+    parameter: 'id',
+  })
   @Post('template/:id/duplicate')
   duplicateTemplate(
     @Request() request: AuthenticatedRequest,
@@ -129,6 +152,7 @@ export class DietPlansController {
   }
 
   // Alternar arquivamento do modelo (isActive)
+  @ClinicalResponse({ domain: 'DIET', shape: 'resource' })
   @Patch('template/:id/archive')
   toggleArchiveTemplate(
     @Request() request: AuthenticatedRequest,
@@ -138,6 +162,7 @@ export class DietPlansController {
   }
 
   // Importar modelo para o prontuário de um cliente com auto-scaling proporcional
+  @ClinicalResponse({ domain: 'DIET', shape: 'resource' })
   @Post('template/:id/import-to-client')
   importTemplateToClient(
     @Request() request: AuthenticatedRequest,
@@ -152,6 +177,12 @@ export class DietPlansController {
   }
 
   // Salvar um plano existente como template reutilizável
+  @ClinicalResponse({
+    domain: 'DIET',
+    shape: 'ack',
+    lookup: 'dietPlan',
+    parameter: 'id',
+  })
   @Patch(':id/save-as-template')
   saveAsTemplate(
     @Request() request: AuthenticatedRequest,
@@ -161,6 +192,7 @@ export class DietPlansController {
   }
 
   // Só o criador da dieta pode deletar
+  @ClinicalResponse({ domain: 'DIET', shape: 'resource' })
   @Delete(':id')
   remove(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.dietPlansService.remove(id, request.user.sub);

@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
+import { foodMutationError } from "@/lib/food-mutation-error"
 import { Apple, Plus, Search, Database, Edit2, Trash2, X, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -116,7 +117,7 @@ export default function AlimentosHubPage() {
       setShowModal(false)
       fetchFoods(selectedSource) // Recarrega a tabela
     } catch (error) {
-      toast.error("Erro ao salvar o alimento.")
+      toast.error(foodMutationError(error, "Erro ao salvar o alimento."))
     } finally {
       setIsSaving(false)
     }
@@ -129,7 +130,7 @@ export default function AlimentosHubPage() {
         toast.success("Alimento removido com sucesso!")
         fetchFoods(selectedSource)
       } catch (error) {
-        toast.error("Erro ao apagar. Ele pode estar em uso numa dieta.")
+        toast.error(foodMutationError(error, "Erro ao apagar o alimento."))
       }
     }
   }
@@ -179,7 +180,7 @@ export default function AlimentosHubPage() {
                     onClick={() => setSelectedSource(s)} 
                     className={`rounded-full px-5 ${selectedSource === s ? 'bg-[var(--sm-brand)] text-[var(--sm-on-brand)] hover:bg-[var(--sm-brand-hover)] shadow-sm' : 'text-[var(--sm-muted)]'}`}
                   >
-                    {s === "TODAS" ? "Tudo" : s === "MANUAL" ? "Meus Alimentos" : s}
+                    {s === "TODAS" ? "Tudo" : s === "MANUAL" ? "Alimentos manuais" : s}
                   </Button>
                 ))}
               </div>

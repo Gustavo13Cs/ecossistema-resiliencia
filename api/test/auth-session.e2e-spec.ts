@@ -1,3 +1,4 @@
+import { testAdminPrisma } from './fixtures/test-admin';
 import { randomUUID } from 'node:crypto';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -68,7 +69,7 @@ describe('Revocable session lifecycle (real PostgreSQL HTTP)', () => {
           }),
       })
       .compile();
-    prisma = module.get(PrismaService);
+    prisma = testAdminPrisma();
     jwt = module.get(JwtService);
     users = module.get(UsersService);
     app = module.createNestApplication();
@@ -113,6 +114,7 @@ describe('Revocable session lifecycle (real PostgreSQL HTTP)', () => {
         await prisma.user.deleteMany({ where: { id: userId, email } });
     } finally {
       await app?.close();
+      await prisma?.$disconnect();
     }
   });
 

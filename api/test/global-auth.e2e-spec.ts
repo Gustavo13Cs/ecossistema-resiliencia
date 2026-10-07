@@ -1,3 +1,5 @@
+import { ClinicalResponse } from '../src/common/decorators/clinical-response.decorator';
+import { testAdminPrisma } from './fixtures/test-admin';
 import { randomUUID } from 'node:crypto';
 import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -14,17 +16,21 @@ import { assertIsolationDatabase } from './fixtures/client-isolation';
 
 @Controller('global-auth-fixture')
 class UnguardedController {
-  @Get() unguarded() {
+  @ClinicalResponse({ exception: 'health' })
+  @Get()
+  unguarded() {
     return { authenticated: true };
   }
   @Public()
   @Throttle({ default: { limit: 2, ttl: 60_000 } })
+  @ClinicalResponse({ exception: 'health' })
   @Get('public')
   publicRoute() {
     return { public: true };
   }
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
+  @ClinicalResponse({ exception: 'health' })
   @Get('admin')
   admin() {
     return { admin: true };
@@ -44,7 +50,7 @@ describe('Global authentication (real PostgreSQL HTTP)', () => {
       imports: [AppModule],
       controllers: [UnguardedController],
     }).compile();
-    prisma = module.get(PrismaService);
+    prisma = testAdminPrisma();
     app = module.createNestApplication();
     await app.init();
     for (const id of [userId, otherId]) {
@@ -79,6 +85,7 @@ describe('Global authentication (real PostgreSQL HTTP)', () => {
       }
     } finally {
       await app?.close();
+      await prisma?.$disconnect();
     }
   });
   it('rejects a newly added controller without a local auth guard', async () => {

@@ -1,3 +1,4 @@
+import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import { Controller, Get, UseGuards, Request, Header } from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -11,6 +12,7 @@ import { AuthenticatedRequest } from '../../common/types/auth-user';
 export class AlertsController {
   constructor(private readonly prisma: PrismaService) {}
 
+  @ClinicalResponse({ domain: 'ALERT', shape: 'resource' })
   @Get('dashboard')
   @Header('Cache-Control', 'no-store')
   getProfessionalAlerts(@Request() req: AuthenticatedRequest) {
