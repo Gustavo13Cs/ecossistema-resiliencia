@@ -27,6 +27,7 @@ WORKDIR /usr/src/app
 COPY --chown=node:node --from=runtime-dependencies /usr/src/app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
 COPY --chown=node:node --from=builder /usr/src/app/dist ./dist
+COPY --chown=node:node --from=builder /usr/src/app/certs ./certs
 COPY --chown=node:node --from=runtime-dependencies /usr/src/app/package*.json ./
 USER node
 
