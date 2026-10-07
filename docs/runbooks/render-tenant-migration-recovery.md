@@ -67,3 +67,9 @@ A consulta pg_stat_ssl pelo pooler retornou ssl=false para o backend PostgreSQL.
 - Deploy com certificado publicado e verificação HTTP: em andamento neste registro.
 - A sessão própria na página /auditoria ainda requer validação autenticada. Não foram consultados prontuários nem criados registros clínicos para testar em produção.
 - Destino/adaptador/cópia independente de auditoria, retenção/base legal, indisponibilidade/carga e demais decisões continuam no runbook read-audit-tenant-rls.md. Recuperar o deploy não encerra a segurança operacional do projeto.
+
+## Dependência corrigida durante a recuperação
+
+O audit detectou proxy-addr 2.0.7 com [GHSA-jqcg-44mw-7w3h](https://github.com/jshttp/proxy-addr/security/advisories/GHSA-jqcg-44mw-7w3h). O lockfile foi atualizado exclusivamente para 2.0.8, sem alterar package.json. O caso de subnet IPv4-mapped incorreta aceitava um IPv4 externo antes; depois rejeita, preservando a subnet IPv4 correta. Não há configuração trust proxy dessa forma no bootstrap atual; a operação remove a dependência afetada, sem afirmar exploração no SafeMove.
+
+Após a atualização: 47 suítes/475 unitários da API passaram; npm audit --omit=dev --omit=optional retornou zero vulnerabilidades. O conjunto completo ainda apresenta 34 alertas (5 moderados, 29 altos) e requer remediação própria. O build Docker foi repetido para o lockfile atualizado antes de concluir sua validação.

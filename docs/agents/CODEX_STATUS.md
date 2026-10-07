@@ -8,7 +8,7 @@
 
 ## Current Task
 
-- **Incidente 2026-10-07**: Recuperação autorizada em produção: backup cifrado/restauração de 41 tabelas, 17 migrations concluídas com checksum original, SET/INHERIT temporários retirados. Quatro LOGINs restritos provisionados; bootstrap clínico/auth/jobs e Prisma checker pelo pooler aprovados. Render recebeu três URLs de aplicação e DIRECT_URL somente de metadados; DATABASE_URL administrativa esvaziada. Security Advisor sem lints; CA pública validada. Publicação do certificado e deploy em andamento.
+- **Incidente 2026-10-07**: Recuperação autorizada em produção: backup cifrado/restauração de 41 tabelas, 17 migrations concluídas com checksum original, SET/INHERIT temporários retirados. Quatro LOGINs restritos provisionados; bootstrap clínico/auth/jobs e Prisma checker pelo pooler aprovados. Render recebeu três URLs de aplicação e DIRECT_URL somente de metadados; DATABASE_URL administrativa esvaziada. Security Advisor sem lints; CA pública validada. proxy-addr corrigido para 2.0.8; API475 e audit runtime0 aprovados. Publicação do certificado e deploy em andamento.
 - **Branch de recuperação**: agent/codex/render-tenant-migration-recovery. Roteiro: docs/runbooks/render-tenant-migration-recovery.md.
 
 
