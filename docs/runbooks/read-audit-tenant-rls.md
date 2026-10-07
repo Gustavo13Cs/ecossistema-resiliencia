@@ -81,7 +81,7 @@ Na pasta api, com DATABASE_URL e DIRECT_URL explicitamente apontando para esse b
 npx.cmd prisma validate
 npx.cmd prisma generate
 npx.cmd prisma migrate deploy
-npx.cmd ts-node test/run-tenant-tests.ts
+npm.cmd run test:e2e
 npx.cmd eslint '{src,apps,libs,test}/**/*.ts'
 npx.cmd tsc --noEmit
 npm.cmd run build
@@ -186,3 +186,9 @@ Task 5: GREEN API475/475, PG16/17 E2E187/187 por versao, web391/391, Cypress1/1,
 Task 1-4: complete, commit db034ed; gates finais verdes; Task5 docs/evidencia persistente preparada.
 
 ~~~
+
+## Preparação da publicação em 2026-10-07
+
+O comando padrão npm run test:e2e foi reproduzido falhando em 11/11 casos de auth-session por ausência de CLINICAL_DATABASE_URL. O script agora chama test/run-tenant-tests.ts, que valida o banco sintético, provisiona LOGINs de teste restritos e passa as conexões ao Jest. O arquivo de workflow permanece com o mesmo comando npm run test:e2e.
+
+Verificação desse comando padrão em PostgreSQL 16.15 vazio: 29 suítes, 187 testes, exit 0 (51,605 s). Nenhuma mudança de comportamento clínico ou de credenciais de produção. O README atualizado em origin/main é a única alteração posterior ao fork; merge-tree confirmou ausência de conflitos, sem integrar main nesta branch.
