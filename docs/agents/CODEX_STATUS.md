@@ -15,10 +15,10 @@
 - **Atualização**: 2026-10-07.
 - **Commit técnico**: db034ed0ecfd2bba32e7be01ba79965d3194acc7.
 - **Resultado**: Fronteira transacional por sessão; evento/outbox antes da resposta; RLS nas 42 tabelas; papéis clínico/auth/jobs/entrega separados; catálogo protegido; cron SYSTEM; consulta própria /read-audit e /auditoria.
-- **Validação**: API 47 suítes/475 unitários; PG16.15 e PG17.11, 29 suítes/187 E2E por versão; web 59 arquivos/391 testes; Cypress real 1/1; tipos/lint/builds/Prisma aprovados; CSP/direção em 29 páginas e standalone verificado.
+- **Validação**: API 47 suítes/475 unitários; PG16.15 e PG17.11, 29 suítes/187 E2E por versão; comando padrão npm run test:e2e validado novamente com 187 testes PG16; web 59 arquivos/391 testes; Cypress real 1/1; tipos/lint/builds/Prisma aprovados; CSP/direção em 29 páginas e standalone verificado.
 - **Revisão**: Um reviewer independente; compatibilidade migrada/corrida de Food/overview corrigidos por RED→GREEN, com regressões adicionais de SET ROLE e cadastro auth. Suítes completas verdes; sem segunda revisão.
-- **Pendências**: Fase 0 no processo publicado, pooler/carga, D1/D2 retenção/base legal, D3 destino/adaptador/cópia independente, D5 homologação de indisponibilidade, D7 investigador e decisões D9/D10. Backlog de toolchain, scripts demo/seed, backups/restauração e publicação não encerrado.
-- **Publicação**: Push e abertura de Pull Request para main autorizados pelo mantenedor em 2026-10-07; em andamento. Merge/deploy/SQL remoto e alteração de segredos não autorizados.
+- **Pendências**: Fase 0 no processo publicado, pooler/carga, D1/D2 retenção/base legal, D3 destino/adaptador/cópia independente, D5 homologação de indisponibilidade, D7 investigador e decisões D9/D10. Backlog de toolchain, scripts demo/seed e backups/restauração não encerrado; integração/deploy pendentes.
+- **Publicação**: Branch publicada e PR #23 aberto como rascunho para main em 2026-10-07: https://github.com/Gustavo13Cs/ecossistema-resiliencia/pull/23. Checks remotos em andamento; sem merge/deploy/SQL remoto ou alteração de segredos.
 - **Roteiro**: [operação e limites](C:/Users/MICRO/Documents/GitHub/ecossistema-resiliencia/.worktrees/security/security-followup/docs/runbooks/read-audit-tenant-rls.md).
 - **Evidência persistente**: [verificação local](C:/Users/MICRO/.codex/state/plugins/codex-security/scans/security-followup/artifacts-d24209c2e31a8c4d3117accee187585a6b91c1cb986256d555d4f2914bd67406/artifacts/2026-10-07-read-audit-tenant-rls-verification.md).
 
