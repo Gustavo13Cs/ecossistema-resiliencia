@@ -8,12 +8,12 @@
 
 ## Current Task
 
-- **Incidente 2026-10-07**: Recuperação autorizada em produção: backup cifrado/restauração de 41 tabelas, 17 migrations concluídas com checksum original, SET/INHERIT temporários retirados. Quatro LOGINs restritos provisionados; bootstrap clínico/auth/jobs e Prisma checker pelo pooler aprovados. Render recebeu três URLs de aplicação e DIRECT_URL somente de metadados; DATABASE_URL administrativa esvaziada. Security Advisor sem lints; CA pública validada. proxy-addr corrigido para 2.0.8; API475 e audit runtime0 aprovados. Publicação do certificado e deploy em andamento.
+- **Incidente 2026-10-07**: Recuperação autorizada concluída. Backup cifrado restaurado (41 tabelas); 17 migrations aplicadas com checksum original e cleanup sem SET/USAGE/CREATE de catálogo. Quatro LOGINs restritos, três assertDatabaseRole e checker Prisma pelo pooler aprovados. CA/TLS externo1.3 validado; API475, audit runtime0 e Docker finais aprovados. PR#24 revisado sem achados, CI completo verde e integrado; Render live em 2e504765 / dep-db3aj9u0tbcc739bo7m0 às20:23UTC. /read-audit e /clients sem sessão retornam401. Confirmação autenticada na própria conta solicitada; limites operacionais no runbook.
 - **Branch de recuperação**: agent/codex/render-tenant-migration-recovery. Roteiro: docs/runbooks/render-tenant-migration-recovery.md.
 
 
 - **Tarefa**: Auditoria de leitura v3 e isolamento por profissional no banco, com correções DR-001/002/003 preservadas.
-- **Status**: Implementação/prova locais concluídas e verificadas. Migration e conexões restritas aplicadas em produção; deploy com CA em andamento.
+- **Status**: Implementação/prova locais concluídas e verificadas. Migration/conexões restritas e deploy com CA concluídos em produção. Confirmação autenticada da própria interface e demais decisões operacionais pendentes.
 - **Branch**: agent/codex/security-followup; base main/934e183.
 - **Worktree**: .worktrees/security/security-followup.
 - **Atualização**: 2026-10-07.
@@ -21,8 +21,8 @@
 - **Resultado**: Fronteira transacional por sessão; evento/outbox antes da resposta; RLS nas 42 tabelas; papéis clínico/auth/jobs/entrega separados; catálogo protegido; cron SYSTEM; consulta própria /read-audit e /auditoria.
 - **Validação**: API 47 suítes/475 unitários; PG16.15 e PG17.11, 29 suítes/187 E2E por versão; comando padrão npm run test:e2e validado novamente com 187 testes PG16; web 59 arquivos/391 testes; Cypress real 1/1; tipos/lint/builds/Prisma aprovados; CSP/direção em 29 páginas e standalone verificado.
 - **Revisão**: Um reviewer independente; compatibilidade migrada/corrida de Food/overview corrigidos por RED→GREEN, com regressões adicionais de SET ROLE e cadastro auth. Suítes completas verdes; sem segunda revisão.
-- **Pendências**: Fase 0 no processo publicado, pooler/carga, D1/D2 retenção/base legal, D3 destino/adaptador/cópia independente, D5 homologação de indisponibilidade, D7 investigador e decisões D9/D10. Backlog de toolchain, scripts demo/seed e backups/restauração não encerrado; integração/deploy pendentes.
-- **Publicação**: PR #23 integrado em main/eebfab1. Recuperação na branch agent/codex/render-tenant-migration-recovery; publicação do certificado/deploy em andamento.
+- **Pendências**: Carga/TLS interno do pooler, D1/D2 retenção/base legal, D3 destino/adaptador/cópia independente, D5 homologação de indisponibilidade, D7 investigador e decisões D9/D10. Backlog de toolchain (34 alertas completos), scripts demo/seed e custódia/backup completo não encerrado. Backup public restaurado e deploy concluídos nesta recuperação.
+- **Publicação**: PR#23 integrado em main/eebfab1; recuperação PR#24 integrada em 2e504765. Render live no deploy dep-db3aj9u0tbcc739bo7m0. Checks remotos completos aprovados.
 - **Roteiro**: [operação e limites](C:/Users/MICRO/Documents/GitHub/ecossistema-resiliencia/.worktrees/security/security-followup/docs/runbooks/read-audit-tenant-rls.md).
 - **Evidência persistente**: [verificação local](C:/Users/MICRO/.codex/state/plugins/codex-security/scans/security-followup/artifacts-d24209c2e31a8c4d3117accee187585a6b91c1cb986256d555d4f2914bd67406/artifacts/2026-10-07-read-audit-tenant-rls-verification.md).
 
@@ -32,6 +32,7 @@
 
 | Data | Tarefa | Branch |
 |------|--------|--------|
+| 2026-10-07 | Recuperação Render em produção: backup/restauração, migration original, papéis restritos, CA/TLS, proxy-addr2.0.8; PR#24/CI completos e deploy live | agent/codex/render-tenant-migration-recovery |
 | 2026-10-07 | Auditoria/RLS locais v3: API475, PG16/17 E2E187 por versao, web391, Cypress real1; papéis separados, trilha antes de resposta e consulta própria; produção pendente | agent/codex/security-followup |
 | 2026-10-05 | DR-001/002/003 e corrida do snapshot de receitas corrigidos localmente; 472 unitários API/150 E2E/388 web, tipos/lint/build aprovados; propostas protegidas pendentes | `agent/codex/security-followup` |
 | 2026-10-02 | PR #22: cache do protocolo invalidado por profissional/Client antes de navegar; 9 testes focais com QueryClient real, tipos/lint/build aprovados | `agent/codex/security-remediation` |

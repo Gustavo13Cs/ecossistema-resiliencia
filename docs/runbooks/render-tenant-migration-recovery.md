@@ -64,7 +64,7 @@ A consulta pg_stat_ssl pelo pooler retornou ssl=false para o backend PostgreSQL.
 - Security Advisor depois da DDL: nenhum lint.
 - Regressão de owner gerenciado em PostgreSQL 17.11: RED por falta de SET ROLE, GREEN com prepare/migration/cleanup. 42 tabelas de aplicação com RLS; função restrita.
 - Validação local anterior do mesmo código: API 47 suítes/475 unitários, 30 suítes/188 E2E PG17; tipos, lint, generate e build aprovados. Não repetir as suítes sem mudança que justifique.
-- Deploy com certificado publicado e verificação HTTP: em andamento neste registro.
+- Deploy com certificado publicado concluído; verificação HTTP sem sessão exige autenticação. Evidência final abaixo.
 - A sessão própria na página /auditoria ainda requer validação autenticada. Não foram consultados prontuários nem criados registros clínicos para testar em produção.
 - Destino/adaptador/cópia independente de auditoria, retenção/base legal, indisponibilidade/carga e demais decisões continuam no runbook read-audit-tenant-rls.md. Recuperar o deploy não encerra a segurança operacional do projeto.
 
@@ -72,4 +72,20 @@ A consulta pg_stat_ssl pelo pooler retornou ssl=false para o backend PostgreSQL.
 
 O audit detectou proxy-addr 2.0.7 com [GHSA-jqcg-44mw-7w3h](https://github.com/jshttp/proxy-addr/security/advisories/GHSA-jqcg-44mw-7w3h). O lockfile foi atualizado exclusivamente para 2.0.8, sem alterar package.json. O caso de subnet IPv4-mapped incorreta aceitava um IPv4 externo antes; depois rejeita, preservando a subnet IPv4 correta. Não há configuração trust proxy dessa forma no bootstrap atual; a operação remove a dependência afetada, sem afirmar exploração no SafeMove.
 
-Após a atualização: 47 suítes/475 unitários da API passaram; npm audit --omit=dev --omit=optional retornou zero vulnerabilidades. O conjunto completo ainda apresenta 34 alertas (5 moderados, 29 altos) e requer remediação própria. O build Docker foi repetido para o lockfile atualizado antes de concluir sua validação.
+Após a atualização: 47 suítes/475 unitários da API passaram; npm audit --omit=dev --omit=optional retornou zero vulnerabilidades. O conjunto completo ainda apresenta 34 alertas (5 moderados, 29 altos) e requer remediação própria. O build Docker foi repetido e aprovado para o lockfile atualizado.
+
+## Conclusão do deploy
+
+PR [#24](https://github.com/Gustavo13Cs/ecossistema-resiliencia/pull/24) integrado após revisão independente sem achados e todos os checks: unitários, E2E, TypeScript, Cypress e Vercel. Commit publicado: `2e504765a115852674cf175d188d104902d22aad`.
+
+Render: deploy `dep-db3aj9u0tbcc739bo7m0`, status **live**, concluído em 2026-10-07 20:23:00 UTC (17:23 em Brasília). O start registrou “No pending migrations to apply” e “Nest application successfully started”. O serviço iniciou com as conexões restritas e o certificado publicado.
+
+A atualização de ambiente havia disparado automaticamente um deploy de eebfab1 em 20:06 UTC; ele falhou por P1011, certificado ainda ausente nesse commit. O deploy do novo commit contém o arquivo e encerrou essa falha. Nenhuma tentativa extra foi disparada após o merge; o Render publicou automaticamente.
+
+Probes HTTPS sem sessão em /read-audit e /clients retornaram 401. Isso confirma a disponibilidade da rota e a exigência de autenticação; não valida a consulta na sessão própria do usuário. A confirmação da página foi solicitada ao mantenedor, sem acessar credenciais de conta ou conteúdos clínicos.
+
+No pooler real, clínico/jobs sem contexto de tenant enxergaram zero clients; auth/checker receberam 42501 em SELECT clients LIMIT 0. Nenhum conteúdo de prontuário foi retornado nos probes.
+
+Imagem Docker final: build aprovado; UID1000, CA presente, proxy-addr2.0.8, sem .env ou Prisma CLI. Container temporário de restauração/testes removido. Backup cifrado/manifesto/chave DPAPI preservados; a cópia temporária DPAPI das credenciais de runtime foi retirada após o serviço ficar live.
+
+Esta conclusão cobre a recuperação do deploy. A verificação autenticada da interface, TLS interno do pooler, carga, destino independente da auditoria, retenção/custódia e 34 alertas do conjunto completo de dependências continuam delimitados acima.
