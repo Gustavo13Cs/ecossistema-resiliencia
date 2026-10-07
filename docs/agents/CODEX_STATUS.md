@@ -8,15 +8,19 @@
 
 ## Current Task
 
-- **Tarefa**: Corrigir cache desatualizado do protocolo de reabilitação no PR #22
-- **Status**: Correção concluída e verificada localmente em 2026-10-02: 9 testes focais, tipos/lint/build aprovados; criação/substituição, consulta ativa, isolamento de cache e falha de salvamento cobertos. Validação remota após push.
-- **Branch**: `agent/codex/security-remediation`
-- **Início**: 2026-09-29
-- **Arquivos protegidos autorizados**: `api/prisma/schema.prisma` e migrations versionadas necessárias à remediação
-- **Worktree**: `.worktrees/security/security-remediation`
-- **Plano atual**: Invalidar a chave por profissional/Client após salvar; testar criação/substituição no mesmo QueryClient real, consulta ativa e erro de salvamento; validar e publicar.
-- **Próximo gate**: verificar os checks do PR #22 após publicar a correção. Sem merge ou comandos de banco.
-- **Coordenação**: o status do Antigravity ainda cita uma tarefa iniciada em 2026-09-22, mas não há branch/worktree detectável para ela; confirmar antes de alterar auth, package files ou `.gitignore` fora deste worktree
+- **Tarefa**: Auditoria de leitura v3 e isolamento por profissional no banco, com correções DR-001/002/003 preservadas.
+- **Status**: Implementação/prova locais concluídas e verificadas. Implantação operacional/produção pendentes.
+- **Branch**: agent/codex/security-followup; base main/934e183.
+- **Worktree**: .worktrees/security/security-followup.
+- **Atualização**: 2026-10-07.
+- **Commit técnico**: db034ed0ecfd2bba32e7be01ba79965d3194acc7.
+- **Resultado**: Fronteira transacional por sessão; evento/outbox antes da resposta; RLS nas 42 tabelas; papéis clínico/auth/jobs/entrega separados; catálogo protegido; cron SYSTEM; consulta própria /read-audit e /auditoria.
+- **Validação**: API 47 suítes/475 unitários; PG16.15 e PG17.11, 29 suítes/187 E2E por versão; web 59 arquivos/391 testes; Cypress real 1/1; tipos/lint/builds/Prisma aprovados; CSP/direção em 29 páginas e standalone verificado.
+- **Revisão**: Um reviewer independente; compatibilidade migrada/corrida de Food/overview corrigidos por RED→GREEN, com regressões adicionais de SET ROLE e cadastro auth. Suítes completas verdes; sem segunda revisão.
+- **Pendências**: Fase 0 no processo publicado, pooler/carga, D1/D2 retenção/base legal, D3 destino/adaptador/cópia independente, D5 homologação de indisponibilidade, D7 investigador e decisões D9/D10. Backlog de toolchain, scripts demo/seed, backups/restauração e publicação não encerrado.
+- **Publicação**: Commits somente locais; sem push, merge, deploy, SQL remoto ou alteração de segredos. Não atesta produção.
+- **Roteiro**: [operação e limites](C:/Users/MICRO/Documents/GitHub/ecossistema-resiliencia/.worktrees/security/security-followup/docs/runbooks/read-audit-tenant-rls.md).
+- **Evidência persistente**: [verificação local](C:/Users/MICRO/.codex/state/plugins/codex-security/scans/security-followup/artifacts-d24209c2e31a8c4d3117accee187585a6b91c1cb986256d555d4f2914bd67406/artifacts/2026-10-07-read-audit-tenant-rls-verification.md).
 
 ---
 
@@ -24,6 +28,8 @@
 
 | Data | Tarefa | Branch |
 |------|--------|--------|
+| 2026-10-07 | Auditoria/RLS locais v3: API475, PG16/17 E2E187 por versao, web391, Cypress real1; papéis separados, trilha antes de resposta e consulta própria; produção pendente | agent/codex/security-followup |
+| 2026-10-05 | DR-001/002/003 e corrida do snapshot de receitas corrigidos localmente; 472 unitários API/150 E2E/388 web, tipos/lint/build aprovados; propostas protegidas pendentes | `agent/codex/security-followup` |
 | 2026-10-02 | PR #22: cache do protocolo invalidado por profissional/Client antes de navegar; 9 testes focais com QueryClient real, tipos/lint/build aprovados | `agent/codex/security-remediation` |
 | 2026-10-02 | PR #22: gate standalone compatível com o output do Vercel; 44 regressões/configuração, tipos/lint/build e CSP em 28 páginas aprovados localmente | `agent/codex/security-remediation` |
 | 2026-10-02 | PR #22: índice legado com histórico preservado, refresh resiliente a 500 e cache da central de exames; 472 API/374 web/12 PostgreSQL e builds/tipos/lint aprovados | `agent/codex/security-remediation` |
@@ -121,3 +127,11 @@
 - Advisors: Security Advisor com 0 lints; o único aviso agregado `rls_disabled` é `_prisma_migrations`, esperado e fora das 33 tabelas de aplicação.
 - Limites: o RLS protege a Data API, não isola tenants nas consultas Prisma feitas como `postgres` com `BYPASSRLS`; ownership por `professionalId`, guards e testes negativos permanecem obrigatórios. `consultation_notes` e `_prisma_migrations` seguem fora das 33 tabelas.
 - Limite histórico: o preflight anterior ao deploy não inventariou sequences, functions, `PUBLIC EXECUTE` nem default ACLs e esse estado não pode ser reconstruído; o runbook foi corrigido e o pós-deploy confirmou zero em toda a superfície atual e futura verificada.
+
+### Proposta v3 — 2026-10-05
+
+Correções documentais da revisão v2 incorporadas; estrutura/consistência e integridade do arquivo salvo conferidas. V2 preservada. Sem código/schema/migrations ou testes novos desta proposta. Documento: [v3](C:/Users/MICRO/.codex/state/plugins/codex-security/scans/security-followup/artifacts-d24209c2e31a8c4d3117accee187585a6b91c1cb986256d555d4f2914bd67406/hardening/2026-10-05-read-audit-and-tenant-rls-proposal-v3.md). A implementação e as provas previstas não são declaradas concluídas por esta edição.
+
+### Retomada autorizada — 2026-10-06
+
+Worktree conferido; alterações DR preservadas. Auditoria/RLS ainda sem fonte implementada na retomada. Última tentativa anterior não executada: auto-review indisponível por limite de uso. Limite não repetido nesta retomada. Plano: docs/superpowers/plans/2026-10-06-read-audit-tenant-rls.md. Bancos sintéticos PG16/17, sem DDL remoto.

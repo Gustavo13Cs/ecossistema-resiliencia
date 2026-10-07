@@ -38,11 +38,11 @@ Alertas de treino consideram somente Clients ativos de contas PERSONAL, com trac
 
 ## Defesa da Data API
 
-O frontend acessa a API NestJS, sem acesso direto aos dados clínicos pelo Supabase. As migrations desta branch deixam as 40 tabelas de aplicação com RLS e policy restritiva `deny_data_api_access`, incluindo `consultation_notes`. Revogam grants de PUBLIC e, quando existentes, `anon`, `authenticated` e `service_role`. `_prisma_migrations` é metadado do ORM e não integra essas 40 tabelas.
+O frontend acessa a API NestJS, sem acesso direto aos dados clínicos pelo Supabase. O hardening anterior protegeu 40 tabelas com RLS e policy restritiva `deny_data_api_access`, incluindo `consultation_notes`. A nova migration inclui duas tabelas de auditoria e mantém a Data API sem grants; policies negativas passam a um grupo sem consumidores para permitir o runtime clínico sem bypass. Revogam grants de PUBLIC e, quando existentes, `anon`, `authenticated` e `service_role`. `_prisma_migrations` é metadado do ORM e não integra essas 40 tabelas.
 
 O histórico de 2026-09-16 registra a Data API de produção desabilitada e o hardening então aplicado. Esta entrega não verificou novamente o ambiente remoto nem aplicou migrations nele. O gate isolado verifica tabelas, sequences, funções e default ACLs sem retornar conteúdo clínico.
 
-A conexão Prisma privilegiada pode contornar RLS. Portanto, RLS defensivo protege a superfície Data API e não substitui os filtros de ownership da API. Qualquer exposição futura precisa de grants mínimos e policies aprovadas; o JWT próprio não equivale a `auth.uid()` do Supabase.
+A conexão privilegiada do owner pode contornar RLS; ela não é aceita como credencial clínica desta implementação local. Policies por profissional complementam os filtros de ownership da API. Qualquer exposição futura precisa de grants mínimos e policies aprovadas; o JWT próprio não equivale a `auth.uid()` do Supabase.
 
 As três funções dos triggers de receitas fixam `search_path=pg_catalog, public`, preservando corpo, ownership e comportamento invoker. Índices acompanham os filtros de Client, autor, estado e ordenação reais. As 17 FKs históricas sem consumidor atual estão justificadas no runbook; não foram indexadas apenas para eliminar avisos do advisor.
 
@@ -62,8 +62,14 @@ Nunca registre dados clínicos, credenciais ou tokens em logs. Nunca retorne has
 
 | Variável | Uso |
 |----------|-----|
-| `DATABASE_URL` | Conexão da API; segredo, somente servidor |
-| `DIRECT_URL` | Conexão direta das migrations; segredo, somente servidor |
+| `DATABASE_URL` | Ferramentas/fixtures; não é fallback do runtime clínico |
+| `DIRECT_URL` | Owner separado das migrations; segredo, somente servidor |
+| `CLINICAL_DATABASE_URL` | LOGIN exclusivamente safemove_clinical |
+| `AUTH_DATABASE_URL` | LOGIN exclusivamente safemove_auth |
+| `JOBS_DATABASE_URL` | LOGIN exclusivamente safemove_jobs |
+| `AUDIT_DELIVERY_DATABASE_URL` | LOGIN exclusivamente safemove_audit_delivery; worker separado |
+| `CLINICAL_TRANSACTION_MAX_WAIT_MS` | 10000 padrão; inteiro entre 100 e 60000 |
+| `CLINICAL_TRANSACTION_TIMEOUT_MS` | 30000 padrão; inteiro entre 100 e 120000 |
 | `JWT_SECRET` | Assinatura dos access JWTs; segredo |
 | `ALLOWED_ORIGINS` | Lista separada por vírgulas de origens permitidas, incluindo a origem da web |
 | `AUTH_COOKIE_SECURE` | `true` obrigatório em produção |
@@ -75,3 +81,33 @@ Nunca registre dados clínicos, credenciais ou tokens em logs. Nunca retorne has
 | `TZ` | Fuso do processo, UTC recomendado |
 
 A publicação exige migrations aplicadas antes de iniciar a API, HTTPS para cookies Secure e correspondência entre proxy, origem e paths. O [runbook](runbooks/security-remediation-verification.md) documenta a ordem, validação isolada e recuperação.
+
+## Integridade do catálogo e preferências
+
+Contrato local da branch `agent/codex/security-followup`, validado em 2026-10-05: criação comum aceita somente fonte MANUAL. Alimentos de fonte oficial não podem ser alterados/excluídos por nutricionistas. Food MANUAL ainda é compartilhado, sem proprietário no schema; após vínculo com qualquer dieta/modelo/receita, passa a ser imutável. Para corrigir nutrientes, cadastrar outro alimento. Registro manual sem referências continua editável/excluível por nutricionistas.
+
+A atualização usa DTO concreto e projeção explícita de escalares; corpo HTTP não fornece operações Prisma ou relações. Verificação de referências e escrita usam transação/lock de linha, evitando novas referências entre as duas operações. Publicação de receita bloqueia os alimentos antes da leitura/cálculo para manter consistência do snapshot.
+
+Preferências são lidas pela identidade autenticada, nunca pela identidade arbitrária da query. Compatibilidade legada só aceita a mesma identidade da sessão; quantidade deve ser finita e não negativa. A resposta usa no-store.
+
+## Trilha de leitura e segunda camada no banco
+
+Implementação local desta branch, aprovada pelo mantenedor: cada resposta clínica classificada grava ClientReadAuditEvent e audit_delivery_states na mesma transação que preparou a resposta. O interceptor aguarda o commit antes de liberar o resultado. Falha de persistência ou de contexto retorna erro genérico, sem conteúdo clínico; não existe fallback em modo sombra. A trilha não guarda nome, conteúdo clínico, IP, user-agent, credenciais ou tokens.
+
+O principal vem da sessão validada e transporta sessionId internamente. requestId é gerado no servidor. Listas deduplicam Clients e gravam eventos em lotes de 100, com teto de 1000 linhas/Clients; amplitude maior é rejeitada integralmente. Todos os handlers HTTP montados exigem classificação explícita. Perfil, autenticação, saúde, catálogo e recursos privados sem Client têm exceções documentadas; modelos vinculados a Client continuam auditados.
+
+PrismaService usa AsyncLocalStorage e TransactionClient; delegates/raw fora do contexto falham, e helpers aninhados reutilizam a conexão. Transações clínicas usam ReadCommitted; agenda declara Serializable. A identidade e os GUCs valem somente na transação. O papel clínico não lê senhas/auth_sessions nem atualiza password/authVersion/role. Auth e cron têm conexões distintas.
+
+A nova migration habilita RLS nas 42 tabelas de aplicação e atribui políticas/grants mínimos a grupos NOLOGIN separados. Client e recursos clínicos exigem dono/autor; filhos herdam acesso pelo pai; modelos clientless exigem autor e isTemplate, sem userId legado. Registros históricos já vinculados a Client autorizado podem conservar userId; novas dietas gravam userId null. Legado sem Client não recebe fallback. ADMIN não tem bypass.
+
+O runtime deve usar LOGINs sem superuser/BYPASSRLS, criação de papéis/bancos, replicação, ownership de tabelas ou mistura dos grupos de privilégios. A inicialização verifica current_user e session_user, flags e memberships/grupos; isso não substitui o inventário da Fase 0 nem a homologação do pooler real. O owner das migrations permanece separado; FORCE RLS é uma decisão operacional pendente.
+
+Food continua compartilhado. A função food_in_use retorna somente um booleano e executa como grupo NOLOGIN sem bypass, com SELECT apenas dos foodIds de referências. O trigger adquire FOR UPDATE antes de revalidar referências, inclusive quando a FK é o único lock do escritor concorrente. Receitas conservam FOR SHARE durante leitura/cálculo do snapshot. O INSERT clínico aceita MANUAL e a fonte interna SAFE_MOVE_TEMPLATE para o fluxo existente; o DTO público permite somente MANUAL. Importação de fontes TACO/TBCA exige papel próprio.
+
+A trilha permite INSERT e SELECT do próprio profissional, sem UPDATE/DELETE/TRUNCATE; triggers reforçam imutabilidade. sessionId não possui FK. Client/dono/ator usam Restrict. O cron restrito registra SYSTEM com alerts.daily e execução identificada, sem ator humano/sessão fictícios. Estado de entrega é separado da trilha e confirmado pelo token da reserva. A cópia usa contrato idempotente por eventId e ocorre depois do commit. O adaptador/destino independente efetivo ainda depende de D3.
+
+A página /auditoria e GET /read-audit exibem somente a trilha do profissional autenticado, com paginação e cache em memória separado por sessão. A consulta também é auditada, sem recursão. Investigação transversal segue D7 e não foi concedida a ADMIN.
+
+Esta entrega não foi aplicada em produção. Antes de publicar, concluir Fase 0, decisões D1–D10 aplicáveis, cópia independente, retenção/expurgo, monitoramento, restauração e homologação do pooler/carga. Os GUCs não são defesa contra SQL injection ou comprometimento do servidor.
+
+O [roteiro operacional de auditoria/RLS](runbooks/read-audit-tenant-rls.md) registra os gates locais aprovados em PG16/17 e as decisões ainda necessárias para implantação.
