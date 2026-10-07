@@ -70,7 +70,7 @@
 | 4.12 | RLS sem bypass provado em PG16/17; produção depende da Fase 0 | ✅ local | Codex |
 | 4.13 | Atualizar dependências de desenvolvimento/testes e validar compatibilidade | ⏳ | — |
 | 4.14 | Proteger scripts demo/seed e atestar role, backups/restauração e publicação | ⏳ | — |
-| 4.16 | Recuperação Render concluída: backup restaurado, migration/LOGINs/CA em produção; PR#24 e deploy live; confirmação autenticada própria pendente | ✅ deploy | Codex |
+| 4.16 | Recuperação Render concluída: backup restaurado, migration/LOGINs/CA em produção; PR#24 e deploy live; página própria confirmada pelo mantenedor | ✅ deploy | Codex |
 | 4.15 | Consolidar proposta v3 com ajustes da revisão de leitura/RLS | ✅ documento | Codex |
 
 ---

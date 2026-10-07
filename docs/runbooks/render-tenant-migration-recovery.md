@@ -65,7 +65,7 @@ A consulta pg_stat_ssl pelo pooler retornou ssl=false para o backend PostgreSQL.
 - Regressão de owner gerenciado em PostgreSQL 17.11: RED por falta de SET ROLE, GREEN com prepare/migration/cleanup. 42 tabelas de aplicação com RLS; função restrita.
 - Validação local anterior do mesmo código: API 47 suítes/475 unitários, 30 suítes/188 E2E PG17; tipos, lint, generate e build aprovados. Não repetir as suítes sem mudança que justifique.
 - Deploy com certificado publicado concluído; verificação HTTP sem sessão exige autenticação. Evidência final abaixo.
-- A sessão própria na página /auditoria ainda requer validação autenticada. Não foram consultados prontuários nem criados registros clínicos para testar em produção.
+- O mantenedor confirmou que a página /auditoria carregou normalmente na própria conta após o deploy. Não foram consultados prontuários nem criados registros clínicos para testar em produção.
 - Destino/adaptador/cópia independente de auditoria, retenção/base legal, indisponibilidade/carga e demais decisões continuam no runbook read-audit-tenant-rls.md. Recuperar o deploy não encerra a segurança operacional do projeto.
 
 ## Dependência corrigida durante a recuperação
@@ -82,10 +82,10 @@ Render: deploy `dep-db3aj9u0tbcc739bo7m0`, status **live**, concluído em 2026-1
 
 A atualização de ambiente havia disparado automaticamente um deploy de eebfab1 em 20:06 UTC; ele falhou por P1011, certificado ainda ausente nesse commit. O deploy do novo commit contém o arquivo e encerrou essa falha. Nenhuma tentativa extra foi disparada após o merge; o Render publicou automaticamente.
 
-Probes HTTPS sem sessão em /read-audit e /clients retornaram 401. Isso confirma a disponibilidade da rota e a exigência de autenticação; não valida a consulta na sessão própria do usuário. A confirmação da página foi solicitada ao mantenedor, sem acessar credenciais de conta ou conteúdos clínicos.
+Probes HTTPS sem sessão em /read-audit e /clients retornaram 401. Isso confirma a disponibilidade da rota e a exigência de autenticação; não valida a consulta na sessão própria do usuário. O mantenedor respondeu “Sim, carregou normalmente” ao atualizar Histórico de acessos na própria conta. Essa confirmação é funcional e informada pelo usuário; não foi uma inspeção automatizada da sessão. Nenhuma credencial de conta ou conteúdo clínico foi acessado.
 
 No pooler real, clínico/jobs sem contexto de tenant enxergaram zero clients; auth/checker receberam 42501 em SELECT clients LIMIT 0. Nenhum conteúdo de prontuário foi retornado nos probes.
 
 Imagem Docker final: build aprovado; UID1000, CA presente, proxy-addr2.0.8, sem .env ou Prisma CLI. Container temporário de restauração/testes removido. Backup cifrado/manifesto/chave DPAPI preservados; a cópia temporária DPAPI das credenciais de runtime foi retirada após o serviço ficar live.
 
-Esta conclusão cobre a recuperação do deploy. A verificação autenticada da interface, TLS interno do pooler, carga, destino independente da auditoria, retenção/custódia e 34 alertas do conjunto completo de dependências continuam delimitados acima.
+Esta conclusão cobre a recuperação do deploy. A interface própria teve confirmação funcional do mantenedor. TLS interno do pooler, carga, destino independente da auditoria, retenção/custódia e 34 alertas do conjunto completo de dependências continuam delimitados acima.

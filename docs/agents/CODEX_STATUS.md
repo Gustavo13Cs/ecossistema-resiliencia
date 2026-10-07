@@ -8,12 +8,12 @@
 
 ## Current Task
 
-- **Incidente 2026-10-07**: Recuperação autorizada concluída. Backup cifrado restaurado (41 tabelas); 17 migrations aplicadas com checksum original e cleanup sem SET/USAGE/CREATE de catálogo. Quatro LOGINs restritos, três assertDatabaseRole e checker Prisma pelo pooler aprovados. CA/TLS externo1.3 validado; API475, audit runtime0 e Docker finais aprovados. PR#24 revisado sem achados, CI completo verde e integrado; Render live em 2e504765 / dep-db3aj9u0tbcc739bo7m0 às20:23UTC. /read-audit e /clients sem sessão retornam401. Confirmação autenticada na própria conta solicitada; limites operacionais no runbook.
+- **Incidente 2026-10-07**: Recuperação autorizada concluída. Backup cifrado restaurado (41 tabelas); 17 migrations aplicadas com checksum original e cleanup sem SET/USAGE/CREATE de catálogo. Quatro LOGINs restritos, três assertDatabaseRole e checker Prisma pelo pooler aprovados. CA/TLS externo1.3 validado; API475, audit runtime0 e Docker finais aprovados. PR#24 revisado sem achados, CI completo verde e integrado; Render live em 2e504765 / dep-db3aj9u0tbcc739bo7m0 às20:23UTC. /read-audit e /clients sem sessão retornam401. Mantenedor confirmou que Histórico de acessos carregou normalmente na própria conta; limites operacionais no runbook.
 - **Branch de recuperação**: agent/codex/render-tenant-migration-recovery. Roteiro: docs/runbooks/render-tenant-migration-recovery.md.
 
 
 - **Tarefa**: Auditoria de leitura v3 e isolamento por profissional no banco, com correções DR-001/002/003 preservadas.
-- **Status**: Implementação/prova locais concluídas e verificadas. Migration/conexões restritas e deploy com CA concluídos em produção. Confirmação autenticada da própria interface e demais decisões operacionais pendentes.
+- **Status**: Implementação/prova locais concluídas e verificadas. Migration/conexões restritas e deploy com CA concluídos em produção. Mantenedor confirmou a própria interface; demais decisões operacionais pendentes.
 - **Branch**: agent/codex/security-followup; base main/934e183.
 - **Worktree**: .worktrees/security/security-followup.
 - **Atualização**: 2026-10-07.
