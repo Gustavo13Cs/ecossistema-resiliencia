@@ -22,6 +22,7 @@ import Link from "next/link"
 import dynamic from "next/dynamic"
 import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/api"
+import { foodMutationError } from "@/lib/food-mutation-error"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
 import { useClientRecord, type ClientRecordStatus } from "@/hooks/features/useClientRecord"
@@ -304,7 +305,7 @@ export default function NovaDietaPage() {
     } 
     else if (loggedInUser?.sub) {
       try {
-        const prefRes = await api.get(`/foods/${food.id}/preference?nutritionistId=${loggedInUser.sub}&quantity=${safeQty}`)
+        const prefRes = await api.get(`/foods/${food.id}/preference?quantity=${safeQty}`)
         if (prefRes.data && prefRes.data.measure) {
           savedMeasure = prefRes.data.measure
         }
@@ -353,7 +354,7 @@ export default function NovaDietaPage() {
   const handleDeleteFood = async (e: React.MouseEvent, foodId: string) => {
     e.stopPropagation()
     if (!confirm("Apagar este alimento da base de dados?")) return
-    try { await api.delete(`/foods/${foodId}`); setAvailableFoods(availableFoods.filter(f => f.id !== foodId)); toast.success("Apagado!") } catch (error) {}
+    try { await api.delete(`/foods/${foodId}`); setAvailableFoods(availableFoods.filter(f => f.id !== foodId)); toast.success("Apagado!") } catch (error) { toast.error(foodMutationError(error, "Erro ao apagar o alimento.")) }
   }
 
   const handleEditFood = (e: React.MouseEvent, food: FoodNutrition) => {
@@ -390,7 +391,7 @@ export default function NovaDietaPage() {
         setAvailableFoods([res.data, ...availableFoods]); addFoodToMeal(res.data, amountToAdd); toast.success("Cadastrado!")
       }
       setIsCreatingManual(false); setEditingFoodId(null)
-    } catch (error) {}
+    } catch (error) { toast.error(foodMutationError(error, "Erro ao salvar o alimento.")) }
   }
 
   const closeModal = () => { setActiveMealId(null); setPickerTab("FOOD"); setSearchTerm(""); setAmountToAdd(100); setIsCreatingManual(false); setEditingFoodId(null) }

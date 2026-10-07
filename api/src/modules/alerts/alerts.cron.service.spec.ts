@@ -1,6 +1,6 @@
 import { expect } from '@jest/globals';
 import { Logger } from '@nestjs/common';
-import { PrismaService } from '../../infra/database/prisma.service';
+import { JobsPrismaService as PrismaService } from '../../infra/database/database-clients';
 import { AlertsCronService } from './alerts.cron.service';
 
 describe('Atomic alert calculation', () => {
@@ -19,6 +19,8 @@ describe('Atomic alert calculation', () => {
         findFirst: jest.fn().mockResolvedValue(null),
         findMany: jest.fn().mockResolvedValue([]),
       },
+      clientReadAuditEvent: { createMany: jest.fn() },
+      auditDeliveryState: { createMany: jest.fn() },
       patientAlert: { deleteMany: jest.fn(), createMany: jest.fn() },
     };
     const prisma = {

@@ -17,7 +17,7 @@
     "test:watch": "cross-env TZ=UTC jest --watch",
     "test:cov": "cross-env TZ=UTC jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:e2e": "ts-node test/run-tenant-tests.ts",
     "seed:phase1-e2e": "ts-node prisma/seed-phase1-e2e.ts"
   },
   "dependencies": {

@@ -229,6 +229,8 @@ class RecipePrismaFake {
       Promise.reject(new Error('Fake not initialized')),
   };
 
+  $queryRaw = (): Promise<unknown[]> => Promise.resolve([]);
+
   $transaction = async <T>(
     callback: (transaction: this) => Promise<T>,
   ): Promise<T> => {

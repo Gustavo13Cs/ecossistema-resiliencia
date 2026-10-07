@@ -20,6 +20,7 @@ const getSharedNavigation = (clientPlural: string) => [
   { id: "agenda", label: "Agenda", href: "/agenda", section: "ATENDIMENTO" },
   { id: "clients", label: clientPlural, href: "/clientes", section: "ATENDIMENTO" },
   { id: "assessments", label: "Avaliações", href: "/avaliacoes", section: "ATENDIMENTO" },
+  { id: "audit", label: "Histórico de acessos", href: "/auditoria", section: "GESTÃO" },
 ] as const satisfies readonly WorkspaceNavigationItem[]
 
 const createWorkspace = (
@@ -47,6 +48,7 @@ const WORKSPACES = {
       { id: "agenda", label: "Agenda", href: "/agenda", section: "ATENDIMENTO" },
       { id: "clients", label: "Clientes", href: "/clientes", section: "ATENDIMENTO" },
       { id: "assessments", label: "Avaliações", href: "/avaliacoes", section: "ATENDIMENTO" },
+  { id: "audit", label: "Histórico de acessos", href: "/auditoria", section: "GESTÃO" },
       { id: "evolution", label: "Evolução", href: "/evolucao", section: "ATENDIMENTO" },
       { id: "nutrition", label: "Planos alimentares", href: "/dietas", section: "NUTRIÇÃO" },
       { id: "foods", label: "Alimentos", href: "/alimentos", section: "NUTRIÇÃO" },
@@ -99,7 +101,7 @@ const ROLE_ONLY_PREFIXES: ReadonlyArray<[string, readonly ProfessionalRole[]]> =
   ["/clientes/:id/nova-reabilitacao", ["PHYSIO"]],
 ]
 
-const PROFESSIONAL_PATHS = new Set(["/home", "/clientes", "/avaliacoes", "/agenda"])
+const PROFESSIONAL_PATHS = new Set(["/home", "/clientes", "/avaliacoes", "/agenda", "/auditoria"])
 
 const matchesPathPrefix = (pathname: string, pattern: string) => {
   const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")

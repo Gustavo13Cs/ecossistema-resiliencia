@@ -1,4 +1,5 @@
 import * as bcrypt from 'bcrypt';
+import { AuthPrismaService } from '../../infra/database/database-clients';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { AuthSessionService } from '../auth/auth-session.service';
 import { UsersService } from './users.service';
@@ -18,6 +19,7 @@ describe('User authentication invalidation', () => {
     service = new UsersService(
       prisma as unknown as PrismaService,
       sessions as unknown as AuthSessionService,
+      prisma as unknown as AuthPrismaService,
     );
   });
 

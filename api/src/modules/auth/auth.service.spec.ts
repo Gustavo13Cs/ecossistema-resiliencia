@@ -1,6 +1,6 @@
 import { AuthSessionService } from './auth-session.service';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../../infra/database/prisma.service';
+import { AuthPrismaService as PrismaService } from '../../infra/database/database-clients';
 import { RegisterDto } from './dto/register.dto';
 import { AuthService } from './auth.service';
 
@@ -62,6 +62,7 @@ describe('AuthService registration', () => {
 
     expect(prisma.user.findUnique).toHaveBeenCalledWith({
       where: { email: 'physio@example.test' },
+      select: { id: true },
     });
     const createCall = capturedUserCreateArgs as {
       data: { email: string };

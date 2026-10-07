@@ -1,4 +1,4 @@
-import { PrismaService } from '../src/infra/database/prisma.service';
+import { testAdminPrisma } from './fixtures/test-admin';
 
 type AppointmentTables = {
   appointments: string | null;
@@ -6,7 +6,7 @@ type AppointmentTables = {
 };
 
 describe('professional appointments migration', () => {
-  const prisma = new PrismaService();
+  const prisma = testAdminPrisma();
 
   beforeAll(async () => {
     await prisma.$connect();

@@ -1,3 +1,4 @@
+import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Controller,
   Post,
@@ -24,12 +25,19 @@ import { AuthenticatedRequest } from '../../common/types/auth-user';
 export class LabExamsController {
   constructor(private readonly labExamsService: LabExamsService) {}
 
+  @ClinicalResponse({ domain: 'LAB_EXAM', shape: 'resource' })
   @Get()
   @Header('Cache-Control', 'no-store')
   findAll(@Request() request: AuthenticatedRequest) {
     return this.labExamsService.findAll(request.user);
   }
 
+  @ClinicalResponse({
+    domain: 'LAB_EXAM',
+    shape: 'ack',
+    lookup: 'labExam',
+    parameter: 'id',
+  })
   @Delete(':id')
   remove(
     @Request() request: AuthenticatedRequest,
@@ -38,6 +46,7 @@ export class LabExamsController {
     return this.labExamsService.remove(request.user, id);
   }
 
+  @ClinicalResponse({ domain: 'LAB_EXAM', shape: 'resource' })
   @Post()
   @Header('Cache-Control', 'no-store')
   create(
@@ -47,6 +56,7 @@ export class LabExamsController {
     return this.labExamsService.create(request.user, createLabExamDto);
   }
 
+  @ClinicalResponse({ domain: 'LAB_EXAM', shape: 'resource' })
   @Get('client/:clientId')
   @Header('Cache-Control', 'no-store')
   findByClient(

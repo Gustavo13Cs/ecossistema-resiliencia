@@ -10,6 +10,7 @@ export type AccessTokenPayload = {
 export type AuthUser = {
   sub: string;
   role: Role;
+  sessionId?: string;
   email?: string;
   name?: string;
 };

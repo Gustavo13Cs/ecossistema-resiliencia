@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, User } from '@prisma/client';
-import { PrismaService } from '../../infra/database/prisma.service';
+import { AuthPrismaService } from '../../infra/database/database-clients';
 import { AuthUser } from '../../common/types/auth-user';
 import {
   createRefreshToken,
@@ -26,7 +26,7 @@ const REFRESH_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 @Injectable()
 export class AuthSessionService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prisma: AuthPrismaService,
     private readonly jwt: JwtService,
   ) {}
 
@@ -140,7 +140,7 @@ export class AuthSessionService {
       session.user.authVersion !== authVersion
     )
       throw this.invalidSession();
-    return this.identity(session.user);
+    return { ...this.identity(session.user), sessionId: session.id };
   }
 
   private async lockSession(tx: Prisma.TransactionClient, sessionId: string) {

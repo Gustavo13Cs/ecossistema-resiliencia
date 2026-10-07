@@ -1,3 +1,4 @@
+import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Body,
   Controller,
@@ -27,6 +28,11 @@ import { AppointmentsService } from './appointments.service';
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
+  @ClinicalResponse({
+    domain: 'APPOINTMENT',
+    shape: 'resource',
+    isolation: 'Serializable',
+  })
   @Post()
   create(
     @Request() request: AuthenticatedRequest,
@@ -35,6 +41,11 @@ export class AppointmentsController {
     return this.appointmentsService.create(request.user, dto);
   }
 
+  @ClinicalResponse({
+    domain: 'APPOINTMENT',
+    shape: 'resource',
+    isolation: 'Serializable',
+  })
   @Get()
   list(
     @Request() request: AuthenticatedRequest,
@@ -43,6 +54,11 @@ export class AppointmentsController {
     return this.appointmentsService.list(request.user, query);
   }
 
+  @ClinicalResponse({
+    domain: 'APPOINTMENT',
+    shape: 'resource',
+    isolation: 'Serializable',
+  })
   @Get(':id')
   findOne(
     @Request() request: AuthenticatedRequest,
@@ -51,6 +67,11 @@ export class AppointmentsController {
     return this.appointmentsService.findOne(request.user, id);
   }
 
+  @ClinicalResponse({
+    domain: 'APPOINTMENT',
+    shape: 'resource',
+    isolation: 'Serializable',
+  })
   @Patch(':id')
   update(
     @Request() request: AuthenticatedRequest,
@@ -60,6 +81,11 @@ export class AppointmentsController {
     return this.appointmentsService.update(request.user, id, dto);
   }
 
+  @ClinicalResponse({
+    domain: 'APPOINTMENT',
+    shape: 'resource',
+    isolation: 'Serializable',
+  })
   @Post(':id/confirm')
   confirm(
     @Request() request: AuthenticatedRequest,
@@ -69,6 +95,11 @@ export class AppointmentsController {
     return this.appointmentsService.confirm(request.user, id, dto);
   }
 
+  @ClinicalResponse({
+    domain: 'APPOINTMENT',
+    shape: 'resource',
+    isolation: 'Serializable',
+  })
   @Post(':id/complete')
   complete(
     @Request() request: AuthenticatedRequest,
@@ -78,6 +109,11 @@ export class AppointmentsController {
     return this.appointmentsService.complete(request.user, id, dto);
   }
 
+  @ClinicalResponse({
+    domain: 'APPOINTMENT',
+    shape: 'resource',
+    isolation: 'Serializable',
+  })
   @Post(':id/no-show')
   markNoShow(
     @Request() request: AuthenticatedRequest,
@@ -87,6 +123,11 @@ export class AppointmentsController {
     return this.appointmentsService.markNoShow(request.user, id, dto);
   }
 
+  @ClinicalResponse({
+    domain: 'APPOINTMENT',
+    shape: 'resource',
+    isolation: 'Serializable',
+  })
   @Post(':id/cancel')
   cancel(
     @Request() request: AuthenticatedRequest,

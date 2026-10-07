@@ -3,7 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
 } from '@nestjs/common';
-import { PrismaService } from '../../infra/database/prisma.service';
+import { AuthPrismaService } from '../../infra/database/database-clients';
 import { AuthSessionService } from './auth-session.service';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
@@ -14,7 +14,7 @@ const normalizeEmail = (email: string) => email.trim().toLowerCase();
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
+    private prisma: AuthPrismaService,
     private readonly sessions: AuthSessionService,
   ) {}
 
@@ -51,6 +51,7 @@ export class AuthService {
     const email = normalizeEmail(registerDto.email);
     const existing = await this.prisma.user.findUnique({
       where: { email },
+      select: { id: true },
     });
 
     if (existing) {

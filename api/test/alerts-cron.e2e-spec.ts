@@ -1,3 +1,4 @@
+import { JobsPrismaService } from '../src/infra/database/database-clients';
 import { PrismaService } from '../src/infra/database/prisma.service';
 import { AuthenticatedRequest } from '../src/common/types/auth-user';
 import { AlertsCronService } from '../src/modules/alerts/alerts.cron.service';
@@ -15,7 +16,7 @@ describe('Atomic alert snapshots (isolated PostgreSQL)', () => {
   beforeAll(async () => {
     database = await isolatedPostgres();
     prisma = database.prisma;
-    service = new AlertsCronService(prisma);
+    service = new AlertsCronService(prisma as unknown as JobsPrismaService);
     for (const id of ['a', 'b'])
       await prisma.user.create({
         data: {

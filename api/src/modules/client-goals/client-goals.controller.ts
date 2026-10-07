@@ -1,3 +1,4 @@
+import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Body,
   Controller,
@@ -23,11 +24,13 @@ import { UpsertClientGoalDto } from './dto/upsert-client-goal.dto';
 @Roles(...DOMAIN_ROLES.nutrition)
 export class ClientGoalsController {
   constructor(private readonly service: ClientGoalsService) {}
+  @ClinicalResponse({ domain: 'CLIENT_GOAL', shape: 'resource' })
   @Get()
   @Header('Cache-Control', 'no-store')
   list(@Request() request: AuthenticatedRequest) {
     return this.service.list(request.user);
   }
+  @ClinicalResponse({ domain: 'CLIENT_GOAL', shape: 'resource' })
   @Get(':clientId')
   @Header('Cache-Control', 'no-store')
   findOne(
@@ -36,6 +39,7 @@ export class ClientGoalsController {
   ) {
     return this.service.findOne(request.user, clientId);
   }
+  @ClinicalResponse({ domain: 'CLIENT_GOAL', shape: 'resource' })
   @Put(':clientId')
   @Header('Cache-Control', 'no-store')
   upsert(
@@ -45,7 +49,14 @@ export class ClientGoalsController {
   ) {
     return this.service.upsert(request.user, clientId, dto);
   }
-  @Delete(':clientId') remove(
+  @ClinicalResponse({
+    domain: 'CLIENT_GOAL',
+    shape: 'ack',
+    lookup: 'clientGoal',
+    parameter: 'clientId',
+  })
+  @Delete(':clientId')
+  remove(
     @Request() request: AuthenticatedRequest,
     @Param('clientId', ParseUUIDPipe) clientId: string,
   ) {

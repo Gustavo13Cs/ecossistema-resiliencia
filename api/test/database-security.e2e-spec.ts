@@ -1,10 +1,11 @@
+import { isolationDatabase } from './fixtures/client-isolation';
+import { isolatedPostgres } from './fixtures/isolated-postgres';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { Pool } from 'pg';
 
-const SAFE_TEST_DATABASE_URL =
-  'postgresql://postgres:postgres@localhost:5434/ecossistema_resiliencia_test';
+const SAFE_TEST_DATABASE_URL = isolationDatabase;
 
 const MIGRATION_PATH = resolve(
   __dirname,
@@ -77,17 +78,19 @@ type PrivilegeRow = {
 
 describe('Database defensive RLS hardening (e2e)', () => {
   let pool: Pool;
+  let database: Awaited<ReturnType<typeof isolatedPostgres>>;
   let createdFixtureRoles: string[] = [];
 
   beforeAll(async () => {
     const url = new URL(SAFE_TEST_DATABASE_URL);
     expect(['localhost', '127.0.0.1']).toContain(url.hostname);
-    expect(url.port).toBe('5434');
+    expect(['5434', '5435']).toContain(url.port);
     expect(url.pathname).toBe('/ecossistema_resiliencia_test');
     expect(process.env.DATABASE_URL).toBe(SAFE_TEST_DATABASE_URL);
     expect(process.env.DIRECT_URL).toBe(SAFE_TEST_DATABASE_URL);
 
-    pool = new Pool({ connectionString: SAFE_TEST_DATABASE_URL });
+    database = await isolatedPostgres({ beforeTenant: true });
+    pool = database.pool;
     const existingRoles = await pool.query<{ rolname: string }>(
       'select rolname from pg_roles where rolname = any($1::text[])',
       [DATA_API_ROLES],
@@ -282,7 +285,7 @@ describe('Database defensive RLS hardening (e2e)', () => {
       await pool.query(`DROP ROLE IF EXISTS ${role}`);
     }
 
-    await pool.end();
+    await database.close();
   });
 
   it('enables RLS on every physical application table', async () => {

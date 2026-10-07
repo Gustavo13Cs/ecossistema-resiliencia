@@ -1,3 +1,4 @@
+import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Body,
   Controller,
@@ -29,6 +30,7 @@ export class ClientsController {
     private readonly clientOverviewService: ClientOverviewService,
   ) {}
 
+  @ClinicalResponse({ domain: 'CLIENT', shape: 'client' })
   @Post()
   create(
     @Request() request: AuthenticatedRequest,
@@ -37,6 +39,7 @@ export class ClientsController {
     return this.clientsService.create(request.user, dto);
   }
 
+  @ClinicalResponse({ domain: 'CLIENT', shape: 'client' })
   @Get()
   findAll(
     @Request() request: AuthenticatedRequest,
@@ -45,6 +48,7 @@ export class ClientsController {
     return this.clientsService.findAll(request.user, query.status ?? 'ACTIVE');
   }
 
+  @ClinicalResponse({ domain: 'OVERVIEW', shape: 'overview' })
   @Get(':clientId/overview')
   getOverview(
     @Request() request: AuthenticatedRequest,
@@ -53,11 +57,13 @@ export class ClientsController {
     return this.clientOverviewService.getOverview(request.user, clientId);
   }
 
+  @ClinicalResponse({ domain: 'CLIENT', shape: 'client' })
   @Get(':id')
   findOne(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.clientsService.findOne(request.user, id);
   }
 
+  @ClinicalResponse({ domain: 'CLIENT', shape: 'client' })
   @Patch(':id')
   update(
     @Request() request: AuthenticatedRequest,
@@ -67,6 +73,7 @@ export class ClientsController {
     return this.clientsService.update(request.user, id, dto);
   }
 
+  @ClinicalResponse({ domain: 'CLIENT', shape: 'client' })
   @Patch(':id/status')
   setStatus(
     @Request() request: AuthenticatedRequest,

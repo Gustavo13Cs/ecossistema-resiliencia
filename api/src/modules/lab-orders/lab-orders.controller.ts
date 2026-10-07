@@ -1,3 +1,4 @@
+import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Body,
   Controller,
@@ -22,11 +23,13 @@ import { CreateLabOrderDto } from './dto/create-lab-order.dto';
 @Roles(...DOMAIN_ROLES.nutrition)
 export class LabOrdersController {
   constructor(private readonly service: LabOrdersService) {}
+  @ClinicalResponse({ domain: 'LAB_ORDER', shape: 'resource' })
   @Get()
   @Header('Cache-Control', 'no-store')
   list(@Request() request: AuthenticatedRequest) {
     return this.service.list(request.user);
   }
+  @ClinicalResponse({ domain: 'LAB_ORDER', shape: 'resource' })
   @Post()
   @Header('Cache-Control', 'no-store')
   create(
@@ -35,7 +38,14 @@ export class LabOrdersController {
   ) {
     return this.service.create(request.user, dto);
   }
-  @Delete(':id') remove(
+  @ClinicalResponse({
+    domain: 'LAB_ORDER',
+    shape: 'ack',
+    lookup: 'labOrder',
+    parameter: 'id',
+  })
+  @Delete(':id')
+  remove(
     @Request() request: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
   ) {

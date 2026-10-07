@@ -1,9 +1,10 @@
+import { isolationPort } from './fixtures/client-isolation';
 import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Pool } from 'pg';
 
-const ADMIN_URL = 'postgresql://postgres:postgres@localhost:5434/postgres';
+const ADMIN_URL = `postgresql://postgres:postgres@localhost:${isolationPort}/postgres`;
 const TARGET = '20260929123000_add_revocable_auth_sessions';
 const MIGRATIONS = resolve(__dirname, '../prisma/migrations');
 const USER_ID = 'auth-schema-existing-user';
@@ -17,13 +18,13 @@ describe('Revocable auth session schema (e2e)', () => {
   beforeAll(async () => {
     const url = new URL(ADMIN_URL);
     expect(url.hostname).toBe('localhost');
-    expect(url.port).toBe('5434');
+    expect(url.port).toBe(String(isolationPort));
     expect(url.pathname).toBe('/postgres');
     expect(databaseName).toMatch(/^safemove_auth_schema_[a-f0-9]{32}$/);
     admin = new Pool({ connectionString: ADMIN_URL });
     await admin.query(`CREATE DATABASE "${databaseName}"`);
     pool = new Pool({
-      connectionString: `postgresql://postgres:postgres@localhost:5434/${databaseName}`,
+      connectionString: `postgresql://postgres:postgres@localhost:${isolationPort}/${databaseName}`,
     });
     for (const name of readdirSync(MIGRATIONS)
       .filter((name) => name < TARGET)

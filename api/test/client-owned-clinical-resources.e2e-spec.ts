@@ -1,3 +1,4 @@
+import { testAdminPrisma } from './fixtures/test-admin';
 import {
   CanActivate,
   ExecutionContext,
@@ -26,6 +27,7 @@ class FixtureAuthGuard implements CanActivate {
       .switchToHttp()
       .getRequest<{ headers: Record<string, string>; user: AuthUser }>();
     req.user = {
+      sessionId: 'synthetic-guard-session',
       sub: req.headers['x-test-user-id'],
       role: req.headers['x-test-role'] as AuthUser['role'],
     };
@@ -51,7 +53,7 @@ describe('Client-owned clinical resources (PostgreSQL HTTP)', () => {
       .overrideGuard(ThrottlerGuard)
       .useValue({ canActivate: () => true })
       .compile();
-    prisma = module.get(PrismaService);
+    prisma = testAdminPrisma();
     app = module.createNestApplication();
     app.useGlobalPipes(
       new ValidationPipe({
@@ -68,6 +70,7 @@ describe('Client-owned clinical resources (PostgreSQL HTTP)', () => {
       if (prisma) await clearIsolationFixtures(prisma);
     } finally {
       await app?.close();
+      await prisma?.$disconnect();
     }
   });
 

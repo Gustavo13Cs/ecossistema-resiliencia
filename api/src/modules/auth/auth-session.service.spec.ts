@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { JwtService } from '@nestjs/jwt';
 import { AuthSession } from '@prisma/client';
-import { PrismaService } from '../../infra/database/prisma.service';
+import { AuthPrismaService as PrismaService } from '../../infra/database/database-clients';
 import { AuthSessionService } from './auth-session.service';
 import { createRefreshToken } from './refresh-token';
 
@@ -174,6 +174,7 @@ describe('Revocable sessions', () => {
     });
     expect(result.role).toBe('PERSONAL');
     expect(result.name).toBe(user.name);
+    expect(result).toHaveProperty('sessionId', sessionId);
   });
 
   it.each([

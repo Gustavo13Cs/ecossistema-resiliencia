@@ -1,3 +1,4 @@
+import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Body,
   Controller,
@@ -32,6 +33,7 @@ export class AuthController {
   @Public()
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
+  @ClinicalResponse({ exception: 'auth' })
   @Post('login')
   @Header('Cache-Control', 'no-store')
   async login(
@@ -44,6 +46,7 @@ export class AuthController {
     return { message: 'Login realizado com sucesso' };
   }
 
+  @ClinicalResponse({ exception: 'auth' })
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @Header('Cache-Control', 'no-store')
@@ -73,6 +76,7 @@ export class AuthController {
   }
 
   @Public()
+  @ClinicalResponse({ exception: 'auth' })
   @Get('csrf')
   @Header('Cache-Control', 'no-store')
   csrf(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
@@ -86,6 +90,7 @@ export class AuthController {
   }
 
   @Public()
+  @ClinicalResponse({ exception: 'auth' })
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @Header('Cache-Control', 'no-store')
@@ -108,6 +113,7 @@ export class AuthController {
   }
 
   @Public()
+  @ClinicalResponse({ exception: 'auth' })
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @Header('Cache-Control', 'no-store')
@@ -121,6 +127,7 @@ export class AuthController {
   }
 
   @Public()
+  @ClinicalResponse({ exception: 'auth' })
   @Post('register')
   register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);

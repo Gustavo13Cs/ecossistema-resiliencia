@@ -1,11 +1,11 @@
+import { isolationPort } from './fixtures/client-isolation';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 
-const SAFE_TEST_DATABASE_URL =
-  'postgresql://postgres:postgres@localhost:5434/ecossistema_resiliencia_test';
+const SAFE_TEST_DATABASE_URL = `postgresql://postgres:postgres@localhost:${isolationPort}/ecossistema_resiliencia_test`;
 const PROFESSIONAL_A = '25000000-0000-4000-8000-000000000001';
 const PROFESSIONAL_B = '25000000-0000-4000-8000-000000000002';
 const LEGACY_PATIENT = '25000000-0000-4000-8000-000000000003';

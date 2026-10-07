@@ -65,6 +65,12 @@
 | 4.6 | Monitoramento de performance (bundle size, query time) | ⏳ | — |
 | 4.7 | Endurecer Data API, grants e RLS defensivo no Supabase | ✅ | Codex |
 | 4.8 | Remediar os 15 achados da auditoria de segurança e qualidade | ✅ | Codex |
+| 4.10 | Corrigir DR-001/002/003 e validar patch local; proposta de leitura/RLS preparada | ✅ local | Codex |
+| 4.11 | Auditoria de leitura v3 implementada e verificada; produção pendente | ✅ local | Codex |
+| 4.12 | RLS sem bypass provado em PG16/17; produção depende da Fase 0 | ✅ local | Codex |
+| 4.13 | Atualizar dependências de desenvolvimento/testes e validar compatibilidade | ⏳ | — |
+| 4.14 | Proteger scripts demo/seed e atestar role, backups/restauração e publicação | ⏳ | — |
+| 4.15 | Consolidar proposta v3 com ajustes da revisão de leitura/RLS | ✅ documento | Codex |
 
 ---
 

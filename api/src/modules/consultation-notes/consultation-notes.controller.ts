@@ -1,3 +1,4 @@
+import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Controller,
   Post,
@@ -24,6 +25,7 @@ import { AuthenticatedRequest } from '../../common/types/auth-user';
 export class ConsultationNotesController {
   constructor(private readonly service: ConsultationNotesService) {}
 
+  @ClinicalResponse({ domain: 'CONSULTATION_NOTE', shape: 'resource' })
   @Post()
   create(
     @Request() request: AuthenticatedRequest,
@@ -32,6 +34,7 @@ export class ConsultationNotesController {
     return this.service.create(request.user, dto);
   }
 
+  @ClinicalResponse({ domain: 'CONSULTATION_NOTE', shape: 'resource' })
   @Get('client/:clientId')
   findByClient(
     @Request() request: AuthenticatedRequest,
@@ -40,6 +43,7 @@ export class ConsultationNotesController {
     return this.service.findByClient(request.user, clientId);
   }
 
+  @ClinicalResponse({ domain: 'CONSULTATION_NOTE', shape: 'resource' })
   @Patch(':id')
   update(
     @Request() request: AuthenticatedRequest,
@@ -49,6 +53,7 @@ export class ConsultationNotesController {
     return this.service.update(request.user, id, dto);
   }
 
+  @ClinicalResponse({ domain: 'CONSULTATION_NOTE', shape: 'resource' })
   @Delete(':id')
   remove(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.service.remove(request.user, id);
