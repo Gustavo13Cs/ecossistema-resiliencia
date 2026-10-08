@@ -106,4 +106,8 @@
 
 ## Remoção de Histórico de acessos — 2026-10-08
 
-- [ ] Em andamento (Codex): interface/API/coleta/entrega/modelos exclusivos; preservar contexto clínico, RLS, guards e históricos de alterações de outros domínios.
+- [x] Codex: interface/API/coleta/entrega/modelos exclusivos retirados; RLS/guards/contexto e históricos de alterações preservados.
+- [x] Primeira etapa revisada sem achados; PR #25 em rascunho com todos os checks remotos aprovados.
+- [x] Segunda etapa preparada e provada: owner gerenciado, preservação dos dados/RLS e rollback diante de dependência inesperada; 30 suítes/181 E2E PG17, TypeScript/lint aprovados.
+- [x] Revisão sem achados e PR #26 publicado em rascunho; depende da publicação do #25 e aplicação externa da migration.
+- [ ] Produção: primeira etapa live, backup atual restaurado e aprovação explícita da exclusão; aplicar migration18 externamente pelo owner antes de publicar a segunda etapa.

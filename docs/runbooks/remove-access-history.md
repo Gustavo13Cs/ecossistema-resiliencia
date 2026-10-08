@@ -30,7 +30,7 @@ DROP ROLE safemove_audit_delivery;
 COMMIT;
 ```
 
-A exclusão é irreversível e se limita aos metadados dos acessos. Não usar CASCADE/DROP OWNED. Dependências inesperadas, inclusive em outro database, devem abortar e reverter a transação. DROP ROLE exige CREATEROLE e ADMIN OPTION; o criador do papel recebe ADMIN. Conferir autoridade/dependências sem consultar conteúdo clínico.
+A exclusão é irreversível e se limita aos metadados dos acessos. Não usar CASCADE/DROP OWNED. A migration usa BEGIN explícito: erro aborta a transação sem commit, mas o driver não executa ROLLBACK automaticamente. Ao falhar, encerrar a operação e executar ROLLBACK na mesma conexão ou fechá-la antes de recuperar/repetir; não continuar comandos numa transação abortada. Dependências inesperadas, inclusive em outro database, devem abortar e reverter a transação. DROP ROLE exige CREATEROLE e ADMIN OPTION; o criador do papel recebe ADMIN. Conferir autoridade/dependências sem consultar conteúdo clínico.
 
 ## Validação
 
@@ -43,3 +43,5 @@ Segunda etapa comprovada localmente em PostgreSQL 17: upgrade 17→18 sob owner 
 ## Estado operacional
 
 Nenhuma operação de produção foi realizada nesta remoção. Backup atual, dependências reais do cluster e conclusão do rollout continuam pendentes. A recuperação anterior permanece em render-tenant-migration-recovery.md.
+
+PRs preparados: [#25 — remoção da funcionalidade](https://github.com/Gustavo13Cs/ecossistema-resiliencia/pull/25), [#26 — armazenamento](https://github.com/Gustavo13Cs/ecossistema-resiliencia/pull/26). Ambos em rascunho; revisão independente sem achados. O #26 depende da publicação do #25 e da aplicação externa da migration.
