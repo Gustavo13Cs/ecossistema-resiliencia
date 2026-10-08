@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
 import { JobsPrismaService } from '../../infra/database/database-clients';
-import { randomUUID } from 'node:crypto';
 
 export const ALERT_SNAPSHOT_LOCK = 0x534146454d4f5645n;
 const DAY = 86_400_000;
@@ -26,7 +25,6 @@ export class AlertsCronService {
             select: { id: true, professionalId: true },
           });
           const alerts: Prisma.PatientAlertCreateManyInput[] = [];
-          const executionId = randomUUID();
           const fiveDaysAgo = new Date(now.getTime() - 5 * DAY);
           const fourteenDaysAgo = new Date(now.getTime() - 14 * DAY);
           const twentyOneDaysAgo = new Date(now.getTime() - 21 * DAY);
@@ -94,24 +92,6 @@ export class AlertsCronService {
             where: { clientId: { not: null } },
           });
           if (alerts.length) await tx.patientAlert.createMany({ data: alerts });
-          const events = clients.map((client) => ({
-            id: randomUUID(),
-            clientId: client.id,
-            tenantProfessionalId: client.professionalId,
-            actorType: 'SYSTEM' as const,
-            actorProfessionalId: null,
-            sessionId: null,
-            systemTaskId: 'alerts.daily',
-            action: 'READ' as const,
-            domain: 'ALERT' as const,
-            requestId: executionId,
-          }));
-          if (events.length) {
-            await tx.clientReadAuditEvent.createMany({ data: events });
-            await tx.auditDeliveryState.createMany({
-              data: events.map((event) => ({ eventId: event.id })),
-            });
-          }
           return { generated: alerts.length, skipped: false };
         },
         { maxWait: 30_000, timeout: 60_000 },

@@ -1,5 +1,7 @@
 # Operação da auditoria de leitura e RLS por profissional
 
+> Documento histórico. O mantenedor solicitou retirar Histórico de acessos em 2026-10-08; consulte [a remoção vigente](remove-access-history.md). A proteção RLS/contexto continua vigente.
+
 Entrega local da proposta v3 no worktree security-followup. Este roteiro não autoriza deploy, DDL remoto, troca de credenciais ou publicação. A Fase 0 e a aprovação operacional continuam obrigatórias.
 
 ## Comportamento implementado

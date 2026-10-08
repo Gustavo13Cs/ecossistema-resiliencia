@@ -12,16 +12,16 @@ import {
 import { DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
 import { METHOD_METADATA } from '@nestjs/common/constants';
 import { defer, lastValueFrom } from 'rxjs';
-import { AuthenticatedRequest } from '../../common/types/auth-user';
+import { AuthenticatedRequest } from '../types/auth-user';
 import {
   CLINICAL_RESPONSE,
   ClinicalResponsePolicy,
-} from '../../common/decorators/clinical-response.decorator';
-import { ReadAuditService } from './read-audit.service';
+} from '../decorators/clinical-response.decorator';
+import { ClinicalResponseValidator } from './clinical-response.validator';
 import { PrismaService } from '../../infra/database/prisma.service';
 
 @Injectable()
-export class ReadAuditInterceptor
+export class ClinicalContextInterceptor
   implements NestInterceptor, OnApplicationBootstrap
 {
   constructor(
@@ -29,7 +29,7 @@ export class ReadAuditInterceptor
     private readonly reflector: Reflector,
     private readonly discovery: DiscoveryService,
     private readonly scanner: MetadataScanner,
-    private readonly audit: ReadAuditService,
+    private readonly validator: ClinicalResponseValidator,
   ) {}
   onApplicationBootstrap() {
     for (const { instance } of this.discovery.getControllers()) {
@@ -82,16 +82,9 @@ export class ReadAuditInterceptor
           request.user,
           requestId,
           async () => {
-            const before =
-              'exception' in policy
-                ? []
-                : await this.audit.before(
-                    policy,
-                    request.params as Record<string, string>,
-                  );
             const result: unknown = await lastValueFrom<unknown>(next.handle());
             if (!('exception' in policy))
-              await this.audit.record(policy, result, before);
+              await this.validator.validate(policy, result);
             return result;
           },
           'exception' in policy ? undefined : policy.isolation,

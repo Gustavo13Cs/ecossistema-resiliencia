@@ -1,5 +1,5 @@
 import { isolationPort } from './fixtures/client-isolation';
-import { testAdminPrisma, clearTestReadAudits } from './fixtures/test-admin';
+import { testAdminPrisma } from './fixtures/test-admin';
 import {
   CanActivate,
   ExecutionContext,
@@ -93,7 +93,6 @@ describe('Clients tenant isolation and lifecycle (e2e)', () => {
 
   const deleteFixtures = async () => {
     assertSafeTestDatabase();
-    await clearTestReadAudits(prisma, FIXTURE_USER_IDS);
     await prisma.clientAuditEvent.deleteMany({
       where: { professionalId: { in: FIXTURE_USER_IDS } },
     });

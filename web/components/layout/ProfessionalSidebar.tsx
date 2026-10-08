@@ -5,7 +5,6 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   Apple,
-  ShieldCheck,
   BarChart3,
   Calendar,
   CalendarClock,
@@ -31,7 +30,6 @@ import type { AuthUser, ProfessionalRole } from "@/types/auth"
 
 const NAVIGATION_ICONS: Record<string, LucideIcon> = {
   home: LayoutDashboard,
-  audit: ShieldCheck,
   agenda: Calendar,
   clients: Users,
   assessments: ClipboardCheck,

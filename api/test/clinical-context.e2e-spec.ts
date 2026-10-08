@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   INestApplication,
   ValidationPipe,
 } from '@nestjs/common';
@@ -8,6 +9,7 @@ import { Test } from '@nestjs/testing';
 import { ThrottlerStorage } from '@nestjs/throttler';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { ClinicalResponse } from '../src/common/decorators/clinical-response.decorator';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/infra/database/prisma.service';
 import {
@@ -20,6 +22,27 @@ import { AuthSessionService } from '../src/modules/auth/auth-session.service';
 import { isolatedPostgres } from './fixtures/isolated-postgres';
 import { runtimeUrls } from './fixtures/runtime-roles';
 
+@Controller('fixture-response')
+class ClassifiedResponseController {
+  constructor(private readonly prisma: PrismaService) {}
+  @Get('foreign')
+  @ClinicalResponse({ shape: 'resource' })
+  response() {
+    return { clientId: 'foreign-client', notes: 'Synthetic withheld data' };
+  }
+  @Post('invalid')
+  @ClinicalResponse({ shape: 'resource' })
+  async invalid() {
+    await this.prisma.client.create({
+      data: {
+        professionalId: this.prisma.principal.sub,
+        name: 'Synthetic rollback',
+      },
+    });
+    return { clientId: 'foreign-client', notes: 'Synthetic withheld data' };
+  }
+}
+
 @Controller('unclassified')
 class UnclassifiedController {
   @Get() response() {
@@ -27,7 +50,7 @@ class UnclassifiedController {
   }
 }
 
-describe('Read auditing through authenticated HTTP and real tenant role', () => {
+describe('Clinical context through authenticated HTTP and real tenant role', () => {
   let db: Awaited<ReturnType<typeof isolatedPostgres>>;
   let urls: Awaited<ReturnType<typeof runtimeUrls>>;
   let app: INestApplication<App>;
@@ -38,9 +61,9 @@ describe('Read auditing through authenticated HTTP and real tenant role', () => 
     urls = await runtimeUrls(db.pool);
     await db.prisma.user.create({
       data: {
-        id: 'audit-human',
+        id: 'context-human',
         name: 'Synthetic',
-        email: 'audit@synthetic.invalid',
+        email: 'context@synthetic.invalid',
         password: 'unused',
         role: 'NUTRITIONIST',
       },
@@ -48,18 +71,21 @@ describe('Read auditing through authenticated HTTP and real tenant role', () => 
     await db.prisma.client.createMany({
       data: [
         {
-          id: 'audit-client-a',
+          id: 'context-client-a',
           name: 'Synthetic A',
-          professionalId: 'audit-human',
+          professionalId: 'context-human',
         },
         {
-          id: 'audit-client-b',
+          id: 'context-client-b',
           name: 'Synthetic B',
-          professionalId: 'audit-human',
+          professionalId: 'context-human',
         },
       ],
     });
-    const module = await Test.createTestingModule({ imports: [AppModule] })
+    const module = await Test.createTestingModule({
+      imports: [AppModule],
+      controllers: [ClassifiedResponseController],
+    })
       .overrideProvider(ThrottlerStorage)
       .useValue({
         increment: () =>
@@ -82,7 +108,7 @@ describe('Read auditing through authenticated HTTP and real tenant role', () => 
     );
     await app.init();
     const user = await db.prisma.user.findUniqueOrThrow({
-      where: { id: 'audit-human' },
+      where: { id: 'context-human' },
     });
     token = (await module.get(AuthSessionService).create(user)).access_token;
   });
@@ -97,62 +123,67 @@ describe('Read auditing through authenticated HTTP and real tenant role', () => 
     urls?.restore();
     await db?.close();
   });
-  it('records every returned Client once with the validated session and no content', async () => {
-    const response = await request(app.getHttpServer())
-      .get('/clients')
-      .set('Authorization', 'Bearer ' + token)
-      .expect(200);
-    expect(response.body).toHaveLength(2);
-    const rows = (
-      await db.pool.query<Record<string, unknown>>(
-        'SELECT * FROM client_read_audit_events ORDER BY "clientId"',
+  it('serves owned Clients without any dependency on read-history persistence', async () => {
+    const table = (
+      await db.pool.query<{ name: string | null }>(
+        "SELECT to_regclass('public.client_read_audit_events')::text AS name",
       )
-    ).rows;
-    expect(rows).toHaveLength(2);
-    expect(rows.map((r) => r.clientId)).toEqual([
-      'audit-client-a',
-      'audit-client-b',
-    ]);
-    expect(rows[0]).toMatchObject({
-      actorType: 'PROFESSIONAL',
-      tenantProfessionalId: 'audit-human',
-      actorProfessionalId: 'audit-human',
-      action: 'LIST',
-      domain: 'CLIENT',
-    });
-    expect(rows[0].sessionId).toBeTruthy();
-    expect(rows[0]).not.toHaveProperty('name');
-    expect(
-      (
-        await db.pool.query<Record<string, unknown>>(
-          'SELECT count(*)::int AS count FROM audit_delivery_states',
-        )
-      ).rows[0].count,
-    ).toBe(2);
-  });
-  it('blocks clinical content and rolls back a mutation when audit persistence fails', async () => {
-    await db.pool
-      .query(`CREATE FUNCTION reject_fixture_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic failure'; END $$;
-   CREATE TRIGGER reject_fixture_audit BEFORE INSERT ON client_read_audit_events FOR EACH ROW EXECUTE FUNCTION reject_fixture_audit();`);
+    ).rows[0].name;
+    if (table)
+      await db.pool.query(`
+      CREATE FUNCTION reject_fixture_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic failure'; END $$;
+      CREATE TRIGGER reject_fixture_audit BEFORE INSERT ON client_read_audit_events FOR EACH ROW EXECUTE FUNCTION reject_fixture_audit();
+    `);
     try {
       const response = await request(app.getHttpServer())
         .post('/clients')
         .set('Authorization', 'Bearer ' + token)
-        .send({ name: 'Must roll back' })
-        .expect(500);
-      expect(JSON.stringify(response.body)).not.toContain('Must roll back');
+        .send({ name: 'Synthetic independent Client' })
+        .expect(201);
+      expect(response.body as unknown).toMatchObject({
+        professionalId: 'context-human',
+      });
       expect(
-        await db.prisma.client.count({ where: { name: 'Must roll back' } }),
-      ).toBe(0);
+        await db.prisma.client.count({
+          where: { name: 'Synthetic independent Client' },
+        }),
+      ).toBe(1);
+      await request(app.getHttpServer())
+        .get('/clients')
+        .set('Authorization', 'Bearer ' + token)
+        .expect(200);
     } finally {
-      await db.pool.query<Record<string, unknown>>(
-        'DROP TRIGGER reject_fixture_audit ON client_read_audit_events; DROP FUNCTION reject_fixture_audit()',
-      );
+      if (table)
+        await db.pool.query(
+          'DROP TRIGGER reject_fixture_audit ON client_read_audit_events; DROP FUNCTION reject_fixture_audit()',
+        );
     }
+  });
+  it('no longer exposes the removed history endpoint', async () => {
+    await request(app.getHttpServer())
+      .get('/read-audit')
+      .set('Authorization', 'Bearer ' + token)
+      .expect(404);
+  });
+  it('withholds unauthorized response content and rolls back its mutation', async () => {
+    const read = await request(app.getHttpServer())
+      .get('/fixture-response/foreign')
+      .set('Authorization', 'Bearer ' + token)
+      .expect(500);
+    const write = await request(app.getHttpServer())
+      .post('/fixture-response/invalid')
+      .set('Authorization', 'Bearer ' + token)
+      .expect(500);
+    expect(JSON.stringify([read.body, write.body])).not.toContain(
+      'Synthetic withheld data',
+    );
+    expect(
+      await db.prisma.client.count({ where: { name: 'Synthetic rollback' } }),
+    ).toBe(0);
   });
   it('keeps nested helpers and concurrent principals on the same isolated transaction', async () => {
     const principal = {
-      sub: 'audit-human',
+      sub: 'context-human',
       role: 'NUTRITIONIST' as const,
       sessionId: 'synthetic-validated-session',
     };
@@ -191,7 +222,7 @@ describe('Read auditing through authenticated HTTP and real tenant role', () => 
   it('keeps shared manual Food immutable when only another tenant references it', async () => {
     await db.prisma.user.create({
       data: {
-        id: 'audit-other',
+        id: 'context-other',
         name: 'Other synthetic',
         email: 'other@synthetic.invalid',
         password: 'unused',
@@ -200,7 +231,7 @@ describe('Read auditing through authenticated HTTP and real tenant role', () => 
     });
     await db.prisma.food.create({
       data: {
-        id: 'audit-shared-food',
+        id: 'context-shared-food',
         name: 'Shared synthetic',
         kcal: 100,
         protein: 10,
@@ -210,11 +241,11 @@ describe('Read auditing through authenticated HTTP and real tenant role', () => 
     });
     await db.prisma.recipe.create({
       data: {
-        id: 'audit-other-recipe',
-        professionalId: 'audit-other',
+        id: 'context-other-recipe',
+        professionalId: 'context-other',
         versions: {
           create: {
-            id: 'audit-other-version',
+            id: 'context-other-version',
             version: 1,
             name: 'Other synthetic recipe',
             category: 'OTHER',
@@ -229,7 +260,7 @@ describe('Read auditing through authenticated HTTP and real tenant role', () => 
             iron: 0,
             ingredients: {
               create: {
-                foodId: 'audit-shared-food',
+                foodId: 'context-shared-food',
                 quantity: 100,
                 measure: 'g',
               },
@@ -240,73 +271,24 @@ describe('Read auditing through authenticated HTTP and real tenant role', () => 
     });
     await expect(
       clinical.runAsProfessional(
-        { sub: 'audit-human', role: 'NUTRITIONIST', sessionId: 'fixture' },
+        { sub: 'context-human', role: 'NUTRITIONIST', sessionId: 'fixture' },
         'catalog-check',
-        () => app.get(FoodsService).update('audit-shared-food', { kcal: 999 }),
+        () =>
+          app.get(FoodsService).update('context-shared-food', { kcal: 999 }),
       ),
     ).rejects.toThrow('já está em uso');
     await request(app.getHttpServer())
-      .put('/foods/audit-shared-food')
+      .put('/foods/context-shared-food')
       .set('Authorization', 'Bearer ' + token)
       .send({ kcal: 999 })
       .expect(409);
     expect(
       (
         await db.prisma.food.findUniqueOrThrow({
-          where: { id: 'audit-shared-food' },
+          where: { id: 'context-shared-food' },
         })
       ).kcal,
     ).toBe(100);
-  });
-  it('paginates only the authenticated trail and audits the page without recursion', async () => {
-    const page = await request(app.getHttpServer())
-      .get('/read-audit?limit=1')
-      .set('Authorization', 'Bearer ' + token)
-      .expect(200);
-    const pageBody = page.body as {
-      items: Array<{ id: string; tenantProfessionalId: string }>;
-      nextCursor: string;
-    };
-    expect(pageBody.items).toHaveLength(1);
-    expect(pageBody.nextCursor).toBeTruthy();
-    expect(pageBody.items[0].tenantProfessionalId).toBe('audit-human');
-    const next = await request(app.getHttpServer())
-      .get('/read-audit')
-      .query({ limit: 1, cursor: pageBody.nextCursor })
-      .set('Authorization', 'Bearer ' + token)
-      .expect(200);
-    const nextBody = next.body as { items: Array<{ id: string }> };
-    expect(nextBody.items).toHaveLength(1);
-    expect(nextBody.items[0].id).not.toBe(pageBody.items[0].id);
-    expect(
-      await db.prisma.clientReadAuditEvent.count({
-        where: { domain: 'AUDIT', tenantProfessionalId: 'audit-human' },
-      }),
-    ).toBe(2);
-    await request(app.getHttpServer())
-      .get('/read-audit?limit=101')
-      .set('Authorization', 'Bearer ' + token)
-      .expect(400);
-    await request(app.getHttpServer())
-      .get('/read-audit?cursor=00000000-0000-4000-8000-000000000099')
-      .set('Authorization', 'Bearer ' + token)
-      .expect(404);
-  });
-
-  it('records a complete overview under its own audit domain', async () => {
-    const result = await request(app.getHttpServer())
-      .get('/clients/audit-client-a/overview')
-      .set('Authorization', 'Bearer ' + token)
-      .expect(200);
-    expect(
-      await db.prisma.clientReadAuditEvent.count({
-        where: {
-          requestId: result.headers['x-request-id'],
-          clientId: 'audit-client-a',
-          domain: 'OVERVIEW',
-        },
-      }),
-    ).toBe(1);
   });
   it('creates a Client-first diet for an owned Client already linked to a legacy patient', async () => {
     const clientId = '82000000-0000-4000-8000-000000000001';
@@ -322,7 +304,7 @@ describe('Read auditing through authenticated HTTP and real tenant role', () => 
     await db.prisma.professionalPatientLink.create({
       data: {
         id: clientId,
-        professionalId: 'audit-human',
+        professionalId: 'context-human',
         patientId: 'http-legacy-patient',
       },
     });
@@ -330,7 +312,7 @@ describe('Read auditing through authenticated HTTP and real tenant role', () => 
       data: {
         id: clientId,
         name: 'Synthetic migrated Client',
-        professionalId: 'audit-human',
+        professionalId: 'context-human',
       },
     });
     const response = await request(app.getHttpServer())
@@ -350,12 +332,12 @@ describe('Read auditing through authenticated HTTP and real tenant role', () => 
     expect(response.body as unknown).toMatchObject({
       clientId,
       userId: null,
-      creatorId: 'audit-human',
+      creatorId: 'context-human',
     });
   });
   it('invalidates credentials through the restricted authentication connection', async () => {
     const users = app.get(UsersService);
-    await users.invalidateAuthentication('audit-human');
+    await users.invalidateAuthentication('context-human');
     await request(app.getHttpServer())
       .get('/clients')
       .set('Authorization', 'Bearer ' + token)

@@ -19,8 +19,6 @@ describe('Atomic alert calculation', () => {
         findFirst: jest.fn().mockResolvedValue(null),
         findMany: jest.fn().mockResolvedValue([]),
       },
-      clientReadAuditEvent: { createMany: jest.fn() },
-      auditDeliveryState: { createMany: jest.fn() },
       patientAlert: { deleteMany: jest.fn(), createMany: jest.fn() },
     };
     const prisma = {

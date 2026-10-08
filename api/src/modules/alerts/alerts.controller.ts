@@ -12,7 +12,7 @@ import { AuthenticatedRequest } from '../../common/types/auth-user';
 export class AlertsController {
   constructor(private readonly prisma: PrismaService) {}
 
-  @ClinicalResponse({ domain: 'ALERT', shape: 'resource' })
+  @ClinicalResponse({ shape: 'resource' })
   @Get('dashboard')
   @Header('Cache-Control', 'no-store')
   getProfessionalAlerts(@Request() req: AuthenticatedRequest) {

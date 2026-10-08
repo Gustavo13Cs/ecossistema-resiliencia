@@ -23,7 +23,7 @@ import { AuthenticatedRequest } from '../../common/types/auth-user';
 export class PhysioAssessmentsController {
   constructor(private readonly service: PhysioAssessmentsService) {}
 
-  @ClinicalResponse({ domain: 'PHYSIO_ASSESSMENT', shape: 'resource' })
+  @ClinicalResponse({ shape: 'resource' })
   @Post()
   create(
     @Request() request: AuthenticatedRequest,
@@ -32,13 +32,13 @@ export class PhysioAssessmentsController {
     return this.service.create(request.user, dto);
   }
 
-  @ClinicalResponse({ domain: 'PHYSIO_ASSESSMENT', shape: 'resource' })
+  @ClinicalResponse({ shape: 'resource' })
   @Get()
   findAll(@Request() request: AuthenticatedRequest) {
     return this.service.findAllByProfessional(request.user);
   }
 
-  @ClinicalResponse({ domain: 'PHYSIO_ASSESSMENT', shape: 'resource' })
+  @ClinicalResponse({ shape: 'resource' })
   @Get('client/:clientId')
   findByClient(
     @Request() request: AuthenticatedRequest,
@@ -47,7 +47,7 @@ export class PhysioAssessmentsController {
     return this.service.findByClient(request.user, clientId);
   }
 
-  @ClinicalResponse({ domain: 'PHYSIO_ASSESSMENT', shape: 'resource' })
+  @ClinicalResponse({ shape: 'resource' })
   @Delete(':id')
   remove(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.service.remove(request.user, id);

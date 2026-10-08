@@ -22,7 +22,7 @@ import { AuthenticatedRequest } from '../../common/types/auth-user';
 export class AnamnesesController {
   constructor(private readonly anamnesesService: AnamnesesService) {}
 
-  @ClinicalResponse({ domain: 'ANAMNESIS', shape: 'resource' })
+  @ClinicalResponse({ shape: 'resource' })
   @Post()
   create(
     @Request() request: AuthenticatedRequest,
@@ -31,7 +31,7 @@ export class AnamnesesController {
     return this.anamnesesService.create(request.user, createDto);
   }
 
-  @ClinicalResponse({ domain: 'ANAMNESIS', shape: 'resource' })
+  @ClinicalResponse({ shape: 'resource' })
   @Get('client/:clientId')
   findByClient(
     @Request() request: AuthenticatedRequest,

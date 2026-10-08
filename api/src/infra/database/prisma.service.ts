@@ -134,12 +134,6 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       },
     );
   }
-  get clientReadAuditEvent() {
-    return this.current().tx.clientReadAuditEvent;
-  }
-  get auditDeliveryState() {
-    return this.current().tx.auditDeliveryState;
-  }
   get user() {
     return this.current().tx.user;
   }

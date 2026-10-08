@@ -1,5 +1,7 @@
 # Auditoria de leitura e prova local de RLS
 
+> Documento histórico. O mantenedor solicitou retirar Histórico de acessos em 2026-10-08; consulte [a remoção vigente](../../runbooks/remove-access-history.md). A proteção RLS/contexto continua vigente.
+
 > Execute nesta conversa com superpowers:executing-plans. Aprovação local explícita do mantenedor em 2026-10-05, reiterada em 2026-10-06.
 
 **Spec:** proposta v3, hash 8d97c7c0ab883ac72c88bff892c9b88dcca2293d9b454fb2c29f3befc2653ea1, no diretório persistente codex-security/hardening.

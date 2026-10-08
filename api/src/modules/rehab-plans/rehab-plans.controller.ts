@@ -26,7 +26,7 @@ import { AuthenticatedRequest } from '../../common/types/auth-user';
 export class RehabPlansController {
   constructor(private readonly rehabPlansService: RehabPlansService) {}
 
-  @ClinicalResponse({ domain: 'REHAB', shape: 'resource' })
+  @ClinicalResponse({ shape: 'resource' })
   @Post()
   create(
     @Request() request: AuthenticatedRequest,
@@ -36,13 +36,13 @@ export class RehabPlansController {
   }
 
   // Lista planos de reabilitação criados pelo profissional logado
-  @ClinicalResponse({ domain: 'REHAB', shape: 'resource' })
+  @ClinicalResponse({ shape: 'resource' })
   @Get()
   findAll(@Request() request: AuthenticatedRequest) {
     return this.rehabPlansService.findAllByProfessional(request.user);
   }
 
-  @ClinicalResponse({ domain: 'REHAB', shape: 'resource' })
+  @ClinicalResponse({ shape: 'resource' })
   @Get('client/:clientId/active')
   findActive(
     @Request() request: AuthenticatedRequest,
@@ -52,7 +52,7 @@ export class RehabPlansController {
   }
 
   // Só o criador do plano de reabilitação pode deletar
-  @ClinicalResponse({ domain: 'REHAB', shape: 'resource' })
+  @ClinicalResponse({ shape: 'resource' })
   @Delete(':id')
   remove(@Request() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.rehabPlansService.remove(request.user, id);
@@ -60,10 +60,7 @@ export class RehabPlansController {
 
   // Salvar um plano de reabilitação existente como template reutilizável
   @ClinicalResponse({
-    domain: 'REHAB',
     shape: 'ack',
-    lookup: 'rehabPlan',
-    parameter: 'id',
   })
   @Patch(':id/save-as-template')
   saveAsTemplate(
@@ -74,7 +71,7 @@ export class RehabPlansController {
   }
 
   // Listar todos os templates do fisioterapeuta logado (com sessões e exercícios para pré-preencher)
-  @ClinicalResponse({ domain: 'REHAB', shape: 'resource' })
+  @ClinicalResponse({ shape: 'resource' })
   @Get('templates')
   listTemplates(@Request() request: AuthenticatedRequest) {
     return this.rehabPlansService.listTemplates(request.user);

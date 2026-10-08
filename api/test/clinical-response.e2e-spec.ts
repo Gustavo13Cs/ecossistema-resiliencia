@@ -1,10 +1,9 @@
-import { performance } from 'node:perf_hooks';
 import { PrismaService } from '../src/infra/database/prisma.service';
-import { ReadAuditService } from '../src/modules/read-audit/read-audit.service';
+import { ClinicalResponseValidator } from '../src/common/clinical-context/clinical-response.validator';
 import { isolatedPostgres } from './fixtures/isolated-postgres';
 import { runtimeUrls } from './fixtures/runtime-roles';
 
-describe('Local audit batch and bounded transaction proof', () => {
+describe('Clinical response limits and bounded transaction proof', () => {
   let db: Awaited<ReturnType<typeof isolatedPostgres>>;
   let urls: Awaited<ReturnType<typeof runtimeUrls>>;
   let clinical: PrismaService;
@@ -40,59 +39,31 @@ describe('Local audit batch and bounded transaction proof', () => {
     role: 'NUTRITIONIST' as const,
     sessionId: 'validated-fixture',
   };
-  it('records all 500 returned Clients in batches and commits under concurrent principals', async () => {
-    const audit = new ReadAuditService(clinical);
-    const samples: number[] = [];
-    const request = async (id: string) => {
-      const start = performance.now();
-      await clinical.runAsProfessional(principal, id, async () => {
-        const result = await clinical.client.findMany({ select: { id: true } });
-        await audit.record({ domain: 'CLIENT', shape: 'client' }, result, []);
-      });
-      samples.push(performance.now() - start);
-    };
-    for (let i = 0; i < 4; i++) await request('sequential-' + i);
-    await Promise.all(
-      Array.from({ length: 4 }, (_, i) => request('concurrent-' + i)),
-    );
-    expect(await db.prisma.clientReadAuditEvent.count()).toBe(4000);
-    expect(await db.prisma.auditDeliveryState.count()).toBe(4000);
-    samples.sort((a, b) => a - b);
-    const version = (
-      await db.pool.query<{ server_version: string }>('SHOW server_version')
-    ).rows[0].server_version;
-    console.info(
-      JSON.stringify({
-        localBenchmark: true,
-        postgres: version,
-        clientsPerRequest: 500,
-        requests: 8,
-        concurrency: 4,
-        medianMs: Math.round(samples[4]),
-        maxMs: Math.round(samples[7]),
-      }),
-    );
-    const plan = await db.pool.query<Record<string, unknown>>(
-      `EXPLAIN (ANALYZE,BUFFERS,FORMAT JSON) SELECT id FROM clients WHERE "professionalId"='batch-owner'`,
-    );
-    expect(plan.rows).toHaveLength(1);
+  it('validates an owned response and rejects a foreign Client', async () => {
+    const validator = new ClinicalResponseValidator(clinical);
+    await clinical.runAsProfessional(principal, 'owned-response', async () => {
+      const result = await clinical.client.findMany({ select: { id: true } });
+      await validator.validate({ shape: 'client' }, result);
+    });
+    await expect(
+      clinical.runAsProfessional(principal, 'foreign-response', () =>
+        validator.validate(
+          { shape: 'resource' },
+          { clientId: 'foreign-client' },
+        ),
+      ),
+    ).rejects.toThrow('Unauthorized Client in prepared response');
   });
-  it('rejects an over-wide response before recording a partial trail', async () => {
-    const audit = new ReadAuditService(clinical);
+  it('rejects an over-wide response before releasing clinical data', async () => {
+    const validator = new ClinicalResponseValidator(clinical);
     await expect(
       clinical.runAsProfessional(principal, 'too-wide', () =>
-        audit.record(
-          { domain: 'CLIENT', shape: 'client' },
+        validator.validate(
+          { shape: 'client' },
           Array.from({ length: 1001 }, (_, i) => ({ id: 'batch-' + i })),
-          [],
         ),
       ),
     ).rejects.toThrow('Consulta muito ampla');
-    expect(
-      await db.prisma.clientReadAuditEvent.count({
-        where: { requestId: 'too-wide' },
-      }),
-    ).toBe(0);
   });
   it('rolls back a timed-out transaction and closes the contextual delegates', async () => {
     const before = process.env.CLINICAL_TRANSACTION_TIMEOUT_MS;

@@ -103,6 +103,18 @@ describe("AppShell", () => {
       expect(
         within(primaryNavigation).getByRole("link", { name: clientLabel }),
       ).toHaveAttribute("href", "/clientes")
+      expect(
+        within(primaryNavigation).queryByRole("link", { name: "Histórico de acessos" }),
+      ).not.toBeInTheDocument()
+      expect(
+        within(primaryNavigation).getByRole("link", { name: "Visão geral" }),
+      ).toHaveAttribute("aria-current", "page")
+      expect(
+        within(primaryNavigation).getByRole("link", { name: "Agenda" }),
+      ).toHaveAttribute("href", "/agenda")
+      expect(
+        within(primaryNavigation).getByRole("link", { name: "Avaliações" }),
+      ).toHaveAttribute("href", "/avaliacoes")
 
       ownLinks.forEach((label) => {
         expect(within(primaryNavigation).getByRole("link", { name: label })).toBeInTheDocument()
@@ -128,6 +140,18 @@ describe("AppShell", () => {
       expect(
         within(mobileNavigation).getByRole("link", { name: clientLabel }),
       ).toHaveAttribute("href", "/clientes")
+      expect(
+        within(mobileNavigation).queryByRole("link", { name: "Histórico de acessos" }),
+      ).not.toBeInTheDocument()
+      expect(
+        within(mobileNavigation).getByRole("link", { name: "Visão geral" }),
+      ).toHaveAttribute("aria-current", "page")
+      expect(
+        within(mobileNavigation).getByRole("link", { name: "Agenda" }),
+      ).toHaveAttribute("href", "/agenda")
+      expect(
+        within(mobileNavigation).getByRole("link", { name: "Avaliações" }),
+      ).toHaveAttribute("href", "/avaliacoes")
 
       ownLinks.forEach((label) => {
         expect(within(mobileNavigation).getByRole("link", { name: label })).toBeInTheDocument()

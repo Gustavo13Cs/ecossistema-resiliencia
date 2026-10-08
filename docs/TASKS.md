@@ -103,3 +103,7 @@
 - [x] Plano B: persistência server-only, impressão escapada e CSP — concluído (Codex); jornada real e gate de HTML dinâmico aprovados.
 - [x] Plano C: sessões revogáveis e dependências — concluído (Codex); 11 testes HTTP reais e jornada Cypress aprovados.
 - [x] Plano D: operação, índices e gates de qualidade — concluído no worktree (Codex). Evidência e limites: [verificação final](runbooks/security-remediation-verification.md). Sem publicação ou migrations em produção.
+
+## Remoção de Histórico de acessos — 2026-10-08
+
+- [ ] Em andamento (Codex): interface/API/coleta/entrega/modelos exclusivos; preservar contexto clínico, RLS, guards e históricos de alterações de outros domínios.

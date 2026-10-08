@@ -19,7 +19,6 @@ export async function runtimeUrls(
     clinical: 'safemove_clinical',
     auth: 'safemove_auth',
     jobs: 'safemove_jobs',
-    delivery: 'safemove_audit_delivery',
   };
   for (const [purpose, group] of Object.entries(groups)) {
     const role = 'safemove_test_' + purpose;
@@ -33,7 +32,6 @@ export async function runtimeUrls(
     CLINICAL_DATABASE_URL: url('clinical'),
     AUTH_DATABASE_URL: url('auth'),
     JOBS_DATABASE_URL: url('jobs'),
-    AUDIT_DELIVERY_DATABASE_URL: url('delivery'),
   };
   const previous = Object.fromEntries(
     Object.keys(values).map((key) => [key, process.env[key]]),

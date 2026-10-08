@@ -14,6 +14,17 @@ describe("owned Client overview access", () => {
 
 describe("professional workspace policy", () => {
   it.each(["NUTRITIONIST", "PERSONAL", "PHYSIO"] as const)(
+    "does not grant %s the removed access history route",
+    (role) => {
+      expect(canAccessProfessionalPath(role, "/auditoria")).toBe(false)
+      expect(canAccessProfessionalPath(role, "/home")).toBe(true)
+      expect(canAccessProfessionalPath(role, "/clientes")).toBe(true)
+      expect(canAccessProfessionalPath(role, "/avaliacoes")).toBe(true)
+      expect(canAccessProfessionalPath(role, "/agenda")).toBe(true)
+    },
+  )
+
+  it.each(["NUTRITIONIST", "PERSONAL", "PHYSIO"] as const)(
     "shares the professional Agenda with %s",
     (role) => {
       expect(getNavigationForRole(role)).toEqual(
