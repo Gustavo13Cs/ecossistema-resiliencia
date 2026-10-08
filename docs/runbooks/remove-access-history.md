@@ -36,9 +36,9 @@ A exclusão é irreversível e se limita aos metadados dos acessos. Não usar CA
 
 RED real: falha induzida no histórico impedia cadastro de Client (500); após separação, retorna 201 e persiste o cadastro sem gravar leitura. Regressões preservadas: resposta não autorizada não é liberada e sua mutação é revertida; endpoint removido 404; sessões, dieta Client-first, catálogo, timeout e classificação obrigatória.
 
-Frontend aprovado: 58 arquivos/391 testes, typecheck/lint/build; /auditoria ausente das rotas e da navegação desktop/móvel para três profissões. API aprovada: 47 suítes/485 unitários, 29 suítes/179 E2E reais no PostgreSQL17, schema validate/generate, lint e build. O aviso TS151002 preexistente do ts-jest não foi silenciado; o build TypeScript passou.
+Frontend aprovado: 58 arquivos/391 testes, typecheck/lint/build; /auditoria ausente das rotas e da navegação desktop/móvel para três profissões. API aprovada: 47 suítes/485 unitários, 29 suítes/179 E2E reais no PostgreSQL 17, schema validate/generate, lint e build. O aviso TS151002 preexistente do ts-jest não foi silenciado; o build TypeScript passou.
 
-Segunda etapa deve provar upgrade 17→18 com owner NOSUPERUSER/CREATEROLE, ausência dos objetos exclusivos, preservação dos dados/históricos/RLS e rollback integral com dependência inesperada do papel.
+Segunda etapa comprovada localmente em PostgreSQL 17: upgrade 17→18 sob owner NOSUPERUSER/NOBYPASSRLS com CREATEROLE e ADMIN OPTION, ausência das tabelas/enums/função/papel exclusivos, 40 tabelas de domínio com RLS, prontuários e histórico de alterações preservados, leitura isolada por dois profissionais e escrita em conta alheia rejeitada. Um grant inesperado em clients fez DROP ROLE falhar e reverteu integralmente as exclusões. Suite completa após a migration: 30 suítes/181 E2E aprovados; TypeScript explícito e lint aprovados. A checagem que proíbe mistura com o antigo papel foi mantida como defesa caso ele seja recriado; ela não grava acessos.
 
 ## Estado operacional
 
