@@ -106,4 +106,9 @@
 
 ## Remoção de Histórico de acessos — 2026-10-08
 
-- [ ] Em andamento (Codex): interface/API/coleta/entrega/modelos exclusivos; preservar contexto clínico, RLS, guards e históricos de alterações de outros domínios.
+- [x] Codex: interface/API/coleta/entrega/modelos exclusivos retirados; RLS/guards/contexto e históricos de alterações preservados.
+- [x] Primeira etapa revisada sem achados; PR #25 integrado em e1b13ddd com CI completo; Render live e Vercel produção READY.
+- [x] Segunda etapa preparada e provada: owner gerenciado, preservação dos dados/RLS e rollback diante de dependência inesperada; 30 suítes/181 E2E PG17, TypeScript/lint aprovados.
+- [x] Revisão sem achados e PR #26 pronto; rebase sobre main preservou o SQL/teste já revisados.
+- [x] Produção autorizada: primeira etapa live; novo backup cifrado restaurou43 tabelas/21 acessos; migration18 aplicada externamente pelo owner. 18 concluídas/zero falhas,40 tabelas de domínio com RLS e contagens preservadas; objetos exclusivos ausentes.
+- [ ] Publicar segunda etapa após CI completo e confirmar Render live/checker sem migrations pendentes e frontend em produção.

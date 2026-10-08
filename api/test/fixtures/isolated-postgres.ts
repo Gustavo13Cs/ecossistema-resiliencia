@@ -8,7 +8,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { assertIsolationDatabase } from './client-isolation';
 
 export async function isolatedPostgres(
-  options: { beforeTenant?: boolean } = {},
+  options: { beforeTenant?: boolean; beforeHistoryRemoval?: boolean } = {},
 ) {
   assertIsolationDatabase();
   const port = Number(process.env.LOCAL_TEST_PG_PORT ?? '5434');
@@ -36,6 +36,11 @@ export async function isolatedPostgres(
       if (
         options.beforeTenant &&
         migration >= '20261006120000_read_audit_tenant_roles'
+      )
+        continue;
+      if (
+        options.beforeHistoryRemoval &&
+        migration >= '20261008120000_remove_read_access_history'
       )
         continue;
       const path = resolve(migrations, migration, 'migration.sql');
