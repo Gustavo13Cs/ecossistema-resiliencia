@@ -1,5 +1,5 @@
 import { isolationPort } from './fixtures/client-isolation';
-import { testAdminPrisma, clearTestReadAudits } from './fixtures/test-admin';
+import { testAdminPrisma } from './fixtures/test-admin';
 import {
   CanActivate,
   ExecutionContext,
@@ -125,7 +125,6 @@ describe('Recipes HTTP isolation and versioning (e2e)', () => {
 
   const deleteFixtures = async () => {
     assertSafeTestDatabase();
-    await clearTestReadAudits(prisma, FIXTURE_USER_IDS);
     await prisma.$transaction(async (tx) => {
       const recipes = await tx.recipe.findMany({
         where: { professionalId: { in: FIXTURE_USER_IDS } },

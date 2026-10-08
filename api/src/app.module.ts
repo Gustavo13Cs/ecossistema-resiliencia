@@ -5,7 +5,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 
-import { ReadAuditModule } from './modules/read-audit/read-audit.module';
+import { ClinicalContextModule } from './common/clinical-context/clinical-context.module';
 import { DatabaseModule } from './infra/database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -40,7 +40,7 @@ export const GLOBAL_JWT_AUTH_GUARD = 'GLOBAL_JWT_AUTH_GUARD';
     ]),
     ScheduleModule.forRoot(),
     DatabaseModule,
-    ReadAuditModule,
+    ClinicalContextModule,
     AuthModule,
     UsersModule,
     WorkoutsModule,

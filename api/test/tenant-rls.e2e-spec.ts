@@ -352,59 +352,6 @@ describe('Tenant SQL matrix through a non-owner login', () => {
       ),
     ).rejects.toMatchObject({ code: '42501' });
   });
-  const insertAudit =
-    "INSERT INTO client_read_audit_events(id,\"tenantProfessionalId\",\"clientId\",\"actorType\",\"actorProfessionalId\",\"sessionId\",\"requestId\",action,domain) VALUES($1,'tenant-a','client-a','PROFESSIONAL','tenant-a',$2,'valid-request','READ','CLIENT')";
-  it('binds human trail to validated request/session and leaves initial outbox state', async () => {
-    await expect(
-      scoped('tenant-a', (c) =>
-        c.query<Record<string, unknown>>(insertAudit, [
-          'forged',
-          'wrong-session',
-        ]),
-      ),
-    ).rejects.toMatchObject({ code: '42501' });
-    await scoped('tenant-a', async (c) => {
-      await c.query<Record<string, unknown>>(insertAudit, [
-        'valid-audit',
-        'valid-session',
-      ]);
-      await c.query<Record<string, unknown>>(
-        'INSERT INTO audit_delivery_states("eventId") VALUES(\'valid-audit\')',
-      );
-    });
-    expect(
-      (
-        await scoped('tenant-b', (c) =>
-          c.query<Record<string, unknown>>(
-            'SELECT id FROM client_read_audit_events',
-          ),
-        )
-      ).rows,
-    ).toEqual([]);
-    await expect(
-      scoped('tenant-a', (c) =>
-        c.query<Record<string, unknown>>(
-          'INSERT INTO audit_delivery_states("eventId",attempts,"deliveredAt") VALUES(\'valid-audit\',3,now())',
-        ),
-      ),
-    ).rejects.toMatchObject({ code: '42501' });
-  });
-  it.each([
-    "UPDATE client_read_audit_events SET domain='AUDIT'",
-    'DELETE FROM client_read_audit_events',
-    'TRUNCATE client_read_audit_events',
-  ])('denies immutable trail mutation: %s', async (sql) => {
-    await expect(
-      scoped('tenant-a', (c) => c.query<Record<string, unknown>>(sql)),
-    ).rejects.toMatchObject({ code: '42501' });
-  });
-  it('rejects a SYSTEM actor with no task even when inserted by the fixture owner', async () => {
-    await expect(
-      db.pool.query<Record<string, unknown>>(
-        "INSERT INTO client_read_audit_events(id,\"tenantProfessionalId\",\"clientId\",\"actorType\",\"requestId\",action,domain) VALUES('invalid-system','tenant-a','client-a','SYSTEM','invalid-system','READ','ALERT')",
-      ),
-    ).rejects.toMatchObject({ code: '23514' });
-  });
   it('denies clinical credentials and sensitive writes', async () => {
     await expect(
       scoped('tenant-a', (c) =>

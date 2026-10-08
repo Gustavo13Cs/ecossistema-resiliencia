@@ -29,7 +29,6 @@ export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
   @ClinicalResponse({
-    domain: 'APPOINTMENT',
     shape: 'resource',
     isolation: 'Serializable',
   })
@@ -42,7 +41,6 @@ export class AppointmentsController {
   }
 
   @ClinicalResponse({
-    domain: 'APPOINTMENT',
     shape: 'resource',
     isolation: 'Serializable',
   })
@@ -55,7 +53,6 @@ export class AppointmentsController {
   }
 
   @ClinicalResponse({
-    domain: 'APPOINTMENT',
     shape: 'resource',
     isolation: 'Serializable',
   })
@@ -68,7 +65,6 @@ export class AppointmentsController {
   }
 
   @ClinicalResponse({
-    domain: 'APPOINTMENT',
     shape: 'resource',
     isolation: 'Serializable',
   })
@@ -82,7 +78,6 @@ export class AppointmentsController {
   }
 
   @ClinicalResponse({
-    domain: 'APPOINTMENT',
     shape: 'resource',
     isolation: 'Serializable',
   })
@@ -96,7 +91,6 @@ export class AppointmentsController {
   }
 
   @ClinicalResponse({
-    domain: 'APPOINTMENT',
     shape: 'resource',
     isolation: 'Serializable',
   })
@@ -110,7 +104,6 @@ export class AppointmentsController {
   }
 
   @ClinicalResponse({
-    domain: 'APPOINTMENT',
     shape: 'resource',
     isolation: 'Serializable',
   })
@@ -124,7 +117,6 @@ export class AppointmentsController {
   }
 
   @ClinicalResponse({
-    domain: 'APPOINTMENT',
     shape: 'resource',
     isolation: 'Serializable',
   })

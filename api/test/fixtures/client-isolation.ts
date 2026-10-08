@@ -1,4 +1,3 @@
-import { clearTestReadAudits } from './test-admin';
 import { AuthUser } from '../../src/common/types/auth-user';
 import { PrismaService } from '../../src/infra/database/prisma.service';
 
@@ -54,7 +53,6 @@ export async function clearIsolationFixtures(prisma: PrismaService) {
   const professionalIds = Object.values(isolationFixtures).flatMap(
     ({ a, b }) => [a.sub, b.sub],
   );
-  await clearTestReadAudits(prisma, professionalIds);
   const clientIds = Object.values(isolationFixtures).flatMap(
     ({ clientA, clientB }) => [clientA, clientB],
   );

@@ -38,7 +38,7 @@ Alertas de treino consideram somente Clients ativos de contas PERSONAL, com trac
 
 ## Defesa da Data API
 
-O frontend acessa a API NestJS, sem acesso direto aos dados clínicos pelo Supabase. O hardening anterior protegeu 40 tabelas com RLS e policy restritiva `deny_data_api_access`, incluindo `consultation_notes`. A nova migration inclui duas tabelas de auditoria e mantém a Data API sem grants; policies negativas passam a um grupo sem consumidores para permitir o runtime clínico sem bypass. Revogam grants de PUBLIC e, quando existentes, `anon`, `authenticated` e `service_role`. `_prisma_migrations` é metadado do ORM e não integra essas 40 tabelas.
+O frontend acessa a API NestJS, sem acesso direto aos dados clínicos pelo Supabase. As 40 tabelas de domínio conservam RLS e a Data API sem grants. Policies negativas pertencem a safemove_data_api_denied; PUBLIC e anon/authenticated/service_role não recebem acesso clínico. _prisma_migrations contém metadados do ORM.
 
 O histórico de 2026-09-16 registra a Data API de produção desabilitada e o hardening então aplicado. Esta entrega não verificou novamente o ambiente remoto nem aplicou migrations nele. O gate isolado verifica tabelas, sequences, funções e default ACLs sem retornar conteúdo clínico.
 
@@ -67,7 +67,6 @@ Nunca registre dados clínicos, credenciais ou tokens em logs. Nunca retorne has
 | `CLINICAL_DATABASE_URL` | LOGIN exclusivamente safemove_clinical |
 | `AUTH_DATABASE_URL` | LOGIN exclusivamente safemove_auth |
 | `JOBS_DATABASE_URL` | LOGIN exclusivamente safemove_jobs |
-| `AUDIT_DELIVERY_DATABASE_URL` | LOGIN exclusivamente safemove_audit_delivery; worker separado |
 | `CLINICAL_TRANSACTION_MAX_WAIT_MS` | 10000 padrão; inteiro entre 100 e 60000 |
 | `CLINICAL_TRANSACTION_TIMEOUT_MS` | 30000 padrão; inteiro entre 100 e 120000 |
 | `JWT_SECRET` | Assinatura dos access JWTs; segredo |
@@ -90,24 +89,18 @@ A atualização usa DTO concreto e projeção explícita de escalares; corpo HTT
 
 Preferências são lidas pela identidade autenticada, nunca pela identidade arbitrária da query. Compatibilidade legada só aceita a mesma identidade da sessão; quantidade deve ser finita e não negativa. A resposta usa no-store.
 
-## Trilha de leitura e segunda camada no banco
+## Contexto clínico e segunda camada no banco
 
-Implementação local desta branch, aprovada pelo mantenedor: cada resposta clínica classificada grava ClientReadAuditEvent e audit_delivery_states na mesma transação que preparou a resposta. O interceptor aguarda o commit antes de liberar o resultado. Falha de persistência ou de contexto retorna erro genérico, sem conteúdo clínico; não existe fallback em modo sombra. A trilha não guarda nome, conteúdo clínico, IP, user-agent, credenciais ou tokens.
+O mantenedor solicitou retirar Histórico de acessos em 2026-10-08. Esta branch remove interface, endpoint, gravação de leituras e mecanismo de entrega. A retirada das duas tabelas antigas usa uma segunda etapa de publicação: [runbook de remoção](runbooks/remove-access-history.md). Até ela ser aplicada, as tabelas permanecem no banco sem novas gravações pela API.
 
-O principal vem da sessão validada e transporta sessionId internamente. requestId é gerado no servidor. Listas deduplicam Clients e gravam eventos em lotes de 100, com teto de 1000 linhas/Clients; amplitude maior é rejeitada integralmente. Todos os handlers HTTP montados exigem classificação explícita. Perfil, autenticação, saúde, catálogo e recursos privados sem Client têm exceções documentadas; modelos vinculados a Client continuam auditados.
+ClinicalContextInterceptor mantém o contexto por requisição, o principal da sessão validada e os GUCs somente na transação. A resposta aguarda o commit. ClinicalResponseValidator verifica identidade e proprietário dos Clients retornados, com limite de 1000 linhas/Clients. Resposta inválida causa rollback e erro genérico sem conteúdo clínico. requestId é correlação técnica e não persiste histórico de leitura.
 
-PrismaService usa AsyncLocalStorage e TransactionClient; delegates/raw fora do contexto falham, e helpers aninhados reutilizam a conexão. Transações clínicas usam ReadCommitted; agenda declara Serializable. A identidade e os GUCs valem somente na transação. O papel clínico não lê senhas/auth_sessions nem atualiza password/authVersion/role. Auth e cron têm conexões distintas.
+Todos os handlers montados exigem classificação explícita. Auth, health, perfil, catálogo e recursos privados sem Client têm exceções documentadas. PrismaService mantém AsyncLocalStorage/TransactionClient, rejeita delegates/raw sem contexto e reutiliza a conexão nos helpers. Transações clínicas usam ReadCommitted; agenda declara Serializable.
 
-A nova migration habilita RLS nas 42 tabelas de aplicação e atribui políticas/grants mínimos a grupos NOLOGIN separados. Client e recursos clínicos exigem dono/autor; filhos herdam acesso pelo pai; modelos clientless exigem autor e isTemplate, sem userId legado. Registros históricos já vinculados a Client autorizado podem conservar userId; novas dietas gravam userId null. Legado sem Client não recebe fallback. ADMIN não tem bypass.
+As 40 tabelas de domínio mantêm RLS e grants mínimos a grupos NOLOGIN separados. Client/recursos exigem dono/autor; filhos herdam acesso pelo pai; modelos sem Client exigem autor e isTemplate, sem fallback por userId legado. ADMIN não tem bypass. A conexão clínica não lê senha/auth_sessions nem altera password/authVersion/role; auth e cron usam conexões distintas. O cron conserva snapshot atômico de alertas e escopo restrito aos Clients ativos de PERSONAL.
 
-O runtime deve usar LOGINs sem superuser/BYPASSRLS, criação de papéis/bancos, replicação, ownership de tabelas ou mistura dos grupos de privilégios. A inicialização verifica current_user e session_user, flags e memberships/grupos; isso não substitui o inventário da Fase 0 nem a homologação do pooler real. O owner das migrations permanece separado; FORCE RLS é uma decisão operacional pendente.
+O runtime exige LOGINs sem superuser/BYPASSRLS, criação de papéis/bancos, replicação, ownership ou mistura de grupos. A inicialização verifica identidade, flags e memberships. O owner de migrations fica separado; no Render, DIRECT_URL é um checker sem DDL. FORCE RLS permanece decisão operacional; GUCs não defendem contra SQL injection ou comprometimento do servidor.
 
-Food continua compartilhado. A função food_in_use retorna somente um booleano e executa como grupo NOLOGIN sem bypass, com SELECT apenas dos foodIds de referências. O trigger adquire FOR UPDATE antes de revalidar referências, inclusive quando a FK é o único lock do escritor concorrente. Receitas conservam FOR SHARE durante leitura/cálculo do snapshot. O INSERT clínico aceita MANUAL e a fonte interna SAFE_MOVE_TEMPLATE para o fluxo existente; o DTO público permite somente MANUAL. Importação de fontes TACO/TBCA exige papel próprio.
+Food continua compartilhado e protegido: food_in_use retorna booleano sob grupo sem bypass e com SELECT apenas de referências; trigger revalida sob FOR UPDATE e receitas preservam FOR SHARE. DTO público aceita somente MANUAL; importação de fontes oficiais exige papel próprio.
 
-A trilha permite INSERT e SELECT do próprio profissional, sem UPDATE/DELETE/TRUNCATE; triggers reforçam imutabilidade. sessionId não possui FK. Client/dono/ator usam Restrict. O cron restrito registra SYSTEM com alerts.daily e execução identificada, sem ator humano/sessão fictícios. Estado de entrega é separado da trilha e confirmado pelo token da reserva. A cópia usa contrato idempotente por eventId e ocorre depois do commit. O adaptador/destino independente efetivo ainda depende de D3.
-
-A página /auditoria e GET /read-audit exibem somente a trilha do profissional autenticado, com paginação e cache em memória separado por sessão. A consulta também é auditada, sem recursão. Investigação transversal segue D7 e não foi concedida a ADMIN.
-
-Esta entrega não foi aplicada em produção. Antes de publicar, concluir Fase 0, decisões D1–D10 aplicáveis, cópia independente, retenção/expurgo, monitoramento, restauração e homologação do pooler/carga. Os GUCs não são defesa contra SQL injection ou comprometimento do servidor.
-
-O [roteiro operacional de auditoria/RLS](runbooks/read-audit-tenant-rls.md) registra os gates locais aprovados em PG16/17 e as decisões ainda necessárias para implantação.
+Históricos de alterações de clientes e agendamentos permanecem. As decisões específicas de entrega/custódia da trilha de leitura ficam canceladas; backup/restauração, observabilidade técnica, atualização de dependências, carga e homologação do pooler continuam necessários à operação.

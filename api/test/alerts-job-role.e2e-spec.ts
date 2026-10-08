@@ -3,7 +3,7 @@ import { AlertsCronService } from '../src/modules/alerts/alerts.cron.service';
 import { isolatedPostgres } from './fixtures/isolated-postgres';
 import { runtimeUrls } from './fixtures/runtime-roles';
 
-describe('Dedicated alerts job role and SYSTEM audit', () => {
+describe('Dedicated alerts job role', () => {
   let db: Awaited<ReturnType<typeof isolatedPostgres>>;
   let urls: Awaited<ReturnType<typeof runtimeUrls>>;
   let jobs: JobsPrismaService;
@@ -42,21 +42,20 @@ describe('Dedicated alerts job role and SYSTEM audit', () => {
     urls?.restore();
     await db?.close();
   });
-  it('records the real owner and allowed task without a fictitious human or session', async () => {
+  it('generates alerts only for authorized personal Clients', async () => {
     const cron = new AlertsCronService(jobs);
     await cron.generateDailyAlerts();
-    const rows = (await db.pool.query('SELECT * FROM client_read_audit_events'))
-      .rows;
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({
-      actorType: 'SYSTEM',
-      tenantProfessionalId: 'personal-job',
-      clientId: 'job-client',
-      actorProfessionalId: null,
-      sessionId: null,
-      systemTaskId: 'alerts.daily',
-      domain: 'ALERT',
-    });
+    expect(
+      await db.prisma.patientAlert.findMany({
+        select: { clientId: true, professionalId: true, type: true },
+      }),
+    ).toEqual([
+      {
+        clientId: 'job-client',
+        professionalId: 'personal-job',
+        type: 'INACTIVE_5_DAYS',
+      },
+    ]);
     expect(await jobs.client.findMany({ select: { id: true } })).toEqual([
       { id: 'job-client' },
     ]);

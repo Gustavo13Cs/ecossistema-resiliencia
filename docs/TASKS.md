@@ -70,7 +70,7 @@
 | 4.12 | RLS sem bypass provado em PG16/17; produção depende da Fase 0 | ✅ local | Codex |
 | 4.13 | Atualizar dependências de desenvolvimento/testes e validar compatibilidade | ⏳ | — |
 | 4.14 | Proteger scripts demo/seed e atestar role, backups/restauração e publicação | ⏳ | — |
-| 4.16 | Recuperação autorizada: backup restaurado, migration/LOGINs restritos em produção; certificado e deploy em andamento | 🔄 produção | Codex |
+| 4.16 | Recuperação Render concluída: backup restaurado, migration/LOGINs/CA em produção; PR#24 e deploy live; página própria confirmada pelo mantenedor | ✅ deploy | Codex |
 | 4.15 | Consolidar proposta v3 com ajustes da revisão de leitura/RLS | ✅ documento | Codex |
 
 ---
@@ -103,3 +103,7 @@
 - [x] Plano B: persistência server-only, impressão escapada e CSP — concluído (Codex); jornada real e gate de HTML dinâmico aprovados.
 - [x] Plano C: sessões revogáveis e dependências — concluído (Codex); 11 testes HTTP reais e jornada Cypress aprovados.
 - [x] Plano D: operação, índices e gates de qualidade — concluído no worktree (Codex). Evidência e limites: [verificação final](runbooks/security-remediation-verification.md). Sem publicação ou migrations em produção.
+
+## Remoção de Histórico de acessos — 2026-10-08
+
+- [ ] Em andamento (Codex): interface/API/coleta/entrega/modelos exclusivos; preservar contexto clínico, RLS, guards e históricos de alterações de outros domínios.
