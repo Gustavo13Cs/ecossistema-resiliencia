@@ -11,8 +11,10 @@ import {
   Delete,
   Request,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { WorkoutsService } from './workouts.service';
+import { TrainingReadService } from './training-read.service';
 import { CreateWorkoutDto } from './dto/create-workout.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -24,7 +26,25 @@ import { AuthenticatedRequest } from '../../common/types/auth-user';
 @Roles(...DOMAIN_ROLES.training)
 @Controller('workouts')
 export class WorkoutsController {
-  constructor(private readonly workoutsService: WorkoutsService) {}
+  constructor(
+    private readonly workoutsService: WorkoutsService,
+    private readonly trainingReadService: TrainingReadService,
+  ) {}
+
+  @ClinicalResponse({ shape: 'resource-page' })
+  @Get('workspace')
+  getWorkspace(@Request() request: AuthenticatedRequest) {
+    return this.trainingReadService.getWorkspace(request.user);
+  }
+
+  @ClinicalResponse({ shape: 'overview' })
+  @Get('client/:clientId/overview')
+  getClientOverview(
+    @Request() request: AuthenticatedRequest,
+    @Param('clientId', ParseUUIDPipe) clientId: string,
+  ) {
+    return this.trainingReadService.getClientOverview(request.user, clientId);
+  }
 
   @ClinicalResponse({ shape: 'resource' })
   @Post()
@@ -75,5 +95,14 @@ export class WorkoutsController {
   @Get('templates')
   listTemplates(@Request() request: AuthenticatedRequest) {
     return this.workoutsService.listTemplates(request.user);
+  }
+
+  @ClinicalResponse({ shape: 'resource' })
+  @Get(':workoutId')
+  getWorkout(
+    @Request() request: AuthenticatedRequest,
+    @Param('workoutId', ParseUUIDPipe) workoutId: string,
+  ) {
+    return this.trainingReadService.getWorkout(request.user, workoutId);
   }
 }

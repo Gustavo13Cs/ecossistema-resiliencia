@@ -59,7 +59,7 @@ export class WorkoutsService {
     this.assertTrainingProfessional(user);
     return this.prisma.workout.findMany({
       where: { creatorId: user.sub, client: { professionalId: user.sub } },
-      include: { client: { select: { id: true, name: true } } },
+      include: { client: { select: { id: true, name: true, status: true } } },
       orderBy: { createdAt: 'desc' },
     });
   }
