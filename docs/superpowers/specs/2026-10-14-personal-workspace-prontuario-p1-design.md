@@ -3,14 +3,14 @@ tags:
   - safemove
   - personal
   - especificacao
-status: aguardando-revisao-escrita
+status: aprovado
 date: 2026-10-14
 ---
 
 # P1 — Painel de trabalho e prontuário do Personal
 
 **Direção:** roadmap e uso exclusivo pelo Personal aprovados em conversa em 14/10/2026.
-**Estado deste documento:** especificação escrita para revisão; implementação não iniciada.
+**Estado deste documento:** especificação escrita aprovada pelo usuário em 14/10/2026; implementação não iniciada.
 **Referência:** [[docs/planning/2026-10-14-personal-diagnostico-e-roadmap|Diagnóstico e roadmap do Personal]].
 
 ## 1. Resultado esperado
