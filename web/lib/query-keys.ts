@@ -3,6 +3,12 @@ import type { AppointmentStatus } from "@/types/appointment"
 import type { RecipeFilters } from "@/types/recipe"
 
 export const queryKeys = {
+  trainingWorkspace: (sub: string) => ["training-workspace", sub] as const,
+  trainingOverview: (sub: string, clientId: string) => ["training-overview", sub, clientId] as const,
+  workoutsRoot: (sub: string) => ["workouts", sub] as const,
+  workouts: (sub: string) => ["workouts", sub, "list"] as const,
+  workout: (sub: string, clientId: string, workoutId: string) => ["workouts", sub, "client", clientId, "detail", workoutId] as const,
+  activeWorkout: (sub: string, clientId: string) => ["workouts", sub, "client", clientId, "active"] as const,
   centralLabExams: (sessionUserId: string) => ["central-lab-exams", sessionUserId] as const,
   labOrders: (sessionUserId: string) => ["lab-orders", sessionUserId] as const,
   clientGoals: (sessionUserId: string) => ["client-goals", sessionUserId] as const,
