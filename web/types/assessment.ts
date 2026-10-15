@@ -33,3 +33,31 @@ export interface PhysicalAssessment {
 }
 
 export type CreateAssessmentInput = Partial<Record<Exclude<keyof PhysicalAssessment, "id" | "clientId" | "userId" | "date" | "notes" | "createdAt" | "updatedAt">, number>> & { date?: string; notes?: string }
+
+export type PersonalNumericField =
+  | "weight"
+  | "bodyFat"
+  | "waist"
+  | "abdomen"
+  | "hips"
+  | "thorax"
+  | "armLeft"
+  | "armRight"
+  | "thighLeft"
+  | "thighRight"
+  | "calfLeft"
+  | "calfRight"
+  | "skinfoldTriceps"
+  | "skinfoldSubscapular"
+  | "skinfoldChest"
+  | "skinfoldAxillary"
+  | "skinfoldSuprailiac"
+  | "skinfoldAbdominal"
+  | "skinfoldThigh"
+  | "benchPress1RM"
+  | "squat1RM"
+  | "deadlift1RM"
+
+export type PersonalAssessmentValues = Record<PersonalNumericField | "notes", string>
+
+export type AssessmentCreateInput = { clientId: string; notes?: string } & Partial<Record<PersonalNumericField, number>>
