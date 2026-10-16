@@ -61,11 +61,14 @@ const workoutDetailSelect = {
   isTemplate: true,
   client: { select: { id: true, name: true, status: true } },
   splits: {
+    orderBy: [{ position: 'asc' }, { id: 'asc' }],
     select: {
       id: true,
       name: true,
       focus: true,
+      position: true,
       exercises: {
+        orderBy: [{ position: 'asc' }, { id: 'asc' }],
         select: {
           id: true,
           name: true,
@@ -73,6 +76,13 @@ const workoutDetailSelect = {
           reps: true,
           rest: true,
           notes: true,
+          position: true,
+          muscleGroup: true,
+          load: true,
+          effortType: true,
+          effortTarget: true,
+          tempo: true,
+          method: true,
         },
       },
     },

@@ -117,6 +117,7 @@ describe('WorkoutsService Client ownership', () => {
             {
               name: 'A',
               focus: 'Forca',
+              position: 0,
               exercises: {
                 create: [
                   {
@@ -125,6 +126,13 @@ describe('WorkoutsService Client ownership', () => {
                     reps: '10',
                     rest: undefined,
                     notes: undefined,
+                    position: 0,
+                    muscleGroup: undefined,
+                    load: undefined,
+                    effortType: undefined,
+                    effortTarget: undefined,
+                    tempo: undefined,
+                    method: 'STANDARD',
                   },
                 ],
               },
@@ -134,6 +142,92 @@ describe('WorkoutsService Client ownership', () => {
       },
     });
     expect(prisma.workout.create).not.toHaveBeenCalled();
+  });
+
+  it('persists split/exercise positions from array indices and advanced exercise parameters', async () => {
+    await service.create(user, {
+      ...dto,
+      splits: [
+        {
+          name: 'Treino A',
+          focus: 'Inferiores',
+          exercises: [
+            {
+              name: 'Agachamento livre',
+              sets: '4',
+              reps: '6-8',
+              rest: '120s',
+              notes: 'Amplitude total',
+              muscleGroup: 'QUADRICEPS',
+              load: '80 kg',
+              effortType: 'RIR',
+              effortTarget: '2',
+              tempo: '3-1-1-0',
+              method: 'REST_PAUSE',
+            },
+            {
+              name: 'Cadeira extensora',
+              sets: '3',
+              reps: '12-15',
+              muscleGroup: 'QUADRICEPS',
+              method: 'DROP_SET',
+            },
+          ],
+        },
+        {
+          name: 'Treino B',
+          focus: 'Superiores',
+          exercises: [{ name: 'Supino reto', sets: '4', reps: '8-10' }],
+        },
+      ],
+    } as typeof dto);
+
+    const creation: unknown = tx.workout.create.mock.calls[0]?.[0];
+    expect(creation).toMatchObject({
+      data: {
+        splits: {
+          create: [
+            {
+              name: 'Treino A',
+              position: 0,
+              exercises: {
+                create: [
+                  {
+                    name: 'Agachamento livre',
+                    position: 0,
+                    muscleGroup: 'QUADRICEPS',
+                    load: '80 kg',
+                    effortType: 'RIR',
+                    effortTarget: '2',
+                    tempo: '3-1-1-0',
+                    method: 'REST_PAUSE',
+                  },
+                  {
+                    name: 'Cadeira extensora',
+                    position: 1,
+                    muscleGroup: 'QUADRICEPS',
+                    method: 'DROP_SET',
+                  },
+                ],
+              },
+            },
+            {
+              name: 'Treino B',
+              position: 1,
+              exercises: {
+                create: [
+                  {
+                    name: 'Supino reto',
+                    position: 0,
+                    method: 'STANDARD',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    });
   });
 
   it('denies a foreign Client before reading or mutating plans', async () => {

@@ -43,10 +43,22 @@ export interface TrainingClientOverview {
 export type WorkoutDetail = TrainingActiveWorkout &
   Pick<Workout, 'notes' | 'isTemplate'> & {
     client: Pick<Client, 'id' | 'name' | 'status'>;
-    splits: (Pick<WorkoutSplit, 'id' | 'name' | 'focus'> & {
+    splits: (Pick<WorkoutSplit, 'id' | 'name' | 'focus' | 'position'> & {
       exercises: Pick<
         WorkoutExercise,
-        'id' | 'name' | 'sets' | 'reps' | 'rest' | 'notes'
+        | 'id'
+        | 'name'
+        | 'sets'
+        | 'reps'
+        | 'rest'
+        | 'notes'
+        | 'position'
+        | 'muscleGroup'
+        | 'load'
+        | 'effortType'
+        | 'effortTarget'
+        | 'tempo'
+        | 'method'
       >[];
     })[];
   };

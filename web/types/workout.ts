@@ -1,24 +1,160 @@
 import type { ClientStatus } from "@/types/client"
 import type { TrainingActiveWorkout } from "@/types/training"
 
+export type MuscleGroup =
+  | "CHEST"
+  | "BACK"
+  | "SHOULDERS"
+  | "BICEPS"
+  | "TRICEPS"
+  | "FOREARMS"
+  | "CORE"
+  | "QUADRICEPS"
+  | "HAMSTRINGS"
+  | "GLUTES"
+  | "ADDUCTORS"
+  | "CALVES"
+  | "FULL_BODY"
+  | "CARDIO"
+  | "MOBILITY"
+
+export const MUSCLE_GROUP_LABELS: Record<MuscleGroup, string> = {
+  CHEST: "Peitoral",
+  BACK: "Costas",
+  SHOULDERS: "Ombros",
+  BICEPS: "Bíceps",
+  TRICEPS: "Tríceps",
+  FOREARMS: "Antebraço",
+  CORE: "Abdômen / Core",
+  QUADRICEPS: "Quadríceps",
+  HAMSTRINGS: "Posteriores de coxa",
+  GLUTES: "Glúteos",
+  ADDUCTORS: "Adutores",
+  CALVES: "Panturrilhas",
+  FULL_BODY: "Corpo inteiro",
+  CARDIO: "Cardio",
+  MOBILITY: "Mobilidade",
+}
+
+export const MUSCLE_GROUP_OPTIONS = Object.entries(MUSCLE_GROUP_LABELS).map(([value, label]) => ({
+  value: value as MuscleGroup,
+  label,
+}))
+
+export type EffortType = "RIR" | "RPE"
+
+export const EFFORT_TYPE_LABELS: Record<EffortType, string> = {
+  RIR: "RIR (Repetições em reserva)",
+  RPE: "RPE (Percepção de esforço)",
+}
+
+export type TrainingMethod =
+  | "STANDARD"
+  | "DROP_SET"
+  | "REST_PAUSE"
+  | "PYRAMID"
+  | "CLUSTER"
+  | "ISOMETRIC"
+
+export const TRAINING_METHOD_LABELS: Record<TrainingMethod, string> = {
+  STANDARD: "Padrão",
+  DROP_SET: "Drop-set",
+  REST_PAUSE: "Rest-pause",
+  PYRAMID: "Pirâmide",
+  CLUSTER: "Cluster set",
+  ISOMETRIC: "Isometria",
+}
+
+export type ExerciseEquipment =
+  | "BARBELL"
+  | "DUMBBELL"
+  | "MACHINE"
+  | "CABLE"
+  | "SMITH"
+  | "KETTLEBELL"
+  | "BAND"
+  | "BODYWEIGHT"
+  | "OTHER"
+
+export const EXERCISE_EQUIPMENT_LABELS: Record<ExerciseEquipment, string> = {
+  BARBELL: "Barra",
+  DUMBBELL: "Halteres",
+  MACHINE: "Máquina",
+  CABLE: "Polia / Cabo",
+  SMITH: "Smith",
+  KETTLEBELL: "Kettlebell",
+  BAND: "Elástico",
+  BODYWEIGHT: "Peso do corpo",
+  OTHER: "Outro",
+}
+
+export interface ExerciseLibraryItem {
+  id: string
+  name: string
+  muscleGroup: MuscleGroup
+  equipment: ExerciseEquipment | null
+  notes: string | null
+  source: "CATALOG" | "CUSTOM"
+}
+
+export interface CreateCustomExerciseInput {
+  name: string
+  muscleGroup: MuscleGroup
+  equipment?: ExerciseEquipment
+  notes?: string
+}
+
 export interface WorkoutSummary extends Omit<TrainingActiveWorkout, "durationWeeks"> {
   client: { id: string; name: string; status: ClientStatus }
   isTemplate: boolean
 }
 
+export interface WorkoutPrescriptionExercise {
+  id: string
+  name: string
+  sets: string
+  reps: string
+  rest: string | null
+  notes: string | null
+  position?: number
+  muscleGroup?: MuscleGroup | null
+  load?: string | null
+  effortType?: EffortType | null
+  effortTarget?: string | null
+  tempo?: string | null
+  method?: TrainingMethod
+}
+
+export interface WorkoutPrescriptionSplit {
+  id: string
+  name: string
+  focus: string | null
+  position?: number
+  exercises: WorkoutPrescriptionExercise[]
+}
+
 export interface WorkoutPrescription extends TrainingActiveWorkout {
   isTemplate: boolean
   notes: string | null
-  splits: {
-    id: string
-    name: string
-    focus: string | null
-    exercises: { id: string; name: string; sets: string; reps: string; rest: string | null; notes: string | null }[]
-  }[]
+  splits: WorkoutPrescriptionSplit[]
 }
 
 export interface WorkoutDetail extends WorkoutPrescription {
   client: WorkoutSummary["client"]
+}
+
+export interface CreateWorkoutExerciseInput {
+  name: string
+  sets: string
+  reps: string
+  rest?: string
+  notes?: string
+  muscleGroup?: MuscleGroup
+  load?: string
+  effortType?: EffortType
+  effortTarget?: string
+  tempo?: string
+  method?: TrainingMethod
 }
 
 export interface CreateWorkoutInput {
@@ -30,6 +166,6 @@ export interface CreateWorkoutInput {
   splits: {
     name: string
     focus?: string
-    exercises: { name: string; sets: string; reps: string; rest?: string; notes?: string }[]
+    exercises: CreateWorkoutExerciseInput[]
   }[]
 }

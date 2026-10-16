@@ -1,6 +1,4 @@
 import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
-// api/src/modules/workouts/workouts.controller.ts
-
 import {
   Controller,
   Post,
@@ -9,13 +7,17 @@ import {
   Param,
   Patch,
   Delete,
+  Query,
   Request,
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { WorkoutsService } from './workouts.service';
 import { TrainingReadService } from './training-read.service';
+import { ExerciseLibraryService } from './exercise-library.service';
 import { CreateWorkoutDto } from './dto/create-workout.dto';
+import { CreateCustomExerciseDto } from './dto/create-custom-exercise.dto';
+import { ExerciseLibraryQueryDto } from './dto/exercise-library-query.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -29,6 +31,7 @@ export class WorkoutsController {
   constructor(
     private readonly workoutsService: WorkoutsService,
     private readonly trainingReadService: TrainingReadService,
+    private readonly exerciseLibraryService: ExerciseLibraryService,
   ) {}
 
   @ClinicalResponse({ shape: 'resource-page' })
@@ -44,6 +47,33 @@ export class WorkoutsController {
     @Param('clientId', ParseUUIDPipe) clientId: string,
   ) {
     return this.trainingReadService.getClientOverview(request.user, clientId);
+  }
+
+  @ClinicalResponse({ exception: 'catalog' })
+  @Get('exercise-library')
+  listExerciseLibrary(
+    @Request() request: AuthenticatedRequest,
+    @Query() query: ExerciseLibraryQueryDto,
+  ) {
+    return this.exerciseLibraryService.list(request.user, query);
+  }
+
+  @ClinicalResponse({ exception: 'catalog' })
+  @Post('exercise-library')
+  createCustomExercise(
+    @Request() request: AuthenticatedRequest,
+    @Body() dto: CreateCustomExerciseDto,
+  ) {
+    return this.exerciseLibraryService.create(request.user, dto);
+  }
+
+  @ClinicalResponse({ shape: 'ack' })
+  @Delete('exercise-library/:id')
+  removeCustomExercise(
+    @Request() request: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.exerciseLibraryService.remove(request.user, id);
   }
 
   @ClinicalResponse({ shape: 'resource' })

@@ -169,6 +169,43 @@ describe("WorkoutReadView and exact workout route", () => {
     expect(printSpy).toHaveBeenCalledOnce()
   })
 
+  it("renders advanced exercise parameters (load, effort, tempo, method, muscleGroup)", () => {
+    const detail = makeWorkoutDetail({
+      splits: [
+        {
+          id: "s1",
+          name: "Treino A",
+          focus: "Inferiores",
+          position: 0,
+          exercises: [
+            {
+              id: "e1",
+              name: "Agachamento Livre",
+              sets: "4",
+              reps: "6",
+              rest: "120s",
+              notes: "Apoio estável",
+              position: 0,
+              muscleGroup: "QUADRICEPS",
+              load: "100 kg",
+              effortType: "RIR",
+              effortTarget: "2",
+              tempo: "3-0-1-0",
+              method: "REST_PAUSE",
+            },
+          ],
+        },
+      ],
+    })
+    render(<WorkoutReadView workout={detail} />)
+
+    expect(screen.getByText("Quadríceps")).toBeVisible()
+    expect(screen.getByText("Rest-pause")).toBeVisible()
+    expect(screen.getByText("100 kg")).toBeVisible()
+    expect(screen.getByText("RIR 2")).toBeVisible()
+    expect(screen.getByText("3-0-1-0")).toBeVisible()
+  })
+
   it("keeps archived student workout readable while disabling new prescription creation", async () => {
     http.onGet("/workouts/w-older").reply(
       200,

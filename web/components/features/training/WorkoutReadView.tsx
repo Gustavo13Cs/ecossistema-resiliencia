@@ -2,7 +2,11 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import type { WorkoutDetail } from "@/types/workout"
+import {
+  MUSCLE_GROUP_LABELS,
+  TRAINING_METHOD_LABELS,
+  type WorkoutDetail,
+} from "@/types/workout"
 
 const actionClass =
   "inline-flex min-h-11 items-center justify-center rounded-[var(--sm-radius-sm)] px-4 py-2.5 text-sm font-bold text-[var(--sm-brand)] hover:bg-[var(--sm-subtle-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sm-focus)]"
@@ -17,6 +21,10 @@ function formatDate(value: string) {
 export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
   const archived = workout.client.status === "ARCHIVED"
   const statusLabel = workout.isActive ? "Treino ativo" : "Treino anterior"
+
+  const orderedSplits = [...workout.splits].sort(
+    (a, b) => (a.position ?? 0) - (b.position ?? 0),
+  )
 
   return (
     <article aria-label={`Ficha de treino ${workout.title}`} className="mx-auto min-w-0 max-w-[1120px] space-y-6 px-4 py-6 text-[var(--sm-ink)] sm:px-6 lg:px-8 print:px-0 print:py-0">
@@ -79,52 +87,91 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
       </section>
 
       <div className="space-y-5">
-        {workout.splits.map(split => (
-          <section
-            key={split.id}
-            aria-label={split.name}
-            className="min-w-0 rounded-[var(--sm-radius-md)] border border-[var(--sm-border)] bg-[var(--sm-surface)] p-5 print:break-inside-avoid"
-          >
-            <header className="border-b border-[var(--sm-border)] pb-3">
-              <h2 className="break-words text-xl font-bold">{split.name}</h2>
-              <p className="mt-1 break-words text-sm text-[var(--sm-muted)]">
-                Foco: <span className="font-semibold text-[var(--sm-ink)]">{split.focus || "Não informado"}</span>
-              </p>
-            </header>
+        {orderedSplits.map(split => {
+          const orderedExercises = [...split.exercises].sort(
+            (a, b) => (a.position ?? 0) - (b.position ?? 0),
+          )
+          return (
+            <section
+              key={split.id}
+              aria-label={split.name}
+              className="min-w-0 rounded-[var(--sm-radius-md)] border border-[var(--sm-border)] bg-[var(--sm-surface)] p-5 print:break-inside-avoid"
+            >
+              <header className="border-b border-[var(--sm-border)] pb-3">
+                <h2 className="break-words text-xl font-bold">{split.name}</h2>
+                <p className="mt-1 break-words text-sm text-[var(--sm-muted)]">
+                  Foco: <span className="font-semibold text-[var(--sm-ink)]">{split.focus || "Não informado"}</span>
+                </p>
+              </header>
 
-            {split.exercises.length === 0 ? (
-              <p className="pt-4 text-sm text-[var(--sm-muted)]">Nenhum exercício registrado nesta divisão.</p>
-            ) : (
-              <ul aria-label={`Exercícios de ${split.name}`} className="divide-y divide-[var(--sm-border)]">
-                {split.exercises.map(exercise => (
-                  <li key={exercise.id} className="space-y-2 py-4">
-                    <h3 className="break-words text-base font-bold">{exercise.name}</h3>
-                    <dl className="grid gap-3 text-sm sm:grid-cols-3">
-                      <div>
-                        <dt className="text-[var(--sm-muted)]">Séries</dt>
-                        <dd className="font-semibold tabular-nums">{exercise.sets}</dd>
+              {orderedExercises.length === 0 ? (
+                <p className="pt-4 text-sm text-[var(--sm-muted)]">Nenhum exercício registrado nesta divisão.</p>
+              ) : (
+                <ul aria-label={`Exercícios de ${split.name}`} className="divide-y divide-[var(--sm-border)]">
+                  {orderedExercises.map(exercise => (
+                    <li key={exercise.id} className="space-y-2 py-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="break-words text-base font-bold">{exercise.name}</h3>
+                        {exercise.muscleGroup ? (
+                          <span className="rounded-full border border-[var(--sm-border)] px-2.5 py-0.5 text-xs font-semibold text-[var(--sm-muted)]">
+                            {MUSCLE_GROUP_LABELS[exercise.muscleGroup]}
+                          </span>
+                        ) : null}
+                        {exercise.method && exercise.method !== "STANDARD" ? (
+                          <span className="rounded-full border border-[var(--sm-border)] px-2.5 py-0.5 text-xs font-semibold text-[var(--sm-ink)]">
+                            {TRAINING_METHOD_LABELS[exercise.method]}
+                          </span>
+                        ) : null}
                       </div>
-                      <div>
-                        <dt className="text-[var(--sm-muted)]">Repetições</dt>
-                        <dd className="font-semibold tabular-nums">{exercise.reps}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-[var(--sm-muted)]">Descanso</dt>
-                        <dd className="font-semibold tabular-nums">{exercise.rest || "Não informado"}</dd>
-                      </div>
-                    </dl>
-                    {exercise.notes ? (
-                      <p className="whitespace-pre-wrap break-words text-sm text-[var(--sm-muted)]">
-                        <span className="font-semibold text-[var(--sm-ink)]">Observações: </span>
-                        {exercise.notes}
-                      </p>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        ))}
+
+                      <dl className="grid gap-3 text-sm sm:grid-cols-3 lg:grid-cols-6">
+                        <div>
+                          <dt className="text-[var(--sm-muted)]">Séries</dt>
+                          <dd className="font-semibold tabular-nums">{exercise.sets}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-[var(--sm-muted)]">Repetições</dt>
+                          <dd className="font-semibold tabular-nums">{exercise.reps}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-[var(--sm-muted)]">Descanso</dt>
+                          <dd className="font-semibold tabular-nums">{exercise.rest || "Não informado"}</dd>
+                        </div>
+                        {exercise.load ? (
+                          <div>
+                            <dt className="text-[var(--sm-muted)]">Carga</dt>
+                            <dd className="font-semibold">{exercise.load}</dd>
+                          </div>
+                        ) : null}
+                        {exercise.effortType && exercise.effortTarget ? (
+                          <div>
+                            <dt className="text-[var(--sm-muted)]">Esforço alvo</dt>
+                            <dd className="font-semibold tabular-nums">
+                              {exercise.effortType} {exercise.effortTarget}
+                            </dd>
+                          </div>
+                        ) : null}
+                        {exercise.tempo ? (
+                          <div>
+                            <dt className="text-[var(--sm-muted)]">Cadência</dt>
+                            <dd className="font-semibold tabular-nums">{exercise.tempo}</dd>
+                          </div>
+                        ) : null}
+                      </dl>
+
+                      {exercise.notes ? (
+                        <p className="whitespace-pre-wrap break-words text-sm text-[var(--sm-muted)]">
+                          <span className="font-semibold text-[var(--sm-ink)]">Observações: </span>
+                          {exercise.notes}
+                        </p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )
+        })}
       </div>
 
       <section

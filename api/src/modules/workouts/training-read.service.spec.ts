@@ -69,6 +69,7 @@ describe('Training read contracts', () => {
         id: 'split-1',
         name: 'A',
         focus: null,
+        position: 0,
         exercises: [
           {
             id: 'exercise-1',
@@ -77,6 +78,13 @@ describe('Training read contracts', () => {
             reps: '8',
             rest: '60s',
             notes: null,
+            position: 0,
+            muscleGroup: 'QUADRICEPS' as const,
+            load: '60 kg',
+            effortType: 'RIR' as const,
+            effortTarget: '2',
+            tempo: '3-0-1-0',
+            method: 'STANDARD' as const,
           },
         ],
       },
