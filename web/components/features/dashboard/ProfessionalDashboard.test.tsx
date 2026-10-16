@@ -96,7 +96,6 @@ describe("ProfessionalDashboard", () => {
 
   it.each([
     ["NUTRITIONIST", "cliente", "clientes"],
-    ["PERSONAL", "aluno", "alunos"],
     ["PHYSIO", "paciente", "pacientes"],
   ] as const)(
     "shows only real client actions with $role terminology",

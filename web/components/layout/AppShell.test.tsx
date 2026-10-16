@@ -3,6 +3,10 @@ import userEvent from "@testing-library/user-event"
 import type { ComponentProps } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { AuthUser, ProfessionalRole } from "@/types/auth"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import AxiosMockAdapter from "axios-mock-adapter"
+import { api } from "@/lib/api"
+import { ProfessionalDashboard } from "@/components/features/dashboard/ProfessionalDashboard"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { AppShell } from "./AppShell"
 
@@ -24,6 +28,7 @@ vi.mock("@/contexts/auth-context", () => ({
 
 vi.mock("next/navigation", () => ({
   usePathname: () => navigation.pathname,
+  useRouter: () => ({ push: vi.fn() }),
 }))
 
 const ROLE_CASES = [
@@ -232,4 +237,24 @@ describe("AsyncState", () => {
     expect(screen.getByRole(role)).toHaveAccessibleName(title)
     expect(screen.getByText("Descrição recuperável e objetiva.")).toBeInTheDocument()
   })
+})
+
+it("keeps_personal_daily_work_inside_the_shared_shell", async () => {
+  const http = new AxiosMockAdapter(api)
+  const cache = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  http.onGet("/workouts/workspace").reply(200, { counts: { activeStudents: 0, archivedStudents: 0, withoutActiveWorkout: 0 }, items: [] })
+  http.onGet("/appointments").reply(200, [])
+  authState.user = { sub: "personal", role: "PERSONAL", name: "Ana" }
+  try {
+    render(<QueryClientProvider client={cache}><AppShell><ProfessionalDashboard /></AppShell></QueryClientProvider>)
+    const main = screen.getByRole("main", { name: "Conteúdo principal" })
+    expect(within(main).getByRole("heading", { name: "Área de treinamento" })).toBeVisible()
+    expect(await within(main).findByText("Sua base começa aqui")).toBeVisible()
+    expect(within(main).getByRole("link", { name: "Abrir agenda" })).toHaveAttribute("href", "/agenda")
+  } finally {
+    cleanup()
+    cache.clear()
+    http.restore()
+    authState.user = null
+  }
 })

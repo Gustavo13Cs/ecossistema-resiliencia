@@ -6,6 +6,7 @@ import type { ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import ClientesPage from "@/app/clientes/page"
 import { api } from "@/lib/api"
+import { queryKeys } from "@/lib/query-keys"
 import { getWorkspaceDefinition } from "@/lib/professional-workspace"
 import type { ProfessionalRole } from "@/types/auth"
 import type { Client, ClientStatus } from "@/types/client"
@@ -321,4 +322,17 @@ describe("ClientFilters", () => {
     expect(onSearchChange).toHaveBeenCalled()
     expect(onStatusChange).toHaveBeenCalledWith("ARCHIVED")
   })
+})
+
+it.each(["ACTIVE", "ARCHIVED"] as const)("invalidates_training_workspace_after_%s_lifecycle_change", async status => {
+  session.role = "PERSONAL"
+  navigation.search = status === "ARCHIVED" ? "status=ARCHIVED" : ""
+  http.onGet("/clients").reply(200, [makeClient("ana", "Ana Souza", status)])
+  http.onPatch("/clients/ana/status").reply(200, makeClient("ana", "Ana Souza", status === "ACTIVE" ? "ARCHIVED" : "ACTIVE"))
+  const { queryClient } = renderPage()
+  queryClient.setQueryData(queryKeys.trainingWorkspace("professional-one"), { counts: { activeStudents: 1 } })
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole("button", { name: `${status === "ACTIVE" ? "Arquivar" : "Restaurar"} aluno Ana Souza` }))
+  await user.click(screen.getByRole("button", { name: status === "ACTIVE" ? "Confirmar arquivamento" : "Confirmar restauração" }))
+  await waitFor(() => expect(queryClient.getQueryState(queryKeys.trainingWorkspace("professional-one"))?.isInvalidated).toBe(true))
 })
