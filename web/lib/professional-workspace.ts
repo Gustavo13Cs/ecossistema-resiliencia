@@ -64,7 +64,7 @@ const WORKSPACES = {
     "Aluno",
     "Alunos",
     [
-      { id: "workouts", label: "Planilhas", href: "/treinos" },
+      { id: "workouts", label: "Treinos", href: "/treinos" },
     ],
   ),
   PHYSIO: createWorkspace(
@@ -96,6 +96,7 @@ const ROLE_ONLY_PREFIXES: ReadonlyArray<[string, readonly ProfessionalRole[]]> =
   ["/clientes/:id/exames", ["NUTRITIONIST"]],
   ["/clientes/:id/nova-suplementacao", ["NUTRITIONIST"]],
   ["/clientes/:id/novo-treino", ["PERSONAL"]],
+  ["/clientes/:id/treinos", ["PERSONAL"]],
   ["/clientes/:id/nova-reabilitacao", ["PHYSIO"]],
 ]
 

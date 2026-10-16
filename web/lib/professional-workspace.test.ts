@@ -37,9 +37,9 @@ describe("professional workspace policy", () => {
   )
 
   it.each([
-    ["NUTRITIONIST", ["Planos alimentares", "Alimentos"], ["Planilhas", "Reabilitação"]],
-    ["PERSONAL", ["Planilhas"], ["Planos alimentares", "Alimentos", "Reabilitação"]],
-    ["PHYSIO", ["Reabilitação"], ["Planos alimentares", "Alimentos", "Planilhas"]],
+    ["NUTRITIONIST", ["Planos alimentares", "Alimentos"], ["Treinos", "Reabilitação"]],
+    ["PERSONAL", ["Treinos"], ["Planos alimentares", "Alimentos", "Reabilitação"]],
+    ["PHYSIO", ["Reabilitação"], ["Planos alimentares", "Alimentos", "Treinos"]],
   ] as const)("isolates %s navigation", (role, visible, absent) => {
     const labels = getNavigationForRole(role).map((item) => item.label)
     visible.forEach((label) => expect(labels).toContain(label))
@@ -48,12 +48,16 @@ describe("professional workspace policy", () => {
 
   it("rejects direct cross-domain paths and every clinical path for ADMIN", () => {
     expect(canAccessProfessionalPath("PERSONAL", "/clientes/c1/nova-dieta")).toBe(false)
+    expect(canAccessProfessionalPath("PERSONAL", "/clientes/c1/treinos/w1")).toBe(true)
     expect(canAccessProfessionalPath("NUTRITIONIST", "/clientes/c1/novo-treino")).toBe(false)
+    expect(canAccessProfessionalPath("NUTRITIONIST", "/clientes/c1/treinos/w1")).toBe(false)
+    expect(canAccessProfessionalPath("PHYSIO", "/clientes/c1/treinos/w1")).toBe(false)
     expect(canAccessProfessionalPath("PHYSIO", "/clientes/c1/nova-reabilitacao")).toBe(true)
     expect(canAccessProfessionalPath("NUTRITIONIST", "/clientes/c1/nova-anamnese")).toBe(true)
     expect(canAccessProfessionalPath("PERSONAL", "/clientes/c1/nova-anamnese")).toBe(false)
     expect(canAccessProfessionalPath("NUTRITIONIST", "/receitas")).toBe(true)
     expect(canAccessProfessionalPath("PERSONAL", "/receitas")).toBe(false)
     expect(canAccessProfessionalPath("ADMIN", "/clientes")).toBe(false)
+    expect(canAccessProfessionalPath("ADMIN", "/clientes/c1/treinos/w1")).toBe(false)
   })
 })
