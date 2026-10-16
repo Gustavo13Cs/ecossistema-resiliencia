@@ -21,8 +21,14 @@ export const E2E = {
     id: '31000000-0000-4000-8000-000000000004',
     email: 'tenant-b.phase1@e2e.test',
   },
+  personalB: {
+    id: '31000000-0000-4000-8000-000000000005',
+    email: 'personal-b.phase1@e2e.test',
+  },
   clientA: '41000000-0000-4000-8000-000000000001',
   clientB: '41000000-0000-4000-8000-000000000002',
+  clientPersonalB: '41000000-0000-4000-8000-000000000005',
+  workoutPersonalB: '51000000-0000-4000-8000-000000000005',
 } as const;
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -61,6 +67,11 @@ const professionals = [
     name: 'Profissional Tenant B',
     role: Role.NUTRITIONIST,
   },
+  {
+    ...E2E.personalB,
+    name: 'Personal B Phase 1',
+    role: Role.PERSONAL,
+  },
 ] as const;
 
 async function main() {
@@ -68,6 +79,12 @@ async function main() {
   const password = await bcrypt.hash(E2E.password, 12);
 
   await prisma.$transaction(async (transaction) => {
+    await transaction.appointment.deleteMany({
+      where: { professionalId: { in: professionalIds } },
+    });
+    await transaction.workout.deleteMany({
+      where: { creatorId: { in: professionalIds } },
+    });
     await transaction.physicalAssessment.deleteMany({
       where: { client: { professionalId: { in: professionalIds } } },
     });
@@ -113,7 +130,44 @@ async function main() {
           email: 'cliente-b.phase1@e2e.test',
           goal: 'Registro isolado de outro profissional',
         },
+        {
+          id: E2E.clientPersonalB,
+          professionalId: E2E.personalB.id,
+          name: 'Aluno Exclusivo Personal B',
+          email: 'aluno-personal-b.phase1@e2e.test',
+          goal: 'Condicionamento exclusivo da conta B',
+        },
       ],
+    });
+
+    await transaction.workout.create({
+      data: {
+        id: E2E.workoutPersonalB,
+        clientId: E2E.clientPersonalB,
+        creatorId: E2E.personalB.id,
+        title: 'Ficha Exclusiva Personal B',
+        goal: 'Condicionamento da conta B',
+        durationWeeks: 6,
+        isActive: true,
+        splits: {
+          create: [
+            {
+              name: 'Treino A',
+              focus: 'Geral',
+              exercises: {
+                create: [
+                  {
+                    name: 'Remada Curvada',
+                    sets: '3',
+                    reps: '10',
+                    rest: '60s',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
     });
   });
 

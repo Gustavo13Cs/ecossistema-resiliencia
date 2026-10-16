@@ -2,17 +2,17 @@ const credentials = {
   NUTRITIONIST: {
     area: "Área de Nutrição",
     allowed: /planos alimentares|alimentos/i,
-    denied: /planilhas|reabilitação/i,
+    denied: /treinos|reabilitação/i,
   },
   PERSONAL: {
     area: "Área de Treinamento",
-    allowed: /planilhas/i,
+    allowed: /treinos/i,
     denied: /planos alimentares|alimentos|reabilitação/i,
   },
   PHYSIO: {
     area: "Área de Fisioterapia",
     allowed: /reabilitação/i,
-    denied: /planos alimentares|alimentos|planilhas/i,
+    denied: /planos alimentares|alimentos|treinos/i,
   },
 } as const
 

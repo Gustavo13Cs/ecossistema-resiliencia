@@ -112,3 +112,17 @@
 - [x] Revisão sem achados e PR #26 pronto; rebase sobre main preservou o SQL/teste já revisados.
 - [x] Produção autorizada: primeira etapa live; novo backup cifrado restaurou43 tabelas/21 acessos; migration18 aplicada externamente pelo owner. 18 concluídas/zero falhas,40 tabelas de domínio com RLS e contagens preservadas; objetos exclusivos ausentes.
 - [ ] Publicar segunda etapa após CI completo e confirmar Render live/checker sem migrations pendentes e frontend em produção.
+
+---
+
+## Planejamento — Workspace do Personal
+
+| # | Tarefa | Status | Agente |
+|---|--------|--------|--------|
+| P.0 | Diagnóstico Obsidian/código e proposta de evolução de uso exclusivo do Personal | ✅ proposta documentada | Codex |
+| P.1 | Workspace e prontuário do Personal integrados à avaliação, treino ativo e agenda ([verificação](runbooks/personal-p1-verification.md)) | ✅ concluído | Antigravity |
+| P.2 | Contexto/anamnese de treinamento e avaliações completas | ⏳ proposta | — |
+| P.3 | Editor profissional e biblioteca de exercícios | ⏳ proposta | — |
+| P.4 | Versões, modelos independentes e documentos (entregas encadeadas) | ⏳ proposta | — |
+| P.5 | Sessões, evolução e revisão periódica registradas pelo Personal | ⏳ proposta | — |
+| P.6 | Periodização e gestão do acompanhamento | ⏳ proposta | — |
