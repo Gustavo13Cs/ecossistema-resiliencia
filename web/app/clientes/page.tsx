@@ -63,6 +63,10 @@ export default function ClientesPage() {
         queryClient.invalidateQueries({ queryKey: queryKeys.clients(user.sub, "ARCHIVED") }),
         queryClient.invalidateQueries({ queryKey: queryKeys.client(user.sub, client.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.trainingWorkspace(user.sub) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.trainingOverview(user.sub, client.id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.workouts(user.sub) }),
+        queryClient.invalidateQueries({ queryKey: [...queryKeys.workoutsRoot(user.sub), "client", client.id] }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.assessments(user.sub, client.id) }),
       ])
       toast.success(
         nextStatus === "ARCHIVED"

@@ -330,9 +330,18 @@ it.each(["ACTIVE", "ARCHIVED"] as const)("invalidates_training_workspace_after_%
   http.onGet("/clients").reply(200, [makeClient("ana", "Ana Souza", status)])
   http.onPatch("/clients/ana/status").reply(200, makeClient("ana", "Ana Souza", status === "ACTIVE" ? "ARCHIVED" : "ACTIVE"))
   const { queryClient } = renderPage()
-  queryClient.setQueryData(queryKeys.trainingWorkspace("professional-one"), { counts: { activeStudents: 1 } })
+  const affected = [
+    queryKeys.trainingWorkspace("professional-one"),
+    queryKeys.trainingOverview("professional-one", "ana"),
+    queryKeys.workouts("professional-one"),
+    queryKeys.activeWorkout("professional-one", "ana"),
+    queryKeys.assessments("professional-one", "ana"),
+  ]
+  const unrelated = queryKeys.trainingOverview("other-pro", "ana")
+  ;[...affected, unrelated].forEach(key => queryClient.setQueryData(key, { cached: true }))
   const user = userEvent.setup()
   await user.click(await screen.findByRole("button", { name: `${status === "ACTIVE" ? "Arquivar" : "Restaurar"} aluno Ana Souza` }))
   await user.click(screen.getByRole("button", { name: status === "ACTIVE" ? "Confirmar arquivamento" : "Confirmar restauração" }))
-  await waitFor(() => expect(queryClient.getQueryState(queryKeys.trainingWorkspace("professional-one"))?.isInvalidated).toBe(true))
+  await waitFor(() => affected.forEach(key => expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true)))
+  expect(queryClient.getQueryState(unrelated)?.isInvalidated).toBe(false)
 })

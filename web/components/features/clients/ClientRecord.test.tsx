@@ -8,6 +8,7 @@ import ClienteHubPage from "@/app/clientes/[id]/page"
 import { api } from "@/lib/api"
 import type { ProfessionalRole, UserRole } from "@/types/auth"
 import type { Client } from "@/types/client"
+import { queryKeys } from "@/lib/query-keys"
 
 const navigation = vi.hoisted(() => ({ push: vi.fn() }))
 const session = vi.hoisted(() => ({ role: "PHYSIO" as UserRole }))
@@ -76,7 +77,7 @@ const renderPage = () => {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
-  return render(<ClienteHubPage />, { wrapper })
+  return { queryClient, ...render(<ClienteHubPage />, { wrapper }) }
 }
 
 beforeEach(() => {
@@ -103,7 +104,6 @@ describe("professional Client record", () => {
 
   it.each([
     ["NUTRITIONIST", "Área de Nutrição", "Contexto nutricional", "Alergias e restrições", "Planos alimentares em migração"],
-    ["PERSONAL", "Área de Treinamento", "Contexto de treinamento", "Acompanhamento com personal", "Planilhas de treino em migração"],
     ["PHYSIO", "Área de Fisioterapia", "Contexto fisioterapêutico", "Tipo de exercício", "Planos de reabilitação em migração"],
   ] as const)("renders only the %s workspace", (role, area, context, ownField, migrationStatus) => {
     session.role = role as ProfessionalRole
@@ -127,6 +127,57 @@ describe("professional Client record", () => {
     expect(screen.queryByText("Planos alimentares")).not.toBeInTheDocument()
     expect(screen.queryByText("Planilhas de treino")).not.toBeInTheDocument()
     expect(screen.queryByText(/histórico de dieta|suplementação|exames laboratoriais/i)).not.toBeInTheDocument()
+  })
+
+  it("mounts_the_personal_branch_only_after_owned_client_resolution", async () => {
+    session.role = "PERSONAL"
+    record.status = "loading"
+    record.client = null
+    const view = renderPage()
+    expect(http.history.get).toHaveLength(0)
+    record.status = "ready"
+    record.client = makeClient()
+    http.onGet("/workouts/client/client-one/overview").reply(200, { client: { id: "client-one", status: "ACTIVE" }, activeWorkout: null, recentAssessments: [] })
+    http.onGet("/assessments/client/client-one").reply(200, [])
+    view.rerender(<ClienteHubPage />)
+    expect(await screen.findByText("Nenhum treino ativo registrado")).toBeVisible()
+    expect(screen.getByRole("heading", { name: "Contexto de treinamento" })).toBeVisible()
+    expect(screen.queryByText(/em migração/i)).not.toBeInTheDocument()
+    expect(http.history.get.map(request => request.url).sort()).toEqual(["/assessments/client/client-one", "/workouts/client/client-one/overview"])
+  })
+
+  it.each(["edit", "archive"])("invalidates_the_personal_workspace_and_record_reads_after_%s", async action => {
+    session.role = "PERSONAL"
+    http.onGet("/workouts/client/client-one/overview").reply(200, { client: { id: "client-one", status: "ACTIVE" }, activeWorkout: null, recentAssessments: [] })
+    http.onGet("/assessments/client/client-one").reply(200, [])
+    http.onPatch("/clients/client-one").reply(200, { ...makeClient(), updatedAt: "2026-10-16T12:00:00Z" })
+    http.onPatch("/clients/client-one/status").reply(200, { ...makeClient(), status: "ARCHIVED" })
+    const { queryClient } = renderPage()
+    await screen.findByText("Nenhum treino ativo registrado")
+    const affected = [queryKeys.trainingWorkspace("professional-one"), queryKeys.activeWorkout("professional-one", "client-one")]
+    const unrelated = queryKeys.activeWorkout("other-pro", "client-one")
+    ;[...affected, unrelated].forEach(key => queryClient.setQueryData(key, { old: true }))
+    if (action === "edit") {
+      fireEvent.change(screen.getByLabelText("Objetivo principal"), { target: { value: "Força" } })
+      fireEvent.click(screen.getByRole("button", { name: "Salvar alterações no prontuário" }))
+    } else {
+      fireEvent.click(screen.getByRole("button", { name: "Arquivar aluno Marina Lopes" }))
+      fireEvent.click(screen.getByRole("button", { name: "Confirmar arquivamento" }))
+    }
+    await waitFor(() => affected.forEach(key => expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true)))
+    expect(queryClient.getQueryState(unrelated)?.isInvalidated).toBe(false)
+    await waitFor(() => expect(http.history.get.filter(request => request.url === "/workouts/client/client-one/overview").length).toBeGreaterThan(1))
+    expect(http.history.get.filter(request => request.url === "/assessments/client/client-one").length).toBeGreaterThan(1)
+  })
+
+  it("removes_the_header_and_cadastro_after_personal_query_denial", async () => {
+    session.role = "PERSONAL"
+    http.onGet("/workouts/client/client-one/overview").reply(403)
+    http.onGet("/assessments/client/client-one").reply(200, [])
+    renderPage()
+    await waitFor(() => expect(screen.getByText("Restabeleça seu acesso")).toBeVisible())
+    expect(screen.queryByText("Marina Lopes")).not.toBeInTheDocument()
+    expect(screen.queryByLabelText("Nome completo")).not.toBeInTheDocument()
   })
 
   it("does not turn a Client id into a legacy User-domain href", () => {
