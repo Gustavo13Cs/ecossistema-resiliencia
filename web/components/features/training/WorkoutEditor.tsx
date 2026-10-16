@@ -15,13 +15,21 @@ import {
   createEmptyWorkoutForm,
   createWorkoutExercise,
   createWorkoutSplit,
+  duplicateExercise,
+  duplicateSplit,
   isWorkoutFormDirty,
+  moveItem,
   validateWorkoutForm,
   type WorkoutForm,
   type WorkoutFormExercise,
 } from "@/lib/workout-form"
 import type { Client } from "@/types/client"
-import type { CreateWorkoutInput, WorkoutPrescription } from "@/types/workout"
+import type {
+  CreateWorkoutInput,
+  MuscleGroup,
+  WorkoutPrescription,
+} from "@/types/workout"
+import { WorkoutSplitCard } from "./WorkoutSplitCard"
 
 export interface WorkoutEditorProps {
   client: Client
@@ -120,6 +128,24 @@ export function WorkoutEditor({
     }))
   }
 
+  const moveSplitAtIndex = (splitIndex: number, direction: -1 | 1) => {
+    setForm(current => ({
+      ...current,
+      splits: moveItem(current.splits, splitIndex, direction),
+    }))
+  }
+
+  const duplicateSplitById = (splitId: string) => {
+    setForm(current => {
+      const index = current.splits.findIndex(split => split.id === splitId)
+      if (index === -1) return current
+      const cloned = duplicateSplit(current.splits[index])
+      const nextSplits = [...current.splits]
+      nextSplits.splice(index + 1, 0, cloned)
+      return { ...current, splits: nextSplits }
+    })
+  }
+
   const updateSplit = (splitId: string, field: "name" | "focus", value: string) => {
     setForm(current => ({
       ...current,
@@ -149,11 +175,44 @@ export function WorkoutEditor({
     }))
   }
 
-  const updateExercise = (
+  const moveExerciseAtIndex = (
+    splitId: string,
+    exerciseIndex: number,
+    direction: -1 | 1,
+  ) => {
+    setForm(current => ({
+      ...current,
+      splits: current.splits.map(split =>
+        split.id === splitId
+          ? {
+              ...split,
+              exercises: moveItem(split.exercises, exerciseIndex, direction),
+            }
+          : split,
+      ),
+    }))
+  }
+
+  const duplicateExerciseById = (splitId: string, exerciseId: string) => {
+    setForm(current => ({
+      ...current,
+      splits: current.splits.map(split => {
+        if (split.id !== splitId) return split
+        const index = split.exercises.findIndex(ex => ex.id === exerciseId)
+        if (index === -1) return split
+        const cloned = duplicateExercise(split.exercises[index])
+        const nextExercises = [...split.exercises]
+        nextExercises.splice(index + 1, 0, cloned)
+        return { ...split, exercises: nextExercises }
+      }),
+    }))
+  }
+
+  const updateExercise = <K extends Exclude<keyof WorkoutFormExercise, "id">>(
     splitId: string,
     exerciseId: string,
-    field: Exclude<keyof WorkoutFormExercise, "id">,
-    value: string,
+    field: K,
+    value: WorkoutFormExercise[K],
   ) => {
     setForm(current => ({
       ...current,
@@ -162,6 +221,32 @@ export function WorkoutEditor({
           ? {
               ...split,
               exercises: split.exercises.map(ex => (ex.id === exerciseId ? { ...ex, [field]: value } : ex)),
+            }
+          : split,
+      ),
+    }))
+  }
+
+  const selectLibraryExercise = (
+    splitId: string,
+    exerciseId: string,
+    selection: { name: string; muscleGroup: MuscleGroup },
+  ) => {
+    setForm(current => ({
+      ...current,
+      splits: current.splits.map(split =>
+        split.id === splitId
+          ? {
+              ...split,
+              exercises: split.exercises.map(ex =>
+                ex.id === exerciseId
+                  ? {
+                      ...ex,
+                      name: selection.name,
+                      muscleGroup: selection.muscleGroup,
+                    }
+                  : ex,
+              ),
             }
           : split,
       ),
@@ -296,142 +381,40 @@ export function WorkoutEditor({
 
         <div className="space-y-5">
           {form.splits.map((split, splitIndex) => (
-            <section
+            <WorkoutSplitCard
               key={split.id}
-              aria-label={`Divisão ${split.name || splitIndex + 1}`}
-              className="space-y-4 rounded-[var(--sm-radius-md)] border border-[var(--sm-border)] bg-[var(--sm-surface)] p-5"
-            >
-              <div className="flex flex-col gap-4 border-b border-[var(--sm-border)] pb-4 sm:flex-row sm:items-end sm:justify-between">
-                <div className="grid flex-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor={`split-name-${split.id}`}>Nome da divisão</Label>
-                    <Input
-                      id={`split-name-${split.id}`}
-                      value={split.name}
-                      disabled={disabled}
-                      onChange={event => updateSplit(split.id, "name", event.target.value)}
-                      className="min-h-11 font-semibold"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`split-focus-${split.id}`}>Foco da divisão</Label>
-                    <Input
-                      id={`split-focus-${split.id}`}
-                      value={split.focus}
-                      disabled={disabled}
-                      onChange={event => updateSplit(split.id, "focus", event.target.value)}
-                      placeholder="Opcional"
-                      className="min-h-11"
-                    />
-                  </div>
-                </div>
-                {form.splits.length > 1 ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={disabled}
-                    className="min-h-11"
-                    onClick={() => removeSplit(split.id)}
-                  >
-                    Remover divisão
-                  </Button>
-                ) : null}
-              </div>
-
-              {split.exercises.length === 0 ? (
-                <p className="text-sm text-[var(--sm-muted)]">
-                  Nenhum exercício adicionado nesta divisão. Adicione pelo menos um exercício para salvar.
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {split.exercises.map((exercise, exIndex) => (
-                    <div
-                      key={exercise.id}
-                      className="space-y-3 rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] p-4"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-bold text-[var(--sm-muted)]">
-                          Exercício {exIndex + 1}
-                        </span>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={disabled}
-                          className="min-h-11"
-                          onClick={() => removeExercise(split.id, exercise.id)}
-                        >
-                          Remover exercício
-                        </Button>
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
-                          <Label htmlFor={`ex-name-${exercise.id}`}>Nome do exercício</Label>
-                          <Input
-                            id={`ex-name-${exercise.id}`}
-                            value={exercise.name}
-                            disabled={disabled}
-                            onChange={event => updateExercise(split.id, exercise.id, "name", event.target.value)}
-                            className="min-h-11"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor={`ex-sets-${exercise.id}`}>Séries</Label>
-                          <Input
-                            id={`ex-sets-${exercise.id}`}
-                            value={exercise.sets}
-                            disabled={disabled}
-                            onChange={event => updateExercise(split.id, exercise.id, "sets", event.target.value)}
-                            className="min-h-11 tabular-nums"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor={`ex-reps-${exercise.id}`}>Repetições</Label>
-                          <Input
-                            id={`ex-reps-${exercise.id}`}
-                            value={exercise.reps}
-                            disabled={disabled}
-                            onChange={event => updateExercise(split.id, exercise.id, "reps", event.target.value)}
-                            className="min-h-11 tabular-nums"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor={`ex-rest-${exercise.id}`}>Descanso</Label>
-                          <Input
-                            id={`ex-rest-${exercise.id}`}
-                            value={exercise.rest}
-                            disabled={disabled}
-                            onChange={event => updateExercise(split.id, exercise.id, "rest", event.target.value)}
-                            placeholder="Opcional"
-                            className="min-h-11 tabular-nums"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor={`ex-notes-${exercise.id}`}>Observações do exercício</Label>
-                        <Input
-                          id={`ex-notes-${exercise.id}`}
-                          value={exercise.notes}
-                          disabled={disabled}
-                          onChange={event => updateExercise(split.id, exercise.id, "notes", event.target.value)}
-                          placeholder="Opcional"
-                          className="min-h-11"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <Button
-                type="button"
-                variant="outline"
-                disabled={disabled}
-                className="min-h-11"
-                onClick={() => addExercise(split.id)}
-              >
-                Adicionar exercício
-              </Button>
-            </section>
+              split={split}
+              splitIndex={splitIndex}
+              totalSplits={form.splits.length}
+              disabled={disabled}
+              errors={errors}
+              onUpdateField={(field, value) =>
+                updateSplit(split.id, field, value)
+              }
+              onMoveSplitUp={() => moveSplitAtIndex(splitIndex, -1)}
+              onMoveSplitDown={() => moveSplitAtIndex(splitIndex, 1)}
+              onDuplicateSplit={() => duplicateSplitById(split.id)}
+              onRemoveSplit={() => removeSplit(split.id)}
+              onAddExercise={() => addExercise(split.id)}
+              onUpdateExercise={(exerciseId, field, value) =>
+                updateExercise(split.id, exerciseId, field, value)
+              }
+              onSelectLibraryExercise={(exerciseId, selection) =>
+                selectLibraryExercise(split.id, exerciseId, selection)
+              }
+              onMoveExerciseUp={exIndex =>
+                moveExerciseAtIndex(split.id, exIndex, -1)
+              }
+              onMoveExerciseDown={exIndex =>
+                moveExerciseAtIndex(split.id, exIndex, 1)
+              }
+              onDuplicateExercise={exerciseId =>
+                duplicateExerciseById(split.id, exerciseId)
+              }
+              onRemoveExercise={exerciseId =>
+                removeExercise(split.id, exerciseId)
+              }
+            />
           ))}
         </div>
 

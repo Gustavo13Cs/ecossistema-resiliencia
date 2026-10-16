@@ -9,6 +9,15 @@ import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { CreateWorkoutDto } from './dto/create-workout.dto';
 
+const orderedSplitsInclude = {
+  orderBy: [{ position: 'asc' as const }, { id: 'asc' as const }],
+  include: {
+    exercises: {
+      orderBy: [{ position: 'asc' as const }, { id: 'asc' as const }],
+    },
+  },
+};
+
 @Injectable()
 export class WorkoutsService {
   constructor(
@@ -36,16 +45,24 @@ export class WorkoutsService {
           creatorId: user.sub,
           isActive: true,
           splits: {
-            create: data.splits.map((split) => ({
+            create: data.splits.map((split, splitIndex) => ({
               name: split.name,
               focus: split.focus,
+              position: splitIndex,
               exercises: {
-                create: split.exercises.map((exercise) => ({
+                create: split.exercises.map((exercise, exerciseIndex) => ({
                   name: exercise.name,
                   sets: exercise.sets,
                   reps: exercise.reps,
                   rest: exercise.rest,
                   notes: exercise.notes,
+                  position: exerciseIndex,
+                  muscleGroup: exercise.muscleGroup,
+                  load: exercise.load,
+                  effortType: exercise.effortType,
+                  effortTarget: exercise.effortTarget,
+                  tempo: exercise.tempo,
+                  method: exercise.method ?? 'STANDARD',
                 })),
               },
             })),
@@ -69,7 +86,7 @@ export class WorkoutsService {
     await this.clientAccess.getOwnedClient(user, clientId);
     return this.prisma.workout.findFirst({
       where: { clientId, creatorId: user.sub, isActive: true },
-      include: { splits: { include: { exercises: true } } },
+      include: { splits: orderedSplitsInclude },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -98,7 +115,7 @@ export class WorkoutsService {
         isTemplate: true,
         OR: [{ clientId: null }, { client: { professionalId: user.sub } }],
       },
-      include: { splits: { include: { exercises: true } } },
+      include: { splits: orderedSplitsInclude },
       orderBy: { updatedAt: 'desc' },
     });
   }

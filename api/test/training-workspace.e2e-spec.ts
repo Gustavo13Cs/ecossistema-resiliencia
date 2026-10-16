@@ -16,6 +16,7 @@ import { JwtStrategy } from '../src/common/strategies/jwt.strategy';
 import { AuthUser } from '../src/common/types/auth-user';
 import { PrismaService } from '../src/infra/database/prisma.service';
 import { AuthSessionService } from '../src/modules/auth/auth-session.service';
+import { ExerciseLibraryService } from '../src/modules/workouts/exercise-library.service';
 import { TrainingReadService } from '../src/modules/workouts/training-read.service';
 import { WorkoutsController } from '../src/modules/workouts/workouts.controller';
 import { WorkoutsService } from '../src/modules/workouts/workouts.service';
@@ -133,6 +134,7 @@ describe('Personal training workspace & read projections (PostgreSQL E2E)', () =
         },
         { provide: WorkoutsService, useValue: {} },
         { provide: TrainingReadService, useValue: {} },
+        { provide: ExerciseLibraryService, useValue: {} },
       ],
     }).compile();
 
@@ -571,5 +573,197 @@ describe('Personal training workspace & read projections (PostgreSQL E2E)', () =
       .get(`/workouts/client/${isolationFixtures.training.clientB}/overview`)
       .set(asUser(personalA))
       .expect(404);
+  });
+
+  it('persists split/exercise order, advanced parameters, and isolates custom exercises in the library', async () => {
+    const clientA = isolationFixtures.training.clientA;
+
+    // 1. Custom exercise creation and tenant isolation
+    const customCreated = await request(app.getHttpServer())
+      .post('/workouts/exercise-library')
+      .set(asUser(personalA))
+      .send({
+        name: 'Agachamento Pausa 2s',
+        muscleGroup: 'QUADRICEPS',
+        equipment: 'BARBELL',
+        notes: 'Manter tensão no fundo',
+      })
+      .expect(201);
+
+    const customExercise = customCreated.body as {
+      id: string;
+      name: string;
+      muscleGroup: string;
+      source: string;
+    };
+    expect(customExercise).toMatchObject({
+      name: 'Agachamento Pausa 2s',
+      muscleGroup: 'QUADRICEPS',
+      source: 'CUSTOM',
+    });
+
+    // Duplicate name for same Personal returns 409
+    await request(app.getHttpServer())
+      .post('/workouts/exercise-library')
+      .set(asUser(personalA))
+      .send({
+        name: 'agachamento pausa 2s',
+        muscleGroup: 'QUADRICEPS',
+      })
+      .expect(409);
+
+    // Personal A sees custom exercise + catalog
+    const libraryA = await request(app.getHttpServer())
+      .get('/workouts/exercise-library?q=agachamento&muscleGroup=QUADRICEPS')
+      .set(asUser(personalA))
+      .expect(200);
+    const itemsA = libraryA.body as Array<{
+      id: string;
+      name: string;
+      source: string;
+    }>;
+    expect(itemsA[0]).toMatchObject({
+      id: customExercise.id,
+      name: 'Agachamento Pausa 2s',
+      source: 'CUSTOM',
+    });
+    expect(itemsA.some((item) => item.source === 'CATALOG')).toBe(true);
+
+    // Personal B never sees Personal A's custom exercise and cannot delete it
+    const libraryB = await request(app.getHttpServer())
+      .get('/workouts/exercise-library?q=pausa')
+      .set(asUser(personalB))
+      .expect(200);
+    expect(libraryB.body).toEqual([]);
+
+    await request(app.getHttpServer())
+      .delete(`/workouts/exercise-library/${customExercise.id}`)
+      .set(asUser(personalB))
+      .expect(404);
+
+    // 2. Create workout with persisted order and advanced parameters
+    const createdWorkout = await request(app.getHttpServer())
+      .post('/workouts')
+      .set(asUser(personalA))
+      .send({
+        clientId: clientA,
+        title: 'Hipertrofia Avançada P2',
+        goal: 'Hipertrofia miofibrilar',
+        durationWeeks: 6,
+        splits: [
+          {
+            name: 'Treino B - Superiores',
+            focus: 'Peito e Costas',
+            exercises: [
+              {
+                name: 'Supino reto com barra',
+                sets: '4',
+                reps: '6-8',
+                rest: '120s',
+                muscleGroup: 'CHEST',
+                load: '75% 1RM',
+                effortType: 'RIR',
+                effortTarget: '1-2',
+                tempo: '3-1-1-0',
+                method: 'REST_PAUSE',
+                notes: 'Escápulas retraídas',
+              },
+              {
+                name: 'Remada curvada com barra pronada',
+                sets: '4',
+                reps: '8-10',
+                rest: '90s',
+                muscleGroup: 'BACK',
+                load: '60 kg',
+                effortType: 'RPE',
+                effortTarget: '8.5',
+                tempo: '2-0-1-1',
+                method: 'STANDARD',
+              },
+            ],
+          },
+          {
+            name: 'Treino A - Inferiores',
+            focus: 'Quadríceps e Glúteos',
+            exercises: [
+              {
+                name: 'Agachamento Pausa 2s',
+                sets: '5',
+                reps: '5',
+                rest: '180s',
+                muscleGroup: 'QUADRICEPS',
+                load: '100 kg',
+                effortType: 'RIR',
+                effortTarget: '2',
+                tempo: '3-2-1-0',
+                method: 'CLUSTER',
+              },
+            ],
+          },
+        ],
+      })
+      .expect(201);
+
+    const createdId = (createdWorkout.body as { id: string }).id;
+
+    try {
+      const detail = await request(app.getHttpServer())
+        .get(`/workouts/${createdId}`)
+        .set(asUser(personalA))
+        .expect(200);
+
+      const detailBody = detail.body as {
+        splits: Array<{
+          name: string;
+          position: number;
+          exercises: Array<{
+            name: string;
+            position: number;
+            muscleGroup: string | null;
+            load: string | null;
+            effortType: string | null;
+            effortTarget: string | null;
+            tempo: string | null;
+            method: string;
+          }>;
+        }>;
+      };
+
+      expect(
+        detailBody.splits.map((s) => ({ name: s.name, position: s.position })),
+      ).toEqual([
+        { name: 'Treino B - Superiores', position: 0 },
+        { name: 'Treino A - Inferiores', position: 1 },
+      ]);
+      expect(detailBody.splits[0].exercises).toEqual([
+        expect.objectContaining({
+          name: 'Supino reto com barra',
+          position: 0,
+          muscleGroup: 'CHEST',
+          load: '75% 1RM',
+          effortType: 'RIR',
+          effortTarget: '1-2',
+          tempo: '3-1-1-0',
+          method: 'REST_PAUSE',
+        }),
+        expect.objectContaining({
+          name: 'Remada curvada com barra pronada',
+          position: 1,
+          muscleGroup: 'BACK',
+          load: '60 kg',
+          effortType: 'RPE',
+          effortTarget: '8.5',
+          tempo: '2-0-1-1',
+          method: 'STANDARD',
+        }),
+      ]);
+
+      await request(app.getHttpServer())
+        .delete(`/workouts/exercise-library/${customExercise.id}`)
+        .set(asUser(personalA))
+        .expect(200);
+    } finally {
+      await prisma.workout.deleteMany({ where: { id: createdId } });
+    }
   });
 });

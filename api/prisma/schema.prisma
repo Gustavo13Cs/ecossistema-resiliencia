@@ -64,6 +64,8 @@ model User {
 
   recipes Recipe[] @relation("ProfessionalRecipes")
 
+  customExercises CustomExercise[] @relation("ProfessionalCustomExercises")
+
   assessments PhysicalAssessment[] @relation("UserAssessments")
 
   patientTrackings      DailyTracking[] @relation("PatientTrackings")
@@ -630,9 +632,10 @@ model Workout {
 
 // Tabela 10: As Fichas do Treino (Ex: Treino A, Treino B)
 model WorkoutSplit {
-  id    String  @id @default(uuid())
-  name  String // Ex: "Treino A"
-  focus String? // Ex: "Peito e Tríceps"
+  id       String  @id @default(uuid())
+  name     String // Ex: "Treino A"
+  focus    String? // Ex: "Peito e Tríceps"
+  position Int     @default(0) // Ordem da divisão dentro da prescrição
 
   workoutId String
   workout   Workout @relation("WorkoutToSplits", fields: [workoutId], references: [id], onDelete: Cascade)
@@ -644,14 +647,69 @@ model WorkoutSplit {
   @@map("workout_splits")
 }
 
+// Grupo muscular principal (snapshot na prescrição e filtro da biblioteca)
+enum MuscleGroup {
+  CHEST
+  BACK
+  SHOULDERS
+  BICEPS
+  TRICEPS
+  FOREARMS
+  CORE
+  QUADRICEPS
+  HAMSTRINGS
+  GLUTES
+  ADDUCTORS
+  CALVES
+  FULL_BODY
+  CARDIO
+  MOBILITY
+}
+
+// Escala de esforço alvo
+enum EffortType {
+  RIR // Repetições em reserva
+  RPE // Percepção subjetiva de esforço
+}
+
+// Método/técnica de execução das séries
+enum TrainingMethod {
+  STANDARD
+  DROP_SET
+  REST_PAUSE
+  PYRAMID
+  CLUSTER
+  ISOMETRIC
+}
+
+enum ExerciseEquipment {
+  BARBELL
+  DUMBBELL
+  MACHINE
+  CABLE
+  SMITH
+  KETTLEBELL
+  BAND
+  BODYWEIGHT
+  OTHER
+}
+
 // Tabela 11: Os Exercícios dentro da Ficha
 model WorkoutExercise {
-  id    String  @id @default(uuid())
-  name  String // Ex: "Supino Reto"
-  sets  String // Ex: "4"
-  reps  String // Ex: "10-12"
-  rest  String? // Ex: "60s"
-  notes String? // Ex: "Ponto zero na descida"
+  id       String  @id @default(uuid())
+  name     String // Ex: "Supino Reto"
+  sets     String // Ex: "4"
+  reps     String // Ex: "10-12"
+  rest     String? // Ex: "60s"
+  notes    String? // Ex: "Ponto zero na descida"
+  position Int     @default(0) // Ordem do exercício dentro da divisão
+
+  muscleGroup  MuscleGroup?
+  load         String? // Ex: "20 kg" ou "70% 1RM"
+  effortType   EffortType?
+  effortTarget String? // Ex: "2" ou "1-2"
+  tempo        String? // Cadência, Ex: "3-0-1-0"
+  method       TrainingMethod @default(STANDARD)
 
   splitId String
   split   WorkoutSplit @relation("SplitToExercises", fields: [splitId], references: [id], onDelete: Cascade)
@@ -660,6 +718,24 @@ model WorkoutExercise {
 
   @@index([splitId])
   @@map("workout_exercises")
+}
+
+// Biblioteca privada de exercícios próprios do Personal
+model CustomExercise {
+  id             String             @id @default(uuid())
+  professionalId String
+  professional   User               @relation("ProfessionalCustomExercises", fields: [professionalId], references: [id], onDelete: Restrict)
+  name           String
+  normalizedName String // Nome em minúsculas, sem acentos, para unicidade por profissional
+  muscleGroup    MuscleGroup
+  equipment      ExerciseEquipment?
+  notes          String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([professionalId, normalizedName])
+  @@index([professionalId, muscleGroup])
+  @@map("custom_exercises")
 }
 
 // ==========================================

@@ -4,10 +4,11 @@ import { WorkoutsController } from './workouts.controller';
 import { DatabaseModule } from '../../infra/database/database.module';
 import { ClientAccessModule } from '../../common/client-access/client-access.module';
 import { TrainingReadService } from './training-read.service';
+import { ExerciseLibraryService } from './exercise-library.service';
 
 @Module({
   imports: [DatabaseModule, ClientAccessModule],
   controllers: [WorkoutsController],
-  providers: [WorkoutsService, TrainingReadService],
+  providers: [WorkoutsService, TrainingReadService, ExerciseLibraryService],
 })
 export class WorkoutsModule {}

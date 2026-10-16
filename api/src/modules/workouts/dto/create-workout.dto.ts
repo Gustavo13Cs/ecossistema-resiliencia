@@ -2,17 +2,24 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   Max,
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { EffortType, MuscleGroup, TrainingMethod } from '@prisma/client';
+
+export const WORKOUT_TEMPO_REGEX =
+  /^\d{1,2}-[0-9xX]{1,2}-[0-9xX]{1,2}-\d{1,2}$/;
 
 export class CreateExerciseDto {
   @IsString()
@@ -39,6 +46,46 @@ export class CreateExerciseDto {
   @IsString()
   @MaxLength(2000)
   notes?: string;
+
+  @IsOptional()
+  @IsEnum(MuscleGroup)
+  muscleGroup?: MuscleGroup;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  load?: string;
+
+  @ValidateIf(
+    (exercise: CreateExerciseDto) =>
+      (exercise.effortType !== undefined && exercise.effortType !== null) ||
+      (exercise.effortTarget !== undefined && exercise.effortTarget !== null),
+  )
+  @IsEnum(EffortType)
+  effortType?: EffortType;
+
+  @ValidateIf(
+    (exercise: CreateExerciseDto) =>
+      (exercise.effortTarget !== undefined && exercise.effortTarget !== null) ||
+      (exercise.effortType !== undefined && exercise.effortType !== null),
+  )
+  @IsString()
+  @MinLength(1)
+  @MaxLength(20)
+  effortTarget?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  @Matches(WORKOUT_TEMPO_REGEX, {
+    message:
+      'Cadência deve seguir o formato excêntrica-pausa-concêntrica-pausa (ex.: 3-0-1-0).',
+  })
+  tempo?: string;
+
+  @IsOptional()
+  @IsEnum(TrainingMethod)
+  method?: TrainingMethod;
 }
 
 export class CreateSplitDto {

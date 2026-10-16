@@ -562,4 +562,70 @@ describe('Tenant SQL matrix through a non-owner login', () => {
         .kcal,
     ).toBe(100);
   });
+
+  it('isolates custom_exercises per professional via clinical_owner RLS policy', async () => {
+    await scoped(
+      'tenant-a',
+      (c) =>
+        c.query(
+          `INSERT INTO custom_exercises(id,"professionalId",name,"normalizedName","muscleGroup","updatedAt")
+           VALUES('custom-ex-a','tenant-a','Supino Pausa','supino pausa','CHEST',now())`,
+        ),
+      'PERSONAL',
+    );
+    await scoped(
+      'tenant-b',
+      (c) =>
+        c.query(
+          `INSERT INTO custom_exercises(id,"professionalId",name,"normalizedName","muscleGroup","updatedAt")
+           VALUES('custom-ex-b','tenant-b','Agachamento Pausa','agachamento pausa','QUADRICEPS',now())`,
+        ),
+      'PERSONAL',
+    );
+
+    expect(
+      (
+        await scoped(
+          'tenant-a',
+          (c) => c.query<{ id: string }>('SELECT id FROM custom_exercises'),
+          'PERSONAL',
+        )
+      ).rows,
+    ).toEqual([{ id: 'custom-ex-a' }]);
+
+    expect(
+      (
+        await scoped(
+          'tenant-b',
+          (c) => c.query<{ id: string }>('SELECT id FROM custom_exercises'),
+          'PERSONAL',
+        )
+      ).rows,
+    ).toEqual([{ id: 'custom-ex-b' }]);
+
+    await expect(
+      scoped(
+        'tenant-a',
+        (c) =>
+          c.query(
+            `INSERT INTO custom_exercises(id,"professionalId",name,"normalizedName","muscleGroup","updatedAt")
+             VALUES('custom-ex-foreign','tenant-b','Remada','remada','BACK',now())`,
+          ),
+        'PERSONAL',
+      ),
+    ).rejects.toMatchObject({ code: '42501' });
+
+    expect(
+      (
+        await scoped(
+          'tenant-a',
+          (c) =>
+            c.query<{ id: string }>(
+              "DELETE FROM custom_exercises WHERE id='custom-ex-b' RETURNING id",
+            ),
+          'PERSONAL',
+        )
+      ).rows,
+    ).toEqual([]);
+  });
 });

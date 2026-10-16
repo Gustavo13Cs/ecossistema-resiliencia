@@ -73,6 +73,9 @@ export async function clearIsolationFixtures(prisma: PrismaService) {
   await prisma.clientAuditEvent.deleteMany({
     where: { clientId: { in: clientIds } },
   });
+  await prisma.customExercise.deleteMany({
+    where: { professionalId: { in: professionalIds } },
+  });
   await prisma.client.deleteMany({ where: { id: { in: clientIds } } });
   await prisma.user.deleteMany({ where: { id: { in: professionalIds } } });
 }

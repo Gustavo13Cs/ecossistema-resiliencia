@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { CLINICAL_RESPONSE } from '../../common/decorators/clinical-response.decorator';
 import { TrainingReadService } from './training-read.service';
+import { ExerciseLibraryService } from './exercise-library.service';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -28,6 +29,11 @@ describe('WorkoutsController Client contract', () => {
     getClientOverview: jest.fn(),
     getWorkout: jest.fn(),
   };
+  const exerciseLibraryService = {
+    list: jest.fn(),
+    create: jest.fn(),
+    remove: jest.fn(),
+  };
   const body = {
     clientId,
     title: 'Plano de treino',
@@ -48,6 +54,7 @@ describe('WorkoutsController Client contract', () => {
         RolesGuard,
         { provide: WorkoutsService, useValue: service },
         { provide: TrainingReadService, useValue: readService },
+        { provide: ExerciseLibraryService, useValue: exerciseLibraryService },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -79,6 +86,16 @@ describe('WorkoutsController Client contract', () => {
     service.findActive.mockResolvedValue(null);
     service.findActiveByUser.mockResolvedValue(null);
     service.listTemplates.mockResolvedValue([]);
+    exerciseLibraryService.list.mockResolvedValue([]);
+    exerciseLibraryService.create.mockResolvedValue({
+      id: clientId,
+      name: 'Agachamento pausa',
+      muscleGroup: 'QUADRICEPS',
+      equipment: 'BARBELL',
+      notes: null,
+      source: 'CUSTOM',
+    });
+    exerciseLibraryService.remove.mockResolvedValue({ id: clientId });
     readService.getWorkspace.mockResolvedValue({
       counts: {
         activeStudents: 0,
@@ -104,6 +121,38 @@ describe('WorkoutsController Client contract', () => {
     expect(service.create).toHaveBeenCalledWith(user, body);
   });
 
+  it('accepts valid advanced exercise parameters on workout creation', async () => {
+    const advancedBody = {
+      ...body,
+      splits: [
+        {
+          name: 'Treino A',
+          focus: 'Inferiores',
+          exercises: [
+            {
+              name: 'Agachamento livre',
+              sets: '4',
+              reps: '6-8',
+              rest: '120s',
+              muscleGroup: 'QUADRICEPS',
+              load: '80 kg (75% 1RM)',
+              effortType: 'RIR',
+              effortTarget: '1-2',
+              tempo: '3-1-X-0',
+              method: 'REST_PAUSE',
+              notes: 'Manter tronco firme',
+            },
+          ],
+        },
+      ],
+    };
+    await request(app.getHttpServer())
+      .post('/workouts')
+      .send(advancedBody)
+      .expect(201);
+    expect(service.create).toHaveBeenCalledWith(user, advancedBody);
+  });
+
   it.each(['userId', 'patientId', 'creatorId', 'professionalId'])(
     'rejects the internal field %s before mutation',
     async (field) => {
@@ -124,12 +173,130 @@ describe('WorkoutsController Client contract', () => {
     {
       splits: [{ name: 'A', exercises: [{ name: '', sets: '3', reps: '10' }] }],
     },
+    {
+      splits: [
+        {
+          name: 'A',
+          position: 0,
+          exercises: [{ name: 'Agachamento', sets: '3', reps: '10' }],
+        },
+      ],
+    },
+    {
+      splits: [
+        {
+          name: 'A',
+          exercises: [
+            {
+              name: 'Agachamento',
+              sets: '3',
+              reps: '10',
+              tempo: 'lento',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      splits: [
+        {
+          name: 'A',
+          exercises: [
+            {
+              name: 'Agachamento',
+              sets: '3',
+              reps: '10',
+              effortType: 'RIR',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      splits: [
+        {
+          name: 'A',
+          exercises: [
+            {
+              name: 'Agachamento',
+              sets: '3',
+              reps: '10',
+              effortTarget: '2',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      splits: [
+        {
+          name: 'A',
+          exercises: [
+            {
+              name: 'Agachamento',
+              sets: '3',
+              reps: '10',
+              muscleGroup: 'INVALID_GROUP',
+            },
+          ],
+        },
+      ],
+    },
   ])('rejects invalid or unbounded plan input %j', async (invalid) => {
     await request(app.getHttpServer())
       .post('/workouts')
       .send({ ...body, ...invalid })
       .expect(400);
     expect(service.create).not.toHaveBeenCalled();
+  });
+
+  it('serves and mutates the exercise library before the generic workout route', async () => {
+    await request(app.getHttpServer())
+      .get('/workouts/exercise-library?q=supino&muscleGroup=CHEST')
+      .expect(200);
+    expect(exerciseLibraryService.list).toHaveBeenCalledWith(user, {
+      q: 'supino',
+      muscleGroup: 'CHEST',
+    });
+    expect(readService.getWorkout).not.toHaveBeenCalled();
+
+    await request(app.getHttpServer())
+      .post('/workouts/exercise-library')
+      .send({
+        name: 'Agachamento pausa',
+        muscleGroup: 'QUADRICEPS',
+        equipment: 'BARBELL',
+      })
+      .expect(201);
+    expect(exerciseLibraryService.create).toHaveBeenCalledWith(user, {
+      name: 'Agachamento pausa',
+      muscleGroup: 'QUADRICEPS',
+      equipment: 'BARBELL',
+    });
+
+    await request(app.getHttpServer())
+      .delete(`/workouts/exercise-library/${clientId}`)
+      .expect(200);
+    expect(exerciseLibraryService.remove).toHaveBeenCalledWith(user, clientId);
+
+    expect(
+      Reflect.getMetadata(
+        CLINICAL_RESPONSE,
+        WorkoutsController.prototype['listExerciseLibrary'],
+      ),
+    ).toEqual({ exception: 'catalog' });
+    expect(
+      Reflect.getMetadata(
+        CLINICAL_RESPONSE,
+        WorkoutsController.prototype['createCustomExercise'],
+      ),
+    ).toEqual({ exception: 'catalog' });
+    expect(
+      Reflect.getMetadata(
+        CLINICAL_RESPONSE,
+        WorkoutsController.prototype['removeCustomExercise'],
+      ),
+    ).toEqual({ shape: 'ack' });
   });
 
   it('reads the active plan through the Client route', async () => {

@@ -1,4 +1,15 @@
-import type { CreateWorkoutInput, WorkoutPrescription } from "@/types/workout"
+import {
+  MUSCLE_GROUP_LABELS,
+  TRAINING_METHOD_LABELS,
+  type CreateWorkoutExerciseInput,
+  type CreateWorkoutInput,
+  type EffortType,
+  type MuscleGroup,
+  type TrainingMethod,
+  type WorkoutPrescription,
+} from "@/types/workout"
+
+export const WORKOUT_TEMPO_REGEX = /^\d{1,2}-[0-9xX]{1,2}-[0-9xX]{1,2}-\d{1,2}$/
 
 export interface WorkoutFormExercise {
   id: string
@@ -7,6 +18,12 @@ export interface WorkoutFormExercise {
   reps: string
   rest: string
   notes: string
+  muscleGroup: MuscleGroup | ""
+  load: string
+  effortType: EffortType | ""
+  effortTarget: string
+  tempo: string
+  method: TrainingMethod
 }
 
 export interface WorkoutFormSplit {
@@ -34,6 +51,12 @@ export function createWorkoutExercise(): WorkoutFormExercise {
     reps: "",
     rest: "",
     notes: "",
+    muscleGroup: "",
+    load: "",
+    effortType: "",
+    effortTarget: "",
+    tempo: "",
+    method: "STANDARD",
   }
 }
 
@@ -48,6 +71,34 @@ export function createWorkoutSplit(index = 0): WorkoutFormSplit {
   }
 }
 
+export function duplicateExercise(exercise: WorkoutFormExercise): WorkoutFormExercise {
+  return {
+    ...exercise,
+    id: `exercise-${nextLocalId++}`,
+  }
+}
+
+export function duplicateSplit(split: WorkoutFormSplit): WorkoutFormSplit {
+  const baseName = split.name.trim() || "Divisão"
+  return {
+    id: `split-${nextLocalId++}`,
+    name: `${baseName} (cópia)`,
+    focus: split.focus,
+    exercises: split.exercises.map(duplicateExercise),
+  }
+}
+
+export function moveItem<T>(items: readonly T[], index: number, direction: -1 | 1): T[] {
+  const targetIndex = index + direction
+  if (index < 0 || index >= items.length || targetIndex < 0 || targetIndex >= items.length) {
+    return [...items]
+  }
+  const next = [...items]
+  const [moved] = next.splice(index, 1)
+  next.splice(targetIndex, 0, moved)
+  return next
+}
+
 export function createEmptyWorkoutForm(): WorkoutForm {
   return {
     title: "",
@@ -59,21 +110,36 @@ export function createEmptyWorkoutForm(): WorkoutForm {
 }
 
 export function copyWorkoutToForm(workout: WorkoutPrescription): WorkoutForm {
+  const orderedSplits = [...workout.splits].sort(
+    (a, b) => (a.position ?? 0) - (b.position ?? 0),
+  )
+
   const splits: WorkoutFormSplit[] =
-    workout.splits.length > 0
-      ? workout.splits.map(split => ({
-          id: `split-${nextLocalId++}`,
-          name: split.name,
-          focus: split.focus ?? "",
-          exercises: split.exercises.map(exercise => ({
-            id: `exercise-${nextLocalId++}`,
-            name: exercise.name,
-            sets: exercise.sets,
-            reps: exercise.reps,
-            rest: exercise.rest ?? "",
-            notes: exercise.notes ?? "",
-          })),
-        }))
+    orderedSplits.length > 0
+      ? orderedSplits.map(split => {
+          const orderedExercises = [...split.exercises].sort(
+            (a, b) => (a.position ?? 0) - (b.position ?? 0),
+          )
+          return {
+            id: `split-${nextLocalId++}`,
+            name: split.name,
+            focus: split.focus ?? "",
+            exercises: orderedExercises.map(exercise => ({
+              id: `exercise-${nextLocalId++}`,
+              name: exercise.name,
+              sets: exercise.sets,
+              reps: exercise.reps,
+              rest: exercise.rest ?? "",
+              notes: exercise.notes ?? "",
+              muscleGroup: exercise.muscleGroup ?? "",
+              load: exercise.load ?? "",
+              effortType: exercise.effortType ?? "",
+              effortTarget: exercise.effortTarget ?? "",
+              tempo: exercise.tempo ?? "",
+              method: exercise.method ?? "STANDARD",
+            })),
+          }
+        })
       : [createWorkoutSplit(0)]
 
   return {
@@ -83,6 +149,26 @@ export function copyWorkoutToForm(workout: WorkoutPrescription): WorkoutForm {
     notes: workout.notes ?? "",
     splits,
   }
+}
+
+export function summarizeAdvancedExercise(exercise: WorkoutFormExercise): string[] {
+  const chips: string[] = []
+  if (exercise.muscleGroup) {
+    chips.push(MUSCLE_GROUP_LABELS[exercise.muscleGroup])
+  }
+  if (exercise.method && exercise.method !== "STANDARD") {
+    chips.push(TRAINING_METHOD_LABELS[exercise.method])
+  }
+  if (exercise.effortType && exercise.effortTarget.trim()) {
+    chips.push(`${exercise.effortType} ${exercise.effortTarget.trim()}`)
+  }
+  if (exercise.tempo.trim()) {
+    chips.push(`Cadência ${exercise.tempo.trim()}`)
+  }
+  if (exercise.notes.trim()) {
+    chips.push("Observações")
+  }
+  return chips
 }
 
 function parseDurationWeeks(raw: string): number | null {
@@ -148,6 +234,10 @@ export function validateWorkoutForm(form: WorkoutForm): Record<string, string> {
       const exerciseName = exercise.name.trim()
       const sets = exercise.sets.trim()
       const reps = exercise.reps.trim()
+      const load = exercise.load.trim()
+      const effortTarget = exercise.effortTarget.trim()
+      const tempo = exercise.tempo.trim()
+
       if (!exerciseName) {
         errors[`exercises.${exercise.id}.name`] = "Informe o nome do exercício."
       } else if (exerciseName.length > 200) {
@@ -165,6 +255,23 @@ export function validateWorkoutForm(form: WorkoutForm): Record<string, string> {
       }
       if (exercise.rest.trim().length > 100) {
         errors[`exercises.${exercise.id}.rest`] = "O descanso deve ter no máximo 100 caracteres."
+      }
+      if (load.length > 100) {
+        errors[`exercises.${exercise.id}.load`] = "A carga deve ter no máximo 100 caracteres."
+      }
+      if (exercise.effortType && !effortTarget) {
+        errors[`exercises.${exercise.id}.effortTarget`] =
+          "Informe o valor de esforço para a escala selecionada."
+      } else if (!exercise.effortType && effortTarget) {
+        errors[`exercises.${exercise.id}.effortType`] =
+          "Selecione a escala (RIR ou RPE) para o esforço alvo."
+      } else if (effortTarget.length > 20) {
+        errors[`exercises.${exercise.id}.effortTarget`] =
+          "O esforço alvo deve ter no máximo 20 caracteres."
+      }
+      if (tempo && (tempo.length > 20 || !WORKOUT_TEMPO_REGEX.test(tempo))) {
+        errors[`exercises.${exercise.id}.tempo`] =
+          "Cadência deve seguir o formato excêntrica-pausa-concêntrica-pausa (ex.: 3-0-1-0)."
       }
       if (exercise.notes.trim().length > 2000) {
         errors[`exercises.${exercise.id}.notes`] = "As observações devem ter no máximo 2000 caracteres."
@@ -187,13 +294,27 @@ export function buildWorkoutInput(form: WorkoutForm, clientId: string): CreateWo
         exercises: split.exercises.map(exercise => {
           const rest = exercise.rest.trim()
           const notes = exercise.notes.trim()
-          return {
+          const load = exercise.load.trim()
+          const effortTarget = exercise.effortTarget.trim()
+          const tempo = exercise.tempo.trim()
+
+          const item: CreateWorkoutExerciseInput = {
             name: exercise.name.trim(),
             sets: exercise.sets.trim(),
             reps: exercise.reps.trim(),
             ...(rest ? { rest } : {}),
             ...(notes ? { notes } : {}),
+            ...(exercise.muscleGroup ? { muscleGroup: exercise.muscleGroup } : {}),
+            ...(load ? { load } : {}),
+            ...(exercise.effortType && effortTarget
+              ? { effortType: exercise.effortType, effortTarget }
+              : {}),
+            ...(tempo ? { tempo } : {}),
+            ...(exercise.method && exercise.method !== "STANDARD"
+              ? { method: exercise.method }
+              : {}),
           }
+          return item
         }),
       }
     }),

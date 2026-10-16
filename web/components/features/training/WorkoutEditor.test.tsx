@@ -208,4 +208,74 @@ describe("WorkoutEditor", () => {
     expect(screen.getByText(/prontuário arquivado/i)).toBeVisible()
     expect(screen.getByRole("button", { name: "Salvar prescrição" })).toBeDisabled()
   })
+
+  it("supports reordering and duplicating exercises and splits in the editor", async () => {
+    const user = userEvent.setup()
+    render(
+      <WorkoutEditor
+        client={makeTestClient("c1", "Marina Lopes", "ACTIVE")}
+        activeWorkout={null}
+        onSubmit={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Adicionar exercício" }))
+    await user.type(screen.getByLabelText("Nome do exercício"), "Exercício 1")
+    await user.type(screen.getByLabelText("Séries"), "3")
+    await user.type(screen.getByLabelText("Repetições"), "10")
+
+    await user.click(screen.getByRole("button", { name: "Duplicar exercício 1" }))
+    const exerciseInputs = screen.getAllByLabelText("Nome do exercício")
+    expect(exerciseInputs).toHaveLength(2)
+    expect(exerciseInputs[1]).toHaveValue("Exercício 1")
+
+    await user.clear(exerciseInputs[1])
+    await user.type(exerciseInputs[1], "Exercício 2")
+
+    // Move Exercise 2 up
+    await user.click(screen.getByRole("button", { name: "Mover exercício 2 para cima" }))
+    const reorderedInputs = screen.getAllByLabelText("Nome do exercício")
+    expect(reorderedInputs[0]).toHaveValue("Exercício 2")
+    expect(reorderedInputs[1]).toHaveValue("Exercício 1")
+
+    // Duplicate split
+    await user.click(screen.getByRole("button", { name: "Duplicar divisão 1" }))
+    expect(screen.getByDisplayValue("Treino A (cópia)")).toBeVisible()
+  })
+
+  it("expands collapsible advanced parameters and shows summary chips", async () => {
+    const user = userEvent.setup()
+    render(
+      <WorkoutEditor
+        client={makeTestClient("c1", "Marina Lopes", "ACTIVE")}
+        activeWorkout={null}
+        onSubmit={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Adicionar exercício" }))
+    await user.type(screen.getByLabelText("Nome do exercício"), "Agachamento")
+    await user.type(screen.getByLabelText("Séries"), "4")
+    await user.type(screen.getByLabelText("Repetições"), "8")
+
+    const toggleBtn = screen.getByRole("button", { name: "Parâmetros avançados" })
+    await user.click(toggleBtn)
+
+    expect(screen.getByLabelText("Grupo muscular")).toBeVisible()
+    expect(screen.getByLabelText("Método de treino")).toBeVisible()
+    expect(screen.getByLabelText("Cadência")).toBeVisible()
+
+    await user.selectOptions(screen.getByLabelText("Grupo muscular"), "QUADRICEPS")
+    await user.selectOptions(screen.getByLabelText("Método de treino"), "REST_PAUSE")
+    await user.selectOptions(screen.getByLabelText("Escala de esforço"), "RIR")
+    await user.type(screen.getByLabelText("Esforço alvo"), "2")
+    await user.type(screen.getByLabelText("Cadência"), "3-0-1-0")
+
+    // Collapse advanced parameters
+    await user.click(toggleBtn)
+    expect(screen.getByText("Quadríceps")).toBeVisible()
+    expect(screen.getByText("Rest-pause")).toBeVisible()
+    expect(screen.getByText("RIR 2")).toBeVisible()
+    expect(screen.getByText("Cadência 3-0-1-0")).toBeVisible()
+  })
 })

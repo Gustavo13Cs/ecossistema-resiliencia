@@ -4,7 +4,13 @@ import {
   buildWorkoutInput,
   copyWorkoutToForm,
   createEmptyWorkoutForm,
+  createWorkoutExercise,
+  createWorkoutSplit,
+  duplicateExercise,
+  duplicateSplit,
   isWorkoutFormDirty,
+  moveItem,
+  summarizeAdvancedExercise,
   validateWorkoutForm,
 } from "./workout-form"
 
@@ -24,6 +30,7 @@ const samplePrescription: WorkoutPrescription = {
       id: "split-db-1",
       name: "Treino A",
       focus: "Inferiores",
+      position: 0,
       exercises: [
         {
           id: "ex-db-1",
@@ -32,6 +39,13 @@ const samplePrescription: WorkoutPrescription = {
           reps: "6-8",
           rest: "120s",
           notes: "Cadência controlada",
+          position: 0,
+          muscleGroup: "QUADRICEPS",
+          load: "80 kg",
+          effortType: "RIR",
+          effortTarget: "2",
+          tempo: "3-1-1-0",
+          method: "REST_PAUSE",
         },
       ],
     },
@@ -39,6 +53,7 @@ const samplePrescription: WorkoutPrescription = {
       id: "split-db-2",
       name: "Treino B",
       focus: null,
+      position: 1,
       exercises: [
         {
           id: "ex-db-2",
@@ -47,6 +62,8 @@ const samplePrescription: WorkoutPrescription = {
           reps: "8-10",
           rest: null,
           notes: null,
+          position: 0,
+          method: "STANDARD",
         },
       ],
     },
@@ -67,7 +84,7 @@ describe("workout-form helpers", () => {
     expect(isWorkoutFormDirty(form)).toBe(false)
   })
 
-  it("copies an existing prescription into editable form state with local ids", () => {
+  it("copies an existing prescription into editable form state with local ids and advanced fields", () => {
     const form = copyWorkoutToForm(samplePrescription)
     expect(form.title).toBe("Força Base")
     expect(form.goal).toBe("Hipertrofia e controle motor")
@@ -82,10 +99,64 @@ describe("workout-form helpers", () => {
       reps: "6-8",
       rest: "120s",
       notes: "Cadência controlada",
+      muscleGroup: "QUADRICEPS",
+      load: "80 kg",
+      effortType: "RIR",
+      effortTarget: "2",
+      tempo: "3-1-1-0",
+      method: "REST_PAUSE",
     })
     expect(form.splits[1].focus).toBe("")
     expect(form.splits[1].exercises[0].rest).toBe("")
     expect(isWorkoutFormDirty(form)).toBe(true)
+  })
+
+  it("moves items up and down immutably within bounds", () => {
+    const original = ["A", "B", "C"]
+    expect(moveItem(original, 1, -1)).toEqual(["B", "A", "C"])
+    expect(moveItem(original, 1, 1)).toEqual(["A", "C", "B"])
+    expect(moveItem(original, 0, -1)).toEqual(["A", "B", "C"])
+    expect(moveItem(original, 2, 1)).toEqual(["A", "B", "C"])
+    expect(original).toEqual(["A", "B", "C"])
+  })
+
+  it("duplicates exercises and splits with distinct local ids and copy suffix", () => {
+    const ex = createWorkoutExercise()
+    ex.name = "Supino Reto"
+    ex.load = "70 kg"
+    const duplicatedEx = duplicateExercise(ex)
+    expect(duplicatedEx.id).not.toBe(ex.id)
+    expect(duplicatedEx.name).toBe("Supino Reto")
+    expect(duplicatedEx.load).toBe("70 kg")
+
+    const split = createWorkoutSplit(0)
+    split.name = "Treino A"
+    split.exercises = [ex]
+    const duplicatedSp = duplicateSplit(split)
+    expect(duplicatedSp.id).not.toBe(split.id)
+    expect(duplicatedSp.name).toBe("Treino A (cópia)")
+    expect(duplicatedSp.exercises).toHaveLength(1)
+    expect(duplicatedSp.exercises[0].id).not.toBe(ex.id)
+  })
+
+  it("summarizes advanced exercise fields as readable chips", () => {
+    const ex = createWorkoutExercise()
+    expect(summarizeAdvancedExercise(ex)).toEqual([])
+
+    ex.muscleGroup = "QUADRICEPS"
+    ex.method = "REST_PAUSE"
+    ex.effortType = "RIR"
+    ex.effortTarget = "2"
+    ex.tempo = "3-0-1-0"
+    ex.notes = "Descida lenta"
+
+    expect(summarizeAdvancedExercise(ex)).toEqual([
+      "Quadríceps",
+      "Rest-pause",
+      "RIR 2",
+      "Cadência 3-0-1-0",
+      "Observações",
+    ])
   })
 
   it("rejects blank or whitespace-only required strings and empty splits", () => {
@@ -102,7 +173,7 @@ describe("workout-form helpers", () => {
           id: "s1",
           name: "   ",
           focus: "",
-          exercises: [{ id: "e1", name: "  ", sets: " ", reps: "\t", rest: "", notes: "" }],
+          exercises: [{ id: "e1", name: "  ", sets: " ", reps: "\t", rest: "", notes: "", muscleGroup: "" as const, load: "", effortType: "" as const, effortTarget: "", tempo: "", method: "STANDARD" as const }],
         },
       ],
     }
@@ -112,6 +183,33 @@ describe("workout-form helpers", () => {
     expect(errors["exercises.e1.name"]).toBeTruthy()
     expect(errors["exercises.e1.sets"]).toBeTruthy()
     expect(errors["exercises.e1.reps"]).toBeTruthy()
+  })
+
+  it("validates advanced exercise fields: tempo regex and effortType/effortTarget pairing", () => {
+    const form = copyWorkoutToForm(samplePrescription)
+    const ex = form.splits[0].exercises[0]
+
+    ex.tempo = "invalido"
+    expect(validateWorkoutForm(form)[`exercises.${ex.id}.tempo`]).toContain("Cadência deve seguir")
+
+    ex.tempo = "3-0-1-0"
+    expect(validateWorkoutForm(form)[`exercises.${ex.id}.tempo`]).toBeUndefined()
+
+    ex.tempo = "4-1-X-0"
+    expect(validateWorkoutForm(form)[`exercises.${ex.id}.tempo`]).toBeUndefined()
+
+    ex.effortType = "RIR"
+    ex.effortTarget = ""
+    expect(validateWorkoutForm(form)[`exercises.${ex.id}.effortTarget`]).toBeTruthy()
+
+    ex.effortType = ""
+    ex.effortTarget = "2"
+    expect(validateWorkoutForm(form)[`exercises.${ex.id}.effortType`]).toBeTruthy()
+
+    ex.effortType = "RIR"
+    ex.effortTarget = "2"
+    expect(validateWorkoutForm(form)[`exercises.${ex.id}.effortTarget`]).toBeUndefined()
+    expect(validateWorkoutForm(form)[`exercises.${ex.id}.effortType`]).toBeUndefined()
   })
 
   it.each(["0", "-4", "105", "4.5", "4,5", "abc", "Infinity"])(
@@ -129,7 +227,7 @@ describe("workout-form helpers", () => {
     expect(validateWorkoutForm(form)).toEqual({})
   })
 
-  it("builds a clean CreateWorkoutInput omitting local ids and blank optional fields", () => {
+  it("builds a clean CreateWorkoutInput omitting local ids and blank optional fields while preserving advanced parameters", () => {
     const form = copyWorkoutToForm(samplePrescription)
     form.goal = "   "
     form.durationWeeks = ""
@@ -150,6 +248,12 @@ describe("workout-form helpers", () => {
               name: "Agachamento Livre",
               sets: "4",
               reps: "6-8",
+              muscleGroup: "QUADRICEPS",
+              load: "80 kg",
+              effortType: "RIR",
+              effortTarget: "2",
+              tempo: "3-1-1-0",
+              method: "REST_PAUSE",
             },
           ],
         },

@@ -34,6 +34,7 @@ import { SupplementsService } from '../src/modules/supplements/supplements.servi
 import { WorkoutsController } from '../src/modules/workouts/workouts.controller';
 import { WorkoutsService } from '../src/modules/workouts/workouts.service';
 import { TrainingReadService } from '../src/modules/workouts/training-read.service';
+import { ExerciseLibraryService } from '../src/modules/workouts/exercise-library.service';
 
 type TestRole = 'NUTRITIONIST' | 'PERSONAL' | 'PHYSIO' | 'ADMIN' | 'PATIENT';
 
@@ -93,6 +94,9 @@ describe('Professional domain boundaries (e2e)', () => {
   const recipesService = {
     list: jest.fn().mockResolvedValue([]),
   };
+  const exerciseLibraryService = {
+    list: jest.fn().mockResolvedValue({ items: [], total: 0 }),
+  };
 
   const asRole = (role: TestRole) => ({
     'x-test-user-id': PROFESSIONAL_ID,
@@ -128,6 +132,7 @@ describe('Professional domain boundaries (e2e)', () => {
         { provide: DietPlansService, useValue: dietPlansService },
         { provide: WorkoutsService, useValue: workoutsService },
         { provide: TrainingReadService, useValue: trainingReadService },
+        { provide: ExerciseLibraryService, useValue: exerciseLibraryService },
         { provide: RehabPlansService, useValue: rehabPlansService },
         { provide: ConsultationNotesService, useValue: {} },
         { provide: RecipesService, useValue: recipesService },
@@ -160,6 +165,7 @@ describe('Professional domain boundaries (e2e)', () => {
         { provide: RecipesService, useValue: recipesService },
         { provide: WorkoutsService, useValue: workoutsService },
         { provide: TrainingReadService, useValue: trainingReadService },
+        { provide: ExerciseLibraryService, useValue: exerciseLibraryService },
       ],
     }).compile();
 
@@ -270,6 +276,10 @@ describe('Professional domain boundaries (e2e)', () => {
     {
       path: `/workouts/${PROFESSIONAL_ID}`,
       method: trainingReadService.getWorkout,
+    },
+    {
+      path: '/workouts/exercise-library',
+      method: exerciseLibraryService.list,
     },
   ])(
     'authenticates and restricts training read route $path to PERSONAL',

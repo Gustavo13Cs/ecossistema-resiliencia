@@ -9,6 +9,9 @@ export const queryKeys = {
   workouts: (sub: string) => ["workouts", sub, "list"] as const,
   workout: (sub: string, clientId: string, workoutId: string) => ["workouts", sub, "client", clientId, "detail", workoutId] as const,
   activeWorkout: (sub: string, clientId: string) => ["workouts", sub, "client", clientId, "active"] as const,
+  exerciseLibraryRoot: (sub: string) => ["exercise-library", sub] as const,
+  exerciseLibrary: (sub: string, q: string, muscleGroup: string) =>
+    ["exercise-library", sub, q, muscleGroup] as const,
   centralLabExams: (sessionUserId: string) => ["central-lab-exams", sessionUserId] as const,
   labOrders: (sessionUserId: string) => ["lab-orders", sessionUserId] as const,
   clientGoals: (sessionUserId: string) => ["client-goals", sessionUserId] as const,
