@@ -9,15 +9,22 @@ import { X, Activity, Save } from "lucide-react"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context" // 🌟 Importamos o contexto de Auth
+import { PersonalAssessmentDialog } from "@/components/features/training/PersonalAssessmentDialog"
 
 interface AssessmentModalProps {
   isOpen: boolean
   onClose: () => void
   clientId: string
   onSuccess: () => void
+  onAccessDenied?: () => void
 }
 
-export function AssessmentModal({ isOpen, onClose, clientId, onSuccess }: AssessmentModalProps) {
+export function AssessmentModal(props: AssessmentModalProps) {
+  const { user } = useAuth()
+  return user?.role === "PERSONAL" ? <PersonalAssessmentDialog {...props} /> : <SharedAssessmentModal {...props} />
+}
+
+function SharedAssessmentModal({ isOpen, onClose, clientId, onSuccess }: AssessmentModalProps) {
   // 🌟 Descobre quem está a usar o modal
   const { user: loggedInUser } = useAuth()
   const isNutri = loggedInUser?.role === 'NUTRITIONIST'

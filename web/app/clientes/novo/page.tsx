@@ -33,6 +33,7 @@ export default function NovoClientePage() {
     await queryClient.invalidateQueries({
       queryKey: queryKeys.clients(user.sub, "ACTIVE"),
     })
+    await queryClient.invalidateQueries({ queryKey: queryKeys.trainingWorkspace(user.sub) })
     router.push("/clientes")
   }
 

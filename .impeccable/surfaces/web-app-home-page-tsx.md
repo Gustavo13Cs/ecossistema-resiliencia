@@ -2,7 +2,7 @@
 version: 1
 slug: "web-app-home-page-tsx"
 primary_target: "web/app/home/page.tsx"
-related_targets: []
+related_targets: ["web/components/features/training/PersonalDashboard.tsx"]
 ---
 
 # Home profissional
@@ -44,3 +44,11 @@ related_targets: []
 ## Unresolved decisions
 
 - Nenhuma decisão visual pendente para a especificação. A disponibilidade de cada bloco será determinada pela auditoria dos endpoints durante o plano de implementação.
+
+## Especialização Personal — P1
+
+- Cabeçalho Área de treinamento, data do navegador, Novo aluno, Nova prescrição e Abrir agenda.
+- Compromissos do dia independentes do workspace: até cinco não cancelados por início, com situação explícita.
+- Resumo autorizado e amostras de alunos sem treino ativo/recentes; conta nova e somente arquivados recebem estados distintos.
+- Seleção de aluno ativo sob demanda, sem carregar o diretório para calcular contagens. Falhas parciais preservam os blocos válidos; 401/403 retira conteúdo utilizável.
+- Nutrição/Fisioterapia conservam a composição anterior. Verificação visual final coordenada na Task 7.

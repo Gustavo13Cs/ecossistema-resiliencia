@@ -1,297 +1,157 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { api } from "@/lib/api"
-import { Dumbbell, Plus, Search, Activity, ArrowRight, X, Clock, Edit, Trash2, Bookmark, BookmarkCheck } from "lucide-react"
+import { useCallback, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
-import { useClients } from "@/hooks/features/useClients"
-import type { WorkoutSummary } from "@/types/workout"
+import { isAxiosError } from "axios"
+import { AsyncState } from "@/components/feedback/AsyncState"
+import { WorkoutClientPicker } from "@/components/features/training/WorkoutClientPicker"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useAuth } from "@/contexts/auth-context"
+import { useWorkouts } from "@/hooks/features/useWorkouts"
+
+const actionClass =
+  "inline-flex min-h-11 items-center justify-center rounded-[var(--sm-radius-sm)] px-4 py-2.5 text-sm font-bold text-[var(--sm-brand)] hover:bg-[var(--sm-subtle-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sm-focus)]"
+
+function formatDate(value: string) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime())
+    ? "Data não registrada"
+    : new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "numeric" }).format(date)
+}
 
 export default function TreinosHubPage() {
   const router = useRouter()
-  const [workouts, setWorkouts] = useState<WorkoutSummary[]>([])
-  const { data: patients = [], isPending: usersLoading } = useClients("ACTIVE")
-  const [loadingWorkouts, setLoadingWorkouts] = useState(true)
-  
-  // Estados para o Modal de Seleção de Aluno
-  const [showSelectModal, setShowSelectModal] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  
-  // Estado para o Modal Bonito de Apagar
-  const [workoutToDelete, setWorkoutToDelete] = useState<{id: string, name: string} | null>(null)
-  const [savingTemplateId, setSavingTemplateId] = useState<string | null>(null)
+  const { user } = useAuth()
+  const { listQuery } = useWorkouts({})
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerDenied, setPickerDenied] = useState(false)
+  const handlePickerAccessDenied = useCallback(() => setPickerDenied(true), [])
 
-  useEffect(() => {
-    fetchDashboardData()
-  }, [])
-
-  const fetchDashboardData = async () => {
-    setLoadingWorkouts(true)
-    try {
-      const workoutsRes = await api.get<WorkoutSummary[]>("/workouts")
-      setWorkouts(workoutsRes.data || [])
-    } catch (error) {
-      setWorkouts([])
-    } finally {
-      setLoadingWorkouts(false)
-    }
+  if (user?.role !== "PERSONAL") {
+    return (
+      <AsyncState
+        kind="error"
+        title="Área de treinamento indisponível"
+        description="Esta área é exclusiva para profissionais de Educação Física."
+      />
+    )
   }
 
-  const loading = usersLoading || loadingWorkouts
-
-  const executeDelete = async () => {
-    if (!workoutToDelete) return
-    try {
-      await api.delete(`/workouts/${workoutToDelete.id}`)
-      setWorkouts(workouts.filter(w => w.id !== workoutToDelete.id))
-      toast.success("Ficha apagada com sucesso!")
-    } catch (error) {
-      toast.error("Erro ao apagar a ficha.")
-    } finally {
-      setWorkoutToDelete(null)
-    }
+  const listErrorStatus = isAxiosError(listQuery.error) ? listQuery.error.response?.status : undefined
+  if (pickerDenied || listErrorStatus === 401 || listErrorStatus === 403) {
+    return (
+      <AsyncState
+        kind="error"
+        title="Restabeleça seu acesso"
+        description="Sua sessão não permite acessar as fichas de treino. Entre novamente ou restabeleça seu acesso para continuar."
+        action={
+          <Link href="/login" className={actionClass}>
+            Entrar novamente
+          </Link>
+        }
+      />
+    )
   }
 
-  const filteredPatients = patients.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
-  const handleSelectPatient = (patientId: string) => {
-    router.push(`/clientes/${patientId}/novo-treino`)
-  }
-
-  const handleSaveAsTemplate = async (workoutId: string) => {
-    setSavingTemplateId(workoutId)
-    try {
-      await api.patch(`/workouts/${workoutId}/save-as-template`)
-      setWorkouts(prev => prev.map(w => w.id === workoutId ? { ...w, isTemplate: true } : w))
-      toast.success("Salvo como template! Disponível para reutilizar em novas prescrições.")
-    } catch {
-      toast.error("Erro ao salvar como template.")
-    } finally {
-      setSavingTemplateId(null)
-    }
-  }
+  const workouts = listQuery.data ?? []
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
-      <div className="w-full px-6 md:px-12 lg:px-20 mx-auto space-y-8">
-        
-        {/* CABEÇALHO */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
-              <Dumbbell className="w-8 h-8 text-blue-600" /> Central de Treinos
-            </h1>
-            <p className="text-slate-500 mt-1">
-              Faça a gestão das periodizações e prescreva novas fichas de treino para os seus alunos.
-            </p>
-          </div>
-
-          <Button 
-            onClick={() => setShowSelectModal(true)}
-            className="h-12 px-6 shadow-md text-base text-white bg-blue-600 hover:bg-blue-700"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Nova Prescrição
-          </Button>
+    <div className="min-w-0 space-y-7 pb-10 text-[var(--sm-ink)]">
+      <header className="flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-3xl font-extrabold tracking-[-0.03em]">Treinos</h1>
+          <p className="mt-2 max-w-[65ch] text-base text-[var(--sm-muted)]">
+            Consulte as fichas salvas dos seus alunos ou inicie uma nova prescrição.
+          </p>
         </div>
+        <Button type="button" className="min-h-11" onClick={() => setPickerOpen(true)}>
+          Nova prescrição
+        </Button>
+      </header>
 
-        {/* RESUMO RÁPIDO */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="shadow-sm border-0 border-t-4 border-t-blue-500">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                <Activity className="w-4 h-4 text-blue-500" /> Fichas de Treino Ativas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-black text-slate-800">{workouts.length}</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="shadow-sm border-0 border-t-4 border-t-indigo-500">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                <Clock className="w-4 h-4 text-indigo-500" /> Ação Rápida
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-slate-600 font-medium mt-1 mb-3">Precisa de ajustar uma carga ou exercício?</p>
-              <Button onClick={() => setShowSelectModal(true)} variant="outline" className="w-full border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100">
-                Selecionar Aluno para Editar
-              </Button>
-            </CardContent>
-          </Card>
+      {listQuery.isPending ? (
+        <div role="status" aria-label="Carregando fichas de treino" aria-busy="true" className="space-y-3 py-5">
+          <span className="sr-only">Buscando as fichas de treino da sua base privada.</span>
+          <Skeleton aria-hidden="true" className="h-12 w-full" />
+          <Skeleton aria-hidden="true" className="h-12 w-full" />
         </div>
-
-        {/* TABELA DE TREINOS RECENTES */}
-        <Card className="shadow-lg border-0 overflow-hidden">
-          <CardHeader className="bg-blue-50 border-b border-blue-100">
-            <CardTitle className="text-lg flex items-center gap-2 text-blue-800">
-              <Clock className="w-5 h-5" /> Últimas Fichas Prescritas
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader className="bg-white">
-                  <TableRow>
-                    <TableHead className="py-4 px-6">Aluno</TableHead>
-                    <TableHead className="px-6">Data da Prescrição</TableHead>
-                    <TableHead className="px-6">Foco / Periodização</TableHead>
-                    <TableHead className="text-right px-6">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-12 text-slate-500 animate-pulse">
-                        A carregar histórico...
-                      </TableCell>
-                    </TableRow>
-                  ) : workouts.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-12 text-slate-500">
-                        <Dumbbell className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-                        Nenhuma ficha de treino encontrada no histórico.<br/>
-                        Clique em "Nova Prescrição" para montar o seu primeiro treino!
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    workouts.map((treino) => (
-                      <TableRow key={treino.id} className="hover:bg-slate-50 transition-colors">
-                        <TableCell className="font-semibold text-slate-700 py-4 px-6">
-                          {treino.client?.name || "Aluno indisponível"}
-                        </TableCell>
-                        <TableCell className="text-slate-500 px-6">
-                          {new Date(treino.createdAt).toLocaleDateString('pt-PT')}
-                        </TableCell>
-                        <TableCell className="text-slate-500 px-6 font-medium">
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs mr-2">
-                            {treino.title}
-                          </span>
-                          {treino.goal}
-                        </TableCell>
-                        <TableCell className="text-right px-6">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline" size="sm"
-                              onClick={() => handleSaveAsTemplate(treino.id)}
-                              disabled={savingTemplateId === treino.id || treino.isTemplate}
-                              className="text-amber-800 border-amber-200 hover:bg-amber-50 hover:border-amber-300"
-                            >
-                              {treino.isTemplate
-                                ? <><BookmarkCheck className="w-4 h-4 mr-1" /> Template</>
-                                : savingTemplateId === treino.id
-                                  ? <span className="animate-pulse">...</span>
-                                  : <><Bookmark className="w-4 h-4 mr-1" /> Salvar Template</>}
-                            </Button>
-                            <Button 
-                              variant="outline" size="sm" 
-                              onClick={() => router.push(`/clientes/${treino.clientId}/novo-treino`)}
-                              className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                            >
-                              <Edit className="w-4 h-4 mr-1" /> Abrir Ficha
-                            </Button>
-                            <Button 
-                              variant="outline" size="icon" 
-                              onClick={() => setWorkoutToDelete({ id: treino.id, name: treino.client?.name || "Aluno" })}
-                              className="text-rose-500 border-rose-200 hover:bg-rose-50 h-9 w-9"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 🌟 MODAL INTELIGENTE: SELECIONAR ALUNO PARA O TREINO */}
-      {showSelectModal && (
-        <>
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40" onClick={() => setShowSelectModal(false)}></div>
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-              <div>
-                <h2 className="text-lg font-bold text-slate-800">Para quem é este treino?</h2>
-                <p className="text-sm text-slate-500">Selecione o aluno na sua lista.</p>
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => setShowSelectModal(false)} className="h-8 w-8 rounded-full">
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div className="relative">
-                <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <Input 
-                  placeholder="Buscar pelo nome..." 
-                  className="pl-10 h-12 bg-slate-50 focus-visible:ring-blue-500"
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  autoFocus
-                />
-              </div>
-
-              <div className="max-h-64 overflow-y-auto space-y-2 custom-scrollbar pr-2 mt-4">
-                {filteredPatients.length === 0 ? (
-                  <p className="text-center text-slate-400 py-4">Nenhum aluno encontrado.</p>
-                ) : (
-                  filteredPatients.map(patient => (
-                    <div 
-                      key={patient.id}
-                      onClick={() => handleSelectPatient(patient.id)}
-                      className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all group"
-                    >
-                      <div>
-                        <p className="font-bold text-slate-700 group-hover:text-blue-800">{patient.name}</p>
-                        <p className="text-xs text-slate-400">{patient.goal || "Sem objetivo mapeado"}</p>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600" />
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </>
+      ) : listQuery.error ? (
+        <AsyncState
+          kind="error"
+          title="Treinos indisponíveis"
+          description="Não foi possível carregar o histórico de prescrições agora."
+          action={
+            <Button type="button" className="min-h-11" onClick={() => void listQuery.refetch()}>
+              Tentar novamente
+            </Button>
+          }
+        />
+      ) : workouts.length === 0 ? (
+        <AsyncState
+          kind="empty"
+          title="Nenhuma ficha de treino registrada"
+          description="Inicie uma nova prescrição para registrar a primeira ficha de treino."
+          action={
+            <Button type="button" className="min-h-11" onClick={() => setPickerOpen(true)}>
+              Nova prescrição
+            </Button>
+          }
+        />
+      ) : (
+        <section
+          aria-label="Fichas prescritas"
+          className="overflow-hidden rounded-[var(--sm-radius-md)] border border-[var(--sm-border)] bg-[var(--sm-surface)]"
+        >
+          <ul className="divide-y divide-[var(--sm-border)]">
+            {workouts.map(workout => (
+              <li
+                key={workout.id}
+                className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
+              >
+                <div className="min-w-0 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold text-[var(--sm-ink)]">{workout.title}</span>
+                    <span className="rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] px-2 py-0.5 text-xs font-semibold text-[var(--sm-muted)]">
+                      {workout.isActive ? "Treino ativo" : "Treino anterior"}
+                    </span>
+                    {workout.client?.status === "ARCHIVED" ? (
+                      <span className="rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] px-2 py-0.5 text-xs font-semibold text-[var(--sm-muted)]">
+                        Aluno arquivado
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="text-sm text-[var(--sm-muted)]">
+                    Aluno: <span className="font-semibold text-[var(--sm-ink)]">{workout.client?.name || "Aluno"}</span> ·{" "}
+                    {workout.goal || "Objetivo não registrado"} · {formatDate(workout.updatedAt || workout.createdAt)}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link href={`/clientes/${workout.clientId}`} className={actionClass}>
+                    Abrir prontuário
+                  </Link>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="min-h-11"
+                    onClick={() => router.push(`/clientes/${workout.clientId}/treinos/${workout.id}`)}
+                  >
+                    Abrir ficha
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
-      {/* 🌟 MODAL BONITO DE EXCLUSÃO (TREINOS) */}
-      {workoutToDelete && (
-        <>
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50" onClick={() => setWorkoutToDelete(null)}></div>
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-6 text-center space-y-4">
-               <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                 <Trash2 className="w-8 h-8 text-rose-500" />
-               </div>
-               <h2 className="text-2xl font-bold text-slate-800">Apagar Ficha?</h2>
-               <p className="text-slate-500">
-                 Tem a certeza que deseja apagar a ficha de <span className="font-bold text-slate-700">{workoutToDelete.name}</span>? Esta ação não pode ser desfeita.
-               </p>
-               <div className="flex gap-3 pt-4">
-                 <Button variant="outline" className="flex-1 h-12 text-slate-600 font-bold" onClick={() => setWorkoutToDelete(null)}>Cancelar</Button>
-                 <Button className="flex-1 h-12 bg-rose-600 hover:bg-rose-700 text-white font-bold" onClick={executeDelete}>Sim, Apagar</Button>
-               </div>
-            </div>
-          </div>
-        </>
-      )}
-
+      <WorkoutClientPicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onAccessDenied={handlePickerAccessDenied}
+        onSelect={clientId => router.push(`/clientes/${clientId}/novo-treino`)}
+      />
     </div>
   )
 }

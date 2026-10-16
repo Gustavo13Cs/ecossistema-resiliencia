@@ -1,6 +1,9 @@
 import {
   IsDateString,
   IsNumber,
+  IsPositive,
+  Min,
+  Max,
   IsOptional,
   IsString,
   ValidateIf,
@@ -16,36 +19,109 @@ export class CreateAssessmentDto {
   @IsString()
   userId?: string;
   @IsOptional() @IsDateString() date?: string;
-  @IsOptional() @IsNumber() weight?: number;
-  @IsOptional() @IsNumber() bodyFat?: number;
-  @IsOptional() @IsNumber() muscleMass?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  weight?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @Min(0)
+  @Max(100)
+  bodyFat?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  muscleMass?: number;
 
   // Circunferências
-  @IsOptional() @IsNumber() waist?: number;
-  @IsOptional() @IsNumber() abdomen?: number;
-  @IsOptional() @IsNumber() hips?: number;
-  @IsOptional() @IsNumber() thorax?: number;
-  @IsOptional() @IsNumber() armLeft?: number;
-  @IsOptional() @IsNumber() armRight?: number;
-  @IsOptional() @IsNumber() thighLeft?: number;
-  @IsOptional() @IsNumber() thighRight?: number;
-  @IsOptional() @IsNumber() calfLeft?: number;
-  @IsOptional() @IsNumber() calfRight?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  waist?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  abdomen?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  hips?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  thorax?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  armLeft?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  armRight?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  thighLeft?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  thighRight?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  calfLeft?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  calfRight?: number;
 
   // Dobras
-  @IsOptional() @IsNumber() skinfoldTriceps?: number;
-  @IsOptional() @IsNumber() skinfoldSubscapular?: number;
-  @IsOptional() @IsNumber() skinfoldChest?: number;
-  @IsOptional() @IsNumber() skinfoldAxillary?: number;
-  @IsOptional() @IsNumber() skinfoldSuprailiac?: number;
-  @IsOptional() @IsNumber() skinfoldAbdominal?: number;
-  @IsOptional() @IsNumber() skinfoldThigh?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  skinfoldTriceps?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  skinfoldSubscapular?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  skinfoldChest?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  skinfoldAxillary?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  skinfoldSuprailiac?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  skinfoldAbdominal?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  skinfoldThigh?: number;
 
   // Performance
-  @IsOptional() @IsNumber() benchPress1RM?: number;
-  @IsOptional() @IsNumber() squat1RM?: number;
-  @IsOptional() @IsNumber() deadlift1RM?: number;
-  @IsOptional() @IsNumber() vo2Max?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  benchPress1RM?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  squat1RM?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  deadlift1RM?: number;
+  @ValidateIf((_dto, value: unknown) => value !== undefined)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @IsPositive()
+  vo2Max?: number;
 
   @IsOptional() @IsString() notes?: string;
 }

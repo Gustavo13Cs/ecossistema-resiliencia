@@ -31,7 +31,12 @@ describe('Contratos clínicos por prontuário Client', () => {
     clinicalWrite('workouts')
     cy.visit(`/clientes/${clinicalClientId}/novo-treino`)
     cy.wait(['@auth', '@client', '@active'])
-    cy.contains('button', 'Finalizar Ficha').click()
+    cy.contains('label', 'Título da prescrição').parent().find('input').type('Treino sintético')
+    cy.contains('button', 'Adicionar exercício').click()
+    cy.contains('label', 'Nome do exercício').parent().find('input').type('Agachamento Livre')
+    cy.contains('label', 'Séries').parent().find('input').type('4')
+    cy.contains('label', 'Repetições').parent().find('input').type('8')
+    cy.contains('button', 'Salvar prescrição').click()
     cy.wait('@clinicalSave')
   })
   it('prescreve reabilitação para o Client selecionado', () => {

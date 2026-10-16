@@ -1,4 +1,10 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import {
+  INestApplication,
+  NotFoundException,
+  ValidationPipe,
+} from '@nestjs/common';
+import { CLINICAL_RESPONSE } from '../../common/decorators/clinical-response.decorator';
+import { TrainingReadService } from './training-read.service';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -15,6 +21,12 @@ describe('WorkoutsController Client contract', () => {
     create: jest.fn(),
     findActive: jest.fn(),
     findActiveByUser: jest.fn(),
+    listTemplates: jest.fn(),
+  };
+  const readService = {
+    getWorkspace: jest.fn(),
+    getClientOverview: jest.fn(),
+    getWorkout: jest.fn(),
   };
   const body = {
     clientId,
@@ -32,7 +44,11 @@ describe('WorkoutsController Client contract', () => {
   beforeAll(async () => {
     const module = await Test.createTestingModule({
       controllers: [WorkoutsController],
-      providers: [RolesGuard, { provide: WorkoutsService, useValue: service }],
+      providers: [
+        RolesGuard,
+        { provide: WorkoutsService, useValue: service },
+        { provide: TrainingReadService, useValue: readService },
+      ],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({
@@ -62,6 +78,25 @@ describe('WorkoutsController Client contract', () => {
     service.create.mockResolvedValue({ id: 'workout-1', clientId });
     service.findActive.mockResolvedValue(null);
     service.findActiveByUser.mockResolvedValue(null);
+    service.listTemplates.mockResolvedValue([]);
+    readService.getWorkspace.mockResolvedValue({
+      counts: {
+        activeStudents: 0,
+        archivedStudents: 0,
+        withoutActiveWorkout: 0,
+      },
+      items: [],
+    });
+    readService.getClientOverview.mockResolvedValue({
+      client: { id: clientId, status: 'ACTIVE' },
+      activeWorkout: null,
+      recentAssessments: [],
+    });
+    readService.getWorkout.mockResolvedValue({
+      id: clientId,
+      clientId,
+      updatedAt: new Date('2026-10-14T12:00:00Z'),
+    });
   });
 
   it('creates with Client identity and the complete authenticated professional', async () => {
@@ -110,4 +145,71 @@ describe('WorkoutsController Client contract', () => {
       .expect(404);
     expect(service.findActiveByUser).not.toHaveBeenCalled();
   });
+
+  it('serves the workspace as a classified resource page', async () => {
+    await request(app.getHttpServer()).get('/workouts/workspace').expect(200);
+    expect(readService.getWorkspace).toHaveBeenCalledWith(user);
+    expect(
+      Reflect.getMetadata(
+        CLINICAL_RESPONSE,
+        WorkoutsController.prototype['getWorkspace'],
+      ),
+    ).toEqual({ shape: 'resource-page' });
+  });
+
+  it('serves a classified training overview', async () => {
+    await request(app.getHttpServer())
+      .get(`/workouts/client/${clientId}/overview`)
+      .expect(200);
+    expect(readService.getClientOverview).toHaveBeenCalledWith(user, clientId);
+    expect(
+      Reflect.getMetadata(
+        CLINICAL_RESPONSE,
+        WorkoutsController.prototype['getClientOverview'],
+      ),
+    ).toEqual({ shape: 'overview' });
+  });
+
+  it('serves the selected workout with ISO dates and resource classification', async () => {
+    const response = await request(app.getHttpServer())
+      .get(`/workouts/${clientId}`)
+      .expect(200);
+    expect(response.body).toMatchObject({
+      updatedAt: '2026-10-14T12:00:00.000Z',
+    });
+    expect(readService.getWorkout).toHaveBeenCalledWith(user, clientId);
+    expect(
+      Reflect.getMetadata(
+        CLINICAL_RESPONSE,
+        WorkoutsController.prototype['getWorkout'],
+      ),
+    ).toEqual({ shape: 'resource' });
+  });
+
+  it.each(['/workouts/not-a-uuid', '/workouts/client/not-a-uuid/overview'])(
+    'rejects invalid UUID on %s before querying',
+    async (path) => {
+      await request(app.getHttpServer()).get(path).expect(400);
+      expect(readService.getClientOverview).not.toHaveBeenCalled();
+      expect(readService.getWorkout).not.toHaveBeenCalled();
+    },
+  );
+
+  it('preserves templates before the generic workout route', async () => {
+    await request(app.getHttpServer()).get('/workouts/templates').expect(200);
+    expect(service.listTemplates).toHaveBeenCalledWith(user);
+    expect(readService.getWorkout).not.toHaveBeenCalled();
+  });
+
+  it.each(['getClientOverview', 'getWorkout'] as const)(
+    'preserves ownership 404 for %s',
+    async (method) => {
+      readService[method].mockRejectedValueOnce(new NotFoundException());
+      const path =
+        method === 'getWorkout'
+          ? `/workouts/${clientId}`
+          : `/workouts/client/${clientId}/overview`;
+      await request(app.getHttpServer()).get(path).expect(404);
+    },
+  );
 });

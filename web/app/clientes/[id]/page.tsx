@@ -1,12 +1,14 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
+import { isAxiosError } from "axios"
 import { useParams, useRouter } from "next/navigation"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { ClientOverviewSection } from "@/components/features/clients/ClientOverviewSection"
 import { ClientRecordHeader } from "@/components/features/clients/ClientRecordHeader"
+import { PersonalClientRecord } from "@/components/features/training/PersonalClientRecord"
 import { ProfessionalScopePanel } from "@/components/features/clients/ProfessionalScopePanel"
 import type { ClientFormPayload } from "@/components/features/clients/client-field-policy"
 import { NutritionistQuickActions } from "@/components/features/clients/NutritionistQuickActions"
@@ -57,6 +59,9 @@ export default function ClienteHubPage() {
   const [formRevision, setFormRevision] = useState(0)
   const [showAssessmentModal, setShowAssessmentModal] = useState(false)
   const [showPhysioAssessmentModal, setShowPhysioAssessmentModal] = useState(false)
+  const [deniedContext, setDeniedContext] = useState<string | null>(null)
+  const contextKey = `${user?.sub}:${clientId}`
+  const handleAccessDenied = useCallback(() => setDeniedContext(contextKey), [contextKey])
 
   const updateClient = useMutation({
     mutationFn: async ({ values, expectedUpdatedAt }: { values: ClientFormPayload; expectedUpdatedAt: string }) => {
@@ -80,6 +85,11 @@ export default function ClienteHubPage() {
       queryClient.invalidateQueries({ queryKey: queryKeys.clients(user.sub, "ACTIVE") }),
       queryClient.invalidateQueries({ queryKey: queryKeys.clients(user.sub, "ARCHIVED") }),
       queryClient.invalidateQueries({ queryKey: queryKeys.client(user.sub, clientId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.trainingWorkspace(user.sub) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.trainingOverview(user.sub, clientId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.workouts(user.sub) }),
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.workoutsRoot(user.sub), "client", clientId] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.assessments(user.sub, clientId) }),
     ])
   }
 
@@ -146,6 +156,11 @@ export default function ClienteHubPage() {
     return <AsyncState kind="loading" title="Carregando prontuário" description="Acessando os dados autorizados deste registro." />
   }
 
+  const actionDenied = [updateClient.error, archiveClient.error].some(error => isAxiosError(error) && [401, 403].includes(error.response?.status ?? 0))
+  if (user.role === "PERSONAL" && (deniedContext === contextKey || actionDenied)) {
+    return <AsyncState kind="error" title="Restabeleça seu acesso" description="Sua sessão não permite acessar estes registros. Entre novamente ou restabeleça seu acesso para continuar." />
+  }
+
   if (status !== "ready" || !client) {
     const state = ERROR_STATES[status === "ready" ? "server-error" : status]
     return (
@@ -189,6 +204,20 @@ export default function ClienteHubPage() {
             onReloadLatest={handleReloadLatest}
           />
           <ProfessionalScopePanel role={user.role} />
+        </div>
+      ) : user.role === "PERSONAL" ? (
+        <div className="space-y-6">
+          <PersonalClientRecord client={client} pending={pending} onAccessDenied={handleAccessDenied} />
+          <ClientOverviewSection
+            client={client}
+            role={user.role}
+            formRevision={formRevision}
+            pending={pending}
+            updateError={updateClient.error}
+            reloadingLatest={reloadingLatest}
+            onUpdate={handleUpdate}
+            onReloadLatest={handleReloadLatest}
+          />
         </div>
       ) : (
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">

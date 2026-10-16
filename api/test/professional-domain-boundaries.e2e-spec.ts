@@ -33,6 +33,7 @@ import { SupplementsController } from '../src/modules/supplements/supplements.co
 import { SupplementsService } from '../src/modules/supplements/supplements.service';
 import { WorkoutsController } from '../src/modules/workouts/workouts.controller';
 import { WorkoutsService } from '../src/modules/workouts/workouts.service';
+import { TrainingReadService } from '../src/modules/workouts/training-read.service';
 
 type TestRole = 'NUTRITIONIST' | 'PERSONAL' | 'PHYSIO' | 'ADMIN' | 'PATIENT';
 
@@ -64,6 +65,24 @@ describe('Professional domain boundaries (e2e)', () => {
   };
   const workoutsService = {
     saveAsTemplate: jest.fn().mockResolvedValue({ id: 'workout-template' }),
+  };
+  const trainingReadService = {
+    getWorkspace: jest.fn().mockResolvedValue({
+      counts: {
+        activeStudents: 0,
+        archivedStudents: 0,
+        withoutActiveWorkout: 0,
+      },
+      items: [],
+    }),
+    getClientOverview: jest.fn().mockResolvedValue({
+      client: { id: PROFESSIONAL_ID, status: 'ACTIVE' },
+      activeWorkout: null,
+      recentAssessments: [],
+    }),
+    getWorkout: jest
+      .fn()
+      .mockResolvedValue({ id: PROFESSIONAL_ID, clientId: PROFESSIONAL_ID }),
   };
   const rehabPlansService = {
     saveAsTemplate: jest.fn().mockResolvedValue({ id: 'rehab-template' }),
@@ -108,6 +127,7 @@ describe('Professional domain boundaries (e2e)', () => {
         { provide: SupplementsService, useValue: {} },
         { provide: DietPlansService, useValue: dietPlansService },
         { provide: WorkoutsService, useValue: workoutsService },
+        { provide: TrainingReadService, useValue: trainingReadService },
         { provide: RehabPlansService, useValue: rehabPlansService },
         { provide: ConsultationNotesService, useValue: {} },
         { provide: RecipesService, useValue: recipesService },
@@ -122,7 +142,11 @@ describe('Professional domain boundaries (e2e)', () => {
 
     const realJwtModule = await Test.createTestingModule({
       imports: [PassportModule.register({ defaultStrategy: 'jwt' })],
-      controllers: [AssessmentsController, RecipesController],
+      controllers: [
+        AssessmentsController,
+        RecipesController,
+        WorkoutsController,
+      ],
       providers: [
         JwtStrategy,
         // Sem credencial, Passport nega antes de consultar a sessão.
@@ -134,6 +158,8 @@ describe('Professional domain boundaries (e2e)', () => {
         JwtAuthGuard,
         RolesGuard,
         { provide: RecipesService, useValue: recipesService },
+        { provide: WorkoutsService, useValue: workoutsService },
+        { provide: TrainingReadService, useValue: trainingReadService },
       ],
     }).compile();
 
@@ -234,4 +260,39 @@ describe('Professional domain boundaries (e2e)', () => {
 
     expect(recipesService.list).not.toHaveBeenCalled();
   });
+
+  it.each([
+    { path: '/workouts/workspace', method: trainingReadService.getWorkspace },
+    {
+      path: `/workouts/client/${PROFESSIONAL_ID}/overview`,
+      method: trainingReadService.getClientOverview,
+    },
+    {
+      path: `/workouts/${PROFESSIONAL_ID}`,
+      method: trainingReadService.getWorkout,
+    },
+  ])(
+    'authenticates and restricts training read route $path to PERSONAL',
+    async ({ path, method }) => {
+      await request(realJwtApp.getHttpServer()).get(path).expect(401);
+      expect(method).not.toHaveBeenCalled();
+      for (const role of [
+        'NUTRITIONIST',
+        'PHYSIO',
+        'ADMIN',
+        'PATIENT',
+      ] as const) {
+        await request(app.getHttpServer())
+          .get(path)
+          .set(asRole(role))
+          .expect(403);
+      }
+      expect(method).not.toHaveBeenCalled();
+      await request(app.getHttpServer())
+        .get(path)
+        .set(asRole('PERSONAL'))
+        .expect(200);
+      expect(method).toHaveBeenCalledTimes(1);
+    },
+  );
 });

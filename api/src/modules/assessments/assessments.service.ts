@@ -3,6 +3,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { lockActiveOwnedClient } from '../../common/client-access/lock-active-owned-client';
+import { validateAssessmentMeasurements } from './domain/assessment-input';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { CreateAssessmentDto } from './dto/create-assessment.dto';
 
@@ -14,20 +17,24 @@ export class AssessmentsService {
     createAssessmentDto: CreateAssessmentDto,
     professionalId: string,
   ) {
+    validateAssessmentMeasurements(createAssessmentDto);
     const { clientId, userId, date, ...values } = createAssessmentDto;
-    const target = await this.resolveOwnedClient(
-      clientId,
-      userId,
-      professionalId,
-    );
-
-    return this.prisma.physicalAssessment.create({
-      data: {
-        ...values,
-        ...(date ? { date: new Date(date) } : {}),
-        clientId: target.clientId,
-        userId: target.userId,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const target = await this.resolveOwnedClient(
+        clientId,
+        userId,
+        professionalId,
+        tx,
+      );
+      await lockActiveOwnedClient(tx, target.clientId, professionalId);
+      return tx.physicalAssessment.create({
+        data: {
+          ...values,
+          ...(date ? { date: new Date(date) } : {}),
+          clientId: target.clientId,
+          userId: target.userId,
+        },
+      });
     });
   }
 
@@ -83,9 +90,13 @@ export class AssessmentsService {
     clientId: string | undefined,
     userId: string | undefined,
     professionalId: string,
+    database: Pick<
+      Prisma.TransactionClient,
+      'client' | 'professionalPatientLink'
+    > = this.prisma,
   ): Promise<{ clientId: string; userId: string | null }> {
     if (clientId) {
-      const client = await this.prisma.client.findFirst({
+      const client = await database.client.findFirst({
         where: { id: clientId, professionalId },
         select: { id: true },
       });
@@ -95,7 +106,7 @@ export class AssessmentsService {
 
     if (!userId) throw new NotFoundException('Cliente não encontrado');
 
-    const legacyLink = await this.prisma.professionalPatientLink.findUnique({
+    const legacyLink = await database.professionalPatientLink.findUnique({
       where: {
         professionalId_patientId: { professionalId, patientId: userId },
       },
@@ -105,7 +116,7 @@ export class AssessmentsService {
       throw new NotFoundException('Cliente não encontrado');
     }
 
-    const client = await this.prisma.client.findFirst({
+    const client = await database.client.findFirst({
       where: { id: legacyLink.id, professionalId },
       select: { id: true },
     });

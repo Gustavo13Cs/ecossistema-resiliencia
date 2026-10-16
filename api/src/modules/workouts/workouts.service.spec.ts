@@ -31,6 +31,7 @@ describe('WorkoutsService Client ownership', () => {
   const user: AuthUser = { sub: 'professional-1', role: 'PERSONAL' };
   const client = { id: dto.clientId, professionalId: user.sub };
   const tx = {
+    client: { findFirst: jest.fn() },
     $queryRaw: jest.fn().mockResolvedValue([{ id: dto.clientId }]),
     workout: {
       updateMany: jest.fn(),
@@ -65,6 +66,11 @@ describe('WorkoutsService Client ownership', () => {
   });
   beforeEach(() => {
     jest.clearAllMocks();
+    tx.$queryRaw.mockResolvedValue([{ id: dto.clientId }]);
+    tx.client.findFirst.mockResolvedValue({
+      id: dto.clientId,
+      status: 'ACTIVE',
+    });
     prisma.client.findFirst.mockResolvedValue(client);
     prisma.workout.findFirst.mockResolvedValue({
       id: 'plan-1',
@@ -141,6 +147,52 @@ describe('WorkoutsService Client ownership', () => {
     expect(prisma.$transaction).not.toHaveBeenCalled();
     expect(prisma.workout.findFirst).not.toHaveBeenCalled();
     expect(prisma.workout.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('archived_client_does_not_replace_active_workout', async () => {
+    tx.client.findFirst.mockResolvedValue({
+      id: client.id,
+      status: 'ARCHIVED',
+    });
+    await expect(service.create(user, dto)).rejects.toMatchObject({
+      status: 409,
+    });
+    expect(tx.workout.updateMany).not.toHaveBeenCalled();
+    expect(tx.workout.create).not.toHaveBeenCalled();
+  });
+
+  it('fails without replacing the active workout when ownership is lost at the lock', async () => {
+    tx.$queryRaw.mockResolvedValue([]);
+    await expect(service.create(user, dto)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(tx.workout.updateMany).not.toHaveBeenCalled();
+    expect(tx.workout.create).not.toHaveBeenCalled();
+  });
+
+  it('does not deactivate the old workout until the current status check completes', async () => {
+    let resolveStatus!: (value: { id: string; status: string }) => void;
+    tx.client.findFirst.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveStatus = resolve;
+      }),
+    );
+    const pending = service.create(user, dto);
+    for (let step = 0; step < 6; step++) await Promise.resolve();
+    expect(tx.workout.updateMany).not.toHaveBeenCalled();
+    resolveStatus({ id: client.id, status: 'ARCHIVED' });
+    await expect(pending).rejects.toMatchObject({ status: 409 });
+    expect(tx.workout.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('propagates a child creation failure from the same replacement transaction', async () => {
+    const failure = new Error('synthetic write failure');
+    tx.workout.create.mockRejectedValueOnce(failure);
+    await expect(service.create(user, dto)).rejects.toBe(failure);
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(tx.workout.updateMany).toHaveBeenCalledTimes(1);
+    expect(prisma.workout.updateMany).not.toHaveBeenCalled();
+    expect(prisma.workout.create).not.toHaveBeenCalled();
   });
 
   it('scopes the active plan to the Client and its creator', async () => {
