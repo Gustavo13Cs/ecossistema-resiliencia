@@ -8,6 +8,8 @@
 
 ## Current Task
 
+- **2026-10-17 — Execução autorizada com subagentes por tarefa**: planos aprovados pelo usuário ao escolher execução por subagentes. Worktree `.worktrees/personal-workout-implementation`, branch `agent/codex/personal-workout-implementation`, base `07b611c`. Preparação da base com Prisma gerado, PostgreSQL 16 sintético na porta 5434 e testes de referência. Cada tarefa terá implementador e revisão independentes; sem produção, push ou deploy. Ledgers locais por plano em `.superpowers/sdd/`.
+
 - **2026-10-17 — Especificações aprovadas e planos escritos**: usuário confirmou “revisei , ta aprovada” para rascunhos/revisões e biblioteca visual. Planos em `docs/superpowers/plans/2026-10-17-personal-rascunhos-revisoes.md` (7 tarefas) e `2026-10-17-personal-biblioteca-visual.md` (6 tarefas), autorrevisados contra as especificações. Aguardam revisão dos planos e escolha de execução; recomendação de execução direta com revisão independente final. A aprovação das especificações inclui o desenho proposto de schema/migrations para desenvolvimento; não representa aplicação em produção. Somente documentação nesta etapa; testes de produto não executados.
 
 - **2026-10-17 — Proposta do Personal aprovada**: usuário aprovou a direção com biblioteca visual e cadastro manual. Especificações em `docs/superpowers/specs/2026-10-17-personal-rascunhos-revisoes-design.md` e `docs/superpowers/specs/2026-10-17-personal-biblioteca-visual-design.md`, autorrevisadas e depois aprovadas pelo usuário. Branch `agent/codex/personal-workout-design`. Somente documentação; sem schema, migration, runtime ou produção alterados. Testes de produto não executados nesta etapa.
