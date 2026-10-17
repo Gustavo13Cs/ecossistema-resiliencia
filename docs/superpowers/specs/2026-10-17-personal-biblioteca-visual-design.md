@@ -2,6 +2,7 @@
 
 Data: 17/10/2026. Estado: especificação revisada e aprovada pelo usuário em conversa em 17/10/2026 (“revisei , ta aprovada”).
 Direção de produto aprovada em conversa em 17/10/2026, após solicitação de exercícios prontos com fotos/vídeos e alternativa manual.
+Atualização de aceite aprovada pelo usuário em 17/10/2026: “Usar as ilustrações nesta entrega”. A primeira entrega pode usar ilustrações licenciadas, identificadas como tal, conforme a fonte alternativa e evidência individual abaixo.
 Base de código: `e33f9c7`; [proposta aprovada e pesquisa de fontes](../../planning/2026-10-17-personal-proxima-entrega.md).
 
 ## 1. Resultado esperado e escopo
@@ -10,7 +11,7 @@ O Personal encontra exercícios prontos em português, consulta uma demonstraç�
 
 Jornada: abrir biblioteca → buscar por nome/grupo/equipamento → ver demonstração → adicionar à ficha → ajustar parâmetros → salvar/finalizar → reabrir a mesma referência de demonstração.
 
-Preservar os 148 exercícios do catálogo atual. A primeira entrega deve associar mídia conferida a pelo menos 20 exercícios desse catálogo, abrangendo peitoral, costas, membros inferiores, ombros e core. Os demais continuam disponíveis com “Demonstração ainda não disponível”. O requisito é foto ou vídeo: vídeo em todos os exercícios não é condição de aceite.
+Preservar os 148 exercícios do catálogo atual. A primeira entrega deve associar mídia conferida a pelo menos 20 exercícios desse catálogo, abrangendo peitoral, costas, membros inferiores, ombros e core. Os demais continuam disponíveis com “Demonstração ainda não disponível”. Após a escolha explícita do usuário, o requisito desta entrega aceita ilustração licenciada, foto ou vídeo; vídeo em todos os exercícios não é condição de aceite. Não apresentar ilustração como fotografia ou vídeo.
 
 Não importar centenas de nomes em inglês para aumentar a contagem. Expandir o catálogo somente com nome em português, variante identificada e metadados revisados. Não incluir upload de arquivos, busca automática no YouTube, geração de demonstrações por IA, portal de aluno ou contratação de serviço pago nesta entrega.
 
@@ -23,6 +24,8 @@ Antes de integrar a mídia, verificar em fontes oficiais os termos vigentes do s
 Registrar no documento de verificação do lote as URLs oficiais consultadas, data, condições observadas, cobertura e mapa de exercícios aceitos. Aceitar para exibição apenas mídia com autoria/origem identificadas e licença CC0, CC BY ou CC BY-SA em versão identificada, com créditos e obrigações cumpridos. Não adaptar/republicar mídia sem avaliar as obrigações dessa ação. Excluir mídia NC, licença ausente ou origem contraditória.
 
 Se o wger não satisfizer cobertura mínima, licença ou acesso gratuito, não publicar uma biblioteca visual vazia como concluída. Registrar o bloqueio concreto e avaliar o Free Exercise DB como alternativa pelo mesmo critério de proveniência. A declaração Unlicense do repositório não valida por si só a titularidade das fotografias. Uma troca de fonte precisa apresentar a evidência da alternativa antes de adoção; não exige nova aprovação para uma verificação somente de leitura.
+
+Fonte alternativa aprovada para esta entrega: ilustrações do Workout Guide (Bryl Lim), com cadeia Everkinetic/Greg Priday quando declarada, licença individual CC BY-SA 4.0, revisão fixa `aac599224bb9780305239607ef98540b7e0ce389`. O usuário escolheu esta opção após ver exemplos e receber a distinção de foto/vídeo. A validação do lote deve conferir arquivos/variantes/créditos e distribuição normal pelo jsDelivr; preservar as obrigações de atribuição/alterações e não incorporar código de terceiros. O bloqueio de wger.de permanece registrado, sem declarar que sua política foi alterada.
 
 Custos de hospedagem e tráfego do próprio SafeMove são distintos do preço da API. Nesta entrega, não criar infraestrutura paga nem copiar arquivos para um armazenamento novo.
 

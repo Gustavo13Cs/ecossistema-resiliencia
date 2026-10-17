@@ -8,6 +8,8 @@
 
 ## Current Task
 
+- **2026-10-17 — Editor de rascunhos implementado; revisão independente em andamento (Codex)**: `ea0d0ea`, 29 testes focados e 545 totais web, tipos/lint focado aprovados. Contratos de primeiro save, create→finalize e rebase fresco conferidos; integração de rotas e confirmação de saída por menu/histórico pendentes nas tarefas 6/7. Usuário aprovou usar as 20 ilustrações licenciadas na biblioteca visual após ver exemplos; especificação atualizada. Fonte candidata Workout Guide/Everkinetic, CC BY-SA4 por arquivo; implementação e revisão do manifesto ainda pendentes.
+
 - **2026-10-17 — Rascunhos Task 4 concluída/revisada; Task 5 em andamento (Codex)**: sete endpoints autenticados e classificados, com 52 testes focais e 19 HTTP/domínio aprovados, tipos/lint e revisão independente PASS/APPROVED sem achados em `0053f78`. Subagente dedicado ao editor, salvamento manual e conflitos; integração de rotas e jornada real seguem pendentes. Execução na worktree `personal-workout-implementation`; sem produção, push ou deploy.
 
 - **2026-10-17 — Rascunhos Task 3 concluída/revisada**: ciclo de vida, version/base, rebase, idempotência e finalização atômica em `6c09b1e`. 9 unitários, 29 PostgreSQL focais e 6 regressões de fixtures, tipos/lint aprovados; revisão independente PASS/APPROVED sem achados. Retomada após interrupção por limite de uso; tarefas 1/2 preservadas. Próxima: endpoints autenticados (Task 4). Acesso wger autorizado, mas política do ambiente ainda exige inclusão do domínio pelo painel. Sem produção, push ou deploy.
