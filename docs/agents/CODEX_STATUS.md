@@ -8,6 +8,8 @@
 
 ## Current Task
 
+- **2026-10-17 — Rascunhos Task 2 concluída (Codex)**: criação direta e por rascunho compartilham escrita transacional, data do servidor e lock do Client; origem da revisão restrita ao aluno/conta. DELETE de ficha vinculada retorna 409, incluindo legado/modelo vinculado; leituras incluem metadados sem backfill. RED/GREEN: 39 unitários focais e 13 regressões PostgreSQL, tipos/lint aprovados. Papel clínico real comprova rollback de filhos e da operação externa; sem produção, push ou deploy.
+
 - **2026-10-17 — Rascunhos Task 1**: conteúdo V1/DTO, schema/migration e delegate clínico concluídos. RED confirmado; API 52 suítes/641 testes, PostgreSQL 6/6, tipos/lint e Prisma validate/generate/deploy aprovados somente no banco sintético local. Legado comparado antes/depois, sem backfill; sem produção, push ou deploy.
 
 - **2026-10-17 — Execução autorizada com subagentes por tarefa**: planos aprovados pelo usuário ao escolher execução por subagentes. Worktree `.worktrees/personal-workout-implementation`, branch `agent/codex/personal-workout-implementation`, base `07b611c`. Preparação da base com Prisma gerado, PostgreSQL 16 sintético na porta 5434 e testes de referência. Cada tarefa terá implementador e revisão independentes; sem produção, push ou deploy. Ledgers locais por plano em `.superpowers/sdd/`.

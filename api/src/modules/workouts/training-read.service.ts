@@ -22,6 +22,8 @@ const activeWorkoutSelect = {
   createdAt: true,
   updatedAt: true,
   isActive: true,
+  finalizedAt: true,
+  revisionOfId: true,
 } satisfies Prisma.WorkoutSelect;
 
 const assessmentSelect = {
@@ -55,7 +57,7 @@ const assessmentSelect = {
   notes: true,
 } satisfies Prisma.PhysicalAssessmentSelect;
 
-const workoutDetailSelect = {
+export const workoutDetailSelect = {
   ...activeWorkoutSelect,
   notes: true,
   isTemplate: true,

@@ -128,3 +128,5 @@ Proposta e especificações do Personal aprovadas pelo usuário em 17/10/2026, i
 | P.4 | Versões, modelos independentes e documentos (entregas encadeadas) | ⏳ proposta | — |
 | P.5 | Sessões, evolução e revisão periódica registradas pelo Personal | ⏳ proposta | — |
 | P.6 | Periodização e gestão do acompanhamento | ⏳ proposta | — |
+
+- [x] Codex — Rascunhos Task 2: escrita finalizada, metadados e preservação de histórico; 39 unitários e 13 regressões PostgreSQL, tipos/lint aprovados (2026-10-17).

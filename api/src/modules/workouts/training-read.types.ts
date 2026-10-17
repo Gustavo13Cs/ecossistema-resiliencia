@@ -27,6 +27,8 @@ export type TrainingActiveWorkout = Pick<
   | 'createdAt'
   | 'updatedAt'
   | 'isActive'
+  | 'finalizedAt'
+  | 'revisionOfId'
 > & { clientId: string };
 
 export type TrainingAssessment = Omit<

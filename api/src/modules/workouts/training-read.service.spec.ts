@@ -62,6 +62,8 @@ describe('Training read contracts', () => {
     isTemplate: false,
     createdAt: new Date('2026-10-01T12:00:00Z'),
     updatedAt: new Date('2026-10-02T12:00:00Z'),
+    finalizedAt: null,
+    revisionOfId: null,
     notes: 'Nota da ficha',
     client: { id: 'student-1', name: 'Aluno 1', status: 'ARCHIVED' },
     splits: [
@@ -91,6 +93,8 @@ describe('Training read contracts', () => {
     ],
   };
   const activePlan = {
+    finalizedAt: new Date('2026-10-14T12:00:00Z'),
+    revisionOfId: 'previous-workout',
     id: 'active-workout',
     clientId: 'student-1',
     title: 'Ficha ativa',
@@ -340,6 +344,8 @@ describe('Training read contracts', () => {
           createdAt: true,
           updatedAt: true,
           isActive: true,
+          finalizedAt: true,
+          revisionOfId: true,
         },
       }),
     );
@@ -364,6 +370,15 @@ describe('Training read contracts', () => {
   it('opens_selected_workout_and_omits_foreign_records', async () => {
     const result = await service.getWorkout(user, 'previous-workout');
     expect(result).toEqual(plan);
+    expect(result).toMatchObject({ finalizedAt: null, revisionOfId: null });
+    expect(prisma.workout.findFirst).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          finalizedAt: true,
+          revisionOfId: true,
+        }) as unknown,
+      }),
+    );
     expect(result.isActive).toBe(false);
     expect(prisma.workout.findFirst).toHaveBeenNthCalledWith(
       1,

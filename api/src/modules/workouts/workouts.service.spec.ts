@@ -20,6 +20,11 @@ const dto = {
 
 interface WorkoutContract {
   create(user: AuthUser, data: typeof dto): Promise<unknown>;
+  createFromDraft(
+    user: AuthUser,
+    data: typeof dto,
+    revisionOfId: string | null,
+  ): Promise<unknown>;
   findActive(user: AuthUser, clientId: string): Promise<unknown>;
   remove(user: AuthUser, id: string): Promise<unknown>;
   saveAsTemplate(user: AuthUser, id: string): Promise<unknown>;
@@ -35,6 +40,8 @@ describe('WorkoutsService Client ownership', () => {
     $queryRaw: jest.fn().mockResolvedValue([{ id: dto.clientId }]),
     workout: {
       updateMany: jest.fn(),
+      findFirst: jest.fn(),
+      findFirstOrThrow: jest.fn(),
       create: jest.fn<Promise<unknown>, [unknown]>(),
     },
   };
@@ -84,6 +91,74 @@ describe('WorkoutsService Client ownership', () => {
       id: 'new-plan',
       clientId: client.id,
     });
+  });
+
+  it('new_prescription_has_server_finalized_at', async () => {
+    const before = Date.now();
+    await service.create(user, dto);
+    expect(tx.workout.create.mock.calls[0]?.[0]).toMatchObject({
+      data: { finalizedAt: expect.any(Date) as unknown, revisionOfId: null },
+    });
+    const { data } = tx.workout.create.mock.calls[0][0] as {
+      data: { finalizedAt: Date };
+    };
+    expect(data.finalizedAt.getTime()).toBeGreaterThanOrEqual(before);
+    expect(data.finalizedAt.getTime()).toBeLessThanOrEqual(Date.now());
+  });
+
+  it.each([false, true])(
+    'cannot_delete_client_prescription_or_legacy_history (template=%s)',
+    async (isTemplate) => {
+      prisma.workout.findFirst.mockResolvedValue({
+        id: 'plan-1',
+        clientId: client.id,
+        isTemplate,
+      });
+      await expect(service.remove(user, 'plan-1')).rejects.toMatchObject({
+        status: 409,
+      });
+      expect(prisma.workout.delete).not.toHaveBeenCalled();
+    },
+  );
+
+  it('creates a revision on the current transaction and returns its clinical detail', async () => {
+    tx.workout.findFirst.mockResolvedValue({ id: 'source' });
+    const detail = {
+      id: 'new-plan',
+      clientId: client.id,
+      client: { id: client.id },
+      splits: [],
+    };
+    tx.workout.findFirstOrThrow.mockResolvedValue(detail);
+    await expect(service.createFromDraft(user, dto, 'source')).resolves.toEqual(
+      detail,
+    );
+    expect(tx.workout.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'source',
+        clientId: client.id,
+        creatorId: user.sub,
+        client: { professionalId: user.sub },
+      },
+      select: { id: true },
+    });
+    expect(tx.workout.create.mock.calls[0]?.[0]).toMatchObject({
+      data: {
+        revisionOfId: 'source',
+        finalizedAt: expect.any(Date) as unknown,
+      },
+    });
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(prisma.workout.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects unavailable or mismatched revision sources before deactivation', async () => {
+    tx.workout.findFirst.mockResolvedValue(null);
+    await expect(
+      service.createFromDraft(user, dto, 'foreign'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(tx.workout.updateMany).not.toHaveBeenCalled();
+    expect(tx.workout.create).not.toHaveBeenCalled();
   });
 
   it('waits for ownership before opening a transaction', async () => {
@@ -340,6 +415,15 @@ describe('WorkoutsService Client ownership', () => {
     expect(prisma.workout.delete).not.toHaveBeenCalled();
   });
 
+  it('keeps save-as-template compatible for an attached legacy prescription', async () => {
+    await service.saveAsTemplate(user, 'plan-1');
+    expect(prisma.workout.update).toHaveBeenCalledWith({
+      where: { id: 'plan-1', creatorId: user.sub, clientId: client.id },
+      data: { isTemplate: true },
+      select: { id: true, title: true, isTemplate: true },
+    });
+  });
+
   it('preserves standalone templates owned by this professional', async () => {
     prisma.workout.findFirst.mockResolvedValue({
       id: 'template-1',
@@ -361,6 +445,9 @@ describe('WorkoutsService Client ownership', () => {
       await expect(service.create(denied, dto)).rejects.toBeInstanceOf(
         ForbiddenException,
       );
+      await expect(
+        service.createFromDraft(denied, dto, null),
+      ).rejects.toBeInstanceOf(ForbiddenException);
       await expect(service.listTemplates(denied)).rejects.toBeInstanceOf(
         ForbiddenException,
       );

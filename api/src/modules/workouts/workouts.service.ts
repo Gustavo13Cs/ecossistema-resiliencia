@@ -1,13 +1,17 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { ClientAccessService } from '../../common/client-access/client-access.service';
 import { lockActiveOwnedClient } from '../../common/client-access/lock-active-owned-client';
 import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { CreateWorkoutDto } from './dto/create-workout.dto';
+import { workoutDetailSelect } from './training-read.service';
+import { WorkoutDetail } from './training-read.types';
 
 const orderedSplitsInclude = {
   orderBy: [{ position: 'asc' as const }, { id: 'asc' as const }],
@@ -29,46 +33,106 @@ export class WorkoutsService {
     this.assertTrainingProfessional(user);
     const client = await this.clientAccess.getOwnedClient(user, data.clientId);
     return this.prisma.$transaction(async (tx) => {
-      await lockActiveOwnedClient(tx, client.id, user.sub);
-      await tx.workout.updateMany({
-        where: { clientId: client.id, creatorId: user.sub, isActive: true },
-        data: { isActive: false },
-      });
-      return tx.workout.create({
-        data: {
-          title: data.title,
-          goal: data.goal,
-          durationWeeks: data.durationWeeks,
-          notes: data.notes,
+      return this.writeFinalizedWorkout(tx, user, client.id, data, null);
+    });
+  }
+
+  async createFromDraft(
+    user: AuthUser,
+    data: CreateWorkoutDto,
+    revisionOfId: string | null,
+  ): Promise<WorkoutDetail> {
+    this.assertTrainingProfessional(user);
+    const client = await this.clientAccess.getOwnedClient(user, data.clientId);
+    return this.prisma.$transaction(async (tx) => {
+      const workout = await this.writeFinalizedWorkout(
+        tx,
+        user,
+        client.id,
+        data,
+        revisionOfId,
+      );
+      const detail = await tx.workout.findFirstOrThrow({
+        where: {
+          id: workout.id,
           clientId: client.id,
-          userId: null,
           creatorId: user.sub,
-          isActive: true,
-          splits: {
-            create: data.splits.map((split, splitIndex) => ({
-              name: split.name,
-              focus: split.focus,
-              position: splitIndex,
-              exercises: {
-                create: split.exercises.map((exercise, exerciseIndex) => ({
-                  name: exercise.name,
-                  sets: exercise.sets,
-                  reps: exercise.reps,
-                  rest: exercise.rest,
-                  notes: exercise.notes,
-                  position: exerciseIndex,
-                  muscleGroup: exercise.muscleGroup,
-                  load: exercise.load,
-                  effortType: exercise.effortType,
-                  effortTarget: exercise.effortTarget,
-                  tempo: exercise.tempo,
-                  method: exercise.method ?? 'STANDARD',
-                })),
-              },
-            })),
-          },
+          client: { professionalId: user.sub },
         },
+        select: workoutDetailSelect,
       });
+      if (
+        !detail.client ||
+        detail.clientId !== client.id ||
+        detail.client.id !== client.id
+      ) {
+        throw new NotFoundException('Treino não encontrado');
+      }
+      return { ...detail, clientId: client.id, client: detail.client };
+    });
+  }
+
+  private async writeFinalizedWorkout(
+    tx: Prisma.TransactionClient,
+    user: AuthUser,
+    clientId: string,
+    data: CreateWorkoutDto,
+    revisionOfId: string | null,
+  ) {
+    await lockActiveOwnedClient(tx, clientId, user.sub);
+    if (revisionOfId !== null) {
+      const source = await tx.workout.findFirst({
+        where: {
+          id: revisionOfId,
+          clientId,
+          creatorId: user.sub,
+          client: { professionalId: user.sub },
+        },
+        select: { id: true },
+      });
+      if (!source)
+        throw new NotFoundException('Treino de origem não encontrado');
+    }
+    await tx.workout.updateMany({
+      where: { clientId, creatorId: user.sub, isActive: true },
+      data: { isActive: false },
+    });
+    return tx.workout.create({
+      data: {
+        title: data.title,
+        goal: data.goal,
+        durationWeeks: data.durationWeeks,
+        notes: data.notes,
+        clientId,
+        userId: null,
+        creatorId: user.sub,
+        isActive: true,
+        finalizedAt: new Date(),
+        revisionOfId,
+        splits: {
+          create: data.splits.map((split, splitIndex) => ({
+            name: split.name,
+            focus: split.focus,
+            position: splitIndex,
+            exercises: {
+              create: split.exercises.map((exercise, exerciseIndex) => ({
+                name: exercise.name,
+                sets: exercise.sets,
+                reps: exercise.reps,
+                rest: exercise.rest,
+                notes: exercise.notes,
+                position: exerciseIndex,
+                muscleGroup: exercise.muscleGroup,
+                load: exercise.load,
+                effortType: exercise.effortType,
+                effortTarget: exercise.effortTarget,
+                tempo: exercise.tempo,
+                method: exercise.method ?? 'STANDARD',
+              })),
+            },
+          })),
+        },
+      },
     });
   }
 
@@ -93,6 +157,11 @@ export class WorkoutsService {
 
   async remove(user: AuthUser, id: string) {
     const plan = await this.getOwnedPlan(user, id);
+    if (plan.clientId) {
+      throw new ConflictException(
+        'Prescrições vinculadas a alunos devem ser preservadas no histórico',
+      );
+    }
     return this.prisma.workout.delete({
       where: { id, creatorId: user.sub, clientId: plan.clientId },
     });
