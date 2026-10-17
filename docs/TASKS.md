@@ -42,11 +42,11 @@
 
 ## Fase 3 — Planos Versionados & Outputs
 
-Proposta e especificações do Personal aprovadas pelo usuário em 17/10/2026, incluindo biblioteca visual e cadastro manual: [direção de produto](planning/2026-10-17-personal-proxima-entrega.md). Planos de [rascunhos/revisões](superpowers/plans/2026-10-17-personal-rascunhos-revisoes.md) e [biblioteca visual](superpowers/plans/2026-10-17-personal-biblioteca-visual.md) preparados para revisão e escolha de execução. Implementação ainda não iniciada.
+Proposta e especificações do Personal aprovadas pelo usuário em 17/10/2026, incluindo biblioteca visual e cadastro manual: [direção de produto](planning/2026-10-17-personal-proxima-entrega.md). Planos de [rascunhos/revisões](superpowers/plans/2026-10-17-personal-rascunhos-revisoes.md) e [biblioteca visual](superpowers/plans/2026-10-17-personal-biblioteca-visual.md) aprovados para execução com subagentes por tarefa. Rascunhos: backend e API concluídos/revisados (tarefas 1–4); editor em andamento (tarefa 5), rotas e jornada real pendentes. Biblioteca visual segue na sequência; validação de wger depende da inclusão do domínio na configuração de rede do ambiente.
 
 | # | Tarefa | Status | Agente |
 |---|--------|--------|--------|
-| 3.1 | Planos versionados (draft → published → archived) | ⏳ | — |
+| 3.1 | Rascunhos e revisões de prescrição do Personal | 🔄 | Codex |
 | 3.2 | Modelos reutilizáveis com cópia profunda | ⏳ | — |
 | 3.3 | Geração de PDF para prescrições | ⏳ | — |
 | 3.4 | Impressão de planos | ⏳ | — |

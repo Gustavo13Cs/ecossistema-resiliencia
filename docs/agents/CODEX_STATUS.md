@@ -8,6 +8,8 @@
 
 ## Current Task
 
+- **2026-10-17 — Rascunhos Task 4 concluída/revisada; Task 5 em andamento (Codex)**: sete endpoints autenticados e classificados, com 52 testes focais e 19 HTTP/domínio aprovados, tipos/lint e revisão independente PASS/APPROVED sem achados em `0053f78`. Subagente dedicado ao editor, salvamento manual e conflitos; integração de rotas e jornada real seguem pendentes. Execução na worktree `personal-workout-implementation`; sem produção, push ou deploy.
+
 - **2026-10-17 — Rascunhos Task 3 concluída/revisada**: ciclo de vida, version/base, rebase, idempotência e finalização atômica em `6c09b1e`. 9 unitários, 29 PostgreSQL focais e 6 regressões de fixtures, tipos/lint aprovados; revisão independente PASS/APPROVED sem achados. Retomada após interrupção por limite de uso; tarefas 1/2 preservadas. Próxima: endpoints autenticados (Task 4). Acesso wger autorizado, mas política do ambiente ainda exige inclusão do domínio pelo painel. Sem produção, push ou deploy.
 
 - **2026-10-17 — Rascunhos Task 2 concluída (Codex)**: criação direta e por rascunho compartilham escrita transacional, data do servidor e lock do Client; origem da revisão restrita ao aluno/conta. DELETE de ficha vinculada retorna 409, incluindo legado/modelo vinculado; leituras incluem metadados sem backfill. RED/GREEN: 39 unitários focais e 13 regressões PostgreSQL, tipos/lint aprovados. Papel clínico real comprova rollback de filhos e da operação externa; sem produção, push ou deploy.
