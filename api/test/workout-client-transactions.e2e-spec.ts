@@ -63,6 +63,9 @@ describe('Client workout transactions (PostgreSQL)', () => {
   });
 
   const clearFixtures = async () => {
+    await prisma.workoutDraft.deleteMany({
+      where: { professionalId: { in: [owner.sub, other.sub] } },
+    });
     await prisma.workout.deleteMany({
       where: { creatorId: { in: [owner.sub, other.sub] } },
     });

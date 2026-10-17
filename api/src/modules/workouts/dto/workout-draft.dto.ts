@@ -177,3 +177,21 @@ export class RebaseWorkoutDraftDto extends DraftVersionDto {
   @IsUUID()
   expectedActiveWorkoutId!: string | null;
 }
+
+export class DraftListQueryDto {
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsUUID()
+  clientId?: string;
+
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsString()
+  @MaxLength(512)
+  cursor?: string;
+
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  limit?: number;
+}

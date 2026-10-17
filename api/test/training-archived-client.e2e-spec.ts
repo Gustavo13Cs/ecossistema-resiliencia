@@ -53,6 +53,9 @@ describe('Archived Client lifecycle & concurrent write protection (PostgreSQL E2
   });
 
   const cleanFixtures = async () => {
+    await prisma.workoutDraft.deleteMany({
+      where: { professionalId: personal.sub },
+    });
     await prisma.physicalAssessment.deleteMany({
       where: {
         clientId: {

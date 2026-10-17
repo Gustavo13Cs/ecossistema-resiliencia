@@ -52,3 +52,30 @@ export type WorkoutDraftResource = {
   updatedAt: Date;
   closedAt: Date | null;
 };
+
+export type DraftListQuery = {
+  clientId?: string;
+  cursor?: string;
+  limit?: number;
+};
+export type DraftCursor = { updatedAt: string; id: string };
+export type DraftSummary = Pick<
+  WorkoutDraftResource,
+  'id' | 'clientId' | 'status' | 'version' | 'createdAt' | 'updatedAt'
+> & {
+  title: string;
+  client: {
+    id: string;
+    name: string;
+    status: import('@prisma/client').ClientStatus;
+  };
+};
+export type DraftPage = { items: DraftSummary[]; nextCursor: string | null };
+export type DraftAck = Pick<
+  WorkoutDraftResource,
+  'id' | 'clientId' | 'status' | 'version'
+>;
+export type FinalizedDraftResult = DraftAck & {
+  finalizedWorkoutId: string;
+  workout: import('./training-read.types').WorkoutDetail;
+};
