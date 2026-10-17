@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { isAxiosError } from "axios"
 import { toast } from "sonner"
+import { ReauthenticateButton } from "@/components/auth/ReauthenticateButton"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { WorkoutEditor } from "@/components/features/training/WorkoutEditor"
 import { Button } from "@/components/ui/button"
@@ -53,9 +54,7 @@ export default function NovoTreinoPage() {
         title="Restabeleça seu acesso"
         description="Sua sessão não permite acessar estes registros. Entre novamente ou restabeleça seu acesso para continuar."
         action={
-          <Link href="/login" className={actionClass}>
-            Entrar novamente
-          </Link>
+          <ReauthenticateButton />
         }
       />
     )
@@ -86,7 +85,7 @@ export default function NovoTreinoPage() {
     )
   }
 
-  if (status !== "ready" || !client) {
+  if (!client || client.id !== clientId || (status !== "ready" && activeQuery.dataUpdatedAt === 0)) {
     return (
       <AsyncState
         kind="error"
@@ -101,7 +100,7 @@ export default function NovoTreinoPage() {
     )
   }
 
-  if (activeQuery.error) {
+  if (activeQuery.error && activeQuery.dataUpdatedAt === 0) {
     return (
       <AsyncState
         kind="error"
@@ -116,23 +115,41 @@ export default function NovoTreinoPage() {
     )
   }
 
+  const contextUnavailable = status !== "ready" || Boolean(activeQuery.error) || activeQuery.isFetching
+
   return (
-    <WorkoutEditor
-      key={contextKey}
-      client={client}
-      activeWorkout={activeQuery.data ?? null}
-      onAccessDenied={handleAccessDenied}
-      onSubmit={async input => {
-        try {
-          const created = await createMutation.mutateAsync(input)
-          toast.success("Prescrição salva com sucesso.")
-          router.push(`/clientes/${client.id}`)
-          return created
-        } catch (error) {
-          toast.error("Não foi possível salvar a prescrição.")
-          throw error
-        }
-      }}
-    />
+    <div className="space-y-4">
+      {status !== "ready" || activeQuery.error ? (
+        <AsyncState
+          kind="error"
+          title="Contexto de prescrição indisponível"
+          description="Seus dados continuam preenchidos. Verifique sua conexão e tente novamente para liberar o salvamento."
+          action={
+            <Button type="button" className="min-h-11" onClick={() => void (status !== "ready" ? refetch() : activeQuery.refetch())}>
+              Tentar novamente
+            </Button>
+          }
+        />
+      ) : null}
+      <WorkoutEditor
+        key={contextKey}
+        client={client}
+        contextUnavailable={contextUnavailable}
+        activeWorkout={activeQuery.data ?? null}
+        onAccessDenied={handleAccessDenied}
+        onSubmit={async input => {
+          if (contextUnavailable) throw new Error("Contexto de prescrição indisponível")
+          try {
+            const created = await createMutation.mutateAsync(input)
+            toast.success("Prescrição salva com sucesso.")
+            router.push(`/clientes/${client.id}`)
+            return created
+          } catch (error) {
+            toast.error("Não foi possível salvar a prescrição.")
+            throw error
+          }
+        }}
+      />
+    </div>
   )
 }

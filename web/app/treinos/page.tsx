@@ -4,6 +4,7 @@ import { useCallback, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { isAxiosError } from "axios"
+import { ReauthenticateButton } from "@/components/auth/ReauthenticateButton"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { WorkoutClientPicker } from "@/components/features/training/WorkoutClientPicker"
 import { Button } from "@/components/ui/button"
@@ -47,9 +48,7 @@ export default function TreinosHubPage() {
         title="Restabeleça seu acesso"
         description="Sua sessão não permite acessar as fichas de treino. Entre novamente ou restabeleça seu acesso para continuar."
         action={
-          <Link href="/login" className={actionClass}>
-            Entrar novamente
-          </Link>
+          <ReauthenticateButton />
         }
       />
     )

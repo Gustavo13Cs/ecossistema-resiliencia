@@ -1,20 +1,22 @@
 import AxiosMockAdapter from "axios-mock-adapter"
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { queryKeys } from "@/lib/query-keys"
 import { api } from "@/lib/api"
 import NovoTreinoPage from "./page"
 import TreinosHubPage from "@/app/treinos/page"
 
 const navigation = vi.hoisted(() => ({ push: vi.fn() }))
+const session = vi.hoisted(() => ({ logout: vi.fn().mockResolvedValue(undefined) }))
 const notices = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
 vi.mock("next/navigation", () => ({ useParams: () => ({ id: "client-1" }), useRouter: () => navigation }))
 vi.mock("sonner", () => ({ toast: notices }))
-vi.mock("@/contexts/auth-context", () => ({ useAuth: () => ({ user: { sub: "professional-1", role: "PERSONAL" } }) }))
+vi.mock("@/contexts/auth-context", () => ({ useAuth: () => ({ user: { sub: "professional-1", role: "PERSONAL" }, logout: session.logout }) }))
 
 function renderWithQuery(ui: React.ReactNode) {
   const cache = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } })
-  return render(<QueryClientProvider client={cache}>{ui}</QueryClientProvider>)
+  return { cache, ...render(<QueryClientProvider client={cache}>{ui}</QueryClientProvider>) }
 }
 
 async function fillRequiredPrescriptionFields() {
@@ -77,6 +79,52 @@ describe("workout Client contracts", () => {
     expect(notices.success).not.toHaveBeenCalled()
     expect(navigation.push).not.toHaveBeenCalled()
     expect(screen.getByDisplayValue("Força Base")).toBeVisible()
+  })
+
+  it.each(["active", "client"])("preserves an unsaved prescription after a failed %s refresh and retry", async target => {
+    const { cache } = renderWithQuery(<NovoTreinoPage />)
+    await fillRequiredPrescriptionFields()
+    const url = target === "active" ? "/workouts/client/client-1/active" : "/clients/client-1"
+    const key = target === "active" ? queryKeys.activeWorkout("professional-1", "client-1") : queryKeys.client("professional-1", "client-1")
+    http.onGet(url).reply(503)
+    await act(async () => { await cache.invalidateQueries({ queryKey: key, exact: true }) })
+    await screen.findByText("Contexto de prescrição indisponível")
+    expect(screen.getByLabelText("Título da prescrição")).toHaveValue("Força Base")
+    expect(screen.getByLabelText("Nome do exercício")).toHaveValue("Agachamento Livre")
+    expect(screen.getByRole("button", { name: "Salvar prescrição" })).toBeDisabled()
+    fireEvent.submit(screen.getByRole("button", { name: "Salvar prescrição" }).closest("form")!)
+    expect(http.history.post).toHaveLength(0)
+
+    http.onGet(url).reply(200, target === "active" ? null : { id: "client-1", name: "Cliente de treino", status: "ACTIVE" })
+    fireEvent.click(screen.getByRole("button", { name: "Tentar novamente" }))
+    await waitFor(() => expect(screen.getByRole("button", { name: "Salvar prescrição" })).toBeEnabled())
+    expect(screen.getByLabelText("Título da prescrição")).toHaveValue("Força Base")
+    expect(screen.getByLabelText("Séries")).toHaveValue("4")
+    expect(screen.getByLabelText("Repetições")).toHaveValue("8")
+  })
+
+  it("does not mount the editor when the initial active-workout lookup fails", async () => {
+    http.onGet("/workouts/client/client-1/active").reply(503)
+    renderWithQuery(<NovoTreinoPage />)
+    expect(await screen.findByText("Contexto de treino indisponível")).toBeVisible()
+    expect(screen.queryByLabelText("Título da prescrição")).not.toBeInTheDocument()
+  })
+
+  it.each([401, 403])("removes the unsaved prescription after access denial %s", async status => {
+    const { cache } = renderWithQuery(<NovoTreinoPage />)
+    await fillRequiredPrescriptionFields()
+    http.onGet("/auth/csrf").reply(401)
+    http.onGet("/workouts/client/client-1/active").reply(status)
+    await act(async () => { await cache.invalidateQueries({ queryKey: queryKeys.activeWorkout("professional-1", "client-1") }) })
+    expect(await screen.findByText("Restabeleça seu acesso")).toBeVisible()
+    expect(screen.queryByDisplayValue("Força Base")).not.toBeInTheDocument()
+  })
+
+  it("ends the current session when recovering access from the workout hub", async () => {
+    http.onGet("/workouts").reply(403)
+    renderWithQuery(<TreinosHubPage />)
+    fireEvent.click(await screen.findByText("Entrar novamente"))
+    await waitFor(() => expect(session.logout).toHaveBeenCalledOnce())
   })
 
   it("opens a listed workout by its id and uses the private Client directory only when selecting a student", async () => {

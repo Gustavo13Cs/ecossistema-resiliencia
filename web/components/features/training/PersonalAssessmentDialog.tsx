@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { useAuth } from "@/contexts/auth-context"
-import { useClientAssessments } from "@/hooks/features/useClientAssessments"
+import { useCreateClientAssessment } from "@/hooks/features/useClientAssessments"
 import { buildPersonalAssessmentPayload, validatePersonalAssessment, PERSONAL_ASSESSMENT_FIELDS, PERSONAL_ASSESSMENT_GROUPS } from "@/lib/personal-assessment"
 import type { PersonalAssessmentValues } from "@/types/assessment"
 
@@ -27,7 +27,7 @@ export function PersonalAssessmentDialog(props: PersonalAssessmentDialogProps) {
 }
 
 function AssessmentForm({ isOpen, onClose, clientId, onSuccess, onAccessDenied }: PersonalAssessmentDialogProps) {
-  const { createMutation } = useClientAssessments(clientId, { enabled: false })
+  const createMutation = useCreateClientAssessment(clientId)
   const [values, setValues] = useState<Partial<PersonalAssessmentValues>>({})
   const [saveError, setSaveError] = useState<string | null>(null)
   const [denied, setDenied] = useState(false)
