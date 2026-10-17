@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { isAxiosError } from "axios"
+import { ReauthenticateButton } from "@/components/auth/ReauthenticateButton"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { WorkoutReadView } from "@/components/features/training/WorkoutReadView"
 import { Button } from "@/components/ui/button"
@@ -52,9 +53,7 @@ export default function WorkoutDetailPage() {
           title="Restabeleça seu acesso"
           description="Sua sessão não permite acessar esta ficha de treino. Entre novamente ou restabeleça seu acesso para continuar."
           action={
-            <Link href="/login" className={actionClass}>
-              Entrar novamente
-            </Link>
+            <ReauthenticateButton />
           }
         />
       )

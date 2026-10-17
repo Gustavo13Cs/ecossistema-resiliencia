@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { isAxiosError } from "axios"
+import { ReauthenticateButton } from "@/components/auth/ReauthenticateButton"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -37,7 +38,7 @@ function TrainingRecord({ client, pending, onAccessDenied }: PersonalClientRecor
   const [dialogDenied, setDialogDenied] = useState(false)
   const denied = dialogDenied || isDenied(overview.error) || isDenied(assessments.error)
   useEffect(() => { if (denied) onAccessDenied?.() }, [denied, onAccessDenied])
-  if (denied) return <AsyncState kind="error" title="Restabeleça seu acesso" description="Sua sessão não permite acessar estes registros. Entre novamente ou restabeleça seu acesso para continuar." action={<Link href="/login" className={actionClass}>Entrar novamente</Link>} />
+  if (denied) return <AsyncState kind="error" title="Restabeleça seu acesso" description="Sua sessão não permite acessar estes registros. Entre novamente ou restabeleça seu acesso para continuar." action={<ReauthenticateButton />} />
 
   const archived = client.status === "ARCHIVED" || overview.data?.client.status === "ARCHIVED"
   const blocked = pending || archived
