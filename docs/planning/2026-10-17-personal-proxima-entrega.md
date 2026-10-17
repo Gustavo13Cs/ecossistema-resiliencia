@@ -1,6 +1,6 @@
 # Personal — próxima entrega proposta
 
-Data: 17/10/2026. Estado: direção de produto aprovada pelo usuário em conversa, incluindo a biblioteca visual. Especificações técnicas em revisão; implementação ainda não iniciada.
+Data: 17/10/2026. Estado: direção de produto e especificações técnicas aprovadas pelo usuário em conversa, incluindo a biblioteca visual. Planos técnicos preparados para revisão; implementação ainda não iniciada.
 Base consultada: checkout `e33f9c7`, com workspace P1 e prescrição avançada integrados.
 
 ## Objetivo
@@ -91,9 +91,9 @@ A recomendação técnica é manter catálogo e identificação estáveis no Saf
 
 O usuário aprovou a proposta em conversa em 17/10/2026: “eu aprovo a proposta”. A aprovação abrange a direção de produto, incluindo biblioteca visual e cadastro manual. A execução será dividida em entregas focadas, começando por rascunhos/revisões e seguida pela biblioteca visual; os demais módulos permanecem no roadmap.
 
-Especificações escritas para revisão:
+Especificações revisadas e aprovadas em conversa em 17/10/2026:
 
 - [Rascunhos e revisões de treino](../superpowers/specs/2026-10-17-personal-rascunhos-revisoes-design.md).
 - [Biblioteca visual de exercícios](../superpowers/specs/2026-10-17-personal-biblioteca-visual-design.md).
 
-Esses documentos detalham novos contratos e alterações protegidas. Sua revisão antecede o plano técnico e a implementação. A aprovação da direção não representa uma aplicação de migration ou publicação em produção.
+Esses documentos detalham novos contratos e alterações protegidas. O usuário confirmou “revisei , ta aprovada”. Planos técnicos preparados: [rascunhos/revisões](../superpowers/plans/2026-10-17-personal-rascunhos-revisoes.md) e [biblioteca visual](../superpowers/plans/2026-10-17-personal-biblioteca-visual.md). Revisão dos planos e escolha de execução antecedem a implementação. Nenhuma aprovação documental representa aplicação em produção.

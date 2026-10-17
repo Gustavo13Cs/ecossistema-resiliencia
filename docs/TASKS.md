@@ -42,7 +42,7 @@
 
 ## Fase 3 — Planos Versionados & Outputs
 
-Proposta do Personal aprovada pelo usuário em 17/10/2026, incluindo biblioteca visual e cadastro manual: [direção de produto](planning/2026-10-17-personal-proxima-entrega.md). Especificações de [rascunhos/revisões](superpowers/specs/2026-10-17-personal-rascunhos-revisoes-design.md) e [biblioteca visual](superpowers/specs/2026-10-17-personal-biblioteca-visual-design.md) escritas para revisão. Implementação ainda não iniciada.
+Proposta e especificações do Personal aprovadas pelo usuário em 17/10/2026, incluindo biblioteca visual e cadastro manual: [direção de produto](planning/2026-10-17-personal-proxima-entrega.md). Planos de [rascunhos/revisões](superpowers/plans/2026-10-17-personal-rascunhos-revisoes.md) e [biblioteca visual](superpowers/plans/2026-10-17-personal-biblioteca-visual.md) preparados para revisão e escolha de execução. Implementação ainda não iniciada.
 
 | # | Tarefa | Status | Agente |
 |---|--------|--------|--------|

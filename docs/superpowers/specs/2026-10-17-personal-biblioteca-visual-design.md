@@ -1,6 +1,6 @@
 # Personal — biblioteca visual de exercícios
 
-Data: 17/10/2026. Estado: especificação escrita para revisão do usuário.
+Data: 17/10/2026. Estado: especificação revisada e aprovada pelo usuário em conversa em 17/10/2026 (“revisei , ta aprovada”).
 Direção de produto aprovada em conversa em 17/10/2026, após solicitação de exercícios prontos com fotos/vídeos e alternativa manual.
 Base de código: `e33f9c7`; [proposta aprovada e pesquisa de fontes](../../planning/2026-10-17-personal-proxima-entrega.md).
 
@@ -118,4 +118,4 @@ Schema/migration são aditivos: colunas opcionais em WorkoutExercise e CustomExe
 
 Autorrevisão: escopo limitado a biblioteca/demonstração e sua referência na prescrição; exclusão de upload e embeds reduz dependências; cobertura mínima, legado, vínculo manual, licença, falha externa e snapshots definidos. A decisão de wger é condicionada a evidência oficial de acesso e mídia compatíveis; não representa verificação já concluída desses pontos.
 
-Após revisão deste arquivo, preparar o plano técnico do lote. Modelos independentes, documentos e acompanhamento permanecem entregas seguintes da proposta aprovada. Esta etapa documental não declara execução de testes, integração com provedor ou deploy.
+Preparar e apresentar o [plano técnico do lote](../plans/2026-10-17-personal-biblioteca-visual.md) para revisão e escolha do método de execução. Modelos independentes, documentos e acompanhamento permanecem entregas seguintes da proposta aprovada. Esta etapa documental não declara execução de testes, integração com provedor ou deploy.

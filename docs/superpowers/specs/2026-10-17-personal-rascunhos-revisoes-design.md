@@ -1,6 +1,6 @@
 # Personal — rascunhos e revisões de treino
 
-Data: 17/10/2026. Estado: especificação escrita para revisão do usuário.
+Data: 17/10/2026. Estado: especificação revisada e aprovada pelo usuário em conversa em 17/10/2026 (“revisei , ta aprovada”).
 Direção de produto aprovada em conversa em 17/10/2026.
 Base de código: `e33f9c7`; [proposta aprovada](../../planning/2026-10-17-personal-proxima-entrega.md).
 
@@ -137,4 +137,4 @@ Aplicar e verificar primeiro em PostgreSQL sintético. A migration não reclassi
 
 Autorrevisão: escopo limitado ao ciclo de prescrição; separação entre version técnico e histórico clínico; contratos, legado, estados terminais, conflitos, proteção de dados e rollout definidos. Nenhuma execução de testes de produto é declarada nesta etapa documental.
 
-Próximo passo: revisão do usuário deste arquivo, seguida de plano técnico de implementação. A biblioteca visual pode ser planejada separadamente após sua própria especificação ser revisada.
+Próximo passo: preparar o [plano técnico de implementação](../plans/2026-10-17-personal-rascunhos-revisoes.md) e apresentá-lo para revisão e escolha do método de execução. A biblioteca visual tem plano separado e será integrada após este lote.
