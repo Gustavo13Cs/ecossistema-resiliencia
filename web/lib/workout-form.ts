@@ -23,7 +23,7 @@ export interface WorkoutFormExercise {
   effortType: EffortType | ""
   effortTarget: string
   tempo: string
-  method: TrainingMethod
+  method: TrainingMethod | ""
 }
 
 export interface WorkoutFormSplit {

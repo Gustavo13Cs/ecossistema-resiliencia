@@ -149,7 +149,7 @@ export function WorkoutSplitCard({
 
       {split.exercises.length === 0 ? (
         <p className="text-sm text-[var(--sm-muted)]">
-          Nenhum exercício adicionado nesta divisão. Adicione pelo menos um exercício para salvar.
+          Nenhum exercício adicionado nesta divisão.
         </p>
       ) : (
         <div className="space-y-4">

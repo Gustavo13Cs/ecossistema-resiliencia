@@ -281,10 +281,11 @@ export function WorkoutExerciseCard({
                 value={exercise.method}
                 disabled={disabled}
                 onChange={event =>
-                  onChange("method", event.target.value as TrainingMethod)
+                  onChange("method", event.target.value as TrainingMethod | "")
                 }
                 className="min-h-11 w-full rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-3 text-sm text-[var(--sm-ink)]"
               >
+                <option value="">Não informado</option>
                 {TRAINING_METHOD_OPTIONS.map(option => (
                   <option key={option.value} value={option.value}>
                     {option.label}
