@@ -16,8 +16,8 @@ describe("useWorkoutDrafts", () => {
   const caches: QueryClient[] = []
   beforeEach(() => { auth.user = { sub: "pro-a", role: "PERSONAL" }; http = new AxiosMockAdapter(api) })
   afterEach(() => { cleanup(); caches.forEach(cache => cache.clear()); caches.length = 0; http.restore() })
-  function setup(options: { clientId?: string; draftId?: string; cursor?: string; enabled?: boolean } = {}) {
-    const cache = new QueryClient({ defaultOptions: { queries: { retry: false } } }); caches.push(cache)
+  function setup(options: { clientId?: string; draftId?: string; cursor?: string; enabled?: boolean } = {}, sharedCache?: QueryClient) {
+    const cache = sharedCache ?? new QueryClient({ defaultOptions: { queries: { retry: false } } }); if (!sharedCache) caches.push(cache)
     const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={cache}>{children}</QueryClientProvider>
     return { cache, ...renderHook(props => useWorkoutDrafts(props), { initialProps: options, wrapper }) }
   }
@@ -127,6 +127,53 @@ describe("useWorkoutDrafts", () => {
     expect(cache.getQueryData(queryKeys.workoutDraft("pro-a", "c1", "d1"))).toBeNull()
     await waitFor(() => expect(result.current.saveMutation.variables).toBeUndefined())
     expect(cache.getQueryData(queryKeys.workoutDrafts("pro-b", "c1"))).toEqual({ marker: "safe" })
+  })
+  it("mutation_403_cancels_and_blocks_late_reads_refetch_and_other_instances_of_the_owner", async () => {
+    let finishPrimary!: (response: [number, unknown]) => void
+    let finishPeer!: (response: [number, unknown]) => void
+    http.onGet("/workouts/drafts/d1").replyOnce(() => new Promise(resolve => { finishPrimary = resolve }))
+    http.onGet("/workouts/drafts/d2").replyOnce(() => new Promise(resolve => { finishPeer = resolve }))
+    http.onGet("/workouts/drafts").reply(200, { items: [{ ...draft, title: "Lista privada", client: { id: "c1", name: "Ana", status: "ACTIVE" } }], nextCursor: null })
+    http.onPut("/workouts/drafts/d1").reply(403)
+    const primary = setup({ clientId: "c1", draftId: "d1" })
+    const peer = setup({ clientId: "c2", draftId: "d2" }, primary.cache)
+    const list = setup({}, primary.cache)
+    const otherAccountKey = queryKeys.workoutDraft("pro-b", "c1", "d1")
+    primary.cache.setQueryData(otherAccountKey, { marker: "outra conta" })
+    await waitFor(() => expect(list.result.current.listQuery.data?.items[0].title).toBe("Lista privada"))
+    await waitFor(() => expect(http.history.get).toHaveLength(3))
+    await act(async () => { await expect(primary.result.current.saveMutation.mutateAsync({ expectedVersion: 1, content })).rejects.toThrow() })
+    await act(async () => {
+      finishPrimary([200, { ...draft, content: { ...content, title: "Privado tardio" } }])
+      finishPeer([200, { ...draft, id: "d2", clientId: "c2" }])
+    })
+    expect(primary.cache.getQueryData(queryKeys.workoutDraft("pro-a", "c1", "d1"))).toBeNull()
+    await waitFor(() => expect(list.result.current.listQuery.data).toBeUndefined())
+    expect(primary.result.current.detailQuery.data).toBeUndefined()
+    expect(peer.result.current.detailQuery.data).toBeUndefined()
+    expect(http.history.get.filter(request => request.url !== "/workouts/drafts").every(request => request.signal?.aborted)).toBe(true)
+    expect(primary.cache.getQueryData(queryKeys.workoutDraft("pro-a", "c2", "d2"))).toBeNull()
+    expect(primary.cache.getQueryData(queryKeys.workoutDrafts("pro-a"))).toBeNull()
+    http.onGet("/workouts/drafts/d1").reply(200, draft)
+    http.onGet("/workouts/drafts/d2").reply(200, { ...draft, id: "d2", clientId: "c2" })
+    await act(async () => { await Promise.all([primary.result.current.detailQuery.refetch(), peer.result.current.detailQuery.refetch(), list.result.current.listQuery.refetch()]) })
+    expect(http.history.get).toHaveLength(3)
+    expect(primary.result.current.detailQuery.data).toBeUndefined()
+    expect(peer.result.current.detailQuery.data).toBeUndefined()
+    expect(list.result.current.listQuery.data).toBeUndefined()
+    expect(peer.result.current.detailQuery.error).toMatchObject({ response: { status: 403 } })
+    expect(peer.result.current.detailQuery.isError).toBe(true)
+    for (const key of [queryKeys.workoutDraft("pro-a", "c1", "d1"), queryKeys.workoutDraft("pro-a", "c2", "d2"), queryKeys.workoutDrafts("pro-a")]) {
+      expect(primary.cache.getQueryData(key)).toBeNull()
+    }
+    primary.unmount()
+    const reopened = setup({ clientId: "c1", draftId: "d1" }, primary.cache)
+    await act(async () => {})
+    expect(reopened.result.current.detailQuery.data).toBeUndefined()
+    expect(primary.cache.getQueryData(queryKeys.workoutDraft("pro-a", "c1", "d1"))).toBeNull()
+    expect(primary.cache.getQueryData(otherAccountKey)).toEqual({ marker: "outra conta" })
+    expect(primary.cache.getQueryState(otherAccountKey)?.isInvalidated).toBe(false)
+    expect(http.history.get).toHaveLength(3)
   })
   it("removes_only_denied_draft_payload_on_403", async () => {
     http.onGet("/workouts/drafts/d1").replyOnce(200, draft)

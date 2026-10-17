@@ -1,5 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { AxiosError } from "axios"
+import AxiosMockAdapter from "axios-mock-adapter"
+import { api } from "@/lib/api"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { makeTestClient } from "@/test/client-fixture"
 import type { DraftContentV1, WorkoutDraftResource } from "@/types/workout-draft"
@@ -124,6 +126,46 @@ describe("WorkoutDraftEditor", () => {
     expect(screen.getByLabelText("Título da prescrição")).toHaveValue("Enviado")
     expect(screen.getByLabelText("Título da prescrição")).toBeEnabled()
     expect(screen.getByText(/salvo às/i)).toBeVisible()
+  })
+  it("keeps_create_handoff_locked_while_destination_get_and_route_commit_are_pending", async () => {
+    const http = new AxiosMockAdapter(api)
+    const created = { ...draft, content: { ...content, title: "Enviado" } }
+    let finishGet!: (response: [number, WorkoutDraftResource]) => void
+    let destination!: Promise<WorkoutDraftResource>
+    http.onPost("/workouts/drafts").reply(201, created)
+    http.onGet("/workouts/drafts/d1").reply(() => new Promise(resolve => { finishGet = resolve }))
+    navigation.replace.mockImplementation(() => { destination = api.get<WorkoutDraftResource>("/workouts/drafts/d1").then(response => response.data) })
+    const p = props({ draft: null, onCreate: async sent => (await api.post<WorkoutDraftResource>("/workouts/drafts", { clientId: "c1", content: sent })).data })
+    const view = render(<WorkoutDraftEditor {...p} />)
+    try {
+      fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Enviado" } })
+      fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+      await waitFor(() => expect(http.history.get).toHaveLength(1))
+      expect(screen.getByLabelText("Título da prescrição")).toBeDisabled()
+      expect(screen.getByRole("button", { name: "Salvar rascunho" })).toBeDisabled()
+      expect(screen.getByRole("button", { name: "Finalizar prescrição" })).toBeDisabled()
+      fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Texto na janela de navegação" } })
+      expect(screen.getByLabelText("Título da prescrição")).toHaveValue("Enviado")
+      await act(async () => { finishGet([200, created]); await destination })
+      // A resposta do GET também não equivale ao commit da nova identidade de rota.
+      expect(screen.getByLabelText("Título da prescrição")).toBeDisabled()
+      view.rerender(<WorkoutDraftEditor {...p} draft={await destination} />)
+      expect(screen.getByLabelText("Título da prescrição")).toBeEnabled()
+      expect(screen.getByLabelText("Título da prescrição")).toHaveValue("Enviado")
+    } finally { finishGet?.([200, created]); view.unmount(); http.restore() }
+  })
+  it("recovers_failed_handoff_without_recreating_or_unlocking_the_old_editor", async () => {
+    navigation.replace.mockImplementationOnce(() => { throw new Error("Navigation failed") })
+    const p = props({ draft: null }); render(<WorkoutDraftEditor {...p} />)
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    expect(await screen.findByRole("alert")).toHaveTextContent("O rascunho foi salvo, mas não foi possível abrir a página.")
+    expect(screen.getByLabelText("Título da prescrição")).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Salvar rascunho" })).toBeDisabled()
+    fireEvent.click(screen.getByRole("button", { name: "Tentar abrir rascunho salvo" }))
+    expect(navigation.replace).toHaveBeenCalledTimes(2)
+    expect(p.onCreate).toHaveBeenCalledOnce()
+    expect(screen.getByRole("link", { name: "Abrir rascunho salvo" })).toHaveAttribute("href", "/clientes/c1/rascunhos/d1")
+    expect(screen.getByLabelText("Título da prescrição")).toBeDisabled()
   })
   it("blocks_invalid_finalize_but_preserves_incomplete_draft_and_archived_readonly", async () => {
     const p = props({ draft: { ...draft, content: { ...content, title: "" } } }); const { rerender } = render(<WorkoutDraftEditor {...p} />)

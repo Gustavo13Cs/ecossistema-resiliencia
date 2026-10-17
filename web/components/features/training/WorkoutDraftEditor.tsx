@@ -63,6 +63,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
   const [form, setForm] = useState(() => initialForm(draft))
   const [baseline, setBaseline] = useState(() => JSON.stringify(form))
   const [busy, setBusy] = useState<Busy>(null)
+  const [handoff, setHandoff] = useState<string | null>(null)
   const [denied, setDenied] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<string | null>(null)
@@ -83,7 +84,8 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
   const archived = client.status === "ARCHIVED"
   const terminal = Boolean(resource && resource.status !== "OPEN")
   const readonly = archived || terminal || denied
-  const fieldsDisabled = readonly || (busy !== null && busy !== "save")
+  const actionsDisabled = busy !== null || handoff !== null
+  const fieldsDisabled = readonly || handoff !== null || (busy !== null && busy !== "save")
 
   useEffect(() => {
     if (!dirty || readonly) return
@@ -104,7 +106,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
     edit(current => ({ ...current, splits: current.splits.map(split => split.id === id ? update(split) : split) }))
   }
   function begin(operation: Exclude<Busy, null>) {
-    if (pending.current || readonly) return null
+    if (pending.current || readonly || handoff !== null) return null
     pending.current = true; setBusy(operation); setMessage(null)
     return () => mounted.current && !blocked.current
   }
@@ -117,7 +119,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
       blocked.current = true
       formRef.current = createEmptyWorkoutForm()
       setDenied(true); setForm(formRef.current); setResource(null); setActiveSeen(null)
-      setBaseline(""); setConfirmation(null); setErrors({}); setMessage(null); setBusy(null)
+      setBaseline(""); setConfirmation(null); setErrors({}); setMessage(null); setBusy(null); setHandoff(null)
       onAccessDenied()
     } else if (status === 413) {
       setMessage("O rascunho excede o limite de 64 KiB. Reduza o conteúdo e tente salvar novamente.")
@@ -147,6 +149,13 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
     setBaseline(JSON.stringify(snapshot))
     return saved
   }
+  function openSavedDraft(path: string) {
+    // router.replace é void: somente a montagem do draft de destino encerra o handoff.
+    setHandoff(path)
+    setMessage(null)
+    try { router.replace(path) }
+    catch { setMessage("O rascunho foi salvo, mas não foi possível abrir a página. Tente novamente.") }
+  }
   async function save() {
     const validation = validateDraftForm(formRef.current)
     setErrors(validation)
@@ -155,13 +164,13 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
     if (!current) return
     try {
       const saved = await saveSnapshot(formRef.current, current)
-      if (saved && current() && !resource) router.replace(`/clientes/${client.id}/rascunhos/${saved.id}`)
+      if (saved && current() && !resource) openSavedDraft(`/clientes/${client.id}/rascunhos/${saved.id}`)
     }
     catch (error) { handleError(error, current) }
     finally { finish(current) }
   }
   function requestFinalize() {
-    if (readonly || pending.current) return
+    if (readonly || pending.current || handoff !== null) return
     const validation = { ...validateDraftForm(formRef.current), ...validateWorkoutForm(formRef.current) }
     setErrors(validation)
     if (!Object.keys(validation).length) setConfirmation("finalize")
@@ -242,13 +251,20 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
     <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div><h1 className="text-2xl font-bold">{form.title || "Rascunho sem título"}</h1><p>{client.name}</p></div>
-        <Button type="button" variant="outline" disabled={busy !== null} onClick={() => dirty ? setConfirmation("leave") : router.push(`/clientes/${client.id}`)}>Voltar para aluno</Button>
+        <Button type="button" variant="outline" disabled={actionsDisabled} onClick={() => dirty ? setConfirmation("leave") : router.push(`/clientes/${client.id}`)}>Voltar para aluno</Button>
       </div>
       {archived ? <p role="status">Aluno arquivado. Rascunho disponível apenas para leitura.</p> : null}
       <p role="status" aria-live="polite">{busy === "save" || busy === "create" ? "Salvando" : dirty ? "Alterações não salvas" : savedAt ? `Rascunho salvo às ${savedAt}` : "Salve o rascunho para retomar depois."}</p>
+      {handoff ? <div className="space-y-3">
+        <p role="status">O rascunho foi salvo. Abrindo a página para continuar.</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="button" variant="outline" onClick={() => openSavedDraft(handoff)}>Tentar abrir rascunho salvo</Button>
+          <a className="text-sm font-semibold underline" href={handoff}>Abrir rascunho salvo</a>
+        </div>
+      </div> : null}
       {message ? <p role="alert">{message}</p> : null}
       {Object.keys(errors).length ? <div role="alert"><p>Revise os campos indicados:</p><ul>{Object.entries(errors).map(([key, value]) => <li key={key}>{value}</li>)}</ul></div> : null}
-      {needsRebase ? <Button type="button" disabled={readonly || busy !== null} onClick={() => void loadRebase()}>Revisar treino ativo</Button> : null}
+      {needsRebase ? <Button type="button" disabled={readonly || actionsDisabled} onClick={() => void loadRebase()}>Revisar treino ativo</Button> : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2"><Label htmlFor="draft-title">Título da prescrição</Label><Input id="draft-title" disabled={fieldsDisabled} aria-invalid={Boolean(errors.title)} value={form.title} onChange={event => edit(current => ({ ...current, title: event.target.value }))} /></div>
         <div className="space-y-2"><Label htmlFor="draft-goal">Objetivo</Label><Input id="draft-goal" disabled={fieldsDisabled} value={form.goal} onChange={event => edit(current => ({ ...current, goal: event.target.value }))} /></div>
@@ -272,9 +288,9 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
       />)}
       <Button type="button" variant="outline" disabled={fieldsDisabled} onClick={() => edit(current => ({ ...current, splits: [...current.splits, createWorkoutSplit(current.splits.length)] }))}>Adicionar divisão</Button>
       <div className="flex flex-wrap gap-3">
-        <Button type="button" disabled={readonly || busy !== null} onClick={() => void save()}>Salvar rascunho</Button>
-        <Button type="button" disabled={readonly || busy !== null} onClick={requestFinalize}>Finalizar prescrição</Button>
-        <Button type="button" variant="outline" disabled={readonly || busy !== null || !resource} onClick={() => setConfirmation("discard")}>Descartar rascunho</Button>
+        <Button type="button" disabled={readonly || actionsDisabled} onClick={() => void save()}>Salvar rascunho</Button>
+        <Button type="button" disabled={readonly || actionsDisabled} onClick={requestFinalize}>Finalizar prescrição</Button>
+        <Button type="button" variant="outline" disabled={readonly || actionsDisabled || !resource} onClick={() => setConfirmation("discard")}>Descartar rascunho</Button>
       </div>
       <AlertDialog open={confirmation !== null} onOpenChange={open => { if (!open) setConfirmation(null) }}>
         <AlertDialogContent>
