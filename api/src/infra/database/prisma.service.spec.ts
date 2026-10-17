@@ -8,6 +8,9 @@ describe('Clinical database boundary', () => {
     const prisma = new PrismaService();
     if (previous === undefined) delete process.env.CLINICAL_DATABASE_URL;
     else process.env.CLINICAL_DATABASE_URL = previous;
+    expect(() => prisma.workoutDraft).toThrow(
+      'Clinical database context required',
+    );
     expect(() => prisma.client).toThrow('Clinical database context required');
     expect(() => prisma.$queryRaw).toThrow(
       'Clinical database context required',

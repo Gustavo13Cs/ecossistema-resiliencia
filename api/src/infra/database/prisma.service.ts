@@ -185,6 +185,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get workout() {
     return this.current().tx.workout;
   }
+  get workoutDraft() {
+    return this.current().tx.workoutDraft;
+  }
   get workoutSplit() {
     return this.current().tx.workoutSplit;
   }

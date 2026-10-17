@@ -8,6 +8,8 @@
 
 ## Current Task
 
+- **2026-10-17 — Rascunhos Task 1**: conteúdo V1/DTO, schema/migration e delegate clínico concluídos. RED confirmado; API 52 suítes/641 testes, PostgreSQL 6/6, tipos/lint e Prisma validate/generate/deploy aprovados somente no banco sintético local. Legado comparado antes/depois, sem backfill; sem produção, push ou deploy.
+
 - **2026-10-17 — Execução autorizada com subagentes por tarefa**: planos aprovados pelo usuário ao escolher execução por subagentes. Worktree `.worktrees/personal-workout-implementation`, branch `agent/codex/personal-workout-implementation`, base `07b611c`. Preparação da base com Prisma gerado, PostgreSQL 16 sintético na porta 5434 e testes de referência. Cada tarefa terá implementador e revisão independentes; sem produção, push ou deploy. Ledgers locais por plano em `.superpowers/sdd/`.
 
 - **2026-10-17 — Especificações aprovadas e planos escritos**: usuário confirmou “revisei , ta aprovada” para rascunhos/revisões e biblioteca visual. Planos em `docs/superpowers/plans/2026-10-17-personal-rascunhos-revisoes.md` (7 tarefas) e `2026-10-17-personal-biblioteca-visual.md` (6 tarefas), autorrevisados contra as especificações. Aguardam revisão dos planos e escolha de execução; recomendação de execução direta com revisão independente final. A aprovação das especificações inclui o desenho proposto de schema/migrations para desenvolvimento; não representa aplicação em produção. Somente documentação nesta etapa; testes de produto não executados.
