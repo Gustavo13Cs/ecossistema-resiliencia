@@ -9,7 +9,7 @@
 
 ## Correções das revisões — 2026-10-17
 
-- 🔄 Codex: PR #27 — preservar prescrição em falhas transitórias, corrigir histórico após avaliação e reautenticação nas cinco telas. PR #28 — executar testes API pendentes.
+- ✅ Codex: PR #27 — prescrição preservada em falhas transitórias, histórico após avaliação e reautenticação nas cinco telas corrigidos. PR #28 — suíte API pendente validada (602/602); web 525/525, tipos/lint/builds aprovados. Publicação aguardando autorização após bloqueio do auto-review.
 
 ## Fase 1 — Fundação Profissional ✅
 

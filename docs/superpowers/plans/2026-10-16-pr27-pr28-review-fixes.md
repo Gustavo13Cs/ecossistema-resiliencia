@@ -11,7 +11,8 @@
 - [x] Reproduzir perda do formulário em `workout-client-contract.test.tsx`, com QueryClient real; corrigir `novo-treino/page.tsx` e `WorkoutEditor.tsx`; testar falha inicial, recarga, retry e negação de acesso.
 - [x] Reproduzir erro do histórico durante POST pendente em `PersonalClientRecord.test.tsx`; extrair `useCreateClientAssessment` e usá-lo no diálogo sem observador desabilitado. Verificar novo GET e avaliação exibida após sucesso.
 - [x] Testar recuperação com sessão presente; usar componente compartilhado de reautenticação com logout existente nas cinco telas afetadas. Verificar logout, limpeza do cache e rota `/auth/login`.
-- [ ] Executar suítes web/API, typecheck, lint e builds; registrar resultados e abrir PR.
+- [x] Executar suítes web/API, typecheck, lint e builds; registrar resultados.
+- [ ] Publicar branch e abrir PR após autorização explícita do mantenedor (push bloqueado por auto-review).
 
 ## Foco da revisão final
 

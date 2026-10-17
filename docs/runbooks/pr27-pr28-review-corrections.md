@@ -15,7 +15,9 @@ Base: `e33f9c7`, ambos PRs integrados. Revisões consultadas nos chats “Revisa
 - Revisão independente do diff não identificou novos defeitos acionáveis.
 - A execução em UTC revelou dependência preexistente do fuso brasileiro em `useFollowUps.test.ts` (consulta hoje) e `usePersonalDayAgenda.test.tsx` (virada do dia, retorno à aba e atualização manual). Os arquivos permanecem intactos; a suíte é validada com `TZ=America/Fortaleza`.
 - Três verificações de stdout em `scripts/assert-standalone-runtime.test.mjs` falharam sob o sandbox padrão. A reprodução mínima com `spawnSync(node, ["-e", "console.log(123)"])` retornou `error.code=EPERM`, status 0 e stdout vazio. A execução com a permissão de rede do sandbox removeu o EPERM e capturou stdout normalmente, sem modificar scripts/testes.
-- Antes da recriação do ambiente, 602 testes API, tipos/lint e ambos builds passaram. Validação final no ambiente restaurado em andamento.
+- Validação final no ambiente restaurado: `TZ=America/Fortaleza npm test -- --maxWorkers=2` passou em 75 arquivos, 525 testes; `npm test -- --runInBand` da API passou em 51 suítes, 602 testes.
+- `npm run typecheck`, `npm run lint` (zero warnings), build Next.js e build NestJS aprovados. Pós-build: CSP/direção em 29/29 páginas e runtime standalone sem dev packages/arquivos de ambiente.
+- Commit técnico: `80df49f`. Publicação bloqueada pelo auto-review: `git push` ao repositório privado requer autorização explícita do mantenedor. Nenhum push, PR ou deploy foi realizado.
 
 ## Limites
 
