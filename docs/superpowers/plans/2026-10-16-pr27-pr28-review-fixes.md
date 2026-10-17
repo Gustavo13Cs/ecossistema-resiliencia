@@ -12,7 +12,7 @@
 - [x] Reproduzir erro do histórico durante POST pendente em `PersonalClientRecord.test.tsx`; extrair `useCreateClientAssessment` e usá-lo no diálogo sem observador desabilitado. Verificar novo GET e avaliação exibida após sucesso.
 - [x] Testar recuperação com sessão presente; usar componente compartilhado de reautenticação com logout existente nas cinco telas afetadas. Verificar logout, limpeza do cache e rota `/auth/login`.
 - [x] Executar suítes web/API, typecheck, lint e builds; registrar resultados.
-- [ ] Publicar branch e abrir PR (autorização explícita recebida em 2026-10-17).
+- [x] Publicar branch e abrir PR #29 como rascunho (autorização explícita recebida em 2026-10-17).
 
 ## Foco da revisão final
 

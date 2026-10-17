@@ -9,7 +9,7 @@
 
 ## Correções das revisões — 2026-10-17
 
-- ✅ Codex: PR #27 — prescrição preservada em falhas transitórias, histórico após avaliação e reautenticação nas cinco telas corrigidos. PR #28 — suíte API pendente validada (602/602); web 525/525, tipos/lint/builds aprovados. Push/PR autorizados pelo mantenedor em 2026-10-17; publicação em andamento.
+- ✅ Codex: PR #27 — prescrição preservada em falhas transitórias, histórico após avaliação e reautenticação nas cinco telas corrigidos. PR #28 — suíte API pendente validada (602/602); web 525/525, tipos/lint/builds aprovados. Publicado no PR #29 (rascunho), após autorização do mantenedor em 2026-10-17.
 
 ## Fase 1 — Fundação Profissional ✅
 
