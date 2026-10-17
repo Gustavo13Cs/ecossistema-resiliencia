@@ -8,7 +8,7 @@
 
 ## Current Task
 
-- **2026-10-17 — Revisões PRs #27/#28**: correções concluídas no commit `80df49f`, branch `agent/codex/pr27-pr28-review-fixes`. Web 525/525, API 602/602, tipos/lint/builds aprovados; revisão independente sem achados. Push/PR bloqueados pelo auto-review até autorização explícita ao destino GitHub privado. Evidências: `docs/runbooks/pr27-pr28-review-corrections.md`.
+- **2026-10-17 — Revisões PRs #27/#28**: correções concluídas no commit `80df49f`, branch `agent/codex/pr27-pr28-review-fixes`. Web 525/525, API 602/602, tipos/lint/builds aprovados; revisão independente sem achados. Mantenedor autorizou push/PR ao destino GitHub privado em 2026-10-17; publicação em andamento. Evidências: `docs/runbooks/pr27-pr28-review-corrections.md`.
 
 - **2026-10-08 — Remoção solicitada pelo mantenedor**: PR #25 integrado em e1b13ddd; Render live dep-db3tm7gjo6nc73bfuang e Vercel produção READY. /read-audit retorna404, /clients sem sessão401. Publicação/exclusão autorizadas pelo mantenedor após backup restaurado: novo snapshot cifrado de public+safemove_private restaurou 43 tabelas, incluindo21 acessos/outbox; contagens/owners/RLS/enums/funções conferidos e container isolado removido. Migration18 aplicada externamente pelo owner com CA pública/sslaccept=strict; SHA256 a3ead2773928767f7e7baa034e5d2051f6ad61e8b17b2e9d48255e7698134a8b. 18 migrations concluídas, zero falhas, objetos exclusivos ausentes; 40 tabelas de domínio/RLS e contagens de todos os registros preservados. PR #26 pronto: aguarda CI completo e publicação final. Revisões sem achados; web391/API485/E2E179 primeira etapa e181 PG17 armazenamento, tipos/lint/build/Prisma aprovados. Roteiro: docs/runbooks/remove-access-history.md.
 
