@@ -15,7 +15,7 @@
 - Executar após o [lote de rascunhos/revisões](2026-10-17-personal-rascunhos-revisoes.md), usando seus tipos, rotas e testes aprovados.
 - “Preservar os 148 exercícios do catálogo atual.”
 - “pelo menos 20 exercícios desse catálogo, abrangendo peitoral, costas, membros inferiores, ombros e core.”
-- “O requisito é foto ou vídeo: vídeo em todos os exercícios não é condição de aceite.”
+- “Após a escolha explícita do usuário, o requisito desta entrega aceita ilustração licenciada, foto ou vídeo; vídeo em todos os exercícios não é condição de aceite. Não apresentar ilustração como fotografia ou vídeo.”
 - “Não incluir upload de arquivos, busca automática no YouTube, geração de demonstrações por IA, portal de aluno ou contratação de serviço pago nesta entrega.”
 - Aceitar somente CC0, CC BY ou CC BY-SA com versão/origem/autoria identificadas; cumprir obrigações da mídia. Sem importação baseada somente na licença de software do repositório.
 - Detalhe/busca privados para PERSONAL, dados CUSTOM filtrados pelo dono; snapshot nunca é JSON/URL arbitrário do cliente.

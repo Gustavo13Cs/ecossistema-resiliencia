@@ -42,7 +42,7 @@
 
 ## Fase 3 — Planos Versionados & Outputs
 
-Proposta e especificações do Personal aprovadas pelo usuário em 17/10/2026, incluindo biblioteca visual e cadastro manual: [direção de produto](planning/2026-10-17-personal-proxima-entrega.md). Planos de [rascunhos/revisões](superpowers/plans/2026-10-17-personal-rascunhos-revisoes.md) e [biblioteca visual](superpowers/plans/2026-10-17-personal-biblioteca-visual.md) aprovados para execução com subagentes por tarefa. Rascunhos: backend e API concluídos/revisados (tarefas 1–4); editor implementado e em revisão (tarefa 5), rotas e jornada real pendentes. Biblioteca visual segue na sequência com 20 ilustrações licenciadas aprovadas pelo usuário; fonte candidata e direitos documentados para validação do manifesto. O bloqueio de wger permanece, sem impedir a alternativa aprovada.
+Proposta e especificações do Personal aprovadas pelo usuário em 17/10/2026, incluindo biblioteca visual e cadastro manual: [direção de produto](planning/2026-10-17-personal-proxima-entrega.md). Planos de [rascunhos/revisões](superpowers/plans/2026-10-17-personal-rascunhos-revisoes.md) e [biblioteca visual](superpowers/plans/2026-10-17-personal-biblioteca-visual.md) aprovados para execução com subagentes por tarefa. Rascunhos: backend e API concluídos/revisados (tarefas 1–4); editor concluído/revisado (tarefa 5), integração de rotas em andamento (tarefa 6), jornada real pendente (tarefa 7). Biblioteca visual segue na sequência com 20 ilustrações licenciadas aprovadas pelo usuário; fonte candidata e direitos documentados para validação do manifesto. O bloqueio de wger permanece, sem impedir a alternativa aprovada.
 
 | # | Tarefa | Status | Agente |
 |---|--------|--------|--------|
