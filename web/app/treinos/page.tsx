@@ -3,8 +3,10 @@
 import { useCallback, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { navigateToWorkoutPage } from "@/lib/workout-editor-navigation"
 import { isAxiosError } from "axios"
 import { AsyncState } from "@/components/feedback/AsyncState"
+import { WorkoutDraftSection } from "@/components/features/training/WorkoutDraftSection"
 import { WorkoutClientPicker } from "@/components/features/training/WorkoutClientPicker"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -146,11 +148,13 @@ export default function TreinosHubPage() {
         </section>
       )}
 
+      <WorkoutDraftSection key={user.sub} onAccessDenied={handlePickerAccessDenied} />
+
       <WorkoutClientPicker
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         onAccessDenied={handlePickerAccessDenied}
-        onSelect={clientId => router.push(`/clientes/${clientId}/novo-treino`)}
+        onSelect={clientId => navigateToWorkoutPage(router, `/clientes/${clientId}/novo-treino`)}
       />
     </div>
   )

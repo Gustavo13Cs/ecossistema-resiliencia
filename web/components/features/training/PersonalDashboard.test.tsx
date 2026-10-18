@@ -19,6 +19,7 @@ function mount() {
     return { cache, ...render(<QueryClientProvider client={cache}><ProfessionalDashboard /></QueryClientProvider>) };
 }
 beforeEach(() => {
+  vi.stubGlobal("navigation", Object.assign(new EventTarget(), { traverseTo: vi.fn() }))
     http.reset();
     auth.user = { sub: "personal", role: "PERSONAL", name: "Ana" };
     http.onGet("/workouts/workspace").reply(200, workspace);
@@ -110,3 +111,5 @@ it("removes_dashboard_content_when_picker_access_is_denied", async () => {
     expect(screen.queryByText("Bruno")).not.toBeInTheDocument();
     expect(screen.queryByText("7")).not.toBeInTheDocument();
 });
+
+afterEach(() => vi.unstubAllGlobals())

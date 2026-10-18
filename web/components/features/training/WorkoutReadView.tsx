@@ -1,6 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import { useState } from "react"
+import { AsyncState } from "@/components/feedback/AsyncState"
+import { WorkoutRevisionAction } from "./WorkoutRevisionAction"
 import { Button } from "@/components/ui/button"
 import {
   MUSCLE_GROUP_LABELS,
@@ -19,6 +22,7 @@ function formatDate(value: string) {
 }
 
 export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
+  const [denied, setDenied] = useState(false)
   const archived = workout.client.status === "ARCHIVED"
   const statusLabel = workout.isActive ? "Treino ativo" : "Treino anterior"
 
@@ -26,6 +30,7 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
     (a, b) => (a.position ?? 0) - (b.position ?? 0),
   )
 
+  if (denied) return <AsyncState kind="error" title="Restabeleça seu acesso" description="Sua sessão não permite consultar estes registros." />
   return (
     <article aria-label={`Ficha de treino ${workout.title}`} className="mx-auto min-w-0 max-w-[1120px] space-y-6 px-4 py-6 text-[var(--sm-ink)] sm:px-6 lg:px-8 print:px-0 print:py-0">
       <header className="flex flex-col gap-4 border-b border-[var(--sm-border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
@@ -47,12 +52,7 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
               Criar prescrição
             </Button>
           ) : (
-            <Link
-              href={`/clientes/${workout.clientId}/novo-treino`}
-              className="inline-flex min-h-11 items-center justify-center rounded-[var(--sm-radius-sm)] bg-[var(--sm-brand)] px-4 py-2.5 text-sm font-bold text-[var(--sm-on-brand)] hover:bg-[var(--sm-brand-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sm-focus)]"
-            >
-              Criar prescrição
-            </Link>
+            <WorkoutRevisionAction workout={workout} onAccessDenied={() => setDenied(true)} />
           )}
         </nav>
       </header>
@@ -62,6 +62,9 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
           Prontuário arquivado: esta ficha permanece disponível para consulta e impressão. Novas prescrições estão bloqueadas.
         </p>
       ) : null}
+
+      <p>{workout.finalizedAt ? `Finalizada em ${formatDate(workout.finalizedAt)}` : "Registro legado"}</p>
+      {workout.revisionOfId ? <Link href={`/clientes/${workout.clientId}/treinos/${workout.revisionOfId}`} className={actionClass}>Consultar ficha de origem</Link> : null}
 
       <section aria-label="Resumo da prescrição" className="rounded-[var(--sm-radius-md)] border border-[var(--sm-border)] bg-[var(--sm-surface)] p-5">
         <dl className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">

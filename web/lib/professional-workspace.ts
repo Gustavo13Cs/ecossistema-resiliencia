@@ -97,6 +97,7 @@ const ROLE_ONLY_PREFIXES: ReadonlyArray<[string, readonly ProfessionalRole[]]> =
   ["/clientes/:id/nova-suplementacao", ["NUTRITIONIST"]],
   ["/clientes/:id/novo-treino", ["PERSONAL"]],
   ["/clientes/:id/treinos", ["PERSONAL"]],
+  ["/clientes/:id/rascunhos", ["PERSONAL"]],
   ["/clientes/:id/nova-reabilitacao", ["PHYSIO"]],
 ]
 

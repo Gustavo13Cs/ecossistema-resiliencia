@@ -8,6 +8,7 @@ import { queryKeys } from "@/lib/query-keys"
 import { makeTestClient } from "@/test/client-fixture"
 import { PersonalClientRecord } from "./PersonalClientRecord"
 
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }))
 vi.mock("@/contexts/auth-context", () => ({ useAuth: () => ({ user: { sub: "personal", role: "PERSONAL" } }) }))
 const http = new AxiosMockAdapter(api)
 const assessment = { id: "a1", clientId: "c1", userId: null, date: "2026-10-14T12:00:00Z", weight: null, bodyFat: null, muscleMass: 29, waist: 80, abdomen: null, hips: null, thorax: null, armLeft: null, armRight: null, thighLeft: null, thighRight: null, calfLeft: null, calfRight: null, skinfoldTriceps: 12, skinfoldSubscapular: null, skinfoldChest: null, skinfoldAxillary: null, skinfoldSuprailiac: null, skinfoldAbdominal: null, skinfoldThigh: null, benchPress1RM: null, squat1RM: 80, deadlift1RM: null, vo2Max: 40, notes: "Força registrada", createdAt: "2026-10-14T12:00:00Z", updatedAt: "2026-10-14T12:00:00Z" }
@@ -18,6 +19,7 @@ function mount(archived = false) {
 }
 beforeEach(() => {
   http.reset()
+  http.onGet("/workouts/drafts").reply(200, { items: [], nextCursor: null })
   http.onGet("/workouts/client/c1/overview").reply(200, overview)
   http.onGet("/assessments/client/c1").reply(200, [assessment, { ...assessment, id: "a2", squat1RM: 70, date: "2026-09-14T12:00:00Z" }])
 })
@@ -25,7 +27,7 @@ afterEach(cleanup)
 it("does_not_query_other_domains", async () => {
   mount()
   expect(await screen.findByText("Treino de força")).toBeVisible()
-  expect(http.history.get.map(request => request.url).sort()).toEqual(["/assessments/client/c1", "/workouts/client/c1/overview"])
+  expect(http.history.get.map(request => request.url).sort()).toEqual(["/assessments/client/c1", "/workouts/client/c1/overview", "/workouts/drafts"])
   expect(screen.queryByText(/em migração/i)).not.toBeInTheDocument()
   expect(screen.getByRole("link", { name: "Ver ficha" })).toHaveAttribute("href", "/clientes/c1/treinos/w1")
   expect(screen.getByRole("link", { name: "Criar prescrição" })).toHaveAttribute("href", "/clientes/c1/novo-treino")
@@ -76,4 +78,12 @@ it("propagates_dialog_denial_and_removes_record_content", async () => {
   await user.click(screen.getByRole("button", { name: "Salvar avaliação física" }))
   expect(await screen.findByText("Restabeleça seu acesso")).toBeVisible()
   expect(screen.queryByText("Treino de força")).not.toBeInTheDocument()
+})
+
+it("record_separates_active_and_open_draft", async () => {
+  http.onGet("/workouts/drafts").reply(200, { items: [{ id: "d1", clientId: "c1", client: { id: "c1", name: "Marina", status: "ACTIVE" }, title: "Elaboração incompleta", status: "OPEN", version: 1, updatedAt: "2026-10-17T12:00:00Z" }], nextCursor: null })
+  mount()
+  expect(await screen.findByText("Treino de força")).toBeVisible()
+  expect(await screen.findByRole("region", { name: "Rascunhos" })).toHaveTextContent("Elaboração incompleta")
+  expect(screen.getByRole("link", { name: "Ver ficha" })).toHaveAttribute("href", "/clientes/c1/treinos/w1")
 })

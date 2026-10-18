@@ -83,7 +83,9 @@ function renderWithQuery(ui: React.ReactNode) {
 }
 
 beforeEach(() => {
+  vi.stubGlobal("navigation", Object.assign(new EventTarget(), { traverseTo: vi.fn() }))
   http.reset()
+  http.onGet("/workouts/drafts").reply(200, { items: [], nextCursor: null })
   navigation.push.mockReset()
   navigation.params = { id: "c1", workoutId: "w-older" }
   auth.user = { sub: "personal-1", role: "PERSONAL", name: "Ana Personal" }
@@ -154,7 +156,7 @@ describe("WorkoutReadView and exact workout route", () => {
     const user = userEvent.setup()
     const printSpy = vi.spyOn(window, "print").mockImplementation(() => undefined)
     const detail = makeWorkoutDetail()
-    render(<WorkoutReadView workout={detail} />)
+    renderWithQuery(<WorkoutReadView workout={detail} />)
 
     expect(screen.getByRole("heading", { name: "Mesociclo Base — Força" })).toBeVisible()
     expect(screen.getByText("Treino anterior")).toBeVisible()
@@ -197,7 +199,7 @@ describe("WorkoutReadView and exact workout route", () => {
         },
       ],
     })
-    render(<WorkoutReadView workout={detail} />)
+    renderWithQuery(<WorkoutReadView workout={detail} />)
 
     expect(screen.getByText("Quadríceps")).toBeVisible()
     expect(screen.getByText("Rest-pause")).toBeVisible()
@@ -229,3 +231,31 @@ describe("WorkoutReadView and exact workout route", () => {
     expect(http.history.get).toHaveLength(0)
   })
 })
+
+it("legacy_label_has_no_invented_version", () => {
+  renderWithQuery(<WorkoutReadView workout={makeWorkoutDetail()} />)
+  expect(screen.getByText("Registro legado")).toBeVisible()
+  expect(screen.queryByText(/versão \d/i)).not.toBeInTheDocument()
+})
+it("revision_uses_selected_workout_id", async () => {
+  http.onPost("/workouts/drafts").reply(201, { id: "d1", clientId: "c1", status: "OPEN" })
+  renderWithQuery(<WorkoutReadView workout={makeWorkoutDetail()} />)
+  await waitFor(() => expect(screen.getByRole("button", { name: "Revisar esta ficha" })).toBeEnabled())
+  await userEvent.click(screen.getByRole("button", { name: "Revisar esta ficha" }))
+  await waitFor(() => expect(navigation.push).toHaveBeenCalledWith("/clientes/c1/rascunhos/d1"))
+  expect(JSON.parse(http.history.post[0].data)).toEqual({ clientId: "c1", sourceWorkoutId: "w-older" })
+})
+it("removes_readable_workout_after_revision_access_denial", async () => {
+  http.onGet("/workouts/drafts").reply(403)
+  renderWithQuery(<WorkoutReadView workout={makeWorkoutDetail()} />)
+  expect(await screen.findByText("Restabeleça seu acesso")).toBeVisible()
+  expect(screen.queryByText("Mesociclo Base — Força")).not.toBeInTheDocument()
+})
+it("shows_server_finalization_date_and_links_selected_origin_without_clinical_version", () => {
+  renderWithQuery(<WorkoutReadView workout={makeWorkoutDetail({ finalizedAt: "2026-10-18T12:00:00Z", revisionOfId: "w-origin" })} />)
+  expect(screen.getByText("Finalizada em 18 de outubro de 2026")).toBeVisible()
+  expect(screen.queryByText("Registro legado")).not.toBeInTheDocument()
+  expect(screen.getByRole("link", { name: "Consultar ficha de origem" })).toHaveAttribute("href", "/clientes/c1/treinos/w-origin")
+})
+
+afterEach(() => vi.unstubAllGlobals())

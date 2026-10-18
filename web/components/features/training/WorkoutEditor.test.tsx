@@ -54,6 +54,7 @@ const activeWorkoutFixture: WorkoutPrescription = {
 }
 
 beforeEach(() => {
+  vi.stubGlobal("navigation", Object.assign(new EventTarget(), { traverseTo: vi.fn() }))
   http.reset()
   navigation.push.mockReset()
   auth.user = { sub: "personal-1", role: "PERSONAL", name: "Personal" }
@@ -183,8 +184,9 @@ describe("WorkoutEditor", () => {
     expect(navigation.push).toHaveBeenCalledWith("/clientes/c1")
   })
 
-  it("blocks prescription submission when the base active workout query fails or Client is archived", async () => {
-    http.onGet("/clients/c1").reply(200, makeTestClient("c1", "Marina Lopes", "ACTIVE"))
+  it("blocks copying an unavailable active workout and keeps archived legacy editor read only", async () => {
+    http.onGet("/clients/c1").reply(200, { ...makeTestClient("c1", "Marina Lopes", "ACTIVE"), professionalId: "personal-1" })
+    http.onGet("/workouts/drafts").reply(200, { items: [], nextCursor: null })
     http.onGet("/workouts/client/c1/active").reply(503)
 
     const cache = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } })
@@ -194,7 +196,9 @@ describe("WorkoutEditor", () => {
       </QueryClientProvider>,
     )
 
-    expect(await screen.findByText("Contexto de treino indisponível")).toBeVisible()
+    expect(await screen.findByText(/Não foi possível consultar o treino ativo/)).toBeVisible()
+    expect(screen.getByRole("button", { name: "Usar treino ativo como base" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Começar do zero" })).toBeEnabled()
     expect(screen.queryByRole("button", { name: "Salvar prescrição" })).not.toBeInTheDocument()
     view.unmount()
 
@@ -279,3 +283,5 @@ describe("WorkoutEditor", () => {
     expect(screen.getByText("Cadência 3-0-1-0")).toBeVisible()
   })
 })
+
+afterEach(() => vi.unstubAllGlobals())

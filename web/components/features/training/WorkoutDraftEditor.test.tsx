@@ -24,7 +24,8 @@ async function confirmFinalize() {
   fireEvent.click(screen.getByRole("button", { name: "Finalizar prescrição" }))
   fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Confirmar finalização" }))
 }
-beforeEach(() => { auth.user = { sub: "personal", role: "PERSONAL" }; navigation.push.mockReset(); navigation.replace.mockReset() })
+beforeEach(() => {
+  vi.stubGlobal("navigation", Object.assign(new EventTarget(), { traverseTo: vi.fn() })); auth.user = { sub: "personal", role: "PERSONAL" }; navigation.push.mockReset(); navigation.replace.mockReset() })
 afterEach(cleanup)
 describe("WorkoutDraftEditor", () => {
   it("draft_save_accepts_incomplete_form", async () => {
@@ -234,3 +235,5 @@ describe("WorkoutDraftEditor", () => {
     unmount(); expect(window.dispatchEvent(new Event("beforeunload", { cancelable: true }))).toBe(true)
   })
 })
+
+afterEach(() => vi.unstubAllGlobals())

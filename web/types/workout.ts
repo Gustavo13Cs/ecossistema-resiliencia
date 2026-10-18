@@ -105,6 +105,8 @@ export interface CreateCustomExerciseInput {
 }
 
 export interface WorkoutSummary extends Omit<TrainingActiveWorkout, "durationWeeks"> {
+  finalizedAt?: string | null
+  revisionOfId?: string | null
   client: { id: string; name: string; status: ClientStatus }
   isTemplate: boolean
 }
@@ -134,6 +136,8 @@ export interface WorkoutPrescriptionSplit {
 }
 
 export interface WorkoutPrescription extends TrainingActiveWorkout {
+  finalizedAt?: string | null
+  revisionOfId?: string | null
   isTemplate: boolean
   notes: string | null
   splits: WorkoutPrescriptionSplit[]

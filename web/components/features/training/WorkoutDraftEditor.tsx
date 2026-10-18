@@ -9,6 +9,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { navigateToWorkoutPage } from "@/lib/workout-editor-navigation"
+import { useDraftNavigationGuard } from "@/hooks/features/useDraftNavigationGuard"
 import { useAuth } from "@/contexts/auth-context"
 import { fromDraftContent, toDraftContent, validateDraftForm } from "@/lib/workout-draft-form"
 import { createEmptyWorkoutForm, createWorkoutExercise, createWorkoutSplit, duplicateExercise, duplicateSplit, moveItem, validateWorkoutForm, type WorkoutForm, type WorkoutFormSplit } from "@/lib/workout-form"
@@ -75,6 +77,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
   const pending = useRef(false)
   const revision = useRef(0)
   const formRef = useRef(form)
+  const pendingLeave = useRef<(() => void) | null>(null)
   useEffect(() => {
     mounted.current = true
     return () => { mounted.current = false }
@@ -87,12 +90,11 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
   const actionsDisabled = busy !== null || handoff !== null
   const fieldsDisabled = readonly || handoff !== null || (busy !== null && busy !== "save")
 
-  useEffect(() => {
-    if (!dirty || readonly) return
-    const beforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = "" }
-    window.addEventListener("beforeunload", beforeUnload)
-    return () => window.removeEventListener("beforeunload", beforeUnload)
-  }, [dirty, readonly])
+  const allowNavigation = useDraftNavigationGuard(dirty && !readonly, proceed => {
+    pendingLeave.current = proceed
+    setConfirmation("leave")
+  })
+
 
   function edit(update: (current: WorkoutForm) => WorkoutForm) {
     if (fieldsDisabled) return
@@ -153,7 +155,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
     // router.replace é void: somente a montagem do draft de destino encerra o handoff.
     setHandoff(path)
     setMessage(null)
-    try { router.replace(path) }
+    try { allowNavigation(() => navigateToWorkoutPage(router, path, "replace")) }
     catch { setMessage("O rascunho foi salvo, mas não foi possível abrir a página. Tente novamente.") }
   }
   async function save() {
@@ -198,7 +200,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
       setResource({ ...saved, ...result, content: null }); setBaseline(JSON.stringify(formRef.current))
       formRef.current = createEmptyWorkoutForm()
       setForm(formRef.current)
-      router.push(`/clientes/${client.id}/treinos/${result.finalizedWorkoutId}`)
+      allowNavigation(() => navigateToWorkoutPage(router, `/clientes/${client.id}/treinos/${result.finalizedWorkoutId}`))
     } catch (error) { handleError(error, current) }
     finally { finish(current) }
   }
@@ -238,7 +240,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
       if (result.id !== resource.id || result.clientId !== client.id || result.status !== "DISCARDED") throw new Error("Resposta incompatível")
       formRef.current = createEmptyWorkoutForm()
       setResource({ ...resource, ...result, content: null }); setForm(formRef.current); setBaseline("")
-      router.push(`/clientes/${client.id}`)
+      allowNavigation(() => navigateToWorkoutPage(router, `/clientes/${client.id}`))
     } catch (error) { handleError(error, current) }
     finally { finish(current) }
   }
@@ -251,7 +253,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
     <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div><h1 className="text-2xl font-bold">{form.title || "Rascunho sem título"}</h1><p>{client.name}</p></div>
-        <Button type="button" variant="outline" disabled={actionsDisabled} onClick={() => dirty ? setConfirmation("leave") : router.push(`/clientes/${client.id}`)}>Voltar para aluno</Button>
+        <Button type="button" variant="outline" disabled={actionsDisabled} onClick={() => dirty ? setConfirmation("leave") : navigateToWorkoutPage(router, `/clientes/${client.id}`)}>Voltar para aluno</Button>
       </div>
       {archived ? <p role="status">Aluno arquivado. Rascunho disponível apenas para leitura.</p> : null}
       <p role="status" aria-live="polite">{busy === "save" || busy === "create" ? "Salvando" : dirty ? "Alterações não salvas" : savedAt ? `Rascunho salvo às ${savedAt}` : "Salve o rascunho para retomar depois."}</p>
@@ -292,7 +294,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
         <Button type="button" disabled={readonly || actionsDisabled} onClick={requestFinalize}>Finalizar prescrição</Button>
         <Button type="button" variant="outline" disabled={readonly || actionsDisabled || !resource} onClick={() => setConfirmation("discard")}>Descartar rascunho</Button>
       </div>
-      <AlertDialog open={confirmation !== null} onOpenChange={open => { if (!open) setConfirmation(null) }}>
+      <AlertDialog open={confirmation !== null} onOpenChange={open => { if (!open) { setConfirmation(null); pendingLeave.current = null } }}>
         <AlertDialogContent>
           <AlertDialogTitle>{confirmation === "rebase" ? "Confirmar nova base" : confirmation === "discard" ? "Descartar rascunho?" : confirmation === "leave" ? "Sair com alterações não salvas?" : "Finalizar prescrição?"}</AlertDialogTitle>
           <AlertDialogDescription>{confirmation === "rebase" ? activeSeen ? `Treino ativo atual: ${activeSeen.title}. Confirme esta ficha como base para a próxima finalização.` : "Não há treino ativo. Confirme esta situação como base para a próxima finalização." : confirmation === "discard" ? "O rascunho salvo será encerrado. As prescrições finalizadas permanecem no histórico." : confirmation === "leave" ? "As alterações locais serão perdidas. O último rascunho salvo permanece no servidor." : "A prescrição válida será finalizada e substituirá o treino ativo. As fichas anteriores permanecem no histórico."}</AlertDialogDescription>
@@ -302,7 +304,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
             <AlertDialogAction onClick={() => {
               if (confirmation === "rebase") void rebase()
               else if (confirmation === "discard") void discard()
-              else if (confirmation === "leave") { setConfirmation(null); router.push(`/clientes/${client.id}`) }
+              else if (confirmation === "leave") { setConfirmation(null); const proceed = pendingLeave.current; pendingLeave.current = null; allowNavigation(() => proceed ? proceed() : navigateToWorkoutPage(router, `/clientes/${client.id}`)) }
               else void finalize()
             }}>{confirmation === "rebase" ? "Confirmar nova base" : confirmation === "discard" ? "Confirmar descarte" : confirmation === "leave" ? "Sair sem salvar alterações" : "Confirmar finalização"}</AlertDialogAction>
           </AlertDialogFooter>
