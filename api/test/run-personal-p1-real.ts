@@ -8,6 +8,10 @@ import {
   isolationPort,
 } from './fixtures/client-isolation';
 import { runtimeUrls } from './fixtures/runtime-roles';
+import {
+  packageCommand,
+  personalRealSpecs,
+} from './personal-real-runner-options';
 
 const API_PORT = 3000;
 const WEB_PORT = 3001;
@@ -54,32 +58,25 @@ async function waitForHttp(
 }
 
 function runCommandSync(
-  command: string,
+  tool: 'npm' | 'npx',
   args: string[],
   cwd: string,
   env: NodeJS.ProcessEnv,
 ): void {
-  const isCmd = command.toLowerCase().endsWith('.cmd');
-  const result = isCmd
-    ? spawnSync('cmd.exe', ['/d', '/s', '/c', command, ...args], {
-        cwd,
-        env,
-        stdio: 'inherit',
-        windowsHide: true,
-      })
-    : spawnSync(command, args, {
-        cwd,
-        env,
-        stdio: 'inherit',
-        windowsHide: true,
-      });
+  const invocation = packageCommand(tool, args, process.platform);
+  const result = spawnSync(invocation.command, invocation.args, {
+    cwd,
+    env,
+    stdio: 'inherit',
+    windowsHide: true,
+  });
 
   if (result.error) {
     throw result.error;
   }
   if (result.status !== 0) {
     throw new Error(
-      `Command "${command} ${args.join(' ')}" exited with status ${String(result.status)}`,
+      `Command "${tool} ${args.join(' ')}" exited with status ${String(result.status)}`,
     );
   }
 }
@@ -118,7 +115,10 @@ function buildChildApiEnv(
   };
 }
 
-export async function runPersonalP1Real(): Promise<number> {
+export async function runPersonalP1Real(
+  args: readonly string[] = process.argv.slice(2),
+): Promise<number> {
+  const specs = personalRealSpecs(args);
   const previousDatabaseUrl = process.env.DATABASE_URL;
   const previousDirectUrl = process.env.DIRECT_URL;
 
@@ -146,18 +146,13 @@ export async function runPersonalP1Real(): Promise<number> {
       DOTENV_CONFIG_PATH: '__disabled_dotenv__',
     };
 
-    runCommandSync(
-      'npx.cmd',
-      ['prisma', 'migrate', 'deploy'],
-      apiDir,
-      adminEnv,
-    );
+    runCommandSync('npx', ['prisma', 'migrate', 'deploy'], apiDir, adminEnv);
 
     const roles = await runtimeUrls(pool, isolationPort);
     restoreRoles = () => roles.restore();
 
-    runCommandSync('npm.cmd', ['run', 'seed:phase1-e2e'], apiDir, adminEnv);
-    runCommandSync('npm.cmd', ['run', 'build'], apiDir, adminEnv);
+    runCommandSync('npm', ['run', 'seed:phase1-e2e'], apiDir, adminEnv);
+    runCommandSync('npm', ['run', 'build'], apiDir, adminEnv);
 
     const webBuildEnv: NodeJS.ProcessEnv = {
       ...process.env,
@@ -167,7 +162,13 @@ export async function runPersonalP1Real(): Promise<number> {
     delete webBuildEnv.DATABASE_URL;
     delete webBuildEnv.DIRECT_URL;
 
-    runCommandSync('npm.cmd', ['run', 'build'], webDir, webBuildEnv);
+    // Webpack também permite o node_modules compartilhado dos worktrees isolados.
+    runCommandSync(
+      'npm',
+      ['run', 'build', '--', '--webpack'],
+      webDir,
+      webBuildEnv,
+    );
 
     apiProcess = spawn(
       process.execPath,
@@ -204,20 +205,9 @@ export async function runPersonalP1Real(): Promise<number> {
 
     await waitForHttp(`http://localhost:${WEB_PORT}/auth/login`, [200]);
 
-    const specs = [
-      'cypress/e2e/personal-workspace-real.cy.ts',
-      'cypress/e2e/professional-phase1-real.cy.ts',
-      'cypress/e2e/assessments-client-real.cy.ts',
-      'cypress/e2e/client-owned-clinical-resources.cy.ts',
-    ].join(',');
-
-    const cypressResult = spawnSync(
-      'cmd.exe',
+    const cypress = packageCommand(
+      'npx',
       [
-        '/d',
-        '/s',
-        '/c',
-        'npx.cmd',
         'cypress',
         'run',
         '--browser',
@@ -227,13 +217,14 @@ export async function runPersonalP1Real(): Promise<number> {
         '--spec',
         specs,
       ],
-      {
-        cwd: webDir,
-        env: webBuildEnv,
-        stdio: 'inherit',
-        windowsHide: true,
-      },
+      process.platform,
     );
+    const cypressResult = spawnSync(cypress.command, cypress.args, {
+      cwd: webDir,
+      env: webBuildEnv,
+      stdio: 'inherit',
+      windowsHide: true,
+    });
 
     if (cypressResult.error) {
       throw cypressResult.error;

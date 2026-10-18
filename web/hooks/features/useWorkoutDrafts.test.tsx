@@ -71,12 +71,16 @@ describe("useWorkoutDrafts", () => {
     const { result, cache } = setup({ clientId: "c1", draftId: "d1", enabled: false })
     const affected = [queryKeys.workoutDrafts("pro-a", "c1"), queryKeys.trainingOverview("pro-a", "c1"), queryKeys.client("pro-a", "c1")]
     const isolated = [queryKeys.workoutDrafts("pro-b", "c1"), queryKeys.trainingWorkspace("pro-b"), queryKeys.client("pro-a", "c2")]
+    const previousWorkout = queryKeys.workout("pro-a", "c1", "previous-workout")
+    cache.setQueryData(previousWorkout, { isActive: true })
     ;[...affected, ...isolated, queryKeys.activeWorkout("pro-a", "c1"), queryKeys.workout("pro-a", "c1", "w1"), queryKeys.activeWorkout("pro-a", "c2"), queryKeys.workout("pro-a", "c2", "w2")].forEach(key => cache.setQueryData(key, { marker: "old" }))
     await act(async () => { await result.current.saveMutation.mutateAsync({ expectedVersion: 1, content }) })
     affected.forEach(key => expect(cache.getQueryState(key)?.isInvalidated).toBe(true))
+    expect(cache.getQueryState(previousWorkout)?.isInvalidated).toBe(false)
     await act(async () => { await result.current.finalizeMutation.mutateAsync({ expectedVersion: 2 }) })
     expect(cache.getQueryState(queryKeys.activeWorkout("pro-a", "c1"))?.isInvalidated).toBe(true)
     expect(cache.getQueryState(queryKeys.workout("pro-a", "c1", "w1"))?.isInvalidated).toBe(true)
+    expect(cache.getQueryState(previousWorkout)?.isInvalidated).toBe(true)
     isolated.forEach(key => expect(cache.getQueryState(key)?.isInvalidated).toBe(false))
     expect(cache.getQueryState(queryKeys.activeWorkout("pro-a", "c2"))?.isInvalidated).toBe(false)
     expect(cache.getQueryState(queryKeys.workout("pro-a", "c2", "w2"))?.isInvalidated).toBe(false)

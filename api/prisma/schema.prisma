@@ -1287,6 +1287,7 @@ model WorkoutDraft {
   closedAt            DateTime?
 
   // A unicidade parcial de OPEN e os checks de estado são mantidos pela migration SQL.
+  @@index([clientId])
   @@index([professionalId, status, updatedAt(sort: Desc), id])
   @@map("workout_drafts")
 }

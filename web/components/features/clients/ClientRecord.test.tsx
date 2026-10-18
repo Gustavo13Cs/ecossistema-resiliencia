@@ -139,11 +139,13 @@ describe("professional Client record", () => {
     record.client = makeClient()
     http.onGet("/workouts/client/client-one/overview").reply(200, { client: { id: "client-one", status: "ACTIVE" }, activeWorkout: null, recentAssessments: [] })
     http.onGet("/assessments/client/client-one").reply(200, [])
+    http.onGet("/workouts/drafts").reply(200, { items: [], nextCursor: null })
     view.rerender(<ClienteHubPage />)
     expect(await screen.findByText("Nenhum treino ativo registrado")).toBeVisible()
     expect(screen.getByRole("heading", { name: "Contexto de treinamento" })).toBeVisible()
     expect(screen.queryByText(/em migração/i)).not.toBeInTheDocument()
-    expect(http.history.get.map(request => request.url).sort()).toEqual(["/assessments/client/client-one", "/workouts/client/client-one/overview"])
+    expect(http.history.get.map(request => request.url).sort()).toEqual(["/assessments/client/client-one", "/workouts/client/client-one/overview", "/workouts/drafts"])
+    expect(http.history.get.find(request => request.url === "/workouts/drafts")?.params.clientId).toBe("client-one")
   })
 
   it.each(["edit", "archive"])("invalidates_the_personal_workspace_and_record_reads_after_%s", async action => {

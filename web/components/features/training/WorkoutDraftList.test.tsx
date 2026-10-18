@@ -110,6 +110,18 @@ function unloadIsGuarded() {
   window.dispatchEvent(unload)
   return unload.defaultPrevented
 }
+it("restores_input_focus_after_cancelling_a_history_leave_dialog", async () => {
+  const navigation = Object.assign(new EventTarget(), { traverseTo: vi.fn() })
+  vi.stubGlobal("navigation", navigation)
+  mount(<DraftPage />)
+  const title = await screen.findByLabelText("Título da prescrição")
+  fireEvent.change(title, { target: { value: "Ainda não salvo" } })
+  title.focus()
+  act(() => { navigation.dispatchEvent(Object.assign(new Event("navigate", { cancelable: true }), { navigationType: "traverse", destination: { key: "previous", sameDocument: true } })) })
+  await waitFor(() => expect(screen.getByRole("button", { name: "Cancelar" })).toHaveFocus())
+  fireEvent.click(screen.getByRole("button", { name: "Cancelar" }))
+  await waitFor(() => expect(title).toHaveFocus())
+})
 it.each([
   ["detail", "503"], ["detail", "network"],
   ["list", "503"], ["list", "network"],
@@ -245,6 +257,48 @@ it("finalize_response_navigates_after_terminal_detail_refetch", async () => {
   fireEvent.click(await screen.findByRole("button", { name: "Finalizar prescrição" }))
   fireEvent.click(screen.getByRole("button", { name: "Confirmar finalização" }))
   await waitFor(() => expect(nav.push).toHaveBeenCalledWith("/clientes/c1/treinos/w-final"))
+  expect(screen.queryByLabelText("Título da prescrição")).not.toBeInTheDocument()
+})
+it("keeps_the_initiating_editor_until_its_finalize_ack_when_terminal_detail_renders_before_client_refetch_finishes", async () => {
+  const validContent = { ...content, splits: [{ name: "A", focus: "", exercises: [{ name: "Supino", sets: "3", reps: "8", rest: "", notes: "", muscleGroup: null, load: "", effortType: null, effortTarget: "", tempo: "", method: null }] }] }
+  http.onGet("/workouts/drafts/d1").reply(200, { ...draft, content: validContent })
+  let finishClient!: (response: [number, unknown]) => void
+  http.onPost("/workouts/drafts/d1/finalize").reply(() => {
+    http.onGet("/workouts/drafts/d1").reply(200, { ...draft, status: "FINALIZED", content: null, finalizedWorkoutId: "w-final" })
+    http.onGet("/clients/c1").reply(() => new Promise(resolve => { finishClient = resolve }))
+    return [200, { id: "d1", clientId: "c1", status: "FINALIZED", version: 2, finalizedWorkoutId: "w-final", workout: { id: "w-final", clientId: "c1" } }]
+  })
+  const { cache } = mount(<DraftPage />)
+  fireEvent.click(await screen.findByRole("button", { name: "Finalizar prescrição" }))
+  fireEvent.click(screen.getByRole("button", { name: "Confirmar finalização" }))
+  try {
+    await waitFor(() => expect(cache.getQueryData<{ status: string }>(queryKeys.workoutDraft("personal", "c1", "d1"))?.status).toBe("FINALIZED"))
+    expect(screen.getByLabelText("Título da prescrição")).toBeDisabled()
+    expect(nav.push).not.toHaveBeenCalled()
+  } finally {
+    await act(async () => finishClient([200, makeTestClient("c1", "Ana", "ACTIVE")]))
+  }
+  await waitFor(() => expect(nav.push).toHaveBeenCalledWith("/clientes/c1/treinos/w-final"))
+  expect(screen.queryByLabelText("Título da prescrição")).not.toBeInTheDocument()
+})
+it("keeps_the_initiating_editor_until_its_discard_ack_when_terminal_detail_renders_before_client_refetch_finishes", async () => {
+  let finishClient!: (response: [number, unknown]) => void
+  http.onPost("/workouts/drafts/d1/discard").reply(() => {
+    http.onGet("/workouts/drafts/d1").reply(200, { ...draft, status: "DISCARDED", content: null })
+    http.onGet("/clients/c1").reply(() => new Promise(resolve => { finishClient = resolve }))
+    return [200, { id: "d1", clientId: "c1", status: "DISCARDED", version: 2 }]
+  })
+  const { cache } = mount(<DraftPage />)
+  fireEvent.click(await screen.findByRole("button", { name: "Descartar rascunho" }))
+  fireEvent.click(screen.getByRole("button", { name: "Confirmar descarte" }))
+  try {
+    await waitFor(() => expect(cache.getQueryData<{ status: string }>(queryKeys.workoutDraft("personal", "c1", "d1"))?.status).toBe("DISCARDED"))
+    expect(screen.getByLabelText("Título da prescrição")).toBeDisabled()
+    expect(nav.push).not.toHaveBeenCalled()
+  } finally {
+    await act(async () => finishClient([200, makeTestClient("c1", "Ana", "ACTIVE")]))
+  }
+  await waitFor(() => expect(nav.push).toHaveBeenCalledWith("/clientes/c1"))
   expect(screen.queryByLabelText("Título da prescrição")).not.toBeInTheDocument()
 })
 it.each(["NUTRITIONIST", "PHYSIO", "ADMIN"])("does_not_query_draft_route_for_%s", async role => {

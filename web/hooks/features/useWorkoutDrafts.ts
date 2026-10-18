@@ -117,7 +117,7 @@ export function useWorkoutDrafts(options: { clientId?: string; draftId?: string;
       queryKeys.trainingOverview(requestOwner, result.clientId), queryKeys.patientOverview(requestOwner, result.clientId),
       ...(finalizedWorkoutId ? [
         queryKeys.trainingWorkspace(requestOwner), queryKeys.workouts(requestOwner),
-        queryKeys.activeWorkout(requestOwner, result.clientId), queryKeys.workout(requestOwner, result.clientId, finalizedWorkoutId),
+        [...queryKeys.workoutsRoot(requestOwner), "client", result.clientId],
       ] : []),
     ]
     await Promise.all(keys.map(queryKey => cache.invalidateQueries({ queryKey })))

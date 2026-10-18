@@ -78,6 +78,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
   const revision = useRef(0)
   const formRef = useRef(form)
   const pendingLeave = useRef<(() => void) | null>(null)
+  const dialogOrigin = useRef<HTMLElement | null>(null)
   useEffect(() => {
     mounted.current = true
     return () => { mounted.current = false }
@@ -295,7 +296,16 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
         <Button type="button" variant="outline" disabled={readonly || actionsDisabled || !resource} onClick={() => setConfirmation("discard")}>Descartar rascunho</Button>
       </div>
       <AlertDialog open={confirmation !== null} onOpenChange={open => { if (!open) { setConfirmation(null); pendingLeave.current = null } }}>
-        <AlertDialogContent>
+        <AlertDialogContent onOpenAutoFocus={() => {
+          dialogOrigin.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+        }} onCloseAutoFocus={event => {
+          const origin = dialogOrigin.current
+          dialogOrigin.current = null
+          if (origin?.isConnected && !origin.matches(":disabled")) {
+            event.preventDefault()
+            origin.focus()
+          }
+        }}>
           <AlertDialogTitle>{confirmation === "rebase" ? "Confirmar nova base" : confirmation === "discard" ? "Descartar rascunho?" : confirmation === "leave" ? "Sair com alterações não salvas?" : "Finalizar prescrição?"}</AlertDialogTitle>
           <AlertDialogDescription>{confirmation === "rebase" ? activeSeen ? `Treino ativo atual: ${activeSeen.title}. Confirme esta ficha como base para a próxima finalização.` : "Não há treino ativo. Confirme esta situação como base para a próxima finalização." : confirmation === "discard" ? "O rascunho salvo será encerrado. As prescrições finalizadas permanecem no histórico." : confirmation === "leave" ? "As alterações locais serão perdidas. O último rascunho salvo permanece no servidor." : "A prescrição válida será finalizada e substituirá o treino ativo. As fichas anteriores permanecem no histórico."}</AlertDialogDescription>
           {confirmation === "rebase" && activeSeen ? <a className="text-sm font-semibold underline" href={`/clientes/${client.id}/treinos/${activeSeen.id}`} target="_blank" rel="noopener noreferrer">Consultar ficha ativa em outra aba</a> : null}

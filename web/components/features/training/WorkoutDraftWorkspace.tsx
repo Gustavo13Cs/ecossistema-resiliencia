@@ -55,7 +55,14 @@ function DraftContext({ client, draftId }: { client: Client; draftId?: string })
   // O hook oculta data em qualquer erro. Somente falhas HTTP/rede comuns podem
   // reutilizar o último recurso verificado neste contexto, nunca erros de contrato.
   const retryable = isAxiosError(query.error) && ![401, 403, 404].includes(query.error.response?.status ?? 0)
-  const draft = draftId ? drafts.detailQuery.data ?? (retryable ? verifiedDraft : null) : null
+  const incomingDraft = draftId ? drafts.detailQuery.data : null
+  const closingMutation = incomingDraft?.status === "FINALIZED" ? drafts.finalizeMutation : incomingDraft?.status === "DISCARDED" ? drafts.discardMutation : null
+  // O refetch terminal pode terminar antes das outras invalidações da própria
+  // mutation. O editor iniciador continua bloqueado até consumir o ACK e navegar.
+  // Fechamentos externos, negação e mudanças de contexto não recebem esta retenção.
+  const ownClosure = incomingDraft?.id === draftId && incomingDraft?.clientId === client.id && closingMutation &&
+    (closingMutation.isPending || (closingMutation.data?.id === draftId && closingMutation.data?.status === incomingDraft.status))
+  const draft = draftId ? ownClosure && verifiedDraft ? verifiedDraft : incomingDraft ?? (retryable ? verifiedDraft : null) : null
   const accessDenied = denied || draftAccessDenied(query.error) || draftAccessDenied(activeQuery.error)
   const nextVerifiedDraft = !accessDenied && draft?.id === draftId && draft?.clientId === client.id && draft.status === "OPEN" ? draft : null
   // Ajuste condicionado aos dados da própria renderização; limpa também em erro duro.
