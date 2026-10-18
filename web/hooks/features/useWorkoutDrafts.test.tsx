@@ -32,6 +32,26 @@ describe("useWorkoutDrafts", () => {
     await waitFor(() => expect(result.current.detailQuery.data?.id).toBe("d1"))
     expect(http.history.get).toHaveLength(2)
   })
+  it.each(["unmount", "change_options"] as const)("shared_read_succeeds_for_remaining_observer_after_initiator_%s", async departure => {
+    let finish!: (response: [number, unknown]) => void
+    http.onGet("/workouts/drafts/d1").reply(() => new Promise(resolve => { finish = resolve }))
+    const initiator = setup({ clientId: "c1", draftId: "d1" })
+    await waitFor(() => expect(http.history.get).toHaveLength(1))
+    const remaining = setup({ clientId: "c1", draftId: "d1" }, initiator.cache)
+    expect(remaining.result.current.detailQuery.isFetching).toBe(true)
+
+    if (departure === "unmount") initiator.unmount()
+    else initiator.rerender({ clientId: "c2", draftId: "d2", enabled: false })
+    expect(http.history.get[0].signal?.aborted).toBe(false)
+    await act(async () => { finish([200, draft]) })
+
+    await waitFor(() => expect(remaining.result.current.detailQuery.isSuccess).toBe(true))
+    expect(remaining.result.current.detailQuery.data).toEqual(draft)
+    expect(remaining.result.current.detailQuery.error).toBeNull()
+    expect(initiator.cache.getQueryData(queryKeys.workoutDraft("pro-a", "c1", "d1"))).toEqual(draft)
+    expect(http.history.get).toHaveLength(1)
+    if (departure === "change_options") expect(initiator.result.current.detailQuery.data).toBeUndefined()
+  })
   it("late_response_does_not_cross_session", async () => {
     let finish!: (value: [number, unknown]) => void
     http.onGet("/workouts/drafts/d1").replyOnce(() => new Promise(resolve => { finish = resolve }))

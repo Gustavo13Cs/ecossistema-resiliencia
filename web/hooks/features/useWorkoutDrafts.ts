@@ -57,11 +57,12 @@ export function useWorkoutDrafts(options: { clientId?: string; draftId?: string;
       resetMutations()
     }
   }
-  async function read<T>(load: () => Promise<T>): Promise<T> {
+  async function read<T>(signal: AbortSignal, load: () => Promise<T>): Promise<T> {
     const generation = access.generation
     const assertAvailable = () => {
       const live = currentAccess()
-      if (!sameScope() || live.deniedStatus !== null || live.generation !== generation) throw new Error("Consulta clínica indisponível")
+      // A query pode continuar em outro observador após a saída do iniciador.
+      if (!isPersonal || signal.aborted || live.deniedStatus !== null || live.generation !== generation) throw new Error("Consulta clínica indisponível")
     }
     assertAvailable()
     try {
@@ -75,7 +76,7 @@ export function useWorkoutDrafts(options: { clientId?: string; draftId?: string;
   }
   const listQuery = useClinicalQuery(
     queryKeys.workoutDrafts(owner, clientId, cursor), enabled && !draftId,
-    signal => read(async () => {
+    signal => read(signal, async () => {
       const { data } = await api.get<DraftPage>("/workouts/drafts", { params: { clientId, cursor, limit: 20 }, signal })
       if (data.items.some(item => item.client.id !== item.clientId || (clientId && item.clientId !== clientId))) {
         throw new Error("Rascunho incompatível com o prontuário solicitado")
@@ -84,7 +85,7 @@ export function useWorkoutDrafts(options: { clientId?: string; draftId?: string;
     }),
   )
   const detailKey = queryKeys.workoutDraft(owner, clientId ?? "missing", draftId ?? "missing")
-  const detailQuery = useClinicalQuery(detailKey, Boolean(enabled && clientId && draftId), signal => read(async () => {
+  const detailQuery = useClinicalQuery(detailKey, Boolean(enabled && clientId && draftId), signal => read(signal, async () => {
     const { data } = await api.get<WorkoutDraftResource>(`/workouts/drafts/${draftId}`, { signal })
     if (data.id !== draftId || data.clientId !== clientId) throw new Error("Rascunho incompatível com o prontuário solicitado")
     return data
