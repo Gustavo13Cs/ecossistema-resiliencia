@@ -12,7 +12,8 @@ import { queryKeys } from "@/lib/query-keys"
 
 const nav = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }))
 const auth = vi.hoisted(() => ({ user: { sub: "personal", role: "PERSONAL" } }))
-vi.mock("next/navigation", () => ({ useParams: () => ({ id: "c1", draftId: "d1" }), useRouter: () => nav }))
+const params = vi.hoisted(() => ({ id: "c1", draftId: "d1" }))
+vi.mock("next/navigation", () => ({ useParams: () => params, useRouter: () => nav }))
 vi.mock("@/contexts/auth-context", () => ({ useAuth: () => auth }))
 vi.mock("./ExerciseLibraryCombobox", () => ({ ExerciseLibraryCombobox: () => null }))
 const http = new AxiosMockAdapter(api)
@@ -21,12 +22,13 @@ const draft = { id: "d1", clientId: "c1", status: "OPEN", version: 1, schemaVers
 const summary = { ...draft, title: "Elaboração", content: undefined, client: { id: "c1", name: "Ana", status: "ACTIVE" } }
 function mount(ui: React.ReactNode) {
   const cache = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } })
-  return { cache, ...render(<QueryClientProvider client={cache}>{ui}</QueryClientProvider>) }
+  return { cache, ...render(ui, { wrapper: ({ children }) => <QueryClientProvider client={cache}>{children}</QueryClientProvider> }) }
 }
 beforeEach(() => {
   vi.stubGlobal("navigation", Object.assign(new EventTarget(), { traverseTo: vi.fn() }))
   http.reset(); nav.push.mockReset(); nav.replace.mockReset()
   auth.user = { sub: "personal", role: "PERSONAL" }
+  params.id = "c1"; params.draftId = "d1"
   http.onGet("/clients/c1").reply(200, makeTestClient("c1", "Ana", "ACTIVE"))
   http.onGet("/workouts/client/c1/active").reply(200, null)
   http.onGet("/workouts/drafts").reply(200, { items: [], nextCursor: null })
@@ -103,12 +105,101 @@ it("dirty_internal_navigation_and_browser_back_require_confirmation", async () =
   navigation.dispatchEvent(after)
   expect(after.defaultPrevented).toBe(false)
 })
-it.each([403, 404, 503])("masks_editor_after_detail_error_%s", async status => {
+function unloadIsGuarded() {
+  const unload = new Event("beforeunload", { cancelable: true })
+  window.dispatchEvent(unload)
+  return unload.defaultPrevented
+}
+it.each([
+  ["detail", "503"], ["detail", "network"],
+  ["list", "503"], ["list", "network"],
+  ["client", "503"], ["client", "network"],
+] as const)("preserves_dirty_form_and_guard_after_%s_%s_and_retry", async (source, failure) => {
+  const isNew = source === "list"
+  const { cache } = mount(isNew ? <NovoTreinoPage /> : <DraftPage />)
+  if (isNew) fireEvent.click(await screen.findByRole("button", { name: "Começar do zero" }))
+  const title = await screen.findByLabelText("Título da prescrição")
+  const savedTitle = isNew ? "" : content.title
+  fireEvent.change(title, { target: { value: "Texto ainda não salvo" } })
+  expect(unloadIsGuarded()).toBe(true)
+  const url = source === "client" ? "/clients/c1" : source === "list" ? "/workouts/drafts" : "/workouts/drafts/d1"
+  const key = source === "client" ? queryKeys.client("personal", "c1") : source === "list" ? queryKeys.workoutDrafts("personal", "c1") : queryKeys.workoutDraft("personal", "c1", "d1")
+  if (failure === "503") http.onGet(url).reply(503)
+  else http.onGet(url).networkError()
+  await act(async () => { await cache.invalidateQueries({ queryKey: key }) })
+  expect.soft(unloadIsGuarded()).toBe(true)
+  http.onGet(url).reply(200, source === "client" ? makeTestClient("c1", "Ana", "ACTIVE") : source === "list" ? { items: [], nextCursor: null } : draft)
+  fireEvent.click(await screen.findByRole("button", { name: "Tentar novamente" }))
+  expect(await screen.findByLabelText("Título da prescrição")).toHaveValue("Texto ainda não salvo")
+  await waitFor(() => expect(screen.queryByRole("button", { name: "Tentar novamente" })).not.toBeInTheDocument())
+  expect(screen.getByText("Alterações não salvas")).toBeVisible()
+  expect(unloadIsGuarded()).toBe(true)
+  fireEvent.click(screen.getByRole("button", { name: "Voltar para aluno" }))
+  expect(screen.getByRole("alertdialog")).toHaveTextContent("Sair com alterações não salvas?")
+  fireEvent.click(screen.getByRole("button", { name: "Cancelar" }))
+  expect(screen.getByLabelText("Título da prescrição")).toHaveValue("Texto ainda não salvo")
+  // Recuperar a leitura não pode transformar a edição local em baseline salvo.
+  fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: savedTitle } })
+  expect(unloadIsGuarded()).toBe(false)
+  expect(http.history.post).toHaveLength(0)
+})
+it.each([401, 403, 404])("removes_dirty_editor_after_hard_detail_error_%s", async status => {
   const { cache } = mount(<DraftPage />)
-  await screen.findByLabelText("Título da prescrição")
+  fireEvent.change(await screen.findByLabelText("Título da prescrição"), { target: { value: "Texto que deve sair" } })
+  expect(unloadIsGuarded()).toBe(true)
   http.onGet("/workouts/drafts/d1").reply(status)
   await act(async () => { await cache.invalidateQueries({ queryKey: queryKeys.workoutDraft("personal", "c1", "d1") }) })
   await waitFor(() => expect(screen.queryByLabelText("Título da prescrição")).not.toBeInTheDocument())
+  expect(unloadIsGuarded()).toBe(false)
+  http.onGet("/workouts/drafts/d1").reply(503)
+  await act(async () => { await cache.invalidateQueries({ queryKey: queryKeys.workoutDraft("personal", "c1", "d1") }) })
+  expect(screen.queryByLabelText("Título da prescrição")).not.toBeInTheDocument()
+})
+it.each(["client-id", "client-owner", "draft-id", "draft-client", "FINALIZED", "DISCARDED"])("removes_dirty_editor_after_%s_refetch", async change => {
+  const { cache } = mount(<DraftPage />)
+  fireEvent.change(await screen.findByLabelText("Título da prescrição"), { target: { value: "Texto que deve sair" } })
+  const clientChange = change.startsWith("client-")
+  const response = change === "client-id" ? makeTestClient("c2", "Outro", "ACTIVE")
+    : change === "client-owner" ? { ...makeTestClient("c1", "Ana", "ACTIVE"), professionalId: "other" }
+    : change === "draft-id" ? { ...draft, id: "d2" }
+    : change === "draft-client" ? { ...draft, clientId: "c2" }
+    : { ...draft, status: change, content: null, finalizedWorkoutId: change === "FINALIZED" ? "w1" : null }
+  http.onGet(clientChange ? "/clients/c1" : "/workouts/drafts/d1").reply(200, response)
+  await act(async () => { await cache.invalidateQueries({ queryKey: clientChange ? queryKeys.client("personal", "c1") : queryKeys.workoutDraft("personal", "c1", "d1") }) })
+  await waitFor(() => expect(screen.queryByLabelText("Título da prescrição")).not.toBeInTheDocument())
+  expect(unloadIsGuarded()).toBe(false)
+})
+it.each([401, 403, 404])("removes_dirty_editor_after_hard_client_error_%s", async status => {
+  const { cache } = mount(<DraftPage />)
+  fireEvent.change(await screen.findByLabelText("Título da prescrição"), { target: { value: "Texto que deve sair" } })
+  http.onGet("/clients/c1").reply(status)
+  await act(async () => { await cache.invalidateQueries({ queryKey: queryKeys.client("personal", "c1") }) })
+  await waitFor(() => expect(screen.queryByLabelText("Título da prescrição")).not.toBeInTheDocument())
+  expect(unloadIsGuarded()).toBe(false)
+  // Uma falha comum posterior não revalida o acesso nem ressuscita dados em cache.
+  http.onGet("/clients/c1").reply(503)
+  await act(async () => { await cache.invalidateQueries({ queryKey: queryKeys.client("personal", "c1") }) })
+  await screen.findByRole("button", { name: "Tentar novamente" })
+  expect(screen.queryByLabelText("Título da prescrição")).not.toBeInTheDocument()
+})
+it.each(["owner", "client", "draft"])("does_not_restore_dirty_text_after_switching_%s", async change => {
+  const { rerender } = mount(<DraftPage />)
+  fireEvent.change(await screen.findByLabelText("Título da prescrição"), { target: { value: "Privado da sessão anterior" } })
+  http.onGet("/clients/c2").reply(200, makeTestClient("c2", "Outra aluna", "ACTIVE"))
+  http.onGet("/workouts/drafts/d2").reply(200, { ...draft, id: "d2" })
+  if (change === "owner") {
+    auth.user = { sub: "other", role: "PERSONAL" }
+    http.onGet("/clients/c1").reply(200, { ...makeTestClient("c1", "Ana", "ACTIVE"), professionalId: "other" })
+  } else if (change === "client") params.id = "c2"
+  else params.draftId = "d2"
+  rerender(<DraftPage />)
+  expect(screen.queryByDisplayValue("Privado da sessão anterior")).not.toBeInTheDocument()
+  expect(unloadIsGuarded()).toBe(false)
+  params.id = "c1"; params.draftId = "d1"; auth.user = { sub: "personal", role: "PERSONAL" }
+  http.onGet("/clients/c1").reply(200, makeTestClient("c1", "Ana", "ACTIVE"))
+  rerender(<DraftPage />)
+  expect(await screen.findByLabelText("Título da prescrição")).toHaveValue(content.title)
+  expect(unloadIsGuarded()).toBe(false)
 })
 it("terminal_recovers_exact_finalized_workout_without_old_form", async () => {
   http.onGet("/workouts/drafts/d1").reply(200, { ...draft, status: "FINALIZED", content: null, finalizedWorkoutId: "w-saved" })
