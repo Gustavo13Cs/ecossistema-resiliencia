@@ -1,9 +1,10 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import AxiosMockAdapter from "axios-mock-adapter"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { api } from "@/lib/api"
+import { queryKeys } from "@/lib/query-keys"
 import type { ExerciseLibraryItem } from "@/types/workout"
 import { ExerciseLibraryCombobox } from "./ExerciseLibraryCombobox"
 
@@ -25,6 +26,8 @@ const sampleItems: ExerciseLibraryItem[] = [
     equipment: "BARBELL",
     notes: null,
     source: "CUSTOM",
+    hasDemonstration: false,
+    demonstrationTypes: [],
   },
   {
     id: "cat-1",
@@ -33,6 +36,8 @@ const sampleItems: ExerciseLibraryItem[] = [
     equipment: "BARBELL",
     notes: null,
     source: "CATALOG",
+    hasDemonstration: true,
+    demonstrationTypes: ["IMAGE"],
   },
   {
     id: "cat-2",
@@ -41,6 +46,8 @@ const sampleItems: ExerciseLibraryItem[] = [
     equipment: "BARBELL",
     notes: null,
     source: "CATALOG",
+    hasDemonstration: false,
+    demonstrationTypes: [],
   },
 ]
 
@@ -49,6 +56,11 @@ describe("ExerciseLibraryCombobox", () => {
     http.reset()
     auth.user = { sub: "personal-1", role: "PERSONAL", name: "Personal" }
     http.onGet("/workouts/exercise-library").reply(200, sampleItems)
+    http.onGet(/\/workouts\/exercise-library\/[^/]+$/).reply(config => {
+      const item = sampleItems.find(entry => config.url?.endsWith(`/${entry.id}`))
+      if (config.url?.endsWith("/custom-new")) return [200, { id: "custom-new", name: "Remada Pendulo", muscleGroup: "BACK", source: "CUSTOM", demonstration: null, mediaVersion: 1 }]
+      return [200, { ...item, demonstration: item?.id === "cat-1" ? { revision: "r1", instruction: "Execução" } : null, mediaVersion: item?.source === "CUSTOM" ? 1 : null }]
+    })
   })
 
   afterEach(cleanup)
@@ -80,10 +92,11 @@ describe("ExerciseLibraryCombobox", () => {
     expect(screen.getByText("Agachamento livre com barra")).toBeVisible()
 
     await user.click(screen.getByText("Agachamento pausa 2s"))
-    expect(onSelect).toHaveBeenCalledWith({
+    await waitFor(() => expect(onSelect).toHaveBeenCalledWith({
       name: "Agachamento pausa 2s",
       muscleGroup: "QUADRICEPS",
-    })
+      libraryReference: { source: "CUSTOM", exerciseId: "custom-1", demonstrationRevision: null },
+    }))
   })
 
   it("filters by muscle group and supports creating a custom exercise", async () => {
@@ -129,7 +142,78 @@ describe("ExerciseLibraryCombobox", () => {
       expect(onSelect).toHaveBeenCalledWith({
         name: "Remada Pendulo",
         muscleGroup: "BACK",
+        libraryReference: { source: "CUSTOM", exerciseId: "custom-new", demonstrationRevision: null },
       })
     })
+  })
+
+  it("selects the freshly authorized detail revision instead of cached or list data", async () => {
+    const user = userEvent.setup()
+    const onSelect = vi.fn()
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    queryClient.setQueryData(queryKeys.exerciseLibraryDetail("personal-1", "cat-1"), { ...sampleItems[1], demonstration: { revision: "old", instruction: "old" } })
+    render(<QueryClientProvider client={queryClient}><ExerciseLibraryCombobox exerciseId="ex-3" currentName="" currentMuscleGroup="" onSelect={onSelect} /></QueryClientProvider>)
+    await user.click(screen.getByRole("button", { name: /biblioteca/i }))
+    await user.click(await screen.findByText("Agachamento livre com barra"))
+    await waitFor(() => expect(onSelect).toHaveBeenCalledWith({
+      name: "Agachamento livre com barra", muscleGroup: "QUADRICEPS",
+      libraryReference: { source: "CATALOG", exerciseId: "cat-1", demonstrationRevision: "r1" },
+    }))
+    expect(onSelect).toHaveBeenCalledTimes(1)
+  })
+
+  it("owner change drops a pending selection before fetching detail under the new owner", async () => {
+    const user = userEvent.setup()
+    const onSelect = vi.fn()
+    let release!: (response: [number, unknown]) => void
+    let detailCalls = 0
+    http.resetHandlers()
+    http.onGet("/workouts/exercise-library").reply(200, sampleItems)
+    http.onGet("/workouts/exercise-library/cat-1").reply(() => { detailCalls += 1; return new Promise(resolve => { release = resolve }) })
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const view = render(<QueryClientProvider client={queryClient}><ExerciseLibraryCombobox exerciseId="ex-4" currentName="" currentMuscleGroup="" onSelect={onSelect} /></QueryClientProvider>)
+    await user.click(screen.getByRole("button", { name: /biblioteca/i }))
+    await user.click(await screen.findByText("Agachamento livre com barra"))
+    await waitFor(() => expect(detailCalls).toBe(1))
+    auth.user = { sub: "personal-2", role: "PERSONAL", name: "Personal" }
+    view.rerender(<QueryClientProvider client={queryClient}><ExerciseLibraryCombobox exerciseId="ex-4" currentName="" currentMuscleGroup="" onSelect={onSelect} /></QueryClientProvider>)
+    release([200, { ...sampleItems[1], demonstration: { revision: "old", instruction: "" } }])
+    await waitFor(() => expect(queryClient.getQueryData(queryKeys.exerciseLibraryDetail("personal-2", "cat-1"))).toBeUndefined())
+    expect(detailCalls).toBe(1)
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  it("retries detail after a transient failure without selecting stale cached data", async () => {
+    const user = userEvent.setup()
+    const onSelect = vi.fn()
+    http.resetHandlers()
+    http.onGet("/workouts/exercise-library").reply(200, sampleItems)
+    http.onGet("/workouts/exercise-library/cat-1").replyOnce(503).onGet("/workouts/exercise-library/cat-1").reply(200, { ...sampleItems[1], demonstration: { revision: "r2", instruction: "" } })
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(<QueryClientProvider client={queryClient}><ExerciseLibraryCombobox exerciseId="ex-5" currentName="" currentMuscleGroup="" onSelect={onSelect} /></QueryClientProvider>)
+    await user.click(screen.getByRole("button", { name: /biblioteca/i }))
+    const item = await screen.findByText("Agachamento livre com barra")
+    await user.click(item)
+    expect(await screen.findByText(/não foi possível conferir/i)).toBeVisible()
+    expect(onSelect).not.toHaveBeenCalled()
+    await user.click(item)
+    await waitFor(() => expect(onSelect).toHaveBeenCalledWith({ name: "Agachamento livre com barra", muscleGroup: "QUADRICEPS", libraryReference: { source: "CATALOG", exerciseId: "cat-1", demonstrationRevision: "r2" } }))
+  })
+
+  it("does not select a newly created exercise after the popover was closed", async () => {
+    const user = userEvent.setup()
+    const onSelect = vi.fn()
+    let completeCreate!: (response: [number, unknown]) => void
+    http.onPost("/workouts/exercise-library").reply(() => new Promise(resolve => { completeCreate = resolve }))
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(<QueryClientProvider client={queryClient}><ExerciseLibraryCombobox exerciseId="ex-6" currentName="" currentMuscleGroup="" onSelect={onSelect} /></QueryClientProvider>)
+    await user.click(screen.getByRole("button", { name: /biblioteca/i }))
+    await user.click(screen.getByRole("button", { name: "Salvar como exercício próprio" }))
+    await user.type(screen.getByLabelText("Nome do exercício próprio"), "Remada pausada")
+    await user.click(screen.getByRole("button", { name: "Confirmar exercício próprio" }))
+    await waitFor(() => expect(completeCreate).toBeTypeOf("function"))
+    await user.click(screen.getByRole("button", { name: /biblioteca/i }))
+    await act(async () => completeCreate([201, { id: "custom-new", name: "Remada pausada", muscleGroup: "BACK", source: "CUSTOM" }]))
+    expect(onSelect).not.toHaveBeenCalled()
   })
 })

@@ -72,9 +72,11 @@ export class ExerciseDemonstrationService {
         : null;
     } else throw new BadRequestException('Referência inválida.');
     if ((snapshot?.revision ?? null) !== reference.demonstrationRevision)
-      throw new ConflictException(
-        'A demonstração foi alterada. Atualize a seleção ou retire a referência.',
-      );
+      throw new ConflictException({
+        code: 'DEMONSTRATION_SELECTION_STALE',
+        message:
+          'A demonstração foi alterada. Atualize a seleção ou retire a referência.',
+      });
     return snapshot;
   }
   async resolveWorkoutDemonstrations(

@@ -13,16 +13,17 @@ import { navigateToWorkoutPage } from "@/lib/workout-editor-navigation"
 import { useDraftNavigationGuard } from "@/hooks/features/useDraftNavigationGuard"
 import { useAuth } from "@/contexts/auth-context"
 import { fromDraftContent, toDraftContent, validateDraftForm } from "@/lib/workout-draft-form"
+import { adoptSavedFormDemonstrations } from "@/lib/exercise-reference"
 import { createEmptyWorkoutForm, createWorkoutExercise, createWorkoutSplit, duplicateExercise, duplicateSplit, moveItem, validateWorkoutForm, type WorkoutForm, type WorkoutFormSplit } from "@/lib/workout-form"
 import type { Client } from "@/types/client"
 import type { WorkoutPrescription } from "@/types/workout"
-import type { DraftAck, DraftContentV1, DraftRebaseInput, DraftSaveInput, DraftVersionInput, FinalizedDraftResult, WorkoutDraftResource } from "@/types/workout-draft"
+import type { DraftAck, DraftContentInput, DraftRebaseInput, DraftSaveInput, DraftVersionInput, FinalizedDraftResult, WorkoutDraftResource } from "@/types/workout-draft"
 import { WorkoutSplitCard } from "./WorkoutSplitCard"
 
 export interface WorkoutDraftEditorProps {
   client: Client
   draft: WorkoutDraftResource | null
-  onCreate: (content: DraftContentV1) => Promise<WorkoutDraftResource>
+  onCreate: (content: DraftContentInput) => Promise<WorkoutDraftResource>
   onSave: (input: DraftSaveInput) => Promise<WorkoutDraftResource>
   onFinalize: (input: DraftVersionInput) => Promise<FinalizedDraftResult>
   onRebase: (input: DraftRebaseInput) => Promise<WorkoutDraftResource>
@@ -126,6 +127,8 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
       onAccessDenied()
     } else if (status === 413) {
       setMessage("O rascunho excede o limite de 64 KiB. Reduza o conteúdo e tente salvar novamente.")
+    } else if (code === "DEMONSTRATION_SELECTION_STALE") {
+      setMessage("A demonstração selecionada mudou. Abra a biblioteca para selecionar a versão atual ou retire o vínculo do exercício; suas alterações permanecem aqui.")
     } else if (code === "ACTIVE_WORKOUT_CHANGED") {
       setNeedsRebase(true)
       setMessage("O treino ativo mudou. Revise a ficha atual e confirme a nova base antes de finalizar.")
@@ -149,7 +152,12 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
     checkResource(saved)
     setResource(saved)
     // O baseline pertence ao snapshot enviado, nunca ao formulário após o await.
-    setBaseline(JSON.stringify(snapshot))
+    const savedContent = saved.content
+    const baselineForm = savedContent ? adoptSavedFormDemonstrations(snapshot, snapshot, savedContent) : snapshot
+    const currentForm = savedContent ? adoptSavedFormDemonstrations(formRef.current, snapshot, savedContent) : formRef.current
+    formRef.current = currentForm
+    setForm(currentForm)
+    setBaseline(JSON.stringify(baselineForm))
     return saved
   }
   function openSavedDraft(path: string) {
@@ -283,7 +291,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
         onRemoveSplit={() => edit(current => ({ ...current, splits: current.splits.filter(item => item.id !== split.id) }))}
         onAddExercise={() => updateSplit(split.id, item => ({ ...item, exercises: [...item.exercises, createWorkoutExercise()] }))}
         onUpdateExercise={(id, field, value) => updateSplit(split.id, item => ({ ...item, exercises: item.exercises.map(exercise => exercise.id === id ? { ...exercise, [field]: value } : exercise) }))}
-        onSelectLibraryExercise={(id, selection) => updateSplit(split.id, item => ({ ...item, exercises: item.exercises.map(exercise => exercise.id === id ? { ...exercise, ...selection } : exercise) }))}
+        onSelectLibraryExercise={(id, selection) => updateSplit(split.id, item => ({ ...item, exercises: item.exercises.map(exercise => exercise.id === id ? { ...exercise, ...selection, demonstrationSnapshot: null } : exercise) }))}
         onMoveExerciseUp={position => updateSplit(split.id, item => ({ ...item, exercises: moveItem(item.exercises, position, -1) }))}
         onMoveExerciseDown={position => updateSplit(split.id, item => ({ ...item, exercises: moveItem(item.exercises, position, 1) }))}
         onDuplicateExercise={id => updateSplit(split.id, item => ({ ...item, exercises: item.exercises.flatMap(exercise => exercise.id === id ? [exercise, duplicateExercise(exercise)] : [exercise]) }))}

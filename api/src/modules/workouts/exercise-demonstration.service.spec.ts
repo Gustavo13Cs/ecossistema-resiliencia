@@ -56,7 +56,10 @@ describe('ExerciseDemonstrationService', () => {
     });
     await expect(
       service.resolveDemonstrationReference(user, reference, []),
-    ).rejects.toThrow(ConflictException);
+    ).rejects.toMatchObject({
+      status: 409,
+      response: { code: 'DEMONSTRATION_SELECTION_STALE' },
+    });
   });
   it('duplicate_reference_reuses_same_authorized_snapshot', async () => {
     const snapshot = {

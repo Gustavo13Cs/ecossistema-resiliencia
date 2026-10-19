@@ -1,6 +1,6 @@
 "use client"
 
-import { useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from "react"
 import {
   QueryClient,
   QueryClientContext,
@@ -20,11 +20,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useExerciseLibrary } from "@/hooks/features/useExerciseLibrary"
+import { useAuth } from "@/contexts/auth-context"
+import type { LibraryReference } from "@/types/exercise-demonstration"
 import {
   EXERCISE_EQUIPMENT_LABELS,
   MUSCLE_GROUP_LABELS,
   MUSCLE_GROUP_OPTIONS,
   type ExerciseLibraryItem,
+  type ExerciseEquipment,
   type MuscleGroup,
 } from "@/types/workout"
 
@@ -33,7 +36,7 @@ export interface ExerciseLibraryComboboxProps {
   currentName: string
   currentMuscleGroup: MuscleGroup | ""
   disabled?: boolean
-  onSelect: (selection: { name: string; muscleGroup: MuscleGroup }) => void
+  onSelect: (selection: { name: string; muscleGroup: MuscleGroup; libraryReference: LibraryReference }) => void
 }
 
 function ExerciseLibraryComboboxInner({
@@ -47,6 +50,23 @@ function ExerciseLibraryComboboxInner({
   const [searchInput, setSearchInput] = useState("")
   const [debouncedQuery, setDebouncedQuery] = useState("")
   const [groupFilter, setGroupFilter] = useState<MuscleGroup | "">("")
+  const [equipmentFilter, setEquipmentFilter] = useState<ExerciseEquipment | "">("")
+  const [pendingSelection, setPendingSelection] = useState<{ id: string; owner: string } | null>(null)
+  const [selectionError, setSelectionError] = useState<string | null>(null)
+  const { user } = useAuth()
+  const currentOwner = useRef(user?.sub)
+  const selectionRequest = useRef<AbortController | null>(null)
+  const openRef = useRef(false)
+  const selectionEpoch = useRef(0)
+  useLayoutEffect(() => { currentOwner.current = user?.sub }, [user?.sub])
+  useEffect(() => () => selectionRequest.current?.abort(), [user?.sub])
+
+  useEffect(() => {
+    if (pendingSelection && pendingSelection.owner !== user?.sub) {
+      setPendingSelection(null)
+      setSelectionError(null)
+    }
+  }, [pendingSelection, user?.sub])
   const [creatingCustom, setCreatingCustom] = useState(false)
   const [customName, setCustomName] = useState("")
   const [customGroup, setCustomGroup] = useState<MuscleGroup>("CHEST")
@@ -59,10 +79,11 @@ function ExerciseLibraryComboboxInner({
     return () => window.clearTimeout(timer)
   }, [searchInput])
 
-  const { libraryQuery, createCustomMutation, deleteCustomMutation } =
+  const { libraryQuery, loadDetail, createCustomMutation, deleteCustomMutation } =
     useExerciseLibrary({
       q: debouncedQuery,
       muscleGroup: groupFilter,
+      equipment: equipmentFilter,
       enabled: open,
     })
 
@@ -71,8 +92,15 @@ function ExerciseLibraryComboboxInner({
   const catalogItems = items.filter(item => item.source === "CATALOG")
 
   const handleOpenChange = (nextOpen: boolean) => {
+    openRef.current = nextOpen
     setOpen(nextOpen)
+    if (!nextOpen) {
+      selectionEpoch.current += 1
+      selectionRequest.current?.abort()
+      setPendingSelection(null)
+    }
     if (nextOpen) {
+      setSelectionError(null)
       setCustomError(null)
       setCreatingCustom(false)
       setCustomName(currentName.trim())
@@ -80,10 +108,33 @@ function ExerciseLibraryComboboxInner({
     }
   }
 
-  const handlePick = (item: ExerciseLibraryItem) => {
-    onSelect({ name: item.name, muscleGroup: item.muscleGroup })
-    setOpen(false)
+  const selectItem = async (id: string) => {
+    const owner = user?.sub
+    if (!owner) return
+    selectionRequest.current?.abort()
+    const controller = new AbortController()
+    selectionRequest.current = controller
+    setSelectionError(null)
+    setPendingSelection({ id, owner })
+    try {
+      const detail = await loadDetail(id, controller.signal)
+      if (controller.signal.aborted || owner !== currentOwner.current || selectionRequest.current !== controller) return
+      if (detail.id !== id) throw new Error("Detalhe incompatível")
+      onSelect({
+        name: detail.name,
+        muscleGroup: detail.muscleGroup,
+        libraryReference: { source: detail.source, exerciseId: detail.id, demonstrationRevision: detail.demonstration?.revision ?? null },
+      })
+      setPendingSelection(null)
+      setOpen(false)
+    } catch {
+      if (!controller.signal.aborted && owner === currentOwner.current && selectionRequest.current === controller) {
+        setSelectionError("Não foi possível conferir o exercício. Tente selecioná-lo novamente.")
+      }
+    }
   }
+
+  const handlePick = (item: ExerciseLibraryItem) => { selectionEpoch.current += 1; void selectItem(item.id) }
 
   const handleStartCustom = () => {
     setCustomError(null)
@@ -99,14 +150,16 @@ function ExerciseLibraryComboboxInner({
       return
     }
     setCustomError(null)
+    const owner = user?.sub
+    const attempt = ++selectionEpoch.current
     try {
       const created = await createCustomMutation.mutateAsync({
         name: trimmed,
         muscleGroup: customGroup,
       })
-      onSelect({ name: created.name, muscleGroup: created.muscleGroup })
+      if (!owner || owner !== currentOwner.current || !openRef.current || attempt !== selectionEpoch.current) return
       setCreatingCustom(false)
-      setOpen(false)
+      await selectItem(created.id)
     } catch {
       setCustomError(
         "Não foi possível salvar o exercício próprio. Verifique se já existe um com este nome.",
@@ -132,7 +185,7 @@ function ExerciseLibraryComboboxInner({
         align="start"
         className="w-[min(92vw,420px)] space-y-3 border-[var(--sm-border)] bg-[var(--sm-surface)] p-3 text-[var(--sm-ink)]"
       >
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-[var(--sm-muted)]">
             Biblioteca de exercícios
           </span>
@@ -151,7 +204,19 @@ function ExerciseLibraryComboboxInner({
               </option>
             ))}
           </select>
+          <select
+            aria-label="Filtrar biblioteca por equipamento"
+            value={equipmentFilter}
+            onChange={event => setEquipmentFilter(event.target.value as ExerciseEquipment | "")}
+            className="min-h-9 rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-2 text-xs font-medium text-[var(--sm-ink)]"
+          >
+            <option value="">Todos os equipamentos</option>
+            {Object.entries(EXERCISE_EQUIPMENT_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
         </div>
+
+        {selectionError ? <p role="alert" className="text-xs text-[var(--sm-danger)]">{selectionError}</p> : null}
+        {pendingSelection && !selectionError ? <p role="status" className="text-xs">Conferindo exercício...</p> : null}
 
         <Command shouldFilter={false} className="border border-[var(--sm-border)]">
           <CommandInput

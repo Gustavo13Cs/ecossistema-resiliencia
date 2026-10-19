@@ -3,6 +3,16 @@ import { createEmptyWorkoutForm, createWorkoutExercise } from "./workout-form"
 import { fromDraftContent, toDraftContent, validateDraftForm } from "./workout-draft-form"
 
 describe("workout draft form", () => {
+  it("save_sends_reference_not_snapshot and preserves historical null snapshots on load", () => {
+    const form = createEmptyWorkoutForm()
+    form.splits[0].exercises = [{ ...createWorkoutExercise(), name: "Supino", libraryReference: { source: "CUSTOM", exerciseId: "custom-1", demonstrationRevision: null }, demonstrationSnapshot: null }]
+    const sent = toDraftContent(form)
+    expect(sent.splits[0].exercises[0].libraryReference).toEqual(form.splits[0].exercises[0].libraryReference)
+    expect(sent.splits[0].exercises[0]).not.toHaveProperty("demonstrationSnapshot")
+    const loaded = fromDraftContent({ ...sent, splits: [{ ...sent.splits[0], exercises: [{ ...sent.splits[0].exercises[0], demonstrationSnapshot: null }] }] })
+    expect(loaded.splits[0].exercises[0].libraryReference?.demonstrationRevision).toBeNull()
+    expect(loaded.splits[0].exercises[0].demonstrationSnapshot).toBeNull()
+  })
   it("roundtrips_empty_and_advanced_fields", () => {
     const empty = { title: "", goal: "", durationWeeks: null, notes: "", splits: [] }
     expect(toDraftContent(fromDraftContent(empty))).toEqual(empty)

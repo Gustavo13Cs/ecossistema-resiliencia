@@ -1,7 +1,7 @@
 import { createWorkoutExercise, createWorkoutSplit, validateWorkoutForm, type WorkoutForm } from "./workout-form"
-import type { DraftContentV1 } from "@/types/workout-draft"
+import type { DraftContentInput, DraftContentReadable } from "@/types/workout-draft"
 
-export function toDraftContent(form: WorkoutForm): DraftContentV1 {
+export function toDraftContent(form: WorkoutForm): DraftContentInput {
   return {
     title: form.title.trim(),
     goal: form.goal.trim(),
@@ -15,12 +15,13 @@ export function toDraftContent(form: WorkoutForm): DraftContentV1 {
         rest: exercise.rest.trim(), notes: exercise.notes.trim(), muscleGroup: exercise.muscleGroup || null,
         load: exercise.load.trim(), effortType: exercise.effortType || null,
         effortTarget: exercise.effortTarget.trim(), tempo: exercise.tempo.trim(), method: exercise.method || null,
+        ...(exercise.libraryReference ? { libraryReference: exercise.libraryReference } : {}),
       })),
     })),
   }
 }
 
-export function fromDraftContent(content: DraftContentV1): WorkoutForm {
+export function fromDraftContent(content: DraftContentReadable): WorkoutForm {
   return {
     title: content.title, goal: content.goal,
     durationWeeks: content.durationWeeks === null ? "" : String(content.durationWeeks), notes: content.notes,
@@ -29,6 +30,8 @@ export function fromDraftContent(content: DraftContentV1): WorkoutForm {
       exercises: split.exercises.map(exercise => ({
         ...createWorkoutExercise(), ...exercise,
         muscleGroup: exercise.muscleGroup ?? "", effortType: exercise.effortType ?? "", method: exercise.method ?? "",
+        libraryReference: "libraryReference" in exercise ? exercise.libraryReference ?? null : null,
+        demonstrationSnapshot: "demonstrationSnapshot" in exercise ? exercise.demonstrationSnapshot ?? null : null,
       })),
     })),
   }

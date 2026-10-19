@@ -29,6 +29,7 @@ import type {
   MuscleGroup,
   WorkoutPrescription,
 } from "@/types/workout"
+import type { LibraryReference } from "@/types/exercise-demonstration"
 import { WorkoutSplitCard } from "./WorkoutSplitCard"
 
 export interface WorkoutEditorProps {
@@ -230,7 +231,7 @@ export function WorkoutEditor({
   const selectLibraryExercise = (
     splitId: string,
     exerciseId: string,
-    selection: { name: string; muscleGroup: MuscleGroup },
+    selection: { name: string; muscleGroup: MuscleGroup; libraryReference: LibraryReference },
   ) => {
     setForm(current => ({
       ...current,
@@ -244,6 +245,8 @@ export function WorkoutEditor({
                       ...ex,
                       name: selection.name,
                       muscleGroup: selection.muscleGroup,
+                      libraryReference: selection.libraryReference,
+                      demonstrationSnapshot: null,
                     }
                   : ex,
               ),
@@ -265,10 +268,13 @@ export function WorkoutEditor({
     } catch (error) {
       if (!mountedRef.current) return
       const status = isAxiosError(error) ? error.response?.status : undefined
+      const code: unknown = isAxiosError(error) ? error.response?.data?.code : undefined
       if (status === 401 || status === 403) {
         setForm(createEmptyWorkoutForm())
         setDenied(true)
         onAccessDenied?.()
+      } else if (code === "DEMONSTRATION_SELECTION_STALE") {
+        setSaveError("A demonstração selecionada mudou. Abra a biblioteca para selecionar a versão atual ou retire o vínculo do exercício; os demais dados permanecem preenchidos.")
       } else if (status === 409) {
         setSaveError(
           "O prontuário mudou ou foi arquivado. Seus dados continuam em memória; recarregue o prontuário antes de tentar novamente.",

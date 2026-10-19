@@ -28,6 +28,64 @@ beforeEach(() => {
   vi.stubGlobal("navigation", Object.assign(new EventTarget(), { traverseTo: vi.fn() })); auth.user = { sub: "personal", role: "PERSONAL" }; navigation.push.mockReset(); navigation.replace.mockReset() })
 afterEach(cleanup)
 describe("WorkoutDraftEditor", () => {
+  it("manual_rename_clears_demonstration_with_notice while parameter edits retain the link", async () => {
+    const reference = { source: "CATALOG" as const, exerciseId: "cat-1", demonstrationRevision: "r1" }
+    const linked = { ...content, splits: [{ ...content.splits[0], exercises: [{ ...content.splits[0].exercises[0], libraryReference: reference, demonstrationSnapshot: { revision: "r1", instruction: "Execução" } }] }] }
+    const p = props({ draft: { ...draft, schemaVersion: 2, content: linked } })
+    render(<WorkoutDraftEditor {...p} />)
+    fireEvent.change(screen.getByLabelText("Séries"), { target: { value: "5" } })
+    expect(screen.getByText("Demonstração pronta")).toBeVisible()
+    fireEvent.change(screen.getByLabelText("Nome do exercício"), { target: { value: "Agachamento" } })
+    expect(screen.getByText(/o nome mudou; a demonstração foi desvinculada/i)).toBeVisible()
+    expect(screen.queryByText("Demonstração pronta")).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    await waitFor(() => expect(p.onSave).toHaveBeenCalled())
+    const sent = vi.mocked(p.onSave).mock.calls[0][0].content.splits[0].exercises[0]
+    expect(sent.sets).toBe("5")
+    expect(sent).not.toHaveProperty("libraryReference")
+    expect(sent).not.toHaveProperty("demonstrationSnapshot")
+  })
+  it("adopts the matching saved presentation while keeping parameters typed during save", async () => {
+    const reference = { source: "CATALOG" as const, exerciseId: "cat-1", demonstrationRevision: "r1" }
+    const linked = { ...content, splits: [{ ...content.splits[0], exercises: [{ ...content.splits[0].exercises[0], libraryReference: reference, demonstrationSnapshot: null }] }] }
+    const pending = deferred<WorkoutDraftResource>()
+    const p = props({ draft: { ...draft, schemaVersion: 2, content: linked }, onSave: vi.fn(() => pending.promise) })
+    render(<WorkoutDraftEditor {...p} />)
+    fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Enviado" } })
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    fireEvent.change(screen.getByLabelText("Séries"), { target: { value: "5" } })
+    await act(async () => pending.resolve({ ...draft, schemaVersion: 2, version: 2, content: { ...linked, splits: [{ ...linked.splits[0], exercises: [{ ...linked.splits[0].exercises[0], demonstrationSnapshot: { revision: "r1", instruction: "Execução" } }] }] } }))
+    expect(screen.getByText("Demonstração pronta")).toBeVisible()
+    expect(screen.getByLabelText("Séries")).toHaveValue("5")
+    expect(screen.getByText("Alterações não salvas")).toBeVisible()
+  })
+
+  it("a save response cannot restore a reference detached while pending", async () => {
+    const reference = { source: "CATALOG" as const, exerciseId: "cat-1", demonstrationRevision: "r1" }
+    const linked = { ...content, splits: [{ ...content.splits[0], exercises: [{ ...content.splits[0].exercises[0], libraryReference: reference, demonstrationSnapshot: null }] }] }
+    const pending = deferred<WorkoutDraftResource>()
+    render(<WorkoutDraftEditor {...props({ draft: { ...draft, schemaVersion: 2, content: linked }, onSave: vi.fn(() => pending.promise) })} />)
+    fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Enviado" } })
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    fireEvent.click(screen.getByRole("button", { name: "Retirar vínculo" }))
+    await act(async () => pending.resolve({ ...draft, schemaVersion: 2, version: 2, content: { ...linked, splits: [{ ...linked.splits[0], exercises: [{ ...linked.splits[0].exercises[0], demonstrationSnapshot: { revision: "r1", instruction: "Execução" } }] }] } }))
+    expect(screen.queryByText("Demonstração pronta")).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Retirar vínculo" })).not.toBeInTheDocument()
+    expect(screen.getByText("Alterações não salvas")).toBeVisible()
+  })
+  it("shows an actionable stale demonstration conflict and keeps the selected form", async () => {
+    const linked = { ...content, splits: [{ ...content.splits[0], exercises: [{ ...content.splits[0].exercises[0], libraryReference: { source: "CATALOG" as const, exerciseId: "cat-1", demonstrationRevision: "old" }, demonstrationSnapshot: null }] }] }
+    const p = props({ draft: { ...draft, schemaVersion: 2, content: linked }, onSave: vi.fn().mockRejectedValue(fail(409, "DEMONSTRATION_SELECTION_STALE")) })
+    render(<WorkoutDraftEditor {...p} />)
+    fireEvent.change(screen.getByLabelText("Séries"), { target: { value: "5" } })
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    expect(await screen.findByText(/demonstração selecionada mudou/i)).toBeVisible()
+    expect(screen.getByRole("button", { name: "Retirar vínculo" })).toBeVisible()
+    expect(screen.getByLabelText("Séries")).toHaveValue("5")
+    fireEvent.click(screen.getByRole("button", { name: "Retirar vínculo" }))
+    expect(screen.getByLabelText("Séries")).toHaveValue("5")
+    expect(screen.queryByRole("button", { name: "Retirar vínculo" })).not.toBeInTheDocument()
+  })
   it("draft_save_accepts_incomplete_form", async () => {
     const p = props({ draft: null }); render(<WorkoutDraftEditor {...p} />)
     fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))

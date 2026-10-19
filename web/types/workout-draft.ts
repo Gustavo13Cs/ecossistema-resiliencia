@@ -1,5 +1,6 @@
 import type { ClientStatus } from "./client"
 import type { EffortType, MuscleGroup, TrainingMethod, WorkoutDetail } from "./workout"
+import type { DemonstrationPresentation, LibraryReference } from "./exercise-demonstration"
 
 export type WorkoutDraftStatus = "OPEN" | "FINALIZED" | "DISCARDED"
 export type DraftExerciseV1 = {
@@ -23,17 +24,22 @@ export type DraftContentV1 = {
   notes: string
   splits: DraftSplitV1[]
 }
+export type DraftExerciseInput = DraftExerciseV1 & { libraryReference?: LibraryReference | null }
+export type DraftContentInput = Omit<DraftContentV1, "splits"> & { splits: (Omit<DraftSplitV1, "exercises"> & { exercises: DraftExerciseInput[] })[] }
+export type DraftExercisePresentation = DraftExerciseInput & { libraryReference: LibraryReference | null; demonstrationSnapshot: DemonstrationPresentation | null }
+export type DraftContentPresentation = Omit<DraftContentV1, "splits"> & { splits: (Omit<DraftSplitV1, "exercises"> & { exercises: DraftExercisePresentation[] })[] }
+export type DraftContentReadable = Omit<DraftContentV1, "splits"> & { splits: (Omit<DraftSplitV1, "exercises"> & { exercises: (DraftExerciseV1 & { libraryReference?: LibraryReference | null; demonstrationSnapshot?: DemonstrationPresentation | null })[] })[] }
 export type DraftVersionInput = { expectedVersion: number }
-export type DraftSaveInput = DraftVersionInput & { content: DraftContentV1 }
+export type DraftSaveInput = DraftVersionInput & { content: DraftContentInput }
 export type DraftRebaseInput = DraftVersionInput & { expectedActiveWorkoutId: string | null }
-export type DraftCreateInput = { content: DraftContentV1; sourceWorkoutId?: never } | { sourceWorkoutId: string; content?: never }
+export type DraftCreateInput = { content: DraftContentInput; sourceWorkoutId?: never } | { sourceWorkoutId: string; content?: never }
 export type WorkoutDraftResource = {
   id: string
   clientId: string
   status: WorkoutDraftStatus
   version: number
   schemaVersion: number
-  content: DraftContentV1 | null
+  content: DraftContentReadable | null
   sourceWorkoutId: string | null
   baseActiveWorkoutId: string | null
   finalizedWorkoutId: string | null

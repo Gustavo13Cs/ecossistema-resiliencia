@@ -71,6 +71,32 @@ const samplePrescription: WorkoutPrescription = {
 }
 
 describe("workout-form helpers", () => {
+  it("changing_sets_keeps_reference and save_sends_reference_not_snapshot", () => {
+    const exercise = { ...createWorkoutExercise(), name: "Supino", sets: "4", reps: "8", libraryReference: { source: "CATALOG" as const, exerciseId: "cat-1", demonstrationRevision: "r1" }, demonstrationSnapshot: { revision: "r1", instruction: "test" } }
+    const form = createEmptyWorkoutForm()
+    form.splits[0].exercises = [{ ...exercise, sets: "5" }]
+    const sent = buildWorkoutInput(form, "client-1").splits[0].exercises[0]
+    expect(sent.libraryReference).toEqual(exercise.libraryReference)
+    expect(sent).not.toHaveProperty("demonstrationSnapshot")
+  })
+
+  it("copies authorized prescription presentation without sending it on direct create", () => {
+    const prescription = structuredClone(samplePrescription)
+    prescription.splits[0].exercises[0].libraryReference = { source: "CATALOG", exerciseId: "cat-chest-01", demonstrationRevision: "r1" }
+    prescription.splits[0].exercises[0].demonstrationSnapshot = { revision: "r1", instruction: "Treino", assets: [] }
+    const form = copyWorkoutToForm(prescription)
+    expect(form.splits[0].exercises[0].demonstrationSnapshot).toEqual(prescription.splits[0].exercises[0].demonstrationSnapshot)
+    const payload = buildWorkoutInput(form, "client-1").splits[0].exercises[0]
+    expect(payload.libraryReference).toEqual(prescription.splits[0].exercises[0].libraryReference)
+    expect(payload).not.toHaveProperty("demonstrationSnapshot")
+  })
+
+  it("duplicate_and_reorder_preserve_snapshot", () => {
+    const exercise = { ...createWorkoutExercise(), libraryReference: { source: "CATALOG" as const, exerciseId: "cat-1", demonstrationRevision: null }, demonstrationSnapshot: null }
+    const duplicate = duplicateExercise(exercise)
+    expect(moveItem([exercise, duplicate], 0, 1).map(item => item.libraryReference)).toEqual([exercise.libraryReference, exercise.libraryReference])
+    expect(duplicate.demonstrationSnapshot).toBeNull()
+  })
   it("starts with only the structural Treino A split and no sample exercises", () => {
     const form = createEmptyWorkoutForm()
     expect(form.title).toBe("")
@@ -173,7 +199,7 @@ describe("workout-form helpers", () => {
           id: "s1",
           name: "   ",
           focus: "",
-          exercises: [{ id: "e1", name: "  ", sets: " ", reps: "\t", rest: "", notes: "", muscleGroup: "" as const, load: "", effortType: "" as const, effortTarget: "", tempo: "", method: "STANDARD" as const }],
+          exercises: [{ id: "e1", name: "  ", sets: " ", reps: "\t", rest: "", notes: "", muscleGroup: "" as const, load: "", effortType: "" as const, effortTarget: "", tempo: "", method: "STANDARD" as const, libraryReference: null, demonstrationSnapshot: null }],
         },
       ],
     }
