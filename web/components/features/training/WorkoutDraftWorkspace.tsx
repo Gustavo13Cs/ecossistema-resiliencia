@@ -40,12 +40,18 @@ function ResolveClient({ owner, clientId, draftId }: { owner: string; clientId: 
   return <>{status !== "ready" ? error : null}<DraftContext client={nextVerifiedClient} draftId={draftId} /></>
 }
 function AccessDenied() {
-  return <AsyncState kind="error" title="Restabeleça seu acesso" description="Sua sessão não permite acessar estes registros." action={<Link href="/login">Entrar novamente</Link>} />
+  const { logout } = useAuth()
+  const [leaving, setLeaving] = useState(false)
+  return <AsyncState kind="error" title="Restabeleça seu acesso" description="Sua sessão não permite acessar estes registros." action={<Button disabled={leaving} onClick={() => {
+    setLeaving(true)
+    // logout limpa Auth/cache e navega mesmo quando a chamada ao servidor falha.
+    void logout().catch(() => undefined)
+  }}>Entrar novamente</Button>} />
 }
 function DraftContext({ client, draftId }: { client: Client; draftId?: string }) {
   const router = useRouter()
-  const drafts = useWorkoutDrafts({ clientId: client.id, draftId })
   const { activeQuery } = useWorkouts({ clientId: client.id })
+  const drafts = useWorkoutDrafts({ clientId: client.id, draftId, accessError: activeQuery.error })
   const [editing, setEditing] = useState(Boolean(draftId))
   const [denied, setDenied] = useState(false)
   const [selected, setSelected] = useState<DraftSummary | null>(null)

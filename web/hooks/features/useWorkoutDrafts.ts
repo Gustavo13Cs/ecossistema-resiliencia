@@ -19,7 +19,7 @@ function accessDeniedError(status: 401 | 403) {
   })
 }
 
-export function useWorkoutDrafts(options: { clientId?: string; draftId?: string; cursor?: string; enabled?: boolean } = {}) {
+export function useWorkoutDrafts(options: { clientId?: string; draftId?: string; cursor?: string; enabled?: boolean; accessError?: unknown } = {}) {
   const { user } = useAuth()
   const cache = useQueryClient()
   const owner = user?.sub ?? "anonymous"
@@ -34,8 +34,10 @@ export function useWorkoutDrafts(options: { clientId?: string; draftId?: string;
     enabled: false, staleTime: Infinity, gcTime: Infinity,
   })
   const access = accessQuery.data ?? initialAccess
-  const enabled = isPersonal && options.enabled !== false && access.deniedStatus === null
-  const deniedError = useMemo(() => access.deniedStatus ? accessDeniedError(access.deniedStatus) : null, [access.deniedStatus])
+  const externalStatus = isAxiosError(options.accessError) ? options.accessError.response?.status : undefined
+  const deniedStatus = access.deniedStatus ?? (externalStatus === 401 || externalStatus === 403 ? externalStatus : null)
+  const enabled = isPersonal && options.enabled !== false && deniedStatus === null
+  const deniedError = useMemo(() => deniedStatus ? accessDeniedError(deniedStatus) : null, [deniedStatus])
   const session = useRef<{ owner: string; role: string | undefined; clientId?: string; draftId?: string; active: boolean; createdDraftId?: string }>({ owner, role, clientId, draftId, active: true })
   useLayoutEffect(() => {
     session.current = { owner, role, clientId, draftId, active: true }
@@ -57,6 +59,11 @@ export function useWorkoutDrafts(options: { clientId?: string; draftId?: string;
       resetMutations()
     }
   }
+  // Observa a negação do contexto externo mesmo quando outra query iniciou a leitura.
+  // Persiste antes do paint; erro transitório ou remount não encerram essa negação.
+  useLayoutEffect(() => {
+    if (isPersonal && deniedStatus && currentAccess().deniedStatus === null) void denyOwner(deniedStatus)
+  })
   async function read<T>(signal: AbortSignal, load: () => Promise<T>): Promise<T> {
     const generation = access.generation
     const assertAvailable = () => {

@@ -250,7 +250,11 @@ describe("Personal drafts through real browser, HTTP, runtime roles and PostgreS
       cy.findByLabelText("Título da prescrição").should("have.value", "Task7 Snapshot enviado com alteração local")
       cy.findByRole("button", { name: "Voltar para aluno" }).click()
       cy.findByRole("alertdialog").findByRole("button", { name: "Cancelar" }).click()
-      cy.findByLabelText("Título da prescrição").clear().type("Task7 Snapshot enviado")
+      // Aguarda o encerramento e a restauração de foco antes da digitação sintética.
+      cy.findByRole("alertdialog").should("not.exist")
+      cy.findByRole("button", { name: "Voltar para aluno" }).should("be.focused")
+      cy.findByLabelText("Título da prescrição").clear().should("have.value", "")
+        .type("Task7 Snapshot enviado").should("have.value", "Task7 Snapshot enviado")
       cy.contains("Rascunho salvo às").should("be.visible")
       cy.findByRole("button", { name: "Voltar para aluno" }).click()
       cy.location("pathname").should("eq", `/clientes/${clientId}`)
@@ -373,6 +377,9 @@ describe("Personal drafts through real browser, HTTP, runtime roles and PostgreS
       let accountACookies: Cypress.Cookie[]
       let nutritionCookies: Cypress.Cookie[]
       let personalBCookies: Cypress.Cookie[]
+      // A recuperação adiciona logins reais; /auth/login permite5/min/IP.
+      // Espaça o segundo lote, mantendo o throttler e os timeouts de asserção.
+      if (mode === "document fallback") cy.wait(61_000)
       cy.getCookies({ log: false }).then(cookies => { accountACookies = cookies })
       if (mode === "document fallback") cy.on("window:before:load", window => Object.defineProperty(window, "navigation", { configurable: true, value: undefined }))
       newClient(`Negação ${mode}`).then(clientId => newDraft(clientId, `Task7 Segredo da conta A ${mode}`).then(draft => {
@@ -389,6 +396,24 @@ describe("Personal drafts through real browser, HTTP, runtime roles and PostgreS
         cy.findByRole("heading", { name: "Restabeleça seu acesso" }).should("be.visible")
         cy.findByLabelText("Título da prescrição").should("not.exist")
         cy.contains("texto privado não salvo").should("not.exist")
+        // A sessão local ainda é A. A ação precisa encerrar Auth/cache antes de
+        // entrar na rota pública; apenas navegar redirecionaria de volta a /home.
+        cy.intercept("POST", "**/auth/logout").as("reauthLogout")
+        cy.findByRole("button", { name: "Entrar novamente" }).click()
+        cy.wait("@reauthLogout").its("response.statusCode").should("eq", 200)
+        cy.location("pathname").should("eq", "/auth/login")
+        cy.findByRole("heading", { name: "Entrar no SafeMove" }).should("be.visible")
+        cy.findByLabelText("E-mail").type("personal.phase1@e2e.test")
+        cy.findByLabelText("Senha").type(password, { log: false })
+        cy.intercept("POST", "**/auth/login").as("reauthLogin")
+        cy.findByRole("button", { name: "Entrar" }).click()
+        cy.wait("@reauthLogin").its("response.statusCode").should("eq", 200)
+        cy.location("pathname").should("eq", "/home")
+        cy.visit(path)
+        cy.findByLabelText("Título da prescrição").should("have.value", `Task7 Segredo da conta A ${mode}`)
+        cy.contains("texto privado não salvo").should("not.exist")
+        request("GET", `/workouts/drafts/${draft.id}`).its("status").should("eq", 200)
+        assertNoStorage()
         request("POST", "/auth/login", { email: "personal-b.phase1@e2e.test", password })
         cy.getCookies({ log: false }).then(cookies => { personalBCookies = cookies })
         cy.visit("/home")
@@ -406,6 +431,11 @@ describe("Personal drafts through real browser, HTTP, runtime roles and PostgreS
         cy.contains("Task7 Segredo da conta A").should("not.exist")
         assertNoStorage()
         if (mode === "document fallback") {
+          // O logout da recuperação revogou a sessão de Nutrição anterior.
+          // Renova a fixture CDP por login real e restabelece B, sem bypass.
+          request("POST", "/auth/login", { email: "nutri.phase1@e2e.test", password })
+          cy.getCookies({ log: false }).then(cookies => { nutritionCookies = cookies })
+          request("POST", "/auth/login", { email: "personal-b.phase1@e2e.test", password })
           // Cada documento resolve /auth/me. Respeita a janela real60/min/IP
           // antes da prova top-level extra, sem ampliar timeouts das asserções.
           cy.wait(61_000)
