@@ -42,11 +42,11 @@
 
 ## Fase 3 — Planos Versionados & Outputs
 
-Proposta e especificações do Personal aprovadas pelo usuário em 17/10/2026, incluindo biblioteca visual e cadastro manual: [direção de produto](planning/2026-10-17-personal-proxima-entrega.md). Planos de [rascunhos/revisões](superpowers/plans/2026-10-17-personal-rascunhos-revisoes.md) e [biblioteca visual](superpowers/plans/2026-10-17-personal-biblioteca-visual.md) aprovados para execução com subagentes por tarefa. Rascunhos: tarefas 1–7 concluídas com revisões específicas aprovadas; API660, PostgreSQL227, web601 e novo Cypress9/9 aprovados. Revisão ampla da branch em andamento antes do fechamento do lote. Biblioteca visual segue na sequência com 20 ilustrações licenciadas aprovadas pelo usuário; fonte candidata e direitos documentados para validação do manifesto. O bloqueio de wger permanece, sem impedir a alternativa aprovada.
+Proposta e especificações do Personal aprovadas pelo usuário em 17/10/2026, incluindo biblioteca visual e cadastro manual: [direção de produto](planning/2026-10-17-personal-proxima-entrega.md). Planos de [rascunhos/revisões](superpowers/plans/2026-10-17-personal-rascunhos-revisoes.md) e [biblioteca visual](superpowers/plans/2026-10-17-personal-biblioteca-visual.md) aprovados para execução com subagentes por tarefa. Rascunhos concluídos: tarefas 1–7 e revisão ampla aprovadas após correção dos dois achados de acesso em `f052883`. API660, PostgreSQL227, web601 e Cypress9/9 anteriores; correção final com97 testes focados, duas recuperações reais e baseline5/5, sem nova rodada integral9/9. Resultados e limites no runbook. Biblioteca visual segue na sequência com 20 ilustrações licenciadas aprovadas pelo usuário; fonte candidata e direitos documentados para validação do manifesto. O bloqueio de wger permanece, sem impedir a alternativa aprovada.
 
 | # | Tarefa | Status | Agente |
 |---|--------|--------|--------|
-| 3.1 | Rascunhos e revisões de prescrição do Personal | 🔄 | Codex |
+| 3.1 | Rascunhos e revisões de prescrição do Personal | ✅ | Codex |
 | 3.2 | Modelos reutilizáveis com cópia profunda | ⏳ | — |
 | 3.3 | Geração de PDF para prescrições | ⏳ | — |
 | 3.4 | Impressão de planos | ⏳ | — |
