@@ -1,3 +1,4 @@
+import { LibraryReferenceDto } from './library-reference.dto';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -22,6 +23,14 @@ import { EffortType, MuscleGroup, TrainingMethod } from '@prisma/client';
 import { WORKOUT_TEMPO_REGEX } from './create-workout.dto';
 
 export class DraftExerciseDto {
+  @ValidateIf(
+    (_object, value: unknown) => value !== undefined && value !== null,
+  )
+  @IsObject()
+  @ValidateNested()
+  @Type(() => LibraryReferenceDto)
+  libraryReference?: LibraryReferenceDto | null;
+
   @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsString()
   @MaxLength(200)

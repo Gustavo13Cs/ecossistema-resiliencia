@@ -89,6 +89,7 @@ describe('WorkoutDraftsService', () => {
         id: randomUUID(),
         clientId,
         client: { id: clientId, name: 'Synthetic', status: 'ACTIVE' },
+        splits: [],
       }),
     };
     service = new WorkoutDraftsService(

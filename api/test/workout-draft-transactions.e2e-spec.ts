@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client';
+import { upgradeDraftContent } from '../src/modules/workouts/workout-draft-content';
 import { randomUUID } from 'node:crypto';
 import { ClientAccessService } from '../src/common/client-access/client-access.service';
 import { lockOwnedClient } from '../src/common/client-access/lock-owned-client';
@@ -229,7 +231,7 @@ describe('Workout draft lifecycle transactions (PostgreSQL)', () => {
     );
     expect(draft).toMatchObject({
       version: 1,
-      schemaVersion: 1,
+      schemaVersion: 2,
       baseActiveWorkoutId: previousId,
       content: { title: '', splits: [] },
     });
@@ -238,7 +240,7 @@ describe('Workout draft lifecycle transactions (PostgreSQL)', () => {
     );
     expect(saved.version).toBe(2);
     expect((await scoped(() => drafts.get(owner, draft.id))).content).toEqual(
-      content,
+      upgradeDraftContent(content),
     );
     expect(await snapshot()).toEqual(before);
   });
@@ -589,7 +591,7 @@ describe('Workout draft lifecycle transactions (PostgreSQL)', () => {
           id,
           professionalId: owner.sub,
           clientId: client,
-          content,
+          content: content as unknown as Prisma.InputJsonValue,
           updatedAt: timestamp,
         },
       });

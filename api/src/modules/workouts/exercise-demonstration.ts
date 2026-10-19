@@ -7,6 +7,8 @@ import type {
   DemonstrationAsset,
   DemonstrationManifestEntry,
   DemonstrationSnapshot,
+  DemonstrationPresentation,
+  LibraryReference,
 } from './exercise-demonstration.types';
 
 export const DEMONSTRATION_MEDIA_RULES = Object.freeze([
@@ -187,4 +189,69 @@ export function findCatalogDemonstration(
     instruction: entry.instruction,
     assets: entry.assets.map((asset) => ({ ...asset })),
   };
+}
+
+export function presentDemonstration(
+  snapshot: DemonstrationSnapshot | null,
+): DemonstrationPresentation | null {
+  if (!snapshot) return null;
+  return {
+    ...snapshot,
+    assets: snapshot.assets?.map((asset) => ({
+      ...asset,
+      displayAllowed: isApprovedDemonstrationAsset(asset),
+    })),
+  };
+}
+export function storedExerciseDemonstration(exercise: {
+  librarySource?: 'CATALOG' | 'CUSTOM' | null;
+  libraryExerciseId?: string | null;
+  demonstrationSnapshot?: unknown;
+}): {
+  libraryReference: LibraryReference | null;
+  demonstrationSnapshot: DemonstrationSnapshot | null;
+} {
+  const snapshot = (exercise.demonstrationSnapshot ??
+    null) as DemonstrationSnapshot | null;
+  return {
+    libraryReference:
+      exercise.librarySource && exercise.libraryExerciseId
+        ? {
+            source: exercise.librarySource,
+            exerciseId: exercise.libraryExerciseId,
+            demonstrationRevision: snapshot?.revision ?? null,
+          }
+        : null,
+    demonstrationSnapshot: snapshot,
+  };
+}
+export function presentWorkout<T extends { splits: { exercises: object[] }[] }>(
+  workout: T,
+): Omit<T, 'splits'> & {
+  splits: (Omit<T['splits'][number], 'exercises'> & {
+    exercises: (Omit<
+      T['splits'][number]['exercises'][number],
+      'demonstrationSnapshot'
+    > & {
+      libraryReference: LibraryReference | null;
+      demonstrationSnapshot: DemonstrationPresentation | null;
+    })[];
+  })[];
+} {
+  return {
+    ...workout,
+    splits: workout.splits.map((split) => ({
+      ...split,
+      exercises: split.exercises.map((exercise) => {
+        const stored = storedExerciseDemonstration(exercise);
+        return {
+          ...exercise,
+          libraryReference: stored.libraryReference,
+          demonstrationSnapshot: presentDemonstration(
+            stored.demonstrationSnapshot,
+          ),
+        };
+      }),
+    })),
+  } as ReturnType<typeof presentWorkout<T>>;
 }

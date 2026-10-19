@@ -10,6 +10,12 @@ import { lockActiveOwnedClient } from '../../common/client-access/lock-active-ow
 import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { CreateWorkoutDto } from './dto/create-workout.dto';
+import {
+  ExerciseDemonstrationService,
+  ResolvedWorkoutDemonstrations,
+} from './exercise-demonstration.service';
+import { DraftContentV2 } from './workout-draft.types';
+import { presentWorkout } from './exercise-demonstration';
 import { workoutDetailSelect } from './training-read.service';
 import { WorkoutDetail } from './training-read.types';
 
@@ -27,13 +33,29 @@ export class WorkoutsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly clientAccess: ClientAccessService,
+    private readonly demonstrations: ExerciseDemonstrationService = new ExerciseDemonstrationService(
+      prisma,
+    ),
   ) {}
 
   async create(user: AuthUser, data: CreateWorkoutDto) {
     this.assertTrainingProfessional(user);
     const client = await this.clientAccess.getOwnedClient(user, data.clientId);
     return this.prisma.$transaction(async (tx) => {
-      return this.writeFinalizedWorkout(tx, user, client.id, data, null);
+      const resolved = await this.demonstrations.resolveWorkoutDemonstrations(
+        user,
+        data,
+      );
+      return presentWorkout(
+        await this.writeFinalizedWorkout(
+          tx,
+          user,
+          client.id,
+          data,
+          null,
+          resolved,
+        ),
+      );
     });
   }
 
@@ -41,6 +63,7 @@ export class WorkoutsService {
     user: AuthUser,
     data: CreateWorkoutDto,
     revisionOfId: string | null,
+    savedContent?: DraftContentV2,
   ): Promise<WorkoutDetail> {
     this.assertTrainingProfessional(user);
     const client = await this.clientAccess.getOwnedClient(user, data.clientId);
@@ -51,6 +74,8 @@ export class WorkoutsService {
         client.id,
         data,
         revisionOfId,
+        savedContent ??
+          (await this.demonstrations.resolveWorkoutDemonstrations(user, data)),
       );
       const detail = await tx.workout.findFirstOrThrow({
         where: {
@@ -68,7 +93,11 @@ export class WorkoutsService {
       ) {
         throw new NotFoundException('Treino não encontrado');
       }
-      return { ...detail, clientId: client.id, client: detail.client };
+      return presentWorkout({
+        ...detail,
+        clientId: client.id,
+        client: detail.client,
+      });
     });
   }
 
@@ -78,6 +107,7 @@ export class WorkoutsService {
     clientId: string,
     data: CreateWorkoutDto,
     revisionOfId: string | null,
+    resolved: ResolvedWorkoutDemonstrations,
   ) {
     await lockActiveOwnedClient(tx, clientId, user.sub);
     if (revisionOfId !== null) {
@@ -98,6 +128,7 @@ export class WorkoutsService {
       data: { isActive: false },
     });
     return tx.workout.create({
+      include: { splits: orderedSplitsInclude },
       data: {
         title: data.title,
         goal: data.goal,
@@ -116,6 +147,16 @@ export class WorkoutsService {
             position: splitIndex,
             exercises: {
               create: split.exercises.map((exercise, exerciseIndex) => ({
+                librarySource:
+                  resolved.splits[splitIndex].exercises[exerciseIndex]
+                    .libraryReference?.source ?? null,
+                libraryExerciseId:
+                  resolved.splits[splitIndex].exercises[exerciseIndex]
+                    .libraryReference?.exerciseId ?? null,
+                demonstrationSnapshot:
+                  (resolved.splits[splitIndex].exercises[exerciseIndex]
+                    .demonstrationSnapshot as Prisma.InputJsonValue | null) ??
+                  Prisma.DbNull,
                 name: exercise.name,
                 sets: exercise.sets,
                 reps: exercise.reps,
@@ -148,11 +189,12 @@ export class WorkoutsService {
   async findActive(user: AuthUser, clientId: string) {
     this.assertTrainingProfessional(user);
     await this.clientAccess.getOwnedClient(user, clientId);
-    return this.prisma.workout.findFirst({
+    const workout = await this.prisma.workout.findFirst({
       where: { clientId, creatorId: user.sub, isActive: true },
       include: { splits: orderedSplitsInclude },
       orderBy: { createdAt: 'desc' },
     });
+    return workout ? presentWorkout(workout) : null;
   }
 
   async remove(user: AuthUser, id: string) {
@@ -178,7 +220,7 @@ export class WorkoutsService {
 
   async listTemplates(user: AuthUser) {
     this.assertTrainingProfessional(user);
-    return this.prisma.workout.findMany({
+    const templates = await this.prisma.workout.findMany({
       where: {
         creatorId: user.sub,
         isTemplate: true,
@@ -187,6 +229,7 @@ export class WorkoutsService {
       include: { splits: orderedSplitsInclude },
       orderBy: { updatedAt: 'desc' },
     });
+    return templates.map((template) => presentWorkout(template));
   }
 
   private async getOwnedPlan(user: AuthUser, id: string) {

@@ -36,7 +36,10 @@ describe('Client workout transactions (PostgreSQL)', () => {
   let prisma: PrismaService;
   let clinical: PrismaService;
   let service: {
-    create(user: AuthUser, data: typeof dto): Promise<unknown>;
+    create(
+      user: AuthUser,
+      data: typeof dto,
+    ): ReturnType<WorkoutsService['create']>;
     createFromDraft(
       user: AuthUser,
       data: typeof dto,
@@ -148,7 +151,29 @@ describe('Client workout transactions (PostgreSQL)', () => {
     const active = await prisma.workout.findFirstOrThrow({
       where: { clientId, isActive: true },
     });
-    expect(result).toEqual(active);
+    const { splits, ...returnedWorkout } = result;
+    expect(returnedWorkout).toEqual(active);
+    const storedSplits = await prisma.workoutSplit.findMany({
+      where: { workoutId: active.id },
+      orderBy: [{ position: 'asc' }, { id: 'asc' }],
+      include: { exercises: { orderBy: [{ position: 'asc' }, { id: 'asc' }] } },
+    });
+    expect(splits).toEqual(
+      storedSplits.map((split) => ({
+        ...split,
+        exercises: split.exercises.map((exercise) => ({
+          ...exercise,
+          libraryReference: null,
+        })),
+      })),
+    );
+    expect(splits[0].exercises[0]).toMatchObject({
+      name: 'Agachamento',
+      sets: '3',
+      reps: '10',
+      libraryReference: null,
+      demonstrationSnapshot: null,
+    });
     expect(active.finalizedAt).toBeInstanceOf(Date);
     expect(active.finalizedAt!.getTime()).toBeGreaterThanOrEqual(before);
     expect(active.finalizedAt!.getTime()).toBeLessThanOrEqual(Date.now());

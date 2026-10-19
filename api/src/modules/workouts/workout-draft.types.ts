@@ -5,7 +5,12 @@ import {
   WorkoutDraftStatus,
 } from '@prisma/client';
 
-export const WORKOUT_DRAFT_SCHEMA_VERSION = 1 as const;
+import type {
+  DemonstrationSnapshot,
+  DemonstrationPresentation,
+  LibraryReference,
+} from './exercise-demonstration.types';
+export const WORKOUT_DRAFT_SCHEMA_VERSION = 2 as const;
 export const WORKOUT_DRAFT_MAX_BYTES = 65536;
 
 export type DraftExerciseV1 = {
@@ -33,8 +38,32 @@ export type DraftContentV1 = {
   notes: string;
   splits: DraftSplitV1[];
 };
+export type DraftExerciseInput = DraftExerciseV1 & {
+  libraryReference?: LibraryReference | null;
+};
+export type DraftContentInput = Omit<DraftContentV1, 'splits'> & {
+  splits: (Omit<DraftSplitV1, 'exercises'> & {
+    exercises: DraftExerciseInput[];
+  })[];
+};
+export type DraftExerciseV2 = DraftExerciseV1 & {
+  libraryReference: LibraryReference | null;
+  demonstrationSnapshot: DemonstrationSnapshot | null;
+};
+export type DraftContentV2 = Omit<DraftContentV1, 'splits'> & {
+  splits: (Omit<DraftSplitV1, 'exercises'> & {
+    exercises: DraftExerciseV2[];
+  })[];
+};
+export type DraftContentPresentation = Omit<DraftContentV2, 'splits'> & {
+  splits: (Omit<DraftSplitV1, 'exercises'> & {
+    exercises: (Omit<DraftExerciseV2, 'demonstrationSnapshot'> & {
+      demonstrationSnapshot: DemonstrationPresentation | null;
+    })[];
+  })[];
+};
 export type DraftVersionInput = { expectedVersion: number };
-export type DraftSaveInput = DraftVersionInput & { content: DraftContentV1 };
+export type DraftSaveInput = DraftVersionInput & { content: DraftContentInput };
 export type DraftRebaseInput = DraftVersionInput & {
   expectedActiveWorkoutId: string | null;
 };
@@ -44,7 +73,7 @@ export type WorkoutDraftResource = {
   status: WorkoutDraftStatus;
   version: number;
   schemaVersion: number;
-  content: DraftContentV1 | null;
+  content: DraftContentPresentation | null;
   sourceWorkoutId: string | null;
   baseActiveWorkoutId: string | null;
   finalizedWorkoutId: string | null;

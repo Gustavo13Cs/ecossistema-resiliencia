@@ -6,6 +6,7 @@ import {
 import { EffortType } from '@prisma/client';
 import {
   normalizeDraftContent,
+  upgradeDraftContent,
   assertDraftContentSize,
   toFinalizedWorkoutInput,
 } from './workout-draft-content';
@@ -277,4 +278,64 @@ describe('Workout draft content V1', () => {
       parse(RebaseWorkoutDraftDto, { expectedVersion: 1 }),
     ).rejects.toThrow(BadRequestException);
   });
+});
+
+describe('draft reference HTTP boundary', () => {
+  const reference = {
+    source: 'CATALOG',
+    exerciseId: 'cat-chest-01',
+    demonstrationRevision: '2026-10-19.1:1',
+  };
+  it('accepts_reference_without_client_snapshot', () => {
+    const input = complete();
+    Object.assign(input.splits[0].exercises[0], {
+      libraryReference: reference,
+    });
+    expect(normalizeDraftContent(input).splits[0].exercises[0]).toMatchObject({
+      libraryReference: reference,
+    });
+  });
+  it.each(['demonstrationSnapshot', 'personalVideoUrl', 'displayAllowed'])(
+    'rejects_injected_%s',
+    (field) => {
+      const input = complete();
+      Object.assign(input.splits[0].exercises[0], {
+        [field]: field === 'displayAllowed' ? true : { revision: 'forged' },
+      });
+      expect(() => normalizeDraftContent(input)).toThrow(BadRequestException);
+    },
+  );
+});
+
+it('v1_draft_upgrades_without_guessed_media', () => {
+  const old = normalizeDraftContent(complete());
+  const upgraded = upgradeDraftContent(old);
+  expect(upgraded.splits[0].exercises[0]).toMatchObject({
+    name: 'Agachamento',
+    libraryReference: null,
+    demonstrationSnapshot: null,
+  });
+  expect(old.splits[0].exercises[0]).not.toHaveProperty(
+    'demonstrationSnapshot',
+  );
+});
+
+it('finalize_size_includes_authorized_snapshot', () => {
+  const content = upgradeDraftContent(normalizeDraftContent(complete()));
+  content.splits[0].exercises[0].demonstrationSnapshot = {
+    revision: '1',
+    instruction: 'x'.repeat(65536),
+  };
+  expect(() => toFinalizedWorkoutInput(clientId, content)).toThrow(
+    PayloadTooLargeException,
+  );
+});
+
+it.each([
+  [],
+  { source: 'CUSTOM', exerciseId: 'not-a-uuid', demonstrationRevision: null },
+])('rejects_malformed_reference_before_resolution %#', (libraryReference) => {
+  const input = complete();
+  Object.assign(input.splits[0].exercises[0], { libraryReference });
+  expect(() => normalizeDraftContent(input)).toThrow(BadRequestException);
 });

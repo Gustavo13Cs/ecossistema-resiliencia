@@ -1,3 +1,4 @@
+import { presentDemonstration } from './exercise-demonstration';
 import { createHash } from 'node:crypto';
 import { SAFEMOVE_EXERCISE_CATALOG } from './exercise-catalog';
 import {
@@ -180,4 +181,22 @@ describe('verified exercise demonstrations', () => {
       revoked.delete(asset.id);
     }
   });
+});
+
+it('read_revocation_blocks_display_without_rewriting_historical_credits', () => {
+  const snapshot = findCatalogDemonstration('cat-chest-01')!;
+  const raw = structuredClone(snapshot);
+  const revoked = REVOKED_DEMONSTRATION_ASSET_IDS as Set<string>;
+  revoked.add(snapshot.assets![0].id);
+  try {
+    expect(presentDemonstration(snapshot)?.assets?.[0].displayAllowed).toBe(
+      false,
+    );
+    expect(snapshot).toEqual(raw);
+    expect(presentDemonstration(snapshot)?.assets?.[0].author).toEqual(
+      raw.assets![0].author,
+    );
+  } finally {
+    revoked.delete(snapshot.assets![0].id);
+  }
 });

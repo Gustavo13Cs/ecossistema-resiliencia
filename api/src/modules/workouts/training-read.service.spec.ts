@@ -369,7 +369,17 @@ describe('Training read contracts', () => {
 
   it('opens_selected_workout_and_omits_foreign_records', async () => {
     const result = await service.getWorkout(user, 'previous-workout');
-    expect(result).toEqual(plan);
+    expect(result).toEqual({
+      ...plan,
+      splits: plan.splits.map((split) => ({
+        ...split,
+        exercises: split.exercises.map((exercise) => ({
+          ...exercise,
+          libraryReference: null,
+          demonstrationSnapshot: null,
+        })),
+      })),
+    });
     expect(result).toMatchObject({ finalizedAt: null, revisionOfId: null });
     expect(prisma.workout.findFirst).toHaveBeenLastCalledWith(
       expect.objectContaining({

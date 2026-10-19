@@ -1,3 +1,4 @@
+import { ExerciseDemonstrationService } from './exercise-demonstration.service';
 import { Module } from '@nestjs/common';
 import { WorkoutDraftsController } from './workout-drafts.controller';
 import { WorkoutDraftsService } from './workout-drafts.service';
@@ -12,6 +13,7 @@ import { ExerciseLibraryService } from './exercise-library.service';
   imports: [DatabaseModule, ClientAccessModule],
   controllers: [WorkoutDraftsController, WorkoutsController],
   providers: [
+    ExerciseDemonstrationService,
     WorkoutDraftsService,
     WorkoutsService,
     TrainingReadService,

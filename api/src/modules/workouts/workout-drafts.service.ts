@@ -21,10 +21,12 @@ import {
   assertDraftContentSize,
   normalizeDraftContent,
   toFinalizedWorkoutInput,
+  upgradeDraftContent,
 } from './workout-draft-content';
 import {
   DraftAck,
   DraftContentV1,
+  DraftContentV2,
   DraftCursor,
   DraftListQuery,
   DraftPage,
@@ -33,6 +35,15 @@ import {
   WorkoutDraftResource,
   WORKOUT_DRAFT_SCHEMA_VERSION,
 } from './workout-draft.types';
+import {
+  ExerciseDemonstrationService,
+  authorizedDemonstrations,
+} from './exercise-demonstration.service';
+import {
+  presentDemonstration,
+  presentWorkout,
+  storedExerciseDemonstration,
+} from './exercise-demonstration';
 import { workoutDetailSelect } from './training-read.service';
 import { WorkoutsService } from './workouts.service';
 
@@ -42,6 +53,9 @@ export class WorkoutDraftsService {
     private readonly prisma: PrismaService,
     private readonly clientAccess: ClientAccessService,
     private readonly workouts: WorkoutsService,
+    private readonly demonstrations: ExerciseDemonstrationService = new ExerciseDemonstrationService(
+      prisma,
+    ),
   ) {}
 
   async list(user: AuthUser, query: DraftListQuery = {}): Promise<DraftPage> {
@@ -131,7 +145,7 @@ export class WorkoutDraftsService {
           id: existing.id,
           clientId: dto.clientId,
         });
-      let content: DraftContentV1;
+      let content: DraftContentV2;
       if (dto.sourceWorkoutId) {
         const source = await tx.workout.findFirst({
           where: {
@@ -151,7 +165,7 @@ export class WorkoutDraftsService {
         });
         if (!source)
           throw new NotFoundException('Treino de origem não encontrado');
-        content = normalizeDraftContent({
+        const copied = upgradeDraftContent({
           title: source.title,
           goal: source.goal ?? '',
           durationWeeks: source.durationWeeks,
@@ -160,6 +174,7 @@ export class WorkoutDraftsService {
             name: split.name,
             focus: split.focus ?? '',
             exercises: split.exercises.map((exercise) => ({
+              ...storedExerciseDemonstration(exercise),
               name: exercise.name,
               sets: exercise.sets,
               reps: exercise.reps,
@@ -174,8 +189,38 @@ export class WorkoutDraftsService {
             })),
           })),
         });
+        const normalized = normalizeDraftContent({
+          ...copied,
+          splits: copied.splits.map((split) => ({
+            ...split,
+            exercises: split.exercises.map(
+              ({ demonstrationSnapshot: _snapshot, ...exercise }) => {
+                void _snapshot;
+                return exercise;
+              },
+            ),
+          })),
+        });
+        content = {
+          ...normalized,
+          splits: normalized.splits.map((split, splitIndex) => ({
+            ...split,
+            exercises: split.exercises.map((exercise, exerciseIndex) => ({
+              ...exercise,
+              libraryReference:
+                copied.splits[splitIndex].exercises[exerciseIndex]
+                  .libraryReference,
+              demonstrationSnapshot:
+                copied.splits[splitIndex].exercises[exerciseIndex]
+                  .demonstrationSnapshot,
+            })),
+          })),
+        };
       } else {
-        content = normalizeDraftContent(dto.content!);
+        content = await this.demonstrations.resolveContent(
+          user,
+          normalizeDraftContent(dto.content!),
+        );
       }
       assertDraftContentSize(content);
       const baseActiveWorkoutId = await this.activeId(tx, user, dto.clientId);
@@ -187,7 +232,7 @@ export class WorkoutDraftsService {
             sourceWorkoutId: dto.sourceWorkoutId ?? null,
             baseActiveWorkoutId,
             schemaVersion: WORKOUT_DRAFT_SCHEMA_VERSION,
-            content,
+            content: content as unknown as Prisma.InputJsonValue,
           },
         }),
       );
@@ -207,12 +252,20 @@ export class WorkoutDraftsService {
   ): Promise<WorkoutDraftResource> {
     return this.mutate(user, id, async (tx, draft) => {
       this.assertOpenVersion(draft, dto.expectedVersion);
-      const content = normalizeDraftContent(dto.content);
+      const content = await this.demonstrations.resolveContent(
+        user,
+        normalizeDraftContent(dto.content),
+        authorizedDemonstrations(this.content(draft)),
+      );
       assertDraftContentSize(content);
       return this.resource(
         await tx.workoutDraft.update({
           where: { id: draft.id },
-          data: { content, version: { increment: 1 } },
+          data: {
+            content: content as unknown as Prisma.InputJsonValue,
+            schemaVersion: WORKOUT_DRAFT_SCHEMA_VERSION,
+            version: { increment: 1 },
+          },
         }),
       );
     });
@@ -262,11 +315,11 @@ export class WorkoutDraftsService {
         return {
           ...this.ack(draft),
           finalizedWorkoutId: workout.id,
-          workout: {
+          workout: presentWorkout({
             ...workout,
             clientId: draft.clientId,
             client: workout.client,
-          },
+          }),
         };
       }
       this.assertOpenVersion(draft, dto.expectedVersion);
@@ -286,6 +339,7 @@ export class WorkoutDraftsService {
         user,
         input,
         draft.sourceWorkoutId,
+        this.content(draft),
       );
       const closed = await tx.workoutDraft.update({
         where: { id: draft.id },
@@ -434,16 +488,35 @@ export class WorkoutDraftsService {
       version: draft.version,
     };
   }
-  private content(draft: WorkoutDraft): DraftContentV1 {
-    if (draft.schemaVersion !== WORKOUT_DRAFT_SCHEMA_VERSION)
+  private content(draft: WorkoutDraft): DraftContentV2 {
+    if (
+      draft.schemaVersion !== 1 &&
+      draft.schemaVersion !== WORKOUT_DRAFT_SCHEMA_VERSION
+    )
       throw new BadRequestException('Formato de rascunho não suportado');
-    return draft.content as unknown as DraftContentV1;
+    return upgradeDraftContent(
+      draft.content as unknown as DraftContentV1 | DraftContentV2,
+    );
   }
   private resource(draft: WorkoutDraft): WorkoutDraftResource {
+    const content = draft.status === 'OPEN' ? this.content(draft) : null;
     return {
       ...this.ack(draft),
-      schemaVersion: draft.schemaVersion,
-      content: draft.status === 'OPEN' ? this.content(draft) : null,
+      schemaVersion: WORKOUT_DRAFT_SCHEMA_VERSION,
+      content: content
+        ? {
+            ...content,
+            splits: content.splits.map((split) => ({
+              ...split,
+              exercises: split.exercises.map((exercise) => ({
+                ...exercise,
+                demonstrationSnapshot: presentDemonstration(
+                  exercise.demonstrationSnapshot,
+                ),
+              })),
+            })),
+          }
+        : null,
       sourceWorkoutId: draft.sourceWorkoutId,
       baseActiveWorkoutId: draft.baseActiveWorkoutId,
       finalizedWorkoutId: draft.finalizedWorkoutId,

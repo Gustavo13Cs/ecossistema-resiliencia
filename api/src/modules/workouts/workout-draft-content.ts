@@ -3,7 +3,12 @@ import { plainToInstance } from 'class-transformer';
 import { validateSync, ValidationError } from 'class-validator';
 import { CreateWorkoutDto } from './dto/create-workout.dto';
 import { DraftContentDto } from './dto/workout-draft.dto';
-import { DraftContentV1, WORKOUT_DRAFT_MAX_BYTES } from './workout-draft.types';
+import {
+  DraftContentV1,
+  DraftContentV2,
+  DraftContentInput,
+  WORKOUT_DRAFT_MAX_BYTES,
+} from './workout-draft.types';
 
 function assertValid(value: object): void {
   const errors = validateSync(value, {
@@ -31,7 +36,9 @@ function assertValid(value: object): void {
   }
 }
 
-export function normalizeDraftContent(input: DraftContentDto): DraftContentV1 {
+export function normalizeDraftContent(
+  input: DraftContentDto,
+): DraftContentInput {
   if (!input || typeof input !== 'object' || Array.isArray(input))
     throw new BadRequestException('Conteúdo de rascunho inválido.');
   const dto = plainToInstance(DraftContentDto, input);
@@ -46,6 +53,9 @@ export function normalizeDraftContent(input: DraftContentDto): DraftContentV1 {
       name: text(split.name),
       focus: text(split.focus),
       exercises: split.exercises.map((exercise) => ({
+        ...(exercise.libraryReference
+          ? { libraryReference: { ...exercise.libraryReference } }
+          : {}),
         name: text(exercise.name),
         sets: text(exercise.sets),
         reps: text(exercise.reps),
@@ -62,7 +72,9 @@ export function normalizeDraftContent(input: DraftContentDto): DraftContentV1 {
   };
 }
 
-export function assertDraftContentSize(content: DraftContentV1): void {
+export function assertDraftContentSize(
+  content: DraftContentV1 | DraftContentV2,
+): void {
   if (
     Buffer.byteLength(JSON.stringify(content), 'utf8') > WORKOUT_DRAFT_MAX_BYTES
   )
@@ -71,9 +83,22 @@ export function assertDraftContentSize(content: DraftContentV1): void {
 
 export function toFinalizedWorkoutInput(
   clientId: string,
-  content: DraftContentV1,
+  content: DraftContentV1 | DraftContentV2,
 ): CreateWorkoutDto {
-  const normalized = normalizeDraftContent(content);
+  assertDraftContentSize(content);
+  // Só parâmetros/referência passam pelo DTO HTTP; snapshots persistidos são transportados separadamente.
+  const normalized = normalizeDraftContent({
+    ...content,
+    splits: content.splits.map((split) => ({
+      ...split,
+      exercises: split.exercises.map((exercise) => {
+        const { demonstrationSnapshot: _snapshot, ...input } =
+          exercise as import('./workout-draft.types').DraftExerciseV2;
+        void _snapshot;
+        return input;
+      }),
+    })),
+  });
   assertDraftContentSize(normalized);
   const optionalText = (value: string) => value || undefined;
   const dto = plainToInstance(CreateWorkoutDto, {
@@ -86,6 +111,7 @@ export function toFinalizedWorkoutInput(
       name: split.name,
       focus: optionalText(split.focus),
       exercises: split.exercises.map((exercise) => ({
+        libraryReference: exercise.libraryReference,
         name: exercise.name,
         sets: exercise.sets,
         reps: exercise.reps,
@@ -102,4 +128,26 @@ export function toFinalizedWorkoutInput(
   });
   assertValid(dto);
   return dto;
+}
+
+/** Apenas conteúdo persistido autorizado; nunca usar para desserializar HTTP. */
+export function upgradeDraftContent(
+  content: DraftContentV1 | DraftContentV2,
+): DraftContentV2 {
+  return {
+    ...content,
+    splits: content.splits.map((split) => ({
+      ...split,
+      exercises: split.exercises.map((exercise) => {
+        const saved = exercise as Partial<
+          import('./workout-draft.types').DraftExerciseV2
+        >;
+        return {
+          ...exercise,
+          libraryReference: saved.libraryReference ?? null,
+          demonstrationSnapshot: saved.demonstrationSnapshot ?? null,
+        };
+      }),
+    })),
+  };
 }

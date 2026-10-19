@@ -1,8 +1,10 @@
+import { findCatalogDemonstration } from './exercise-demonstration';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { ClientAccessService } from '../../common/client-access/client-access.service';
 import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../infra/database/prisma.service';
+import { ExerciseDemonstrationService } from './exercise-demonstration.service';
 import { WorkoutsService } from './workouts.service';
 
 const dto = {
@@ -65,6 +67,7 @@ describe('WorkoutsService Client ownership', () => {
     const module = await Test.createTestingModule({
       providers: [
         WorkoutsService,
+        ExerciseDemonstrationService,
         ClientAccessService,
         { provide: PrismaService, useValue: prisma },
       ],
@@ -82,6 +85,7 @@ describe('WorkoutsService Client ownership', () => {
     prisma.workout.findFirst.mockResolvedValue({
       id: 'plan-1',
       clientId: client.id,
+      splits: [],
       creatorId: user.sub,
       isTemplate: false,
     });
@@ -90,7 +94,51 @@ describe('WorkoutsService Client ownership', () => {
     tx.workout.create.mockResolvedValue({
       id: 'new-plan',
       clientId: client.id,
+      splits: [],
     });
+  });
+
+  it('template_reads_compute_approval_without_changing_saved_snapshot', async () => {
+    const snapshot = findCatalogDemonstration('cat-chest-01')!;
+    const saved = {
+      id: 'template',
+      splits: [
+        {
+          exercises: [
+            {
+              librarySource: 'CATALOG',
+              libraryExerciseId: 'cat-chest-01',
+              demonstrationSnapshot: snapshot,
+            },
+          ],
+        },
+      ],
+    };
+    prisma.workout.findMany.mockResolvedValue([saved]);
+    const result = await service.listTemplates(user);
+    expect(result).toMatchObject([
+      {
+        splits: [
+          {
+            exercises: [
+              {
+                libraryReference: {
+                  source: 'CATALOG',
+                  exerciseId: 'cat-chest-01',
+                  demonstrationRevision: snapshot.revision,
+                },
+                demonstrationSnapshot: {
+                  assets: [expect.objectContaining({ displayAllowed: true })],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+    expect(
+      saved.splits[0].exercises[0].demonstrationSnapshot.assets![0],
+    ).not.toHaveProperty('displayAllowed');
   });
 
   it('new_prescription_has_server_finalized_at', async () => {
