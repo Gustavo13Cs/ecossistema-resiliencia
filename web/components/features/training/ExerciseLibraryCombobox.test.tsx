@@ -1,4 +1,5 @@
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react"
+import { useState } from "react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import AxiosMockAdapter from "axios-mock-adapter"
@@ -6,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { api } from "@/lib/api"
 import { queryKeys } from "@/lib/query-keys"
 import type { ExerciseLibraryItem } from "@/types/workout"
+import type { LibraryReference } from "@/types/exercise-demonstration"
 import { ExerciseLibraryCombobox } from "./ExerciseLibraryCombobox"
 
 const auth = vi.hoisted(() => ({
@@ -215,5 +217,48 @@ describe("ExerciseLibraryCombobox", () => {
     await user.click(screen.getByRole("button", { name: /biblioteca/i }))
     await act(async () => completeCreate([201, { id: "custom-new", name: "Remada pausada", muscleGroup: "BACK", source: "CUSTOM" }]))
     expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  it("keeps a later custom creation intent ahead of an earlier detail and never restores a detached edit after close", async () => {
+    const user = userEvent.setup()
+    const onSelect = vi.fn()
+    let completeDetail!: (response: [number, unknown]) => void
+    let completeCreate!: (response: [number, unknown]) => void
+    http.resetHandlers()
+    http.onGet("/workouts/exercise-library").reply(200, sampleItems)
+    http.onGet("/workouts/exercise-library/cat-1").reply(() => new Promise(resolve => { completeDetail = resolve }))
+    http.onGet("/workouts/exercise-library/custom-new").reply(200, { id: "custom-new", name: "Remada própria", muscleGroup: "BACK", source: "CUSTOM", demonstration: null, mediaVersion: 1 })
+    http.onPost("/workouts/exercise-library").reply(() => new Promise(resolve => { completeCreate = resolve }))
+    function Harness() {
+      const [name, setName] = useState("Nome inicial")
+      const [reference, setReference] = useState<LibraryReference | null>(null)
+      return <>
+        <input aria-label="Nome manual" value={name} onChange={event => { setName(event.target.value); setReference(null) }} />
+        <button type="button" onClick={() => setReference(null)}>Retirar vínculo manualmente</button>
+        <span data-testid="reference">{reference?.exerciseId ?? "sem vínculo"}</span>
+        <ExerciseLibraryCombobox exerciseId="ex-race" currentName={name} currentMuscleGroup="" onSelect={selection => { onSelect(selection); setName(selection.name); setReference(selection.libraryReference) }} />
+      </>
+    }
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(<QueryClientProvider client={queryClient}><Harness /></QueryClientProvider>)
+    await user.click(screen.getByRole("button", { name: /biblioteca/i }))
+    await user.click(await screen.findByText("Agachamento livre com barra"))
+    await waitFor(() => expect(completeDetail).toBeTypeOf("function"))
+    await user.click(screen.getByRole("button", { name: "Salvar como exercício próprio" }))
+    await user.clear(screen.getByLabelText("Nome do exercício próprio"))
+    await user.type(screen.getByLabelText("Nome do exercício próprio"), "Remada própria")
+    await user.click(screen.getByRole("button", { name: "Confirmar exercício próprio" }))
+    await waitFor(() => expect(completeCreate).toBeTypeOf("function"))
+    await act(async () => completeDetail([200, { ...sampleItems[1], demonstration: { revision: "r1", instruction: "" }, mediaVersion: null }]))
+    expect(onSelect).not.toHaveBeenCalled()
+    expect(screen.getByLabelText("Nome do exercício próprio")).toBeVisible()
+    await user.click(screen.getByRole("button", { name: /biblioteca/i }))
+    await user.clear(screen.getByLabelText("Nome manual"))
+    await user.type(screen.getByLabelText("Nome manual"), "Nome editado")
+    await user.click(screen.getByRole("button", { name: "Retirar vínculo manualmente" }))
+    await act(async () => completeCreate([201, { id: "custom-new", name: "Remada própria", muscleGroup: "BACK", source: "CUSTOM" }]))
+    expect(onSelect).not.toHaveBeenCalled()
+    expect(screen.getByLabelText("Nome manual")).toHaveValue("Nome editado")
+    expect(screen.getByTestId("reference")).toHaveTextContent("sem vínculo")
   })
 })

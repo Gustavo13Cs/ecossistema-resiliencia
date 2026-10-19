@@ -91,52 +91,60 @@ function ExerciseLibraryComboboxInner({
   const customItems = items.filter(item => item.source === "CUSTOM")
   const catalogItems = items.filter(item => item.source === "CATALOG")
 
+  const beginIntent = () => {
+    const attempt = ++selectionEpoch.current
+    selectionRequest.current?.abort()
+    selectionRequest.current = null
+    setPendingSelection(null)
+    return attempt
+  }
+
+  const closeLibrary = () => {
+    openRef.current = false
+    beginIntent()
+    setOpen(false)
+  }
+
   const handleOpenChange = (nextOpen: boolean) => {
-    openRef.current = nextOpen
-    setOpen(nextOpen)
-    if (!nextOpen) {
-      selectionEpoch.current += 1
-      selectionRequest.current?.abort()
-      setPendingSelection(null)
-    }
-    if (nextOpen) {
-      setSelectionError(null)
-      setCustomError(null)
-      setCreatingCustom(false)
-      setCustomName(currentName.trim())
-      setCustomGroup(currentMuscleGroup || groupFilter || "CHEST")
-    }
+    if (!nextOpen) { closeLibrary(); return }
+    openRef.current = true
+    setOpen(true)
+    setSelectionError(null)
+    setCustomError(null)
+    setCreatingCustom(false)
+    setCustomName(currentName.trim())
+    setCustomGroup(currentMuscleGroup || groupFilter || "CHEST")
   }
 
   const selectItem = async (id: string) => {
     const owner = user?.sub
     if (!owner) return
-    selectionRequest.current?.abort()
+    const attempt = beginIntent()
     const controller = new AbortController()
     selectionRequest.current = controller
     setSelectionError(null)
     setPendingSelection({ id, owner })
     try {
       const detail = await loadDetail(id, controller.signal)
-      if (controller.signal.aborted || owner !== currentOwner.current || selectionRequest.current !== controller) return
+      if (controller.signal.aborted || owner !== currentOwner.current || selectionRequest.current !== controller || attempt !== selectionEpoch.current || !openRef.current) return
       if (detail.id !== id) throw new Error("Detalhe incompatível")
+      closeLibrary()
       onSelect({
         name: detail.name,
         muscleGroup: detail.muscleGroup,
         libraryReference: { source: detail.source, exerciseId: detail.id, demonstrationRevision: detail.demonstration?.revision ?? null },
       })
-      setPendingSelection(null)
-      setOpen(false)
     } catch {
-      if (!controller.signal.aborted && owner === currentOwner.current && selectionRequest.current === controller) {
+      if (!controller.signal.aborted && owner === currentOwner.current && selectionRequest.current === controller && attempt === selectionEpoch.current && openRef.current) {
         setSelectionError("Não foi possível conferir o exercício. Tente selecioná-lo novamente.")
       }
     }
   }
 
-  const handlePick = (item: ExerciseLibraryItem) => { selectionEpoch.current += 1; void selectItem(item.id) }
+  const handlePick = (item: ExerciseLibraryItem) => { void selectItem(item.id) }
 
   const handleStartCustom = () => {
+    beginIntent()
     setCustomError(null)
     setCustomName(searchInput.trim() || currentName.trim())
     setCustomGroup(groupFilter || currentMuscleGroup || "CHEST")
@@ -151,7 +159,7 @@ function ExerciseLibraryComboboxInner({
     }
     setCustomError(null)
     const owner = user?.sub
-    const attempt = ++selectionEpoch.current
+    const attempt = beginIntent()
     try {
       const created = await createCustomMutation.mutateAsync({
         name: trimmed,
