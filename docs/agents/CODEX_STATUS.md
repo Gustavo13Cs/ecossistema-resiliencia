@@ -8,6 +8,8 @@
 
 ## Current Task
 
+- **2026-10-19 — Biblioteca visual Task4 concluída/revisada; Task5 iniciada (Codex)**: integração em `cdddb89`, correção da corrida seleção/criação em `3e581b2`; achado importante ADDRESSED e rerevisão PASS/APPROVED sem novos achados. Web118 focados/API8 antes do fix; fix com RED controlado→seletor7/7 e regressões39/39, tipos/lint aprovados. Referências explícitas, snapshot fora do payload, owner/cache/aborto e baseline preservados; código aditivo de conflito registrado no runbook. Task5 cria página/detalhe/renderizador e CSP, antes do aceite real final. Sem produção, push ou deploy.
+
 - **2026-10-19 — Biblioteca visual Task3 concluída/revisada; Task4 iniciada (Codex)**: referências e snapshots autorizados, rascunhoV2/legado, histórico sem mídia e projeção de revogação em `2c38e4d`; revisão PASS/APPROVED sem achados. Evidência117 unitários/33PG e, após correção pontual da cópia,11/11PG/tipos/lint. Limite64KiB permanece no rascunho; criação direta legada preservada, decisão no runbook. Task4 integra referências explícitas, payload sem snapshot e cache por conta/equipamento no editor. Sem produção, push ou deploy.
 
 - **2026-10-19 — Biblioteca visual Task2 concluída/revisada; Task3 iniciada (Codex)**: detalhe/filtro e links privados com normalização estrita e CAS em `e34e8b7`; schema/migration aditivos aplicados somente ao PostgreSQL sintético (22 migrations). API719/57, PostgreSQL232/36, tipos/lint aprovados; revisão PASS/APPROVED sem achados. Drift anterior de nome de FK Recipe comprovado por comparação de base e preservado. Task3 integra resolução de snapshots no servidor e rascunhoV2, mantendo legado e histórico autorizado. Sem produção, push ou deploy.

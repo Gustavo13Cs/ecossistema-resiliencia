@@ -84,11 +84,11 @@ Na web, criar `ExerciseDemonstration.tsx` (renderizador), `ExerciseLibraryDetail
 
 **Interfaces:** `ExerciseLibraryCombobox.onSelect` returns `{ name, muscleGroup, libraryReference }`; WorkoutFormExercise carries libraryReference and read-only demonstrationSnapshot from authorized loads. `useExerciseLibrary({ q?, muscleGroup?, equipment?, exerciseId?, enabled? })` adds detailQuery/updateVideoMutation while preserving existing list/create/delete mutations. `renameWorkoutExercise(exercise, name): WorkoutFormExercise` clears reference/snapshot only when normalized name changes.
 
-- [ ] **Step 1 — Testes RED:** `manual_rename_clears_demonstration_with_notice`, `changing_sets_keeps_reference`, `duplicate_and_reorder_preserve_snapshot`, `save_sends_reference_not_snapshot`, `equipment_filter_scopes_query_key`, `session_change_aborts_detail`. Assertar null na referência após renomear; nenhum snapshot bruto no payload; keys diferentes por equipamento/sub.
-- [ ] **Step 2 — Confirmar RED:** `npm test -- lib/exercise-reference.test.ts lib/workout-form.test.ts lib/workout-draft-form.test.ts hooks/features/useExerciseLibrary.test.tsx components/features/training/ExerciseLibraryCombobox.test.tsx` em `web/`.
-- [ ] **Step 3 — Implementar:** propagar referência por seleção/cópia/conversão de conteúdo V2; revisão retornada pelo servidor vence dados de demonstração somente na resposta correspondente. Renomear dá aviso e remove vínculo; parâmetros editados não removem. Acrescentar filtro e detalhe às chaves por conta e AbortSignal; conflito de link/seleção exige atualizar ou remover explicitamente a referência.
-- [ ] **Step 4 — Verificar GREEN:** testes anteriores e `npm run typecheck`; preservar regressões de rascunhos e criação manual.
-- [ ] **Step 5 — Commit:** `git commit -m "feat: retain explicit exercise references in workout editor"`.
+- [x] **Step 1 — Testes RED:** `manual_rename_clears_demonstration_with_notice`, `changing_sets_keeps_reference`, `duplicate_and_reorder_preserve_snapshot`, `save_sends_reference_not_snapshot`, `equipment_filter_scopes_query_key`, `session_change_aborts_detail`. Assertar null na referência após renomear; nenhum snapshot bruto no payload; keys diferentes por equipamento/sub.
+- [x] **Step 2 — Confirmar RED:** `npm test -- lib/exercise-reference.test.ts lib/workout-form.test.ts lib/workout-draft-form.test.ts hooks/features/useExerciseLibrary.test.tsx components/features/training/ExerciseLibraryCombobox.test.tsx` em `web/`.
+- [x] **Step 3 — Implementar:** propagar referência por seleção/cópia/conversão de conteúdo V2; revisão retornada pelo servidor vence dados de demonstração somente na resposta correspondente. Renomear dá aviso e remove vínculo; parâmetros editados não removem. Acrescentar filtro e detalhe às chaves por conta e AbortSignal; conflito de link/seleção exige atualizar ou remover explicitamente a referência.
+- [x] **Step 4 — Verificar GREEN:** testes anteriores e `npm run typecheck`; preservar regressões de rascunhos e criação manual.
+- [x] **Step 5 — Commit:** `git commit -m "feat: retain explicit exercise references in workout editor"`.
 
 ## Task 5: Biblioteca visual, detalhe compartilhado e CSP
 
