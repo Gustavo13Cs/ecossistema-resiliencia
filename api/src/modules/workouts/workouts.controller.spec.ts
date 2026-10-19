@@ -33,6 +33,8 @@ describe('WorkoutsController Client contract', () => {
     list: jest.fn(),
     create: jest.fn(),
     remove: jest.fn(),
+    get: jest.fn(),
+    updateVideo: jest.fn(),
   };
   const body = {
     clientId,
@@ -297,6 +299,80 @@ describe('WorkoutsController Client contract', () => {
         WorkoutsController.prototype['removeCustomExercise'],
       ),
     ).toEqual({ shape: 'ack' });
+  });
+
+  it('serves catalog IDs without UUID parsing and patches only custom UUIDs', async () => {
+    await request(app.getHttpServer())
+      .get('/workouts/exercise-library/cat-chest-01')
+      .expect(200);
+    expect(exerciseLibraryService.get).toHaveBeenCalledWith(
+      user,
+      'cat-chest-01',
+    );
+    expect(readService.getWorkout).not.toHaveBeenCalled();
+    await request(app.getHttpServer())
+      .patch(`/workouts/exercise-library/${clientId}`)
+      .send({ expectedMediaVersion: 1, videoUrl: null })
+      .expect(200);
+    expect(exerciseLibraryService.updateVideo).toHaveBeenCalledWith(
+      user,
+      clientId,
+      { expectedMediaVersion: 1, videoUrl: null },
+    );
+    for (const method of [
+      'getExerciseLibraryDetail',
+      'updateExerciseVideo',
+    ] as const) {
+      expect(
+        Reflect.getMetadata(
+          CLINICAL_RESPONSE,
+          WorkoutsController.prototype[method],
+        ),
+      ).toEqual({ exception: 'catalog' });
+    }
+    await request(app.getHttpServer())
+      .patch('/workouts/exercise-library/cat-chest-01')
+      .send({ expectedMediaVersion: 1, videoUrl: null })
+      .expect(400);
+  });
+  it.each([
+    {},
+    { expectedMediaVersion: 1 },
+    { expectedMediaVersion: 0, videoUrl: null },
+    { expectedMediaVersion: 1.5, videoUrl: null },
+    { expectedMediaVersion: '1', videoUrl: null },
+    { expectedMediaVersion: 1, videoUrl: 22 },
+    { expectedMediaVersion: 1, videoUrl: null, mediaVersion: 2 },
+    { expectedMediaVersion: 1, videoUrl: 'x'.repeat(2049) },
+  ])('rejects invalid video mutation %j', async (body) => {
+    await request(app.getHttpServer())
+      .patch(`/workouts/exercise-library/${clientId}`)
+      .send(body)
+      .expect(400);
+    expect(exerciseLibraryService.updateVideo).not.toHaveBeenCalled();
+  });
+  it('rejects mediaVersion assignment at custom creation and accepts optional video URL', async () => {
+    await request(app.getHttpServer())
+      .post('/workouts/exercise-library')
+      .send({ name: 'Teste', muscleGroup: 'CHEST', mediaVersion: 9 })
+      .expect(400);
+    await request(app.getHttpServer())
+      .post('/workouts/exercise-library')
+      .send({
+        name: 'Teste',
+        muscleGroup: 'CHEST',
+        videoUrl: 'https://vimeo.com/123',
+      })
+      .expect(201);
+    await request(app.getHttpServer())
+      .get('/workouts/exercise-library?equipment=BARBELL')
+      .expect(200);
+    expect(exerciseLibraryService.list).toHaveBeenCalledWith(user, {
+      equipment: 'BARBELL',
+    });
+    await request(app.getHttpServer())
+      .get('/workouts/exercise-library?equipment=invalid')
+      .expect(400);
   });
 
   it('reads the active plan through the Client route', async () => {

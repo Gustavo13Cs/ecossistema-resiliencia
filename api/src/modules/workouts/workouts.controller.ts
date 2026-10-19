@@ -17,6 +17,7 @@ import { TrainingReadService } from './training-read.service';
 import { ExerciseLibraryService } from './exercise-library.service';
 import { CreateWorkoutDto } from './dto/create-workout.dto';
 import { CreateCustomExerciseDto } from './dto/create-custom-exercise.dto';
+import { UpdateExerciseVideoDto } from './dto/update-exercise-video.dto';
 import { ExerciseLibraryQueryDto } from './dto/exercise-library-query.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -65,6 +66,25 @@ export class WorkoutsController {
     @Body() dto: CreateCustomExerciseDto,
   ) {
     return this.exerciseLibraryService.create(request.user, dto);
+  }
+
+  @ClinicalResponse({ exception: 'catalog' })
+  @Get('exercise-library/:exerciseId')
+  getExerciseLibraryDetail(
+    @Request() request: AuthenticatedRequest,
+    @Param('exerciseId') exerciseId: string,
+  ) {
+    return this.exerciseLibraryService.get(request.user, exerciseId);
+  }
+
+  @ClinicalResponse({ exception: 'catalog' })
+  @Patch('exercise-library/:id')
+  updateExerciseVideo(
+    @Request() request: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateExerciseVideoDto,
+  ) {
+    return this.exerciseLibraryService.updateVideo(request.user, id, dto);
   }
 
   @ClinicalResponse({ shape: 'ack' })

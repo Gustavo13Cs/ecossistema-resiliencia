@@ -705,6 +705,11 @@ enum ExerciseEquipment {
   OTHER
 }
 
+enum ExerciseLibrarySource {
+  CATALOG
+  CUSTOM
+}
+
 // Tabela 11: Os Exercícios dentro da Ficha
 model WorkoutExercise {
   id       String  @id @default(uuid())
@@ -722,6 +727,10 @@ model WorkoutExercise {
   tempo        String? // Cadência, Ex: "3-0-1-0"
   method       TrainingMethod @default(STANDARD)
 
+  librarySource         ExerciseLibrarySource?
+  libraryExerciseId     String?
+  demonstrationSnapshot Json?
+
   splitId String
   split   WorkoutSplit @relation("SplitToExercises", fields: [splitId], references: [id], onDelete: Cascade)
 
@@ -737,6 +746,8 @@ model CustomExercise {
   professionalId String
   professional   User               @relation("ProfessionalCustomExercises", fields: [professionalId], references: [id], onDelete: Restrict)
   name           String
+  videoUrl       String?
+  mediaVersion   Int                @default(1)
   normalizedName String // Nome em minúsculas, sem acentos, para unicidade por profissional
   muscleGroup    MuscleGroup
   equipment      ExerciseEquipment?

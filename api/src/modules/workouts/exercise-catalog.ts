@@ -1,4 +1,5 @@
 import { ExerciseEquipment, MuscleGroup } from '@prisma/client';
+import type { DemonstrationPresentation } from './exercise-demonstration.types';
 
 export interface CatalogExerciseSeed {
   id: string;
@@ -15,6 +16,13 @@ export interface ExerciseLibraryItem {
   equipment: ExerciseEquipment | null;
   notes: string | null;
   source: 'CATALOG' | 'CUSTOM';
+  hasDemonstration: boolean;
+  demonstrationTypes: ('IMAGE' | 'VIDEO')[];
+}
+
+export interface ExerciseLibraryDetail extends ExerciseLibraryItem {
+  demonstration: DemonstrationPresentation | null;
+  mediaVersion: number | null;
 }
 
 export function normalizeExerciseName(value: string): string {
