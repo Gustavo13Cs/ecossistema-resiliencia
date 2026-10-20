@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useExerciseLibrary } from "@/hooks/features/useExerciseLibrary"
+import { ExerciseLibraryDetail } from "./ExerciseLibraryDetail"
 import { useAuth } from "@/contexts/auth-context"
 import type { LibraryReference } from "@/types/exercise-demonstration"
 import {
@@ -46,6 +47,7 @@ function ExerciseLibraryComboboxInner({
   disabled,
   onSelect,
 }: ExerciseLibraryComboboxProps) {
+  const [previewId, setPreviewId] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const [searchInput, setSearchInput] = useState("")
   const [debouncedQuery, setDebouncedQuery] = useState("")
@@ -103,6 +105,7 @@ function ExerciseLibraryComboboxInner({
     openRef.current = false
     beginIntent()
     setOpen(false)
+    setPreviewId(null)
   }
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -190,6 +193,8 @@ function ExerciseLibraryComboboxInner({
         </Button>
       </PopoverTrigger>
       <PopoverContent
+        onInteractOutside={event => { if (previewId) event.preventDefault() }}
+        onEscapeKeyDown={event => { if (previewId) event.preventDefault() }}
         align="start"
         className="w-[min(92vw,420px)] space-y-3 border-[var(--sm-border)] bg-[var(--sm-surface)] p-3 text-[var(--sm-ink)]"
       >
@@ -203,7 +208,7 @@ function ExerciseLibraryComboboxInner({
             onChange={event =>
               setGroupFilter(event.target.value as MuscleGroup | "")
             }
-            className="min-h-9 rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-2 text-xs font-medium text-[var(--sm-ink)]"
+            className="min-h-11 rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-2 text-xs font-medium text-[var(--sm-ink)]"
           >
             <option value="">Todos os grupos</option>
             {MUSCLE_GROUP_OPTIONS.map(option => (
@@ -216,7 +221,7 @@ function ExerciseLibraryComboboxInner({
             aria-label="Filtrar biblioteca por equipamento"
             value={equipmentFilter}
             onChange={event => setEquipmentFilter(event.target.value as ExerciseEquipment | "")}
-            className="min-h-9 rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-2 text-xs font-medium text-[var(--sm-ink)]"
+            className="min-h-11 rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-2 text-xs font-medium text-[var(--sm-ink)]"
           >
             <option value="">Todos os equipamentos</option>
             {Object.entries(EXERCISE_EQUIPMENT_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -259,10 +264,11 @@ function ExerciseLibraryComboboxInner({
                             {MUSCLE_GROUP_LABELS[item.muscleGroup]} · Próprio
                           </p>
                         </div>
+                        <button type="button" aria-label={`Ver execução de ${item.name}`} className="min-h-11 min-w-11 shrink-0 rounded px-2 text-xs font-semibold text-[var(--sm-brand)] hover:bg-[var(--sm-subtle-hover)]" onKeyDown={event => event.stopPropagation()} onClick={event => { event.stopPropagation(); beginIntent(); setPreviewId(item.id) }}>Ver execução</button>
                         <button
                           type="button"
                           aria-label={`Excluir exercício próprio ${item.name}`}
-                          className="rounded p-1 text-[var(--sm-muted)] hover:bg-[var(--sm-subtle-hover)] hover:text-[var(--sm-danger)]"
+                          className="min-h-11 min-w-11 rounded p-1 text-[var(--sm-muted)] hover:bg-[var(--sm-subtle-hover)] hover:text-[var(--sm-danger)]"
                           onClick={event => {
                             event.stopPropagation()
                             void deleteCustomMutation.mutateAsync(item.id)
@@ -293,6 +299,7 @@ function ExerciseLibraryComboboxInner({
                               : ""}
                           </p>
                         </div>
+                        <button type="button" aria-label={`Ver execução de ${item.name}`} className="min-h-11 min-w-11 shrink-0 rounded px-2 text-xs font-semibold text-[var(--sm-brand)] hover:bg-[var(--sm-subtle-hover)]" onKeyDown={event => event.stopPropagation()} onClick={event => { event.stopPropagation(); beginIntent(); setPreviewId(item.id) }}>Ver execução</button>
                       </CommandItem>
                     ))}
                   </CommandGroup>
@@ -306,7 +313,7 @@ function ExerciseLibraryComboboxInner({
           <Button
             type="button"
             variant="outline"
-            className="min-h-10 w-full gap-1.5 text-xs font-semibold"
+            className="min-h-11 w-full gap-1.5 text-xs font-semibold"
             onClick={handleStartCustom}
           >
             <Plus className="size-3.5" aria-hidden="true" />
@@ -326,7 +333,7 @@ function ExerciseLibraryComboboxInner({
                 value={customName}
                 onChange={event => setCustomName(event.target.value)}
                 placeholder="Ex.: Agachamento pausa 2s"
-                className="min-h-10 text-sm"
+                className="min-h-11 text-sm"
               />
             </div>
             <div className="space-y-1">
@@ -342,7 +349,7 @@ function ExerciseLibraryComboboxInner({
                 onChange={event =>
                   setCustomGroup(event.target.value as MuscleGroup)
                 }
-                className="min-h-10 w-full rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-3 text-sm text-[var(--sm-ink)]"
+                className="min-h-11 w-full rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-3 text-sm text-[var(--sm-ink)]"
               >
                 {MUSCLE_GROUP_OPTIONS.map(option => (
                   <option key={option.value} value={option.value}>
@@ -360,7 +367,7 @@ function ExerciseLibraryComboboxInner({
               <Button
                 type="button"
                 variant="outline"
-                className="min-h-9 px-3 text-xs"
+                className="min-h-11 px-3 text-xs"
                 onClick={() => setCreatingCustom(false)}
               >
                 Cancelar
@@ -368,7 +375,7 @@ function ExerciseLibraryComboboxInner({
               <Button
                 type="button"
                 disabled={createCustomMutation.isPending}
-                className="min-h-9 px-3 text-xs"
+                className="min-h-11 px-3 text-xs"
                 onClick={() => void handleCreateCustom()}
               >
                 {createCustomMutation.isPending
@@ -378,6 +385,7 @@ function ExerciseLibraryComboboxInner({
             </div>
           </div>
         )}
+        <ExerciseLibraryDetail exerciseId={previewId ?? undefined} open={Boolean(previewId)} onOpenChange={next => { if (!next) setPreviewId(null) }} onSelect={id => { setPreviewId(null); void selectItem(id) }} />
       </PopoverContent>
     </Popover>
   )

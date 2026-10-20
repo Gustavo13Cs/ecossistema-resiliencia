@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
 import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server"
 import { config, proxy } from "./proxy"
+import { buildExerciseMediaDirectives, EXERCISE_MEDIA_RULES } from "./lib/exercise-media-policy"
 
 afterEach(() => vi.unstubAllEnvs())
 function request() {
@@ -44,4 +45,19 @@ describe("per-request CSP", () => {
   it.each(["/", "/exames", "/clientes/123", "/auth/login"])("protects HTML page %s", url => {
     expect(unstable_doesMiddlewareMatch({ config, url })).toBe(true)
   })
+})
+
+it("csp_has_only_verified_media_hosts", () => {
+  const response = proxy(new NextRequest("https://safemove.test/exercicios"))
+  expect(response.headers.get("Referrer-Policy")).toBe("no-referrer")
+  const csp = response.headers.get("Content-Security-Policy")!
+  const directives = buildExerciseMediaDirectives(EXERCISE_MEDIA_RULES)
+  expect(directives.imgSrc).toEqual(["https://cdn.jsdelivr.net/gh/bryllim/workout-guide@aac599224bb9780305239607ef98540b7e0ce389/packages/workout-guide/assets/"])
+  expect(csp).toContain(`img-src 'self' data: blob: ${directives.imgSrc.join(" ")}`)
+  expect(csp).toContain(`media-src 'self' ${directives.mediaSrc.join(" ")}`)
+  expect(csp).toMatch(/script-src 'self' 'nonce-[^']+' 'strict-dynamic'/)
+  expect(csp).toContain("frame-ancestors 'none'")
+  expect(csp).not.toMatch(/frame-src|https:\*|https:;|\*|youtube|vimeo/)
+  expect(csp.match(/script-src[^;]+/)![0]).not.toContain("cdn.jsdelivr.net")
+  expect(proxy(new NextRequest("https://safemove.test/exercicios")).headers.get("Content-Security-Policy")).not.toBe(csp)
 })

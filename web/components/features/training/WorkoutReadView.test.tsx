@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import AxiosMockAdapter from "axios-mock-adapter"
@@ -79,7 +79,7 @@ function renderWithQuery(ui: React.ReactNode) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: Infinity } },
   })
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>)
+  return render(ui, { wrapper: ({ children }) => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider> })
 }
 
 beforeEach(() => {
@@ -259,3 +259,41 @@ it("shows_server_finalization_date_and_links_selected_origin_without_clinical_ve
 })
 
 afterEach(() => vi.unstubAllGlobals())
+
+
+it("saved_demonstration_never_fetches_current_library_and_media_failure_keeps_prescription", async () => {
+  const detail = makeWorkoutDetail()
+  detail.splits[0].exercises[0].demonstrationSnapshot = {
+    revision: "historical-r1",
+    instruction: "Orientação salva antes da alteração do catálogo.",
+    assets: [{
+      id: "saved-asset", type: "IMAGE", displayAllowed: true,
+      url: "https://cdn.jsdelivr.net/gh/bryllim/workout-guide@aac599224bb9780305239607ef98540b7e0ce389/packages/workout-guide/assets/exercise-squat.svg",
+      alt: "Agachamento salvo", author: "Autoria histórica", licenseName: "CC BY-SA 4.0",
+      licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", sourcePageUrl: "https://github.com/bryllim/workout-guide",
+    }],
+  }
+  const view = renderWithQuery(<WorkoutReadView workout={detail} />)
+  const trigger = screen.getByRole("button", { name: "Ver execução de Agachamento Livre" })
+  expect(trigger).toHaveClass("print:hidden")
+  await userEvent.click(trigger)
+  const dialog = screen.getByRole("dialog")
+  expect(dialog).toHaveClass("print:hidden")
+  expect(within(dialog).getByText("Orientação salva antes da alteração do catálogo.")).toBeVisible()
+  expect(within(dialog).getByText("Autoria: Autoria histórica")).toBeVisible()
+  const revoked = structuredClone(detail)
+  revoked.splits[0].exercises[0].demonstrationSnapshot!.assets![0].displayAllowed = false
+  view.rerender(<WorkoutReadView workout={revoked} />)
+  expect(within(dialog).queryByRole("img")).toBeNull()
+  view.rerender(<WorkoutReadView workout={detail} />)
+  fireEvent.error(within(dialog).getByRole("img"))
+  expect(within(dialog).getByText("Demonstração indisponível")).toBeVisible()
+  expect(within(dialog).getByText("Orientação salva antes da alteração do catálogo.")).toBeVisible()
+  await userEvent.click(within(dialog).getByRole("button", { name: "Fechar" }))
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
+  expect(trigger).toHaveFocus()
+  expect(screen.getByRole("region", { name: "Treino A" })).toHaveTextContent("Controlar descida")
+  expect(screen.getByRole("button", { name: "Imprimir ficha salva" })).toBeEnabled()
+  expect(screen.getByRole("button", { name: "Revisar esta ficha" })).toBeEnabled()
+  expect(http.history.get.filter(request => request.url?.includes("exercise-library"))).toHaveLength(0)
+})

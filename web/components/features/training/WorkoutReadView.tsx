@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { WorkoutRevisionAction } from "./WorkoutRevisionAction"
+import { ExerciseLibraryDetail } from "./ExerciseLibraryDetail"
 import { Button } from "@/components/ui/button"
 import {
   MUSCLE_GROUP_LABELS,
@@ -22,6 +23,13 @@ function formatDate(value: string) {
 }
 
 export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
+  const [executionTarget, setExecutionTarget] = useState<{ workoutId: string; exerciseId: string } | null>(null)
+  const executionExercise = executionTarget?.workoutId === workout.id
+    ? workout.splits.flatMap(split => split.exercises).find(exercise => exercise.id === executionTarget.exerciseId)
+    : undefined
+  const execution = executionExercise?.demonstrationSnapshot
+    ? { name: executionExercise.name, snapshot: executionExercise.demonstrationSnapshot }
+    : undefined
   const [denied, setDenied] = useState(false)
   const archived = workout.client.status === "ARCHIVED"
   const statusLabel = workout.isActive ? "Treino ativo" : "Treino anterior"
@@ -162,6 +170,7 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
                         ) : null}
                       </dl>
 
+                      {exercise.demonstrationSnapshot ? <Button type="button" variant="outline" className="min-h-11 print:hidden" aria-label={`Ver execução de ${exercise.name}`} onClick={() => setExecutionTarget({ workoutId: workout.id, exerciseId: exercise.id })}>Ver execução</Button> : null}
                       {exercise.notes ? (
                         <p className="whitespace-pre-wrap break-words text-sm text-[var(--sm-muted)]">
                           <span className="font-semibold text-[var(--sm-ink)]">Observações: </span>
@@ -186,6 +195,7 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
           {workout.notes || "Nenhuma orientação registrada"}
         </p>
       </section>
+      <ExerciseLibraryDetail open={Boolean(execution)} onOpenChange={open => { if (!open) setExecutionTarget(null) }} saved={execution ?? undefined} />
     </article>
   )
 }
