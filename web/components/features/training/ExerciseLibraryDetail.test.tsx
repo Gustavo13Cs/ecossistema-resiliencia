@@ -6,6 +6,7 @@ import AxiosMockAdapter from "axios-mock-adapter"
 import { afterEach, expect, it, vi } from "vitest"
 import { api } from "@/lib/api"
 import { ExerciseLibraryDetail } from "./ExerciseLibraryDetail"
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 vi.mock("@/contexts/auth-context", () => ({ useAuth: () => ({ user: { sub: "p1", role: "PERSONAL" } }) }))
 const http = new AxiosMockAdapter(api)
 afterEach(() => { cleanup(); http.reset() })
@@ -19,4 +20,25 @@ it("dialog_restores_focus_and_has_credits", async () => {
   await userEvent.keyboard("{Escape}")
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
   expect(screen.getByRole("button", { name: "Ver execução" })).toHaveFocus()
+})
+
+
+it("excludes_both_saved_detail_content_and_its_overlay_from_print", () => {
+  render(<ExerciseLibraryDetail open onOpenChange={() => {}} saved={{ name: "Prancha salva", snapshot: { revision: "r1", instruction: "Apoio estável" } }} />)
+  const content = screen.getByRole("dialog")
+  const overlay = content.previousElementSibling
+  expect(overlay).toHaveAttribute("data-slot", "dialog-overlay")
+  expect(overlay).toHaveClass("fixed", "bg-black/50", "print:hidden")
+  expect(content).toHaveClass("print:hidden")
+  expect(screen.getByText("Prancha salva")).toBeVisible()
+})
+
+it("keeps_other_dialog_overlays_unchanged_without_explicit_opt_in", () => {
+  render(<Dialog open><DialogContent><DialogTitle>Outro diálogo</DialogTitle><DialogDescription>Conteúdo existente</DialogDescription></DialogContent></Dialog>)
+  const content = screen.getByRole("dialog")
+  const overlay = content.previousElementSibling
+  expect(overlay).toHaveAttribute("data-slot", "dialog-overlay")
+  expect(overlay).toHaveClass("fixed", "bg-black/50")
+  expect(overlay).not.toHaveClass("print:hidden")
+  expect(content).not.toHaveClass("print:hidden")
 })
