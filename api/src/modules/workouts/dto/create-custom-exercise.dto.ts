@@ -22,6 +22,11 @@ export class CreateCustomExerciseDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2048)
+  videoUrl?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(500)
   notes?: string;
 }

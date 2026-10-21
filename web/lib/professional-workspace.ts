@@ -64,7 +64,8 @@ const WORKSPACES = {
     "Aluno",
     "Alunos",
     [
-      { id: "workouts", label: "Treinos", href: "/treinos" },
+      { id: "workouts", label: "Treinos", href: "/treinos", section: "TREINAMENTO" },
+      { id: "exercises", label: "Exercícios", href: "/exercicios", section: "TREINAMENTO" },
     ],
   ),
   PHYSIO: createWorkspace(
@@ -89,6 +90,7 @@ const ROLE_ONLY_PREFIXES: ReadonlyArray<[string, readonly ProfessionalRole[]]> =
   ["/exames", ["NUTRITIONIST"]],
   ["/relatorios", ["NUTRITIONIST"]],
   ["/treinos", ["PERSONAL"]],
+  ["/exercicios", ["PERSONAL"]],
   ["/reabilitacao", ["PHYSIO"]],
   ["/clientes/:id/nova-dieta", ["NUTRITIONIST"]],
   ["/clientes/:id/calculo-energetico", ["NUTRITIONIST"]],
@@ -97,6 +99,7 @@ const ROLE_ONLY_PREFIXES: ReadonlyArray<[string, readonly ProfessionalRole[]]> =
   ["/clientes/:id/nova-suplementacao", ["NUTRITIONIST"]],
   ["/clientes/:id/novo-treino", ["PERSONAL"]],
   ["/clientes/:id/treinos", ["PERSONAL"]],
+  ["/clientes/:id/rascunhos", ["PERSONAL"]],
   ["/clientes/:id/nova-reabilitacao", ["PHYSIO"]],
 ]
 

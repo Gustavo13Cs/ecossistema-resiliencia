@@ -3,6 +3,9 @@ import type { AppointmentStatus } from "@/types/appointment"
 import type { RecipeFilters } from "@/types/recipe"
 
 export const queryKeys = {
+  workoutDraftsRoot: (sub: string) => ["workout-drafts", sub] as const,
+  workoutDrafts: (sub: string, clientId?: string, cursor?: string) => ["workout-drafts", sub, "list", clientId ?? "all", cursor ?? "first"] as const,
+  workoutDraft: (sub: string, clientId: string, draftId: string) => ["workout-drafts", sub, "client", clientId, "detail", draftId] as const,
   trainingWorkspace: (sub: string) => ["training-workspace", sub] as const,
   trainingOverview: (sub: string, clientId: string) => ["training-overview", sub, clientId] as const,
   workoutsRoot: (sub: string) => ["workouts", sub] as const,
@@ -10,8 +13,10 @@ export const queryKeys = {
   workout: (sub: string, clientId: string, workoutId: string) => ["workouts", sub, "client", clientId, "detail", workoutId] as const,
   activeWorkout: (sub: string, clientId: string) => ["workouts", sub, "client", clientId, "active"] as const,
   exerciseLibraryRoot: (sub: string) => ["exercise-library", sub] as const,
-  exerciseLibrary: (sub: string, q: string, muscleGroup: string) =>
-    ["exercise-library", sub, q, muscleGroup] as const,
+  exerciseLibrary: (sub: string, q: string, muscleGroup: string, equipment = "ALL") =>
+    ["exercise-library", sub, "list", q, muscleGroup, equipment] as const,
+  exerciseLibraryDetail: (sub: string, exerciseId: string) =>
+    ["exercise-library", sub, "detail", exerciseId] as const,
   centralLabExams: (sessionUserId: string) => ["central-lab-exams", sessionUserId] as const,
   labOrders: (sessionUserId: string) => ["lab-orders", sessionUserId] as const,
   clientGoals: (sessionUserId: string) => ["client-goals", sessionUserId] as const,

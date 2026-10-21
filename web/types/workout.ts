@@ -1,5 +1,6 @@
 import type { ClientStatus } from "@/types/client"
 import type { TrainingActiveWorkout } from "@/types/training"
+import type { DemonstrationPresentation, LibraryReference } from "./exercise-demonstration"
 
 export type MuscleGroup =
   | "CHEST"
@@ -95,6 +96,13 @@ export interface ExerciseLibraryItem {
   equipment: ExerciseEquipment | null
   notes: string | null
   source: "CATALOG" | "CUSTOM"
+  hasDemonstration: boolean
+  demonstrationTypes: ("IMAGE" | "VIDEO")[]
+}
+
+export interface ExerciseLibraryDetail extends ExerciseLibraryItem {
+  demonstration: DemonstrationPresentation | null
+  mediaVersion: number | null
 }
 
 export interface CreateCustomExerciseInput {
@@ -102,9 +110,14 @@ export interface CreateCustomExerciseInput {
   muscleGroup: MuscleGroup
   equipment?: ExerciseEquipment
   notes?: string
+  videoUrl?: string
 }
 
+export interface UpdateExerciseVideoInput { id: string; expectedMediaVersion: number; videoUrl: string | null }
+
 export interface WorkoutSummary extends Omit<TrainingActiveWorkout, "durationWeeks"> {
+  finalizedAt?: string | null
+  revisionOfId?: string | null
   client: { id: string; name: string; status: ClientStatus }
   isTemplate: boolean
 }
@@ -123,6 +136,8 @@ export interface WorkoutPrescriptionExercise {
   effortTarget?: string | null
   tempo?: string | null
   method?: TrainingMethod
+  libraryReference?: LibraryReference | null
+  demonstrationSnapshot?: DemonstrationPresentation | null
 }
 
 export interface WorkoutPrescriptionSplit {
@@ -134,6 +149,8 @@ export interface WorkoutPrescriptionSplit {
 }
 
 export interface WorkoutPrescription extends TrainingActiveWorkout {
+  finalizedAt?: string | null
+  revisionOfId?: string | null
   isTemplate: boolean
   notes: string | null
   splits: WorkoutPrescriptionSplit[]
@@ -155,6 +172,7 @@ export interface CreateWorkoutExerciseInput {
   effortTarget?: string
   tempo?: string
   method?: TrainingMethod
+  libraryReference?: LibraryReference | null
 }
 
 export interface CreateWorkoutInput {

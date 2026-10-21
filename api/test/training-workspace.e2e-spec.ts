@@ -81,6 +81,9 @@ describe('Personal training workspace & read projections (PostgreSQL E2E)', () =
   });
 
   const cleanExtraFixtures = async () => {
+    await prisma.workoutDraft.deleteMany({
+      where: { clientId: { in: extraClientIds } },
+    });
     await prisma.physicalAssessment.deleteMany({
       where: { id: { in: seededAssessmentIds } },
     });

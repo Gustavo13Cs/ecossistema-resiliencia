@@ -8,6 +8,7 @@ import {
   type TrainingMethod,
   type WorkoutPrescription,
 } from "@/types/workout"
+import type { DemonstrationPresentation, LibraryReference } from "@/types/exercise-demonstration"
 
 export const WORKOUT_TEMPO_REGEX = /^\d{1,2}-[0-9xX]{1,2}-[0-9xX]{1,2}-\d{1,2}$/
 
@@ -23,7 +24,9 @@ export interface WorkoutFormExercise {
   effortType: EffortType | ""
   effortTarget: string
   tempo: string
-  method: TrainingMethod
+  method: TrainingMethod | ""
+  libraryReference: LibraryReference | null
+  readonly demonstrationSnapshot: DemonstrationPresentation | null
 }
 
 export interface WorkoutFormSplit {
@@ -57,6 +60,8 @@ export function createWorkoutExercise(): WorkoutFormExercise {
     effortTarget: "",
     tempo: "",
     method: "STANDARD",
+    libraryReference: null,
+    demonstrationSnapshot: null,
   }
 }
 
@@ -137,6 +142,8 @@ export function copyWorkoutToForm(workout: WorkoutPrescription): WorkoutForm {
               effortTarget: exercise.effortTarget ?? "",
               tempo: exercise.tempo ?? "",
               method: exercise.method ?? "STANDARD",
+              libraryReference: exercise.libraryReference ?? null,
+              demonstrationSnapshot: exercise.demonstrationSnapshot ?? null,
             })),
           }
         })
@@ -313,6 +320,7 @@ export function buildWorkoutInput(form: WorkoutForm, clientId: string): CreateWo
             ...(exercise.method && exercise.method !== "STANDARD"
               ? { method: exercise.method }
               : {}),
+            ...(exercise.libraryReference ? { libraryReference: exercise.libraryReference } : {}),
           }
           return item
         }),

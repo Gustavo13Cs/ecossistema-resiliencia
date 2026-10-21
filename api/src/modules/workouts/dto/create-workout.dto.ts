@@ -1,3 +1,4 @@
+import { LibraryReferenceDto } from './library-reference.dto';
 import {
   ArrayMaxSize,
   ArrayMinSize,
@@ -5,6 +6,7 @@ import {
   IsEnum,
   IsInt,
   IsOptional,
+  IsObject,
   IsString,
   IsUUID,
   Matches,
@@ -22,6 +24,14 @@ export const WORKOUT_TEMPO_REGEX =
   /^\d{1,2}-[0-9xX]{1,2}-[0-9xX]{1,2}-\d{1,2}$/;
 
 export class CreateExerciseDto {
+  @ValidateIf(
+    (_object, value: unknown) => value !== undefined && value !== null,
+  )
+  @IsObject()
+  @ValidateNested()
+  @Type(() => LibraryReferenceDto)
+  libraryReference?: LibraryReferenceDto | null;
+
   @IsString()
   @MinLength(1)
   @MaxLength(200)

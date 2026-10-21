@@ -28,15 +28,32 @@ describe('Contratos clínicos por prontuário Client', () => {
   it('prescreve treino para o Client selecionado', () => {
     clinicalSession('PERSONAL')
     cy.intercept('GET', `**/workouts/client/${clinicalClientId}/active`, { body: null }).as('active')
-    clinicalWrite('workouts')
+    cy.intercept('GET', '**/workouts/drafts?*', { body: { items: [], nextCursor: null } })
+    const draftId = '91000000-0000-4000-8000-000000000001'
+    const workoutId = '91000000-0000-4000-8000-000000000002'
+    cy.intercept('POST', '**/workouts/drafts', request => {
+      expect(request.body.clientId).to.equal(clinicalClientId)
+      for (const field of ['userId', 'patientId', 'creatorId', 'professionalId']) expect(request.body).not.to.have.property(field)
+      request.reply({ statusCode: 201, body: {
+        ...request.body, id: draftId, status: 'OPEN', version: 1, schemaVersion: 1,
+        sourceWorkoutId: null, baseActiveWorkoutId: null, finalizedWorkoutId: null,
+        createdAt: '2026-10-18T12:00:00.000Z', updatedAt: '2026-10-18T12:00:00.000Z', closedAt: null,
+      } })
+    })
+    cy.intercept('POST', `**/workouts/drafts/${draftId}/finalize`, request => {
+      expect(request.body).to.deep.equal({ expectedVersion: 1 })
+      request.reply({ statusCode: 201, body: { id: draftId, clientId: clinicalClientId, status: 'FINALIZED', version: 2, finalizedWorkoutId: workoutId, workout: { id: workoutId, clientId: clinicalClientId } } })
+    }).as('clinicalSave')
     cy.visit(`/clientes/${clinicalClientId}/novo-treino`)
     cy.wait(['@auth', '@client', '@active'])
+    cy.findByRole('button', { name: 'Começar do zero' }).click()
     cy.contains('label', 'Título da prescrição').parent().find('input').type('Treino sintético')
     cy.contains('button', 'Adicionar exercício').click()
     cy.contains('label', 'Nome do exercício').parent().find('input').type('Agachamento Livre')
     cy.contains('label', 'Séries').parent().find('input').type('4')
     cy.contains('label', 'Repetições').parent().find('input').type('8')
-    cy.contains('button', 'Salvar prescrição').click()
+    cy.findByRole('button', { name: 'Finalizar prescrição' }).click()
+    cy.findByRole('alertdialog').findByRole('button', { name: 'Confirmar finalização' }).click()
     cy.wait('@clinicalSave')
   })
   it('prescreve reabilitação para o Client selecionado', () => {

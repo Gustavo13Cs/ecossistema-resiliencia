@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   Apple,
+  BookOpen,
   BarChart3,
   Calendar,
   CalendarClock,
@@ -43,6 +44,7 @@ const NAVIGATION_ICONS: Record<string, LucideIcon> = {
   "lab-exams": FlaskConical,
   reports: BarChart3,
   workouts: Dumbbell,
+  exercises: BookOpen,
   rehab: HeartPulse,
 }
 

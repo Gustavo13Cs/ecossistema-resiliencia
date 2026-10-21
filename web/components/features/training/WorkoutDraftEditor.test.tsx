@@ -1,0 +1,297 @@
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
+import { AxiosError } from "axios"
+import AxiosMockAdapter from "axios-mock-adapter"
+import { api } from "@/lib/api"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { makeTestClient } from "@/test/client-fixture"
+import type { DraftContentV1, WorkoutDraftResource } from "@/types/workout-draft"
+import type { WorkoutPrescription } from "@/types/workout"
+import { WorkoutDraftEditor, type WorkoutDraftEditorProps } from "./WorkoutDraftEditor"
+const auth = vi.hoisted(() => ({ user: { sub: "personal", role: "PERSONAL" } }))
+const navigation = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }))
+vi.mock("@/contexts/auth-context", () => ({ useAuth: () => auth }))
+vi.mock("next/navigation", () => ({ useRouter: () => navigation }))
+vi.mock("./ExerciseLibraryCombobox", () => ({ ExerciseLibraryCombobox: () => null }))
+const content: DraftContentV1 = { title: "Força", goal: "", durationWeeks: null, notes: "", splits: [{ name: "Treino A", focus: "", exercises: [{ name: "Supino", sets: "3", reps: "8", rest: "", notes: "", muscleGroup: null, load: "", effortType: null, effortTarget: "", tempo: "", method: null }] }] }
+const draft: WorkoutDraftResource = { id: "d1", clientId: "c1", status: "OPEN", version: 1, schemaVersion: 1, content, sourceWorkoutId: null, baseActiveWorkoutId: "old", finalizedWorkoutId: null, createdAt: "2026-10-17T12:00:00Z", updatedAt: "2026-10-17T12:00:00Z", closedAt: null }
+const active: WorkoutPrescription = { id: "fresh", clientId: "c1", title: "Ativo fresco", goal: null, durationWeeks: null, notes: null, createdAt: "2026-10-17T12:00:00Z", updatedAt: "2026-10-17T12:00:00Z", isActive: true, isTemplate: false, splits: [] }
+function fail(status: number, code?: string) { return Object.assign(new AxiosError("Request failed"), { response: { status, data: { code } } }) }
+function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(done => { resolve = done }); return { promise, resolve } }
+function props(overrides: Partial<WorkoutDraftEditorProps> = {}): WorkoutDraftEditorProps {
+  return { client: makeTestClient("c1", "Ana", "ACTIVE"), draft, onCreate: vi.fn().mockResolvedValue(draft), onSave: vi.fn().mockImplementation(async input => ({ ...draft, version: 2, content: input.content })), onFinalize: vi.fn().mockResolvedValue({ id: "d1", clientId: "c1", status: "FINALIZED", version: 3, finalizedWorkoutId: "w1", workout: { ...active, id: "w1" } }), onRebase: vi.fn().mockResolvedValue({ ...draft, version: 2, baseActiveWorkoutId: "fresh" }), onDiscard: vi.fn().mockResolvedValue({ id: "d1", clientId: "c1", status: "DISCARDED", version: 2 }), onLoadActiveWorkout: vi.fn().mockResolvedValue(active), onAccessDenied: vi.fn(), ...overrides }
+}
+async function confirmFinalize() {
+  fireEvent.click(screen.getByRole("button", { name: "Finalizar prescrição" }))
+  fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Confirmar finalização" }))
+}
+beforeEach(() => {
+  vi.stubGlobal("navigation", Object.assign(new EventTarget(), { traverseTo: vi.fn() })); auth.user = { sub: "personal", role: "PERSONAL" }; navigation.push.mockReset(); navigation.replace.mockReset() })
+afterEach(cleanup)
+describe("WorkoutDraftEditor", () => {
+  it("manual_rename_clears_demonstration_with_notice while parameter edits retain the link", async () => {
+    const reference = { source: "CATALOG" as const, exerciseId: "cat-1", demonstrationRevision: "r1" }
+    const linked = { ...content, splits: [{ ...content.splits[0], exercises: [{ ...content.splits[0].exercises[0], libraryReference: reference, demonstrationSnapshot: { revision: "r1", instruction: "Execução" } }] }] }
+    const p = props({ draft: { ...draft, schemaVersion: 2, content: linked } })
+    render(<WorkoutDraftEditor {...p} />)
+    fireEvent.change(screen.getByLabelText("Séries"), { target: { value: "5" } })
+    expect(screen.getByText("Demonstração pronta")).toBeVisible()
+    fireEvent.change(screen.getByLabelText("Nome do exercício"), { target: { value: "Agachamento" } })
+    expect(screen.getByText(/o nome mudou; a demonstração foi desvinculada/i)).toBeVisible()
+    expect(screen.queryByText("Demonstração pronta")).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    await waitFor(() => expect(p.onSave).toHaveBeenCalled())
+    const sent = vi.mocked(p.onSave).mock.calls[0][0].content.splits[0].exercises[0]
+    expect(sent.sets).toBe("5")
+    expect(sent).not.toHaveProperty("libraryReference")
+    expect(sent).not.toHaveProperty("demonstrationSnapshot")
+  })
+  it("adopts the matching saved presentation while keeping parameters typed during save", async () => {
+    const reference = { source: "CATALOG" as const, exerciseId: "cat-1", demonstrationRevision: "r1" }
+    const linked = { ...content, splits: [{ ...content.splits[0], exercises: [{ ...content.splits[0].exercises[0], libraryReference: reference, demonstrationSnapshot: null }] }] }
+    const pending = deferred<WorkoutDraftResource>()
+    const p = props({ draft: { ...draft, schemaVersion: 2, content: linked }, onSave: vi.fn(() => pending.promise) })
+    render(<WorkoutDraftEditor {...p} />)
+    fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Enviado" } })
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    fireEvent.change(screen.getByLabelText("Séries"), { target: { value: "5" } })
+    await act(async () => pending.resolve({ ...draft, schemaVersion: 2, version: 2, content: { ...linked, splits: [{ ...linked.splits[0], exercises: [{ ...linked.splits[0].exercises[0], demonstrationSnapshot: { revision: "r1", instruction: "Execução" } }] }] } }))
+    expect(screen.getByText("Demonstração pronta")).toBeVisible()
+    expect(screen.getByLabelText("Séries")).toHaveValue("5")
+    expect(screen.getByText("Alterações não salvas")).toBeVisible()
+  })
+
+  it("a save response cannot restore a reference detached while pending", async () => {
+    const reference = { source: "CATALOG" as const, exerciseId: "cat-1", demonstrationRevision: "r1" }
+    const linked = { ...content, splits: [{ ...content.splits[0], exercises: [{ ...content.splits[0].exercises[0], libraryReference: reference, demonstrationSnapshot: null }] }] }
+    const pending = deferred<WorkoutDraftResource>()
+    render(<WorkoutDraftEditor {...props({ draft: { ...draft, schemaVersion: 2, content: linked }, onSave: vi.fn(() => pending.promise) })} />)
+    fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Enviado" } })
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    fireEvent.click(screen.getByRole("button", { name: "Retirar vínculo" }))
+    await act(async () => pending.resolve({ ...draft, schemaVersion: 2, version: 2, content: { ...linked, splits: [{ ...linked.splits[0], exercises: [{ ...linked.splits[0].exercises[0], demonstrationSnapshot: { revision: "r1", instruction: "Execução" } }] }] } }))
+    expect(screen.queryByText("Demonstração pronta")).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Retirar vínculo" })).not.toBeInTheDocument()
+    expect(screen.getByText("Alterações não salvas")).toBeVisible()
+  })
+  it("shows an actionable stale demonstration conflict and keeps the selected form", async () => {
+    const linked = { ...content, splits: [{ ...content.splits[0], exercises: [{ ...content.splits[0].exercises[0], libraryReference: { source: "CATALOG" as const, exerciseId: "cat-1", demonstrationRevision: "old" }, demonstrationSnapshot: null }] }] }
+    const p = props({ draft: { ...draft, schemaVersion: 2, content: linked }, onSave: vi.fn().mockRejectedValue(fail(409, "DEMONSTRATION_SELECTION_STALE")) })
+    render(<WorkoutDraftEditor {...p} />)
+    fireEvent.change(screen.getByLabelText("Séries"), { target: { value: "5" } })
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    expect(await screen.findByText(/demonstração selecionada mudou/i)).toBeVisible()
+    expect(screen.getByRole("button", { name: "Retirar vínculo" })).toBeVisible()
+    expect(screen.getByLabelText("Séries")).toHaveValue("5")
+    fireEvent.click(screen.getByRole("button", { name: "Retirar vínculo" }))
+    expect(screen.getByLabelText("Séries")).toHaveValue("5")
+    expect(screen.queryByRole("button", { name: "Retirar vínculo" })).not.toBeInTheDocument()
+  })
+  it("draft_save_accepts_incomplete_form", async () => {
+    const p = props({ draft: null }); render(<WorkoutDraftEditor {...p} />)
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    await waitFor(() => expect(p.onCreate).toHaveBeenCalledWith(expect.objectContaining({ title: "" })))
+    expect(p.onFinalize).not.toHaveBeenCalled()
+    expect(navigation.replace).toHaveBeenCalledWith("/clientes/c1/rascunhos/d1")
+  })
+  it("creates_and_finalizes_new_valid_content_without_manual_save_handoff", async () => {
+    const p = props({ draft: null }); render(<WorkoutDraftEditor {...p} />)
+    fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Novo" } })
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar exercício" }))
+    fireEvent.change(screen.getByLabelText("Nome do exercício"), { target: { value: "Supino" } })
+    fireEvent.change(screen.getByLabelText("Séries"), { target: { value: "3" } })
+    fireEvent.change(screen.getByLabelText("Repetições"), { target: { value: "8" } })
+    await confirmFinalize()
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith("/clientes/c1/treinos/w1"))
+    expect(p.onCreate).toHaveBeenCalledOnce(); expect(p.onFinalize).toHaveBeenCalledWith({ expectedVersion: 1 })
+    expect(navigation.replace).not.toHaveBeenCalled()
+  })
+  it("typing_during_save_stays_dirty", async () => {
+    const pending = deferred<WorkoutDraftResource>(); const p = props({ onSave: vi.fn(() => pending.promise) })
+    render(<WorkoutDraftEditor {...p} />)
+    fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Enviado" } })
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    fireEvent.change(screen.getByLabelText("Nome do exercício"), { target: { value: "Novo nome" } })
+    fireEvent.change(screen.getByLabelText("Séries"), { target: { value: "5" } })
+    await act(async () => pending.resolve({ ...draft, version: 2 }))
+    expect(screen.getByText("Alterações não salvas")).toBeVisible()
+    expect(screen.getByLabelText("Nome do exercício")).toHaveValue("Novo nome")
+    expect(screen.getByLabelText("Séries")).toHaveValue("5")
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    await waitFor(() => expect(p.onSave).toHaveBeenLastCalledWith(expect.objectContaining({ expectedVersion: 2, content: expect.objectContaining({ splits: [expect.objectContaining({ exercises: [expect.objectContaining({ name: "Novo nome", sets: "5" })] })] }) })))
+  })
+  it("save_error_does_not_finalize", async () => {
+    const p = props({ onSave: vi.fn().mockRejectedValue(fail(503)) }); render(<WorkoutDraftEditor {...p} />)
+    fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Novo" } })
+    await confirmFinalize()
+    await waitFor(() => expect(screen.getByRole("alert")).toBeVisible())
+    expect(p.onFinalize).not.toHaveBeenCalled(); expect(screen.getByLabelText("Título da prescrição")).toHaveValue("Novo")
+  })
+  it("typing_during_prefinalization_save_does_not_publish_older_content", async () => {
+    const pending = deferred<WorkoutDraftResource>(); const p = props({ onSave: vi.fn(() => pending.promise) }); render(<WorkoutDraftEditor {...p} />)
+    fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Enviado" } })
+    await confirmFinalize()
+    fireEvent.change(screen.getByLabelText("Nome do exercício"), { target: { value: "Novo nome" } })
+    await act(async () => pending.resolve({ ...draft, version: 2 }))
+    expect(p.onFinalize).not.toHaveBeenCalled()
+    expect(screen.getByText("Alterações não salvas")).toBeVisible()
+    expect(screen.getByText(/finalize novamente/i)).toBeVisible()
+    expect(navigation.push).not.toHaveBeenCalled()
+  })
+  it("rebase_requires_explicit_confirmation", async () => {
+    const p = props({ onFinalize: vi.fn().mockRejectedValue(fail(409, "ACTIVE_WORKOUT_CHANGED")) }); render(<WorkoutDraftEditor {...p} />)
+    await confirmFinalize()
+    fireEvent.click(await screen.findByRole("button", { name: "Revisar treino ativo" }))
+    await screen.findByRole("alertdialog")
+    expect(p.onRebase).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }))
+    expect(p.onRebase).not.toHaveBeenCalled()
+  })
+  it("rebase_confirms_freshly_loaded_active", async () => {
+    const pending = deferred<WorkoutPrescription | null>()
+    const p = props({ onFinalize: vi.fn().mockRejectedValue(fail(409, "ACTIVE_WORKOUT_CHANGED")), onLoadActiveWorkout: vi.fn(() => pending.promise) }); render(<WorkoutDraftEditor {...p} />)
+    await confirmFinalize(); fireEvent.click(await screen.findByRole("button", { name: "Revisar treino ativo" }))
+    expect(p.onLoadActiveWorkout).toHaveBeenCalledOnce(); expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument()
+    await act(async () => pending.resolve(active))
+    const dialog = await screen.findByRole("alertdialog"); expect(within(dialog).getByText(/Ativo fresco/)).toBeVisible()
+    expect(within(dialog).getByRole("link", { name: /Consultar ficha ativa/ })).toHaveAttribute("href", "/clientes/c1/treinos/fresh")
+    fireEvent.click(within(dialog).getByRole("button", { name: "Confirmar nova base" }))
+    await waitFor(() => expect(p.onRebase).toHaveBeenCalledWith({ expectedVersion: 1, expectedActiveWorkoutId: "fresh" }))
+    expect(p.onFinalize).toHaveBeenCalledTimes(1)
+  })
+  it("clears_content_on_403_and_does_not_restore_it_from_props", async () => {
+    const p = props({ onSave: vi.fn().mockRejectedValue(fail(403)) }); const { rerender } = render(<WorkoutDraftEditor {...p} />)
+    fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Privado" } }); fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    await waitFor(() => expect(p.onAccessDenied).toHaveBeenCalledOnce())
+    expect(screen.queryByDisplayValue("Privado")).not.toBeInTheDocument(); expect(screen.queryByDisplayValue("Supino")).not.toBeInTheDocument()
+    rerender(<WorkoutDraftEditor {...p} draft={{ ...draft, version: 2 }} />)
+    expect(screen.queryByLabelText("Título da prescrição")).not.toBeInTheDocument()
+  })
+  it("late_response_does_not_cross_session", async () => {
+    const pending = deferred<WorkoutDraftResource>(); const p = props({ onSave: vi.fn(() => pending.promise) }); const { rerender } = render(<WorkoutDraftEditor {...p} />)
+    fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Privado A" } }); fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    auth.user.sub = "other"
+    rerender(<WorkoutDraftEditor {...p} draft={{ ...draft, id: "d2", content: { ...content, title: "Conta B" } }} client={{ ...p.client, professionalId: "other" }} />)
+    await act(async () => pending.resolve({ ...draft, version: 2 }))
+    expect(screen.queryByDisplayValue("Privado A")).not.toBeInTheDocument(); expect(screen.getByDisplayValue("Conta B")).toBeVisible()
+    expect(screen.queryByText(/salvo às/i)).toBeInTheDocument()
+  })
+  it("locks_initial_create_fields_for_safe_route_handoff", async () => {
+    const pending = deferred<WorkoutDraftResource>(); const p = props({ draft: null, onCreate: vi.fn(() => pending.promise) }); const { rerender } = render(<WorkoutDraftEditor {...p} />)
+    fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Enviado" } }); fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    expect(screen.getByLabelText("Título da prescrição")).toBeDisabled()
+    fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Depois" } })
+    const created = { ...draft, content: { ...content, title: "Enviado" } }
+    await act(async () => pending.resolve(created)); rerender(<WorkoutDraftEditor {...p} draft={created} />)
+    expect(screen.getByLabelText("Título da prescrição")).toHaveValue("Enviado")
+    expect(screen.getByLabelText("Título da prescrição")).toBeEnabled()
+    expect(screen.getByText(/salvo às/i)).toBeVisible()
+  })
+  it("keeps_create_handoff_locked_while_destination_get_and_route_commit_are_pending", async () => {
+    const http = new AxiosMockAdapter(api)
+    const created = { ...draft, content: { ...content, title: "Enviado" } }
+    let finishGet!: (response: [number, WorkoutDraftResource]) => void
+    let destination!: Promise<WorkoutDraftResource>
+    http.onPost("/workouts/drafts").reply(201, created)
+    http.onGet("/workouts/drafts/d1").reply(() => new Promise(resolve => { finishGet = resolve }))
+    navigation.replace.mockImplementation(() => { destination = api.get<WorkoutDraftResource>("/workouts/drafts/d1").then(response => response.data) })
+    const p = props({ draft: null, onCreate: async sent => (await api.post<WorkoutDraftResource>("/workouts/drafts", { clientId: "c1", content: sent })).data })
+    const view = render(<WorkoutDraftEditor {...p} />)
+    try {
+      fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Enviado" } })
+      fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+      await waitFor(() => expect(http.history.get).toHaveLength(1))
+      expect(screen.getByLabelText("Título da prescrição")).toBeDisabled()
+      expect(screen.getByRole("button", { name: "Salvar rascunho" })).toBeDisabled()
+      expect(screen.getByRole("button", { name: "Finalizar prescrição" })).toBeDisabled()
+      fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Texto na janela de navegação" } })
+      expect(screen.getByLabelText("Título da prescrição")).toHaveValue("Enviado")
+      await act(async () => { finishGet([200, created]); await destination })
+      // A resposta do GET também não equivale ao commit da nova identidade de rota.
+      expect(screen.getByLabelText("Título da prescrição")).toBeDisabled()
+      view.rerender(<WorkoutDraftEditor {...p} draft={await destination} />)
+      expect(screen.getByLabelText("Título da prescrição")).toBeEnabled()
+      expect(screen.getByLabelText("Título da prescrição")).toHaveValue("Enviado")
+    } finally { finishGet?.([200, created]); view.unmount(); http.restore() }
+  })
+  it("recovers_failed_handoff_without_recreating_or_unlocking_the_old_editor", async () => {
+    navigation.replace.mockImplementationOnce(() => { throw new Error("Navigation failed") })
+    const p = props({ draft: null }); render(<WorkoutDraftEditor {...p} />)
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    expect(await screen.findByRole("alert")).toHaveTextContent("O rascunho foi salvo, mas não foi possível abrir a página.")
+    expect(screen.getByLabelText("Título da prescrição")).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Salvar rascunho" })).toBeDisabled()
+    fireEvent.click(screen.getByRole("button", { name: "Tentar abrir rascunho salvo" }))
+    expect(navigation.replace).toHaveBeenCalledTimes(2)
+    expect(p.onCreate).toHaveBeenCalledOnce()
+    expect(screen.getByRole("link", { name: "Abrir rascunho salvo" })).toHaveAttribute("href", "/clientes/c1/rascunhos/d1")
+    expect(screen.getByLabelText("Título da prescrição")).toBeDisabled()
+  })
+  it("blocks_invalid_finalize_but_preserves_incomplete_draft_and_archived_readonly", async () => {
+    const p = props({ draft: { ...draft, content: { ...content, title: "" } } }); const { rerender } = render(<WorkoutDraftEditor {...p} />)
+    fireEvent.click(screen.getByRole("button", { name: "Finalizar prescrição" }))
+    expect(p.onFinalize).not.toHaveBeenCalled(); expect(screen.getByText("Informe o título da prescrição.")).toBeVisible()
+    rerender(<WorkoutDraftEditor {...p} client={{ ...p.client, status: "ARCHIVED" }} />)
+    expect(screen.getByRole("button", { name: "Salvar rascunho" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Descartar rascunho" })).toBeDisabled()
+    expect(screen.getByLabelText("Título da prescrição")).toBeDisabled()
+  })
+  it("preserves_local_content_on_413_and_retries_the_same_snapshot", async () => {
+    const onSave = vi.fn().mockRejectedValueOnce(fail(413)).mockResolvedValueOnce({ ...draft, version: 2 })
+    const p = props({ onSave }); render(<WorkoutDraftEditor {...p} />)
+    fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Privado local" } })
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    expect(await screen.findByText(/64 KiB/)).toBeVisible()
+    expect(screen.getByLabelText("Título da prescrição")).toHaveValue("Privado local")
+    expect(screen.getByText("Alterações não salvas")).toBeVisible()
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    await screen.findByText(/salvo às/i)
+    expect(onSave).toHaveBeenCalledTimes(2)
+    expect(onSave.mock.calls[1][0]).toEqual(onSave.mock.calls[0][0])
+  })
+  it("confirms_discard_with_current_version_and_confirms_local_exit_separately", async () => {
+    const p = props(); render(<WorkoutDraftEditor {...p} />)
+    fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Novo" } })
+    fireEvent.click(screen.getByRole("button", { name: "Voltar para aluno" }))
+    expect(screen.getByRole("alertdialog")).toHaveTextContent("Sair com alterações não salvas?")
+    expect(navigation.push).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }))
+    fireEvent.click(screen.getByRole("button", { name: "Descartar rascunho" }))
+    expect(p.onDiscard).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar descarte" }))
+    await waitFor(() => expect(p.onDiscard).toHaveBeenCalledWith({ expectedVersion: 1 }))
+    expect(navigation.push).toHaveBeenCalledWith("/clientes/c1")
+  })
+  it("requires_a_new_fresh_confirmation_if_active_changes_again_during_rebase", async () => {
+    const onRebase = vi.fn().mockRejectedValueOnce(fail(409, "ACTIVE_WORKOUT_CHANGED")).mockResolvedValueOnce({ ...draft, version: 2, baseActiveWorkoutId: null })
+    const onLoadActiveWorkout = vi.fn().mockResolvedValueOnce(active).mockResolvedValueOnce(null)
+    const p = props({ onFinalize: vi.fn().mockRejectedValue(fail(409, "ACTIVE_WORKOUT_CHANGED")), onRebase, onLoadActiveWorkout })
+    render(<WorkoutDraftEditor {...p} />)
+    await confirmFinalize(); fireEvent.click(await screen.findByRole("button", { name: "Revisar treino ativo" }))
+    fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Confirmar nova base" }))
+    await waitFor(() => expect(onRebase).toHaveBeenCalledOnce())
+    fireEvent.click(screen.getByRole("button", { name: "Revisar treino ativo" }))
+    const dialog = await screen.findByRole("alertdialog")
+    expect(dialog).toHaveTextContent("Não há treino ativo")
+    expect(onRebase).toHaveBeenCalledOnce()
+    fireEvent.click(within(dialog).getByRole("button", { name: "Confirmar nova base" }))
+    await waitFor(() => expect(onRebase).toHaveBeenLastCalledWith({ expectedVersion: 1, expectedActiveWorkoutId: null }))
+    expect(onLoadActiveWorkout).toHaveBeenCalledTimes(2)
+  })
+  it("ignores_late_finalization_after_unmount", async () => {
+    const pending = deferred<Awaited<ReturnType<WorkoutDraftEditorProps["onFinalize"]>>>()
+    const p = props({ onFinalize: vi.fn(() => pending.promise) })
+    const { unmount } = render(<WorkoutDraftEditor {...p} />)
+    await confirmFinalize(); unmount()
+    await act(async () => pending.resolve({ id: "d1", clientId: "c1", status: "FINALIZED", version: 2, finalizedWorkoutId: "w1", workout: { ...active, id: "w1", client: { id: "c1", name: "Ana", status: "ACTIVE" } } }))
+    expect(navigation.push).not.toHaveBeenCalled()
+  })
+  it("warns_before_unload_only_when_dirty_and_cleans_up", () => {
+    const p = props(); const { unmount } = render(<WorkoutDraftEditor {...p} />)
+    expect(window.dispatchEvent(new Event("beforeunload", { cancelable: true }))).toBe(true)
+    fireEvent.change(screen.getByLabelText("Título da prescrição"), { target: { value: "Novo" } })
+    expect(window.dispatchEvent(new Event("beforeunload", { cancelable: true }))).toBe(false)
+    unmount(); expect(window.dispatchEvent(new Event("beforeunload", { cancelable: true }))).toBe(true)
+  })
+})
+
+afterEach(() => vi.unstubAllGlobals())

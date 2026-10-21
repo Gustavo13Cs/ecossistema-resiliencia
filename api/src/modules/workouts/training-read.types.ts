@@ -1,4 +1,8 @@
 import {
+  LibraryReference,
+  DemonstrationPresentation,
+} from './exercise-demonstration.types';
+import {
   Client,
   PhysicalAssessment,
   Workout,
@@ -27,6 +31,8 @@ export type TrainingActiveWorkout = Pick<
   | 'createdAt'
   | 'updatedAt'
   | 'isActive'
+  | 'finalizedAt'
+  | 'revisionOfId'
 > & { clientId: string };
 
 export type TrainingAssessment = Omit<
@@ -44,7 +50,7 @@ export type WorkoutDetail = TrainingActiveWorkout &
   Pick<Workout, 'notes' | 'isTemplate'> & {
     client: Pick<Client, 'id' | 'name' | 'status'>;
     splits: (Pick<WorkoutSplit, 'id' | 'name' | 'focus' | 'position'> & {
-      exercises: Pick<
+      exercises: (Pick<
         WorkoutExercise,
         | 'id'
         | 'name'
@@ -59,6 +65,9 @@ export type WorkoutDetail = TrainingActiveWorkout &
         | 'effortTarget'
         | 'tempo'
         | 'method'
-      >[];
+      > & {
+        libraryReference: LibraryReference | null;
+        demonstrationSnapshot: DemonstrationPresentation | null;
+      })[];
     })[];
   };

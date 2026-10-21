@@ -2,6 +2,7 @@ import { PrismaClient, Role } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
+import { assertIsolationDatabase } from '../test/fixtures/client-isolation';
 
 export const E2E = {
   password: 'SafeMove-E2E-2026!',
@@ -33,11 +34,7 @@ export const E2E = {
 
 const databaseUrl = process.env.DATABASE_URL;
 
-if (!databaseUrl?.endsWith('_test')) {
-  throw new Error(
-    'seed:phase1-e2e recusado: DATABASE_URL deve terminar em _test.',
-  );
-}
+assertIsolationDatabase();
 
 const pool = new Pool({ connectionString: databaseUrl });
 const adapterPool = pool as unknown as ConstructorParameters<
@@ -79,7 +76,13 @@ async function main() {
   const password = await bcrypt.hash(E2E.password, 12);
 
   await prisma.$transaction(async (transaction) => {
+    await transaction.appointmentEvent.deleteMany({
+      where: { appointment: { professionalId: { in: professionalIds } } },
+    });
     await transaction.appointment.deleteMany({
+      where: { professionalId: { in: professionalIds } },
+    });
+    await transaction.workoutDraft.deleteMany({
       where: { professionalId: { in: professionalIds } },
     });
     await transaction.workout.deleteMany({

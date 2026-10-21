@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { presentWorkout } from './exercise-demonstration';
 import { Prisma } from '@prisma/client';
 import { ClientAccessService } from '../../common/client-access/client-access.service';
 import { AuthUser } from '../../common/types/auth-user';
@@ -22,6 +23,8 @@ const activeWorkoutSelect = {
   createdAt: true,
   updatedAt: true,
   isActive: true,
+  finalizedAt: true,
+  revisionOfId: true,
 } satisfies Prisma.WorkoutSelect;
 
 const assessmentSelect = {
@@ -55,7 +58,7 @@ const assessmentSelect = {
   notes: true,
 } satisfies Prisma.PhysicalAssessmentSelect;
 
-const workoutDetailSelect = {
+export const workoutDetailSelect = {
   ...activeWorkoutSelect,
   notes: true,
   isTemplate: true,
@@ -83,6 +86,9 @@ const workoutDetailSelect = {
           effortTarget: true,
           tempo: true,
           method: true,
+          librarySource: true,
+          libraryExerciseId: true,
+          demonstrationSnapshot: true,
         },
       },
     },
@@ -210,7 +216,11 @@ export class TrainingReadService {
     ) {
       throw new NotFoundException('Treino não encontrado');
     }
-    return { ...detail, clientId: client.id, client: detail.client };
+    return presentWorkout({
+      ...detail,
+      clientId: client.id,
+      client: detail.client,
+    });
   }
 
   private assertTrainingProfessional(user: AuthUser) {

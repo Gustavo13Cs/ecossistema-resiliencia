@@ -2,7 +2,9 @@
 
 import { useCallback, useState } from "react"
 import Link from "next/link"
+import { WorkoutEditorLink } from "./WorkoutEditorLink"
 import { useRouter } from "next/navigation"
+import { navigateToWorkoutPage } from "@/lib/workout-editor-navigation"
 import { isAxiosError } from "axios"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ReauthenticateButton } from "@/components/auth/ReauthenticateButton"
@@ -59,7 +61,7 @@ export function PersonalDashboard() {
           )}
         </>
       ) : null}
-      <WorkoutClientPicker open={pickerOpen} onOpenChange={setPickerOpen} onAccessDenied={handlePickerAccessDenied} onSelect={clientId => router.push(`/clientes/${clientId}/novo-treino`)} />
+      <WorkoutClientPicker open={pickerOpen} onOpenChange={setPickerOpen} onAccessDenied={handlePickerAccessDenied} onSelect={clientId => navigateToWorkoutPage(router, `/clientes/${clientId}/novo-treino`)} />
     </div>
   )
 }
@@ -70,7 +72,7 @@ function StudentList({ title, items, pending = false }: { title: string; items: 
     <p className="mt-1 text-sm text-[var(--sm-muted)]">{pending ? "Alunos ativos sem prescrição ativa registrada." : "Atualizações cadastrais mais recentes da sua base."}</p>
     {items.length === 0 ? <p className="py-5 text-sm text-[var(--sm-muted)]">{pending ? "Nenhum aluno sem treino ativo" : "Nenhum aluno recente"}</p> : <ul className="mt-3 divide-y divide-[var(--sm-border)]">{items.map(item => <li key={item.clientId} className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 py-3">
       <div className="min-w-0 flex-1 basis-36"><Link href={`/clientes/${item.clientId}`} aria-label={`Abrir prontuário de ${item.name}`} className="inline-flex min-h-11 items-center break-words font-bold text-[var(--sm-brand)] hover:underline">{item.name}</Link><p className="break-words text-sm text-[var(--sm-muted)]">{item.goal || "Objetivo não informado"}</p></div>
-      {pending ? <Link href={`/clientes/${item.clientId}/novo-treino`} aria-label={`Criar prescrição para ${item.name}`} className={actionClass}>Criar prescrição</Link> : null}
+      {pending ? <WorkoutEditorLink href={`/clientes/${item.clientId}/novo-treino`} aria-label={`Criar prescrição para ${item.name}`} className={actionClass}>Criar prescrição</WorkoutEditorLink> : null}
     </li>)}</ul>}
   </section>
 }

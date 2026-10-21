@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { WorkoutEditorLink } from "./WorkoutEditorLink"
 import { isAxiosError } from "axios"
 import { ReauthenticateButton } from "@/components/auth/ReauthenticateButton"
 import { AsyncState } from "@/components/feedback/AsyncState"
@@ -14,6 +15,7 @@ import { PERSONAL_ASSESSMENT_FIELDS } from "@/lib/personal-assessment"
 import type { PersonalNumericField, PhysicalAssessment } from "@/types/assessment"
 import type { TrainingAssessment } from "@/types/training"
 import type { Client } from "@/types/client"
+import { WorkoutDraftSection } from "./WorkoutDraftSection"
 import { PersonalAssessmentDialog } from "./PersonalAssessmentDialog"
 
 type PersonalClientRecordProps = { client: Client; pending: boolean; onAccessDenied?: () => void }
@@ -49,7 +51,7 @@ function TrainingRecord({ client, pending, onAccessDenied }: PersonalClientRecor
       <h2 className="text-2xl font-bold tracking-[-0.025em]">Área de Treinamento</h2>
       <nav aria-label="Ações de treinamento" className="flex flex-wrap gap-2">
         <Button type="button" disabled={blocked} className="min-h-11" onClick={() => setDialogOpen(true)}>Nova avaliação física</Button>
-        {blocked ? <Button type="button" disabled className="min-h-11" variant="outline">Criar prescrição</Button> : <Link href={`/clientes/${client.id}/novo-treino`} className={actionClass}>Criar prescrição</Link>}
+        {blocked ? <Button type="button" disabled className="min-h-11" variant="outline">Criar prescrição</Button> : <WorkoutEditorLink href={`/clientes/${client.id}/novo-treino`} className={actionClass}>Criar prescrição</WorkoutEditorLink>}
         <Link href="/agenda" className={actionClass}>Abrir agenda</Link>
       </nav>
     </div>
@@ -67,7 +69,7 @@ function TrainingRecord({ client, pending, onAccessDenied }: PersonalClientRecor
           <Link className={actionClass} href={`/clientes/${client.id}/treinos/${active.id}`}>Ver ficha</Link>
         </> : <div className="space-y-3">
           <p className="text-sm text-[var(--sm-muted)]">Nenhum treino ativo registrado</p>
-          {blocked ? null : <Link className={actionClass} href={`/clientes/${client.id}/novo-treino`}>Criar prescrição</Link>}
+          {blocked ? null : <WorkoutEditorLink className={actionClass} href={`/clientes/${client.id}/novo-treino`}>Criar prescrição</WorkoutEditorLink>}
         </div>}
       </section>
       <section aria-labelledby="personal-latest-assessment" className="min-w-0 space-y-3 border-t border-[var(--sm-border)] pt-5">
@@ -75,6 +77,7 @@ function TrainingRecord({ client, pending, onAccessDenied }: PersonalClientRecor
         {latest ? <><p className="text-sm font-semibold">{dateLabel(latest.date)}</p><AssessmentMeasures assessment={latest} /></> : <p className="text-sm text-[var(--sm-muted)]">Nenhuma avaliação registrada</p>}
       </section>
     </div> : null}
+    <WorkoutDraftSection clientId={client.id} onAccessDenied={() => setDialogDenied(true)} />
     <section aria-labelledby="personal-assessment-history" className="min-w-0 border-t border-[var(--sm-border)] pt-5">
       <h3 id="personal-assessment-history" className="text-lg font-bold">Avaliações registradas</h3>
       {assessments.loading ? <LoadingBlock title="Carregando avaliações" /> : assessments.error ? <AsyncState kind="error" title="Avaliações indisponíveis" description="Não foi possível consultar o histórico de avaliações." action={<button type="button" className={actionClass} onClick={() => void assessments.refetch()}>Tentar novamente as avaliações</button>} /> : assessments.assessments.length === 0 ? <p className="mt-3 text-sm text-[var(--sm-muted)]">Nenhuma avaliação registrada neste prontuário.</p> : <div className="mt-3 divide-y divide-[var(--sm-border)]">

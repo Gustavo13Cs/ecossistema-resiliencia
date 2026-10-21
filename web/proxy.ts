@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 
+import { buildExerciseMediaDirectives, EXERCISE_MEDIA_RULES } from "./lib/exercise-media-policy"
+
+const exerciseMedia = buildExerciseMediaDirectives(EXERCISE_MEDIA_RULES)
+
 export function proxy(request: NextRequest) {
   const randomBytes = crypto.getRandomValues(new Uint8Array(16))
   const nonce = btoa(String.fromCharCode(...randomBytes))
@@ -14,7 +18,8 @@ export function proxy(request: NextRequest) {
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDevelopment ? " 'unsafe-eval'" : ""}`,
     // Radix, gráficos e componentes existentes usam atributos style dinâmicos.
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    `img-src 'self' data: blob: ${exerciseMedia.imgSrc.join(" ")}`,
+    `media-src 'self' ${exerciseMedia.mediaSrc.join(" ")}`,
     "font-src 'self' data:",
     `connect-src 'self'${isDevelopment ? " ws: wss:" : ""}`,
     "worker-src 'self' blob:",
@@ -25,6 +30,7 @@ export function proxy(request: NextRequest) {
   requestHeaders.set("Content-Security-Policy", policy)
   const response = NextResponse.next({ request: { headers: requestHeaders } })
   response.headers.set("Content-Security-Policy", policy)
+  response.headers.set("Referrer-Policy", "no-referrer")
   return response
 }
 

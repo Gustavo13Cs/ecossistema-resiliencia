@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { isUUID } from 'class-validator';
 import { Prisma } from '@prisma/client';
 import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../infra/database/prisma.service';
@@ -12,9 +13,17 @@ import { CreateCustomExerciseDto } from './dto/create-custom-exercise.dto';
 import { ExerciseLibraryQueryDto } from './dto/exercise-library-query.dto';
 import {
   ExerciseLibraryItem,
+  ExerciseLibraryDetail,
   SAFEMOVE_EXERCISE_CATALOG,
   normalizeExerciseName,
 } from './exercise-catalog';
+
+import { UpdateExerciseVideoDto } from './dto/update-exercise-video.dto';
+import { normalizeExerciseVideoUrl } from './exercise-video-url';
+import {
+  findCatalogDemonstration,
+  isApprovedDemonstrationAsset,
+} from './exercise-demonstration';
 
 const customExerciseSelect = {
   id: true,
@@ -22,7 +31,13 @@ const customExerciseSelect = {
   muscleGroup: true,
   equipment: true,
   notes: true,
+  videoUrl: true,
+  mediaVersion: true,
 } satisfies Prisma.CustomExerciseSelect;
+
+type CustomExerciseRow = Prisma.CustomExerciseGetPayload<{
+  select: typeof customExerciseSelect;
+}>;
 
 @Injectable()
 export class ExerciseLibraryService {
@@ -38,6 +53,7 @@ export class ExerciseLibraryService {
     const where: Prisma.CustomExerciseWhereInput = {
       professionalId: user.sub,
       ...(query.muscleGroup ? { muscleGroup: query.muscleGroup } : {}),
+      ...(query.equipment ? { equipment: query.equipment } : {}),
       ...(normalizedQuery
         ? { normalizedName: { contains: normalizedQuery } }
         : {}),
@@ -50,6 +66,7 @@ export class ExerciseLibraryService {
     });
 
     const catalogRows = SAFEMOVE_EXERCISE_CATALOG.filter((entry) => {
+      if (query.equipment && entry.equipment !== query.equipment) return false;
       if (query.muscleGroup && entry.muscleGroup !== query.muscleGroup) {
         return false;
       }
@@ -63,23 +80,136 @@ export class ExerciseLibraryService {
     });
 
     return [
-      ...customRows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        muscleGroup: row.muscleGroup,
-        equipment: row.equipment,
-        notes: row.notes,
-        source: 'CUSTOM' as const,
-      })),
-      ...catalogRows.map((entry) => ({
-        id: entry.id,
-        name: entry.name,
-        muscleGroup: entry.muscleGroup,
-        equipment: entry.equipment,
-        notes: entry.notes ?? null,
-        source: 'CATALOG' as const,
-      })),
+      ...customRows.map((row) => this.customItem(row)),
+      ...catalogRows.map((entry) => {
+        const detail = this.catalogDetail(entry.id);
+        return {
+          id: detail.id,
+          name: detail.name,
+          muscleGroup: detail.muscleGroup,
+          equipment: detail.equipment,
+          notes: detail.notes,
+          source: detail.source,
+          hasDemonstration: detail.hasDemonstration,
+          demonstrationTypes: detail.demonstrationTypes,
+        };
+      }),
     ];
+  }
+
+  async get(
+    user: AuthUser,
+    exerciseId: string,
+  ): Promise<ExerciseLibraryDetail> {
+    this.assertTrainingProfessional(user);
+    if (/^cat-[a-z]+-[0-9]{2}$/.test(exerciseId))
+      return this.catalogDetail(exerciseId);
+    this.assertCustomId(exerciseId);
+    const row = await this.prisma.customExercise.findFirst({
+      where: { id: exerciseId, professionalId: user.sub },
+      select: customExerciseSelect,
+    });
+    if (!row)
+      throw new NotFoundException('Exercício personalizado não encontrado.');
+    return this.customDetail(row);
+  }
+
+  async updateVideo(
+    user: AuthUser,
+    id: string,
+    dto: UpdateExerciseVideoDto,
+  ): Promise<ExerciseLibraryDetail> {
+    this.assertTrainingProfessional(user);
+    this.assertCustomId(id);
+    const videoUrl =
+      dto.videoUrl === null ? null : normalizeExerciseVideoUrl(dto.videoUrl);
+    // O filtro de versão e o incremento pertencem ao mesmo UPDATE, dentro da transação clínica.
+    const result = await this.prisma.customExercise.updateMany({
+      where: {
+        id,
+        professionalId: user.sub,
+        mediaVersion: dto.expectedMediaVersion,
+      },
+      data: { videoUrl, mediaVersion: { increment: 1 } },
+    });
+    if (!result.count) {
+      const existing = await this.prisma.customExercise.findFirst({
+        where: { id, professionalId: user.sub },
+        select: customExerciseSelect,
+      });
+      if (!existing)
+        throw new NotFoundException('Exercício personalizado não encontrado.');
+      throw new ConflictException(
+        'O vídeo foi alterado. Atualize o exercício e tente novamente.',
+      );
+    }
+    return this.get(user, id);
+  }
+
+  private assertCustomId(id: string) {
+    if (!isUUID(id))
+      throw new BadRequestException('Identificador de exercício inválido.');
+  }
+
+  private customItem(row: CustomExerciseRow): ExerciseLibraryItem {
+    return {
+      id: row.id,
+      name: row.name,
+      muscleGroup: row.muscleGroup,
+      equipment: row.equipment,
+      notes: row.notes,
+      source: 'CUSTOM',
+      hasDemonstration: !!row.videoUrl,
+      demonstrationTypes: row.videoUrl ? ['VIDEO'] : [],
+    };
+  }
+
+  private customDetail(row: CustomExerciseRow): ExerciseLibraryDetail {
+    return {
+      ...this.customItem(row),
+      mediaVersion: row.mediaVersion,
+      demonstration: row.videoUrl
+        ? {
+            revision: String(row.mediaVersion),
+            instruction: row.notes ?? '',
+            personalVideoUrl: row.videoUrl,
+          }
+        : null,
+    };
+  }
+
+  private catalogDetail(id: string): ExerciseLibraryDetail {
+    const entry = SAFEMOVE_EXERCISE_CATALOG.find((item) => item.id === id);
+    if (!entry) throw new NotFoundException('Exercício não encontrado.');
+    const snapshot = findCatalogDemonstration(id);
+    const demonstration = snapshot
+      ? {
+          ...snapshot,
+          assets: snapshot.assets?.map((asset) => ({
+            ...asset,
+            displayAllowed: isApprovedDemonstrationAsset(asset),
+          })),
+        }
+      : null;
+    const types = [
+      ...new Set(
+        demonstration?.assets
+          ?.filter((asset) => asset.displayAllowed)
+          .map((asset) => asset.type) ?? [],
+      ),
+    ];
+    return {
+      id: entry.id,
+      name: entry.name,
+      muscleGroup: entry.muscleGroup,
+      equipment: entry.equipment,
+      notes: entry.notes ?? null,
+      source: 'CATALOG',
+      mediaVersion: null,
+      demonstration,
+      hasDemonstration: types.length > 0,
+      demonstrationTypes: types,
+    };
   }
 
   async create(
@@ -89,6 +219,8 @@ export class ExerciseLibraryService {
     this.assertTrainingProfessional(user);
     const trimmedName = dto.name.trim().replace(/\s+/g, ' ');
     const normalizedName = normalizeExerciseName(trimmedName);
+    const videoUrl =
+      dto.videoUrl == null ? null : normalizeExerciseVideoUrl(dto.videoUrl);
 
     if (trimmedName.length < 2 || !normalizedName) {
       throw new BadRequestException('Informe um nome válido para o exercício.');
@@ -112,6 +244,7 @@ export class ExerciseLibraryService {
       const created = await this.prisma.customExercise.create({
         data: {
           professionalId: user.sub,
+          videoUrl,
           name: trimmedName,
           normalizedName,
           muscleGroup: dto.muscleGroup,
@@ -121,14 +254,7 @@ export class ExerciseLibraryService {
         select: customExerciseSelect,
       });
 
-      return {
-        id: created.id,
-        name: created.name,
-        muscleGroup: created.muscleGroup,
-        equipment: created.equipment,
-        notes: created.notes,
-        source: 'CUSTOM',
-      };
+      return this.customItem(created);
     } catch (error) {
       if (
         error &&

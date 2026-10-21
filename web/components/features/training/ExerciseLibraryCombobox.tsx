@@ -1,6 +1,6 @@
 "use client"
 
-import { useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useLayoutEffect, useRef, useState, useId } from "react"
 import {
   QueryClient,
   QueryClientContext,
@@ -20,11 +20,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useExerciseLibrary } from "@/hooks/features/useExerciseLibrary"
+import { ExerciseLibraryDetail } from "./ExerciseLibraryDetail"
+import { useAuth } from "@/contexts/auth-context"
+import type { LibraryReference } from "@/types/exercise-demonstration"
 import {
   EXERCISE_EQUIPMENT_LABELS,
   MUSCLE_GROUP_LABELS,
   MUSCLE_GROUP_OPTIONS,
   type ExerciseLibraryItem,
+  type ExerciseEquipment,
   type MuscleGroup,
 } from "@/types/workout"
 
@@ -33,7 +37,7 @@ export interface ExerciseLibraryComboboxProps {
   currentName: string
   currentMuscleGroup: MuscleGroup | ""
   disabled?: boolean
-  onSelect: (selection: { name: string; muscleGroup: MuscleGroup }) => void
+  onSelect: (selection: { name: string; muscleGroup: MuscleGroup; libraryReference: LibraryReference }) => void
 }
 
 function ExerciseLibraryComboboxInner({
@@ -43,10 +47,30 @@ function ExerciseLibraryComboboxInner({
   disabled,
   onSelect,
 }: ExerciseLibraryComboboxProps) {
+  const previewPrefix = useId()
+  const searchFocus = useRef<HTMLInputElement>(null)
+  const [previewId, setPreviewId] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const [searchInput, setSearchInput] = useState("")
   const [debouncedQuery, setDebouncedQuery] = useState("")
   const [groupFilter, setGroupFilter] = useState<MuscleGroup | "">("")
+  const [equipmentFilter, setEquipmentFilter] = useState<ExerciseEquipment | "">("")
+  const [pendingSelection, setPendingSelection] = useState<{ id: string; owner: string } | null>(null)
+  const [selectionError, setSelectionError] = useState<string | null>(null)
+  const { user } = useAuth()
+  const currentOwner = useRef(user?.sub)
+  const selectionRequest = useRef<AbortController | null>(null)
+  const openRef = useRef(false)
+  const selectionEpoch = useRef(0)
+  useLayoutEffect(() => { currentOwner.current = user?.sub }, [user?.sub])
+  useEffect(() => () => selectionRequest.current?.abort(), [user?.sub])
+
+  useEffect(() => {
+    if (pendingSelection && pendingSelection.owner !== user?.sub) {
+      setPendingSelection(null)
+      setSelectionError(null)
+    }
+  }, [pendingSelection, user?.sub])
   const [creatingCustom, setCreatingCustom] = useState(false)
   const [customName, setCustomName] = useState("")
   const [customGroup, setCustomGroup] = useState<MuscleGroup>("CHEST")
@@ -59,10 +83,11 @@ function ExerciseLibraryComboboxInner({
     return () => window.clearTimeout(timer)
   }, [searchInput])
 
-  const { libraryQuery, createCustomMutation, deleteCustomMutation } =
+  const { libraryQuery, loadDetail, createCustomMutation, deleteCustomMutation } =
     useExerciseLibrary({
       q: debouncedQuery,
       muscleGroup: groupFilter,
+      equipment: equipmentFilter,
       enabled: open,
     })
 
@@ -70,22 +95,61 @@ function ExerciseLibraryComboboxInner({
   const customItems = items.filter(item => item.source === "CUSTOM")
   const catalogItems = items.filter(item => item.source === "CATALOG")
 
+  const beginIntent = () => {
+    const attempt = ++selectionEpoch.current
+    selectionRequest.current?.abort()
+    selectionRequest.current = null
+    setPendingSelection(null)
+    return attempt
+  }
+
+  const closeLibrary = () => {
+    openRef.current = false
+    beginIntent()
+    setOpen(false)
+    setPreviewId(null)
+  }
+
   const handleOpenChange = (nextOpen: boolean) => {
-    setOpen(nextOpen)
-    if (nextOpen) {
-      setCustomError(null)
-      setCreatingCustom(false)
-      setCustomName(currentName.trim())
-      setCustomGroup(currentMuscleGroup || groupFilter || "CHEST")
+    if (!nextOpen) { closeLibrary(); return }
+    openRef.current = true
+    setOpen(true)
+    setSelectionError(null)
+    setCustomError(null)
+    setCreatingCustom(false)
+    setCustomName(currentName.trim())
+    setCustomGroup(currentMuscleGroup || groupFilter || "CHEST")
+  }
+
+  const selectItem = async (id: string) => {
+    const owner = user?.sub
+    if (!owner) return
+    const attempt = beginIntent()
+    const controller = new AbortController()
+    selectionRequest.current = controller
+    setSelectionError(null)
+    setPendingSelection({ id, owner })
+    try {
+      const detail = await loadDetail(id, controller.signal)
+      if (controller.signal.aborted || owner !== currentOwner.current || selectionRequest.current !== controller || attempt !== selectionEpoch.current || !openRef.current) return
+      if (detail.id !== id) throw new Error("Detalhe incompatível")
+      closeLibrary()
+      onSelect({
+        name: detail.name,
+        muscleGroup: detail.muscleGroup,
+        libraryReference: { source: detail.source, exerciseId: detail.id, demonstrationRevision: detail.demonstration?.revision ?? null },
+      })
+    } catch {
+      if (!controller.signal.aborted && owner === currentOwner.current && selectionRequest.current === controller && attempt === selectionEpoch.current && openRef.current) {
+        setSelectionError("Não foi possível conferir o exercício. Tente selecioná-lo novamente.")
+      }
     }
   }
 
-  const handlePick = (item: ExerciseLibraryItem) => {
-    onSelect({ name: item.name, muscleGroup: item.muscleGroup })
-    setOpen(false)
-  }
+  const handlePick = (item: ExerciseLibraryItem) => { void selectItem(item.id) }
 
   const handleStartCustom = () => {
+    beginIntent()
     setCustomError(null)
     setCustomName(searchInput.trim() || currentName.trim())
     setCustomGroup(groupFilter || currentMuscleGroup || "CHEST")
@@ -99,14 +163,16 @@ function ExerciseLibraryComboboxInner({
       return
     }
     setCustomError(null)
+    const owner = user?.sub
+    const attempt = beginIntent()
     try {
       const created = await createCustomMutation.mutateAsync({
         name: trimmed,
         muscleGroup: customGroup,
       })
-      onSelect({ name: created.name, muscleGroup: created.muscleGroup })
+      if (!owner || owner !== currentOwner.current || !openRef.current || attempt !== selectionEpoch.current) return
       setCreatingCustom(false)
-      setOpen(false)
+      await selectItem(created.id)
     } catch {
       setCustomError(
         "Não foi possível salvar o exercício próprio. Verifique se já existe um com este nome.",
@@ -129,10 +195,12 @@ function ExerciseLibraryComboboxInner({
         </Button>
       </PopoverTrigger>
       <PopoverContent
+        onInteractOutside={event => { if (previewId) event.preventDefault() }}
+        onEscapeKeyDown={event => { if (previewId) event.preventDefault() }}
         align="start"
         className="w-[min(92vw,420px)] space-y-3 border-[var(--sm-border)] bg-[var(--sm-surface)] p-3 text-[var(--sm-ink)]"
       >
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-[var(--sm-muted)]">
             Biblioteca de exercícios
           </span>
@@ -142,7 +210,7 @@ function ExerciseLibraryComboboxInner({
             onChange={event =>
               setGroupFilter(event.target.value as MuscleGroup | "")
             }
-            className="min-h-9 rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-2 text-xs font-medium text-[var(--sm-ink)]"
+            className="min-h-11 rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-2 text-xs font-medium text-[var(--sm-ink)]"
           >
             <option value="">Todos os grupos</option>
             {MUSCLE_GROUP_OPTIONS.map(option => (
@@ -151,10 +219,23 @@ function ExerciseLibraryComboboxInner({
               </option>
             ))}
           </select>
+          <select
+            aria-label="Filtrar biblioteca por equipamento"
+            value={equipmentFilter}
+            onChange={event => setEquipmentFilter(event.target.value as ExerciseEquipment | "")}
+            className="min-h-11 rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-2 text-xs font-medium text-[var(--sm-ink)]"
+          >
+            <option value="">Todos os equipamentos</option>
+            {Object.entries(EXERCISE_EQUIPMENT_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
         </div>
+
+        {selectionError ? <p role="alert" className="text-xs text-[var(--sm-danger)]">{selectionError}</p> : null}
+        {pendingSelection && !selectionError ? <p role="status" className="text-xs">Conferindo exercício...</p> : null}
 
         <Command shouldFilter={false} className="border border-[var(--sm-border)]">
           <CommandInput
+            ref={searchFocus}
             placeholder="Buscar exercício (ex.: supino, agachamento)..."
             value={searchInput}
             onValueChange={setSearchInput}
@@ -186,10 +267,11 @@ function ExerciseLibraryComboboxInner({
                             {MUSCLE_GROUP_LABELS[item.muscleGroup]} · Próprio
                           </p>
                         </div>
+                        <button type="button" id={`${previewPrefix}-${item.id}`} aria-label={`Ver execução de ${item.name}`} className="min-h-11 min-w-11 shrink-0 rounded px-2 text-xs font-semibold text-[var(--sm-brand)] hover:bg-[var(--sm-subtle-hover)]" onKeyDown={event => event.stopPropagation()} onClick={event => { event.stopPropagation(); beginIntent(); setPreviewId(item.id) }}>Ver execução</button>
                         <button
                           type="button"
                           aria-label={`Excluir exercício próprio ${item.name}`}
-                          className="rounded p-1 text-[var(--sm-muted)] hover:bg-[var(--sm-subtle-hover)] hover:text-[var(--sm-danger)]"
+                          className="min-h-11 min-w-11 rounded p-1 text-[var(--sm-muted)] hover:bg-[var(--sm-subtle-hover)] hover:text-[var(--sm-danger)]"
                           onClick={event => {
                             event.stopPropagation()
                             void deleteCustomMutation.mutateAsync(item.id)
@@ -220,6 +302,7 @@ function ExerciseLibraryComboboxInner({
                               : ""}
                           </p>
                         </div>
+                        <button type="button" id={`${previewPrefix}-${item.id}`} aria-label={`Ver execução de ${item.name}`} className="min-h-11 min-w-11 shrink-0 rounded px-2 text-xs font-semibold text-[var(--sm-brand)] hover:bg-[var(--sm-subtle-hover)]" onKeyDown={event => event.stopPropagation()} onClick={event => { event.stopPropagation(); beginIntent(); setPreviewId(item.id) }}>Ver execução</button>
                       </CommandItem>
                     ))}
                   </CommandGroup>
@@ -233,7 +316,7 @@ function ExerciseLibraryComboboxInner({
           <Button
             type="button"
             variant="outline"
-            className="min-h-10 w-full gap-1.5 text-xs font-semibold"
+            className="min-h-11 w-full gap-1.5 text-xs font-semibold"
             onClick={handleStartCustom}
           >
             <Plus className="size-3.5" aria-hidden="true" />
@@ -253,7 +336,7 @@ function ExerciseLibraryComboboxInner({
                 value={customName}
                 onChange={event => setCustomName(event.target.value)}
                 placeholder="Ex.: Agachamento pausa 2s"
-                className="min-h-10 text-sm"
+                className="min-h-11 text-sm"
               />
             </div>
             <div className="space-y-1">
@@ -269,7 +352,7 @@ function ExerciseLibraryComboboxInner({
                 onChange={event =>
                   setCustomGroup(event.target.value as MuscleGroup)
                 }
-                className="min-h-10 w-full rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-3 text-sm text-[var(--sm-ink)]"
+                className="min-h-11 w-full rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-3 text-sm text-[var(--sm-ink)]"
               >
                 {MUSCLE_GROUP_OPTIONS.map(option => (
                   <option key={option.value} value={option.value}>
@@ -287,7 +370,7 @@ function ExerciseLibraryComboboxInner({
               <Button
                 type="button"
                 variant="outline"
-                className="min-h-9 px-3 text-xs"
+                className="min-h-11 px-3 text-xs"
                 onClick={() => setCreatingCustom(false)}
               >
                 Cancelar
@@ -295,7 +378,7 @@ function ExerciseLibraryComboboxInner({
               <Button
                 type="button"
                 disabled={createCustomMutation.isPending}
-                className="min-h-9 px-3 text-xs"
+                className="min-h-11 px-3 text-xs"
                 onClick={() => void handleCreateCustom()}
               >
                 {createCustomMutation.isPending
@@ -305,6 +388,7 @@ function ExerciseLibraryComboboxInner({
             </div>
           </div>
         )}
+        <ExerciseLibraryDetail fallbackFocus={() => searchFocus.current} exerciseId={previewId ?? undefined} open={Boolean(previewId)} onOpenChange={next => { if (!next) setPreviewId(null) }} onSelect={id => { setPreviewId(null); void selectItem(id) }} />
       </PopoverContent>
     </Popover>
   )

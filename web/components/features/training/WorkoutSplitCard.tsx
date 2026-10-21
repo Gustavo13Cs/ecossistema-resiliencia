@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { WorkoutFormExercise, WorkoutFormSplit } from "@/lib/workout-form"
 import type { MuscleGroup } from "@/types/workout"
+import type { LibraryReference } from "@/types/exercise-demonstration"
 import { WorkoutExerciseCard } from "./WorkoutExerciseCard"
 
 export interface WorkoutSplitCardProps {
@@ -27,7 +28,7 @@ export interface WorkoutSplitCardProps {
   ) => void
   onSelectLibraryExercise: (
     exerciseId: string,
-    selection: { name: string; muscleGroup: MuscleGroup },
+    selection: { name: string; muscleGroup: MuscleGroup; libraryReference: LibraryReference },
   ) => void
   onMoveExerciseUp: (exerciseIndex: number) => void
   onMoveExerciseDown: (exerciseIndex: number) => void
@@ -149,7 +150,7 @@ export function WorkoutSplitCard({
 
       {split.exercises.length === 0 ? (
         <p className="text-sm text-[var(--sm-muted)]">
-          Nenhum exercício adicionado nesta divisão. Adicione pelo menos um exercício para salvar.
+          Nenhum exercício adicionado nesta divisão.
         </p>
       ) : (
         <div className="space-y-4">

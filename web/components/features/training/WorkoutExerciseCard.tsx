@@ -18,6 +18,8 @@ import {
   type TrainingMethod,
 } from "@/types/workout"
 import { ExerciseLibraryCombobox } from "./ExerciseLibraryCombobox"
+import { renameWorkoutExercise } from "@/lib/exercise-reference"
+import type { LibraryReference } from "@/types/exercise-demonstration"
 
 export interface WorkoutExerciseCardProps {
   exercise: WorkoutFormExercise
@@ -32,6 +34,7 @@ export interface WorkoutExerciseCardProps {
   onSelectLibraryExercise: (selection: {
     name: string
     muscleGroup: MuscleGroup
+    libraryReference: LibraryReference
   }) => void
   onMoveUp: () => void
   onMoveDown: () => void
@@ -67,6 +70,7 @@ export function WorkoutExerciseCard({
   onRemove,
 }: WorkoutExerciseCardProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [detachNotice, setDetachNotice] = useState(false)
 
   const tempoError = exercise.tempo.trim()
     ? errors[`exercises.${exercise.id}.tempo`]
@@ -161,7 +165,15 @@ export function WorkoutExerciseCard({
               id={`ex-name-${exercise.id}`}
               value={exercise.name}
               disabled={disabled}
-              onChange={event => onChange("name", event.target.value)}
+              onChange={event => {
+                const renamed = renameWorkoutExercise(exercise, event.target.value)
+                if (exercise.libraryReference && !renamed.libraryReference) {
+                  setDetachNotice(true)
+                  onChange("libraryReference", null)
+                  onChange("demonstrationSnapshot", null)
+                }
+                onChange("name", event.target.value)
+              }}
               placeholder="Digite ou busque na biblioteca"
               className="min-h-11 flex-1"
             />
@@ -170,9 +182,11 @@ export function WorkoutExerciseCard({
               currentName={exercise.name}
               currentMuscleGroup={exercise.muscleGroup}
               disabled={disabled}
-              onSelect={onSelectLibraryExercise}
+              onSelect={selection => { setDetachNotice(false); onSelectLibraryExercise(selection) }}
             />
           </div>
+          {detachNotice ? <p role="status" className="text-xs text-[var(--sm-muted)]">O nome mudou; a demonstração foi desvinculada. Selecione novamente na biblioteca para associá-la.</p> : null}
+          {exercise.libraryReference ? <div className="flex items-center gap-2"><span className="text-xs text-[var(--sm-muted)]">{exercise.demonstrationSnapshot ? "Demonstração pronta" : "Vinculado à biblioteca"}</span><Button type="button" variant="outline" disabled={disabled} className="min-h-10 text-xs" onClick={() => { onChange("libraryReference", null); onChange("demonstrationSnapshot", null); setDetachNotice(true) }}>Retirar vínculo</Button></div> : null}
         </div>
 
         <div className="space-y-1.5">
@@ -281,10 +295,11 @@ export function WorkoutExerciseCard({
                 value={exercise.method}
                 disabled={disabled}
                 onChange={event =>
-                  onChange("method", event.target.value as TrainingMethod)
+                  onChange("method", event.target.value as TrainingMethod | "")
                 }
                 className="min-h-11 w-full rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-3 text-sm text-[var(--sm-ink)]"
               >
+                <option value="">Não informado</option>
                 {TRAINING_METHOD_OPTIONS.map(option => (
                   <option key={option.value} value={option.value}>
                     {option.label}

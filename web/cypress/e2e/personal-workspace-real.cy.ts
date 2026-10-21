@@ -63,11 +63,13 @@ describe("SafeMove Personal workspace and student record over real HTTP", () => 
       cy.findAllByRole("link", { name: "Criar prescrição" }).first().click()
       cy.location("pathname", { timeout: 20_000 }).should("eq", `/clientes/${clientId}/novo-treino`)
 
+      cy.findByRole("button", { name: "Começar do zero" }).click()
+
       cy.findByLabelText("Título da prescrição").should("have.value", "")
       cy.findByDisplayValue("Supino Reto com Barra").should("not.exist")
 
       cy.findByLabelText("Título da prescrição").type("Ficha Base Força A")
-      cy.findByLabelText("Objetivo principal").type("Ganho de força máxima")
+      cy.findByLabelText("Objetivo").type("Ganho de força máxima")
       cy.findByLabelText("Duração (semanas)").type("8")
       cy.findByLabelText("Foco da divisão").type("Inferiores e cadeia posterior")
       cy.findByRole("button", { name: "Adicionar exercício" }).click()
@@ -75,11 +77,15 @@ describe("SafeMove Personal workspace and student record over real HTTP", () => 
       cy.findByLabelText("Séries").type("4")
       cy.findByLabelText("Repetições").type("6")
       cy.findByLabelText("Descanso").type("120s")
+      cy.findByRole("button", { name: "Parâmetros avançados" }).click()
       cy.findByLabelText("Observações do exercício").type("Manter brace firme")
       cy.findByRole("textbox", { name: "Orientações gerais" }).type(
         "Aquecer mobilidade de quadril antes da primeira série",
       )
-      cy.findByRole("button", { name: "Salvar prescrição" }).click()
+      cy.findByRole("button", { name: "Finalizar prescrição" }).click()
+      cy.findByRole("alertdialog").findByRole("button", { name: "Confirmar finalização" }).click()
+      cy.findByRole("heading", { name: "Ficha Base Força A" }).should("be.visible")
+      cy.findByRole("link", { name: "Voltar ao prontuário" }).click()
 
       cy.location("pathname", { timeout: 20_000 }).should("eq", studentPath)
       cy.findByRole("heading", { name: "Ficha Base Força A" }).should("be.visible")
@@ -92,10 +98,10 @@ describe("SafeMove Personal workspace and student record over real HTTP", () => 
 
           cy.findByRole("link", { name: "Criar prescrição" }).click()
           cy.location("pathname", { timeout: 20_000 }).should("eq", `/clientes/${clientId}/novo-treino`)
-          cy.findByLabelText("Título da prescrição").should("have.value", "")
-          cy.contains("Salvar esta nova prescrição substituirá o treino ativo").should("be.visible")
+          cy.findByRole("heading", { name: "Nova elaboração de treino" }).should("be.visible")
+          cy.findByLabelText("Título da prescrição").should("not.exist")
 
-          cy.findByRole("button", { name: "Usar treino atual como base" }).click()
+          cy.findByRole("button", { name: "Usar treino ativo como base" }).click()
           cy.findByLabelText("Título da prescrição").should("have.value", "Ficha Base Força A")
           cy.findByDisplayValue("Agachamento Livre").should("be.visible")
 
@@ -103,7 +109,10 @@ describe("SafeMove Personal workspace and student record over real HTTP", () => 
           cy.findByRole("textbox", { name: "Orientações gerais" })
             .clear()
             .type("Progredir carga na última série")
-          cy.findByRole("button", { name: "Salvar prescrição" }).click()
+          cy.findByRole("button", { name: "Finalizar prescrição" }).click()
+          cy.findByRole("alertdialog").findByRole("button", { name: "Confirmar finalização" }).click()
+          cy.findByRole("heading", { name: "Ficha Evolução Força B" }).should("be.visible")
+          cy.findByRole("link", { name: "Voltar ao prontuário" }).click()
 
           cy.location("pathname", { timeout: 20_000 }).should("eq", studentPath)
           cy.findByRole("heading", { name: "Ficha Evolução Força B" }).should("be.visible")
