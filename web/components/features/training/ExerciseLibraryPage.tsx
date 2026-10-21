@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 import { BookOpen, Plus, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,8 @@ import { ExerciseLibraryDetail } from "./ExerciseLibraryDetail"
 
 const selectClass = "min-h-11 w-full rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-3 text-sm text-[var(--sm-ink)]"
 function PersonalLibrary() {
+  const previewPrefix = useId()
+  const searchFocus = useRef<HTMLInputElement>(null)
   const [search, setSearch] = useState("")
   const [query, setQuery] = useState("")
   const [group, setGroup] = useState<MuscleGroup | "">("")
@@ -51,7 +53,7 @@ function PersonalLibrary() {
     </section> : null}
     {message ? <p role={createCustomMutation.isError ? "alert" : "status"} className="text-sm">{message}</p> : null}
     <section aria-label="Buscar na biblioteca" className="space-y-4 rounded-[var(--sm-radius-md)] border border-[var(--sm-border)] bg-[var(--sm-surface)] p-5">
-      <label className="block space-y-2 text-sm font-semibold"><span className="flex items-center gap-2"><Search className="size-4" aria-hidden="true" />Buscar exercício</span><Input value={search} onChange={event => setSearch(event.target.value)} className="min-h-11" placeholder="Ex.: supino, remada, agachamento" /></label>
+      <label className="block space-y-2 text-sm font-semibold"><span className="flex items-center gap-2"><Search className="size-4" aria-hidden="true" />Buscar exercício</span><Input ref={searchFocus} value={search} onChange={event => setSearch(event.target.value)} className="min-h-11" placeholder="Ex.: supino, remada, agachamento" /></label>
       <div className="grid gap-4 sm:grid-cols-3">
         <label className="space-y-2 text-sm font-semibold">Grupo muscular<select value={group} onChange={event => setGroup(event.target.value as MuscleGroup | "")} className={selectClass}><option value="">Todos os grupos</option>{MUSCLE_GROUP_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
         <label className="space-y-2 text-sm font-semibold">Equipamento<select value={equipment} onChange={event => setEquipment(event.target.value as ExerciseEquipment | "")} className={selectClass}><option value="">Todos os equipamentos</option>{Object.entries(EXERCISE_EQUIPMENT_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
@@ -64,11 +66,11 @@ function PersonalLibrary() {
         {items.length === 0 ? <p className="rounded-[var(--sm-radius-md)] border border-[var(--sm-border)] p-6 text-sm">Nenhum exercício encontrado. Ajuste os filtros ou cadastre um exercício próprio.</p> : <ul className="grid gap-3 md:grid-cols-2">{items.map(item => <li key={item.id} className="flex min-w-0 flex-col gap-3 rounded-[var(--sm-radius-md)] border border-[var(--sm-border)] bg-[var(--sm-surface)] p-5">
           <div className="flex flex-wrap items-center justify-between gap-2"><span className="text-xs font-bold uppercase tracking-wide text-[var(--sm-muted)]">{item.source === "CATALOG" ? "SafeMove" : "Meus exercícios"}</span><span className="text-xs text-[var(--sm-muted)]">{item.demonstrationTypes.includes("IMAGE") ? "Ilustração" : item.hasDemonstration ? "Vídeo" : "Sem demonstração"}</span></div>
           <h2 className="break-words text-lg font-bold">{item.name}</h2><p className="text-sm text-[var(--sm-muted)]">{MUSCLE_GROUP_LABELS[item.muscleGroup]}{item.equipment ? ` · ${EXERCISE_EQUIPMENT_LABELS[item.equipment]}` : ""}</p>
-          <Button type="button" variant="outline" className="mt-auto min-h-11 gap-2 self-start" aria-label={`Ver execução de ${item.name}`} onClick={() => setSelectedId(item.id)}><BookOpen aria-hidden="true" className="size-4" />Ver execução</Button>
+          <Button type="button" id={`${previewPrefix}-${item.id}`} variant="outline" className="mt-auto min-h-11 gap-2 self-start" aria-label={`Ver execução de ${item.name}`} onClick={() => setSelectedId(item.id)}><BookOpen aria-hidden="true" className="size-4" />Ver execução</Button>
         </li>)}</ul>}
       </>}
     </section>
-    <ExerciseLibraryDetail exerciseId={selectedId} open={Boolean(selectedId)} onOpenChange={open => { if (!open) setSelectedId(undefined) }} allowVideoEdit />
+    <ExerciseLibraryDetail fallbackFocus={() => searchFocus.current} exerciseId={selectedId} open={Boolean(selectedId)} onOpenChange={open => { if (!open) setSelectedId(undefined) }} allowVideoEdit />
   </div>
 }
 
