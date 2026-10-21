@@ -46,6 +46,8 @@
 
 ## Fase 3 — Planos Versionados & Outputs
 
+Publicação em andamento, autorizada em 21/10/2026: integração com main validada (web666, browser32/32), seguida por PR/checks, três migrations e deploy dos serviços existentes. [Runbook da publicação](runbooks/personal-release-2026-10-21.md).
+
 Entrega do Personal aprovada pelo usuário em 17/10/2026, com execução por subagentes: [direção](planning/2026-10-17-personal-proxima-entrega.md), [rascunhos/revisões](superpowers/plans/2026-10-17-personal-rascunhos-revisoes.md) e [biblioteca visual](superpowers/plans/2026-10-17-personal-biblioteca-visual.md). Ambos os planos concluídos e revisados. A biblioteca preserva 148 exercícios, inclui 20 com 21 ilustrações licenciadas e permite cadastro manual com link próprio opcional; fichas e rascunhos mantêm referências históricas autorizadas. A revisão ampla identificou um ajuste de foco, corrigido em `2d8d803` e aprovado na única rerevisão restrita, sem pendências. Gates finais: 657 testes web, tipos/lint/builds e visual real 4/4; API 737, PostgreSQL 243, 21 probes oficiais e 28/28 regressões reais retidos sem alterações nas fontes afetadas. O lote histórico 31/32 continua discriminado no [runbook](runbooks/personal-exercise-media-verification.md), sem ser apresentado como verde. Desktop/celular, teclado, impressão e isolamento por conta conferidos. Branch/worktree preservadas; sem publicação ou migrations em produção.
 
 | # | Tarefa | Status | Agente |
