@@ -8,6 +8,8 @@
 
 ## Current Task
 
+- **2026-10-21 — Rascunhos e biblioteca visual do Personal concluídos localmente (Codex)**: dois planos aprovados executados e revisados. Biblioteca com 148 exercícios, dos quais 20 têm 21 ilustrações licenciadas; cadastro manual com link próprio opcional, snapshots históricos e página exclusiva PERSONAL. A revisão ampla encontrou apenas F-1 (foco em busca pendente), corrigido em `2d8d803`; rerevisão Spec PASS/Quality APPROVED sem achados. Gates finais: web 657/86 arquivos, 22 focados, tipos/lint/builds novos, visual real 4/4 e bundle com 84 chunks. API 737/58 suítes, PostgreSQL 243/37, 21 probes e 28 regressões reais retidos por fontes não afetadas. O lote histórico 31/32 permanece falho e documentado. Desktop/mobile, impressão real, teclado e isolamento conferidos. Nove decisões de rascunho e cinco visuais preservadas nos runbooks; relatórios/evidências arquivados em `.superpowers/artifacts/personal-exercise-media/implementation-evidence/`. Sem pendências do escopo aprovado; branch/worktree mantidas, sem push, merge, deploy ou produção.
+
 - **2026-10-21 — Biblioteca visual Task6 concluída/revisada; revisão ampla iniciada (Codex)**: commit `abfeaa7`, SpecPASS/QualityAPPROVED, sem achados. API737/58 suítes, PostgreSQL243/37, web655/86 arquivos, tipos/lint/builds e21 probes oficiais aprovados. Evidência real final:28/28 regressões mais4/4 visuais; lote integrado anterior31/32 permanece falho no relatório. Impressão real com detalhe aberto, foco, CSP/referrer, histórico/CAS/contaB e capturas1440×900/390×844 conferidos. Cinco decisões registradas, nove critérios de aceite mapeados. Revisão ampla do delta visual é o gate restante; branch/worktree preservadas, sem produção, push ou deploy.
 
 - **2026-10-21 — Biblioteca visual Task6 retomada (Codex)**: tarefas1–5 e rascunhos preservados em `a08ce6f`. Subagente retoma a mesma verificação integrada, sem reiniciar a implementação. API737/58 suítes, PostgreSQL243/37 e21 probes oficiais aprovados; correção real de foco com14 testes focados e suíte web655/86 arquivos, tipos/lint aprovados. O lote real recompilou API/Next/pós-build e confirmou retorno de foco por mouse/teclado; encontrou bloqueio de interação ao adicionar o segundo exercício, ainda em diagnóstico. Não há aceite integral do navegador/print/capturas nem revisão ampla final. PostgreSQL sintético local restabelecido com22 migrations; sem produção, push ou deploy.
@@ -76,6 +78,7 @@
 
 | Data | Tarefa | Branch |
 |------|--------|--------|
+| 2026-10-21 | Personal: rascunhos/revisões e biblioteca visual com 148 exercícios/20 demonstrados; revisões aprovadas, web 657/API 737/PG 243 e browser visual 4 + regressões 28 | agent/codex/personal-workout-implementation |
 | 2026-10-07 | Recuperação Render em produção: backup/restauração, migration original, papéis restritos, CA/TLS, proxy-addr2.0.8; PR#24/CI completos e deploy live | agent/codex/render-tenant-migration-recovery |
 | 2026-10-07 | Auditoria/RLS locais v3: API475, PG16/17 E2E187 por versao, web391, Cypress real1; papéis separados, trilha antes de resposta e consulta própria; produção pendente | agent/codex/security-followup |
 | 2026-10-05 | DR-001/002/003 e corrida do snapshot de receitas corrigidos localmente; 472 unitários API/150 E2E/388 web, tipos/lint/build aprovados; propostas protegidas pendentes | `agent/codex/security-followup` |

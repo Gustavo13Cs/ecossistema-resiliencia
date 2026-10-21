@@ -42,7 +42,7 @@
 
 ## Fase 3 — Planos Versionados & Outputs
 
-Proposta e especificações do Personal aprovadas pelo usuário em 17/10/2026, incluindo biblioteca visual e cadastro manual: [direção de produto](planning/2026-10-17-personal-proxima-entrega.md). Planos de [rascunhos/revisões](superpowers/plans/2026-10-17-personal-rascunhos-revisoes.md) e [biblioteca visual](superpowers/plans/2026-10-17-personal-biblioteca-visual.md) aprovados para execução com subagentes por tarefa. Rascunhos concluídos: tarefas 1–7 e revisão ampla aprovadas após correção dos dois achados de acesso em `f052883`. API660, PostgreSQL227, web601 e Cypress9/9 anteriores; correção final com97 testes focados, duas recuperações reais e baseline5/5, sem nova rodada integral9/9. Resultados e limites no runbook. Biblioteca visual Task1 concluída/revisada em `91a1006`:20 exercícios/21 ilustrações licenciadas,148 IDs preservados,21 probes oficiais aprovados. Task2 concluída/revisada em `e34e8b7`, com API719/PG232 aprovados; Task3 concluída/revisada em `2c38e4d`, com snapshots históricos e formatoV2; Task4 concluída/revisada em `cdddb89`+`3e581b2`, incluindo correção de corrida; Task5 concluída/revisada em `54a3337`+`ba39ea0` (página, demonstrações, CSP e impressão); Task6 concluída/revisada em `abfeaa7`: API737/58 suítes, PostgreSQL243/37, web655/86 arquivos, tipos/lint/builds e21 probes aprovados; navegador com28/28 regressões e4/4 visuais finais, mantendo explícito o lote anterior31/32. Impressão real com diálogo aberto, teclado e desktop/mobile conferidos. Revisão ampla da biblioteca em andamento. O bloqueio de wger permanece, sem impedir a alternativa aprovada.
+Entrega do Personal aprovada pelo usuário em 17/10/2026, com execução por subagentes: [direção](planning/2026-10-17-personal-proxima-entrega.md), [rascunhos/revisões](superpowers/plans/2026-10-17-personal-rascunhos-revisoes.md) e [biblioteca visual](superpowers/plans/2026-10-17-personal-biblioteca-visual.md). Ambos os planos concluídos e revisados. A biblioteca preserva 148 exercícios, inclui 20 com 21 ilustrações licenciadas e permite cadastro manual com link próprio opcional; fichas e rascunhos mantêm referências históricas autorizadas. A revisão ampla identificou um ajuste de foco, corrigido em `2d8d803` e aprovado na única rerevisão restrita, sem pendências. Gates finais: 657 testes web, tipos/lint/builds e visual real 4/4; API 737, PostgreSQL 243, 21 probes oficiais e 28/28 regressões reais retidos sem alterações nas fontes afetadas. O lote histórico 31/32 continua discriminado no [runbook](runbooks/personal-exercise-media-verification.md), sem ser apresentado como verde. Desktop/celular, teclado, impressão e isolamento por conta conferidos. Branch/worktree preservadas; sem publicação ou migrations em produção.
 
 | # | Tarefa | Status | Agente |
 |---|--------|--------|--------|
@@ -52,7 +52,7 @@ Proposta e especificações do Personal aprovadas pelo usuário em 17/10/2026, i
 | 3.4 | Impressão de planos | ⏳ | — |
 | 3.5 | Compartilhamento por WhatsApp/e-mail | ⏳ | — |
 | 3.6 | Banco versionado de receitas com macros, restrições e associação às refeições | ✅ | Codex |
-| 3.7 | Biblioteca visual de exercícios e referências nas prescrições | 🔄 | Codex |
+| 3.7 | Biblioteca visual de exercícios e referências nas prescrições | ✅ | Codex |
 
 ---
 

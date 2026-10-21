@@ -119,3 +119,5 @@ Na web, criar `ExerciseDemonstration.tsx` (renderizador), `ExerciseLibraryDetail
 Especificação seções 1–3: tarefa 1; persistência e contratos: tarefas 2–4; interface/acessibilidade: tarefa 5; segurança/cache: tarefas 2–5; os nove critérios de aceite: tarefas 1–6. Review Focus tem testes nas tarefas indicadas. Modelo legado e rascunho V1 preservados.
 
 Autorrevisão: decisões de fonte condicionadas a uma verificação explícita na tarefa 1; nenhuma etapa depende de nome de provedor adivinhado ou acesso pago. Interfaces, campos, comandos e sequência conferidos. Plano preparado, não executado. Recomendação: execução direta após o primeiro lote, com revisão independente da branch ao final.
+
+Execução concluída localmente em 21/10/2026: tarefas 1–6 com revisão independente, revisão ampla e correção final `2d8d803` aprovada na única rerevisão restrita. Nove critérios de aceite satisfeitos. Resultados atuais, distinção dos lotes históricos, decisões e limites no [runbook de verificação](../../runbooks/personal-exercise-media-verification.md). Branch/worktree preservadas; sem push, merge, deploy ou migrations em produção.
