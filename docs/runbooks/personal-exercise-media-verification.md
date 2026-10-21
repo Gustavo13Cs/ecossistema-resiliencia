@@ -271,3 +271,60 @@ Antes de mudar revisão/fonte: repetir licença por arquivo, conferência de var
 - Aviso ts-jest TS151002 (Node16/isolatedModules) preexistente observado; configurações não foram alteradas.
 
 Evidência de execução bruta e relatório completo: `.superpowers/sdd/2026-10-17-personal-biblioteca-visual/task-1-logs/` e `task-1-report.md`, locais e ignorados pelo Git. Este runbook preserva o inventário público durável; não inclui arquivos de mídia nem dados clínicos. Revisão clínica, integração API/persistência/UI/CSP e validação browser pertencem às tarefas seguintes.
+
+## Task 6 — verificação real em 20–21/10/2026
+
+Base integrada: `a08ce6f871f590791970f7bdb83e8ae8bbcfc3e5` (Tasks 1–5). Task 6 acrescenta o harness real e sua evidência, além de corrigir o retorno de foco quando um filtro pendente substitui ou remove o botão de preview. O inventário e a proveniência da Task 1 acima permanecem verbatim.
+
+### Ambiente e reprodução
+
+Somente banco sintético PostgreSQL 16, 22 migrations existentes, ambas as variáveis `DATABASE_URL` e `DIRECT_URL` iguais a `postgresql://postgres:postgres@localhost:5434/ecossistema_resiliencia_test`. O runner verifica isolamento/portas, prepara roles e contas sintéticas, executa builds, inicia seus processos e os encerra em `finally`. Suítes PostgreSQL e navegador executam sequencialmente.
+
+Em `api/`:
+
+```sh
+npm test -- --runInBand
+npx tsc --noEmit
+npx eslint 'src/**/*.ts' 'test/**/*.ts' --max-warnings=0
+DATABASE_URL=postgresql://postgres:postgres@localhost:5434/ecossistema_resiliencia_test DIRECT_URL=postgresql://postgres:postgres@localhost:5434/ecossistema_resiliencia_test NODE_OPTIONS=--max-old-space-size=4096 npm run test:e2e
+npx ts-node scripts/verify-exercise-demonstrations.ts --probe
+npx ts-node test/run-personal-p1-real.ts --media-fixture --spec cypress/e2e/personal-exercise-library-real.cy.ts,cypress/e2e/personal-workout-drafts-real.cy.ts,cypress/e2e/personal-workspace-real.cy.ts,cypress/e2e/professional-phase1-real.cy.ts,cypress/e2e/assessments-client-real.cy.ts,cypress/e2e/client-owned-clinical-resources.cy.ts
+```
+
+Em `web/`: `TZ=America/Fortaleza npm test`, `npm run typecheck`, `npm run lint`. O runner normal executa `npm run build` na API e `INTERNAL_API_URL=http://localhost:3000 npm run build -- --webpack` na web, incluindo postbuild. O webpack atende aos node_modules compartilhados deste worktree. Os builds normais após a correção de foco passaram em `browser-integrated-final.log`; esse processo teve falha posterior no navegador e não constitui uma execução E2E aprovada.
+
+Para alterações apenas do harness, `--reuse-build` exige opt-in, `NODE_ENV=test`, ambas as URLs literais do banco, artefatos existentes e prova com SHA-256 das fontes/config de aplicação e BUILD_ID iguais à compilação bem-sucedida. Prova final: digest `3ec8a0002421c026950ea241116c075500d4b4153eb89ba8f7bae75408385ae6`, BUILD_ID `gA1vRZKEtX70SpgosJTZ5`. As execuções finais verificaram essa prova antes de iniciar a aplicação; sem a flag, o runner sempre compila. A seleção padrão dos quatro specs P1 foi preservada. Seleção Windows/Linux foi testada pelo helper; a execução real observada foi Linux.
+
+O ambiente sem Xvfb no host usa a imagem oficial `cypress/included@sha256:9f27bf8330595fe44dc3ba9c0c96cff1618d24241bd9f95a470f8f6e2ecfba7e` (15.14.2), usuário 1000, rede dedicada `safemove-personal-test_default`, workspace bind e CA do host somente para leitura. Bootstrap encaminha apenas localhost:5434 ao banco sintético. Comando Docker exato, logs e relatório ficam em `.superpowers/sdd/2026-10-17-personal-biblioteca-visual/`; `task-6-logs/run-browser.sh` aceita a lista de specs e `TASK6_REUSE_BUILD=1` para o reuso atestado.
+
+### Fixture controlada e direitos
+
+O Cypress atende somente a URL exata imutável do `frame-1.svg` de bench-press aprovado, com os bytes locais licenciados. API, banco, autenticação JWT e autorização permanecem reais. O task recusa uso sem `--media-fixture`, `NODE_ENV=test` e ambas as URLs literais. O teste de 404 substitui somente essa resposta de mídia. Não foi criado endpoint de mídia, proxy genérico ou exceção de localhost no manifesto/renderer/CSP.
+
+[Atribuição completa e proveniência](../../web/cypress/fixtures/exercise-demonstration/ATTRIBUTION.md). SHA-256 obrigatório: `8d2e44a4623545d6de7318bd7e9e61ca6c70b79847ef0360973a8ad6ec4a7d27`. SVG sem alteração SafeMove, CC BY-SA 4.0, Bryl Lim / Workout Guide, pose original Everkinetic / Greg Priday. A fixture acompanha a mesma licença; créditos, licença e alterações anteriores permanecem acessíveis no detalhe real.
+
+Fonte imutável: <https://cdn.jsdelivr.net/gh/bryllim/workout-guide@aac599224bb9780305239607ef98540b7e0ce389/packages/workout-guide/assets/bench-press/frame-1.svg>. Licença: <https://creativecommons.org/licenses/by-sa/4.0/>. Download independente e comparação byte a byte com a fonte oficial passaram. O cleanup limita exclusões à conta sintética e aos prefixos Task6.
+
+### Resultados finais observados
+
+| Verificação | Resultado |
+| --- | --- |
+| API unitários completos | 58 suítes, 737 testes aprovados; exit 0 |
+| API tipos/lint | aprovados; runner/cleanup também verificados após suas alterações |
+| PostgreSQL completo | 37 suítes, 243 testes aprovados; exit 0 |
+| Web completa após correção de foco | 86 arquivos, 655 testes aprovados; tipos/lint aprovados |
+| Guard da fixture | 7 testes aprovados; hash e flag/ambiente/ambas as URLs conferidos |
+| Helpers do runner/reuso | 13 testes aprovados; quatro defaults, comandos Windows/Linux e rejeição de fontes/config/BUILD_ID alterados |
+| Probe oficial separado (20/10) | 20 exercícios, 21 SVGs, cinco grupos; todos HTTP 200 `image/svg+xml`; exit 0 |
+| Builds normais após correção de foco | API, Next webpack, TypeScript e postbuild aprovados; fonte atestada acima |
+| Bundle do build final | 84 chunks inspecionados; origem/caminho públicos presentes, sem marcadores de catálogo privado, Prisma ou harness |
+| Lote de seis specs em 21/10 | 31/32 aprovados; exit 1: visual 3/4 e os outros cinco specs 28/28 |
+| Visual corrigido, execução final em 21/10 | 4/4 aprovados; exit 0 em `browser-visual-final.log` |
+
+A evidência final dos seis specs é composta pelos 28 testes de regressão aprovados no lote integrado e pelos quatro visuais aprovados na execução seguinte. O lote de seis não é apresentado como integralmente verde. A única falha desse lote foi um seletor genérico `role=status` que também encontrou os avisos de desvinculação; o seletor final exige o texto visível de rascunho salvo, seu papel status, a URL correta e o botão habilitado. Nenhum comportamento de produto mudou entre essas duas execuções.
+
+O visual final verificou catálogo de 148 itens/filtros, próprios com/sem link, preview sem seleção nem perda de texto, teclado/Escape/retorno de foco, seleção explícita, snapshot resolvido no servidor, rascunho/reload/finalização/reabertura, conflito CAS 409, atualização/exclusão sem reescrever a ficha antiga, renomeação/desvinculação, isolamento da conta B e falha 404 da imagem sem quebrar o texto. A impressão real foi emulada por CDP com o detalhe salvo aberto: overlay e conteúdo do diálogo tiveram `display:none`, enquanto o artigo textual continuou visível. Documento servido com CSP exata/nonce e `Referrer-Policy: no-referrer`; requisição da imagem sem Referer e links próprios sem iframe.
+
+Capturas finais únicas: biblioteca em 1440×900 e detalhe salvo em 390×844, sem overflow horizontal nas asserções. Cópias preservadas em `.superpowers/artifacts/personal-biblioteca-visual/task-6/task6-library-desktop-final.png` e `task6-saved-detail-mobile-final.png`. O coordenador inspecionou os fluxos desktop/mobile. A regressão de foco teve RED reproduzível por consulta adiada, seguida de 14 testes focados e da suíte web completa aprovados.
+
+Limites: a coorte oficial é IMAGE (ilustrações), sem prova de vídeo oficial ou reprodução de YouTube/Vimeo. O probe observa disponibilidade naquele instante e não garante uptime, permanência ou custos futuros; condições da fonte continuam no [runbook de decisões](personal-exercise-media-decisions.md). O teste de navegação por documento observou `bfcacheObserved:false`, portanto não prova restauração por BFCache. Não houve execução Windows, deploy ou migration em produção, envio de dados de aluno ao fornecedor nem avaliação clínica nova neste lote.

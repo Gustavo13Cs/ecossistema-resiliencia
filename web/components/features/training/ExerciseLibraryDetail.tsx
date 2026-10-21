@@ -18,6 +18,7 @@ interface Props {
   onSelect?: (exerciseId: string) => void
   saved?: { name: string; snapshot: DemonstrationPresentation }
   allowVideoEdit?: boolean
+  fallbackFocus?: () => HTMLElement | null
 }
 
 function VideoEditor({ detail }: { detail: Detail }) {
@@ -75,12 +76,21 @@ function CurrentDetail({ exerciseId, onSelect, allowVideoEdit }: Pick<Props, "on
   </>
 }
 
-export function ExerciseLibraryDetail({ exerciseId, open, onOpenChange, onSelect, saved, allowVideoEdit = false }: Props) {
+export function ExerciseLibraryDetail({ exerciseId, open, onOpenChange, onSelect, saved, allowVideoEdit = false, fallbackFocus }: Props) {
   const { user } = useAuth()
   const previousFocus = useRef<HTMLElement | null>(null)
+  const restoreFocus = (event: Event) => {
+    event.preventDefault()
+    const previous = previousFocus.current
+    // O filtro pendente pode substituir o botão enquanto o detalhe está aberto.
+    const replacement = previous?.id ? document.getElementById(previous.id) : null
+    const target = [previous, replacement, fallbackFocus?.()]
+      .find(element => element?.isConnected && !element.matches(":disabled"))
+    target?.focus()
+  }
   if (user?.role !== "PERSONAL") return null
   return <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent overlayClassName="print:hidden" showCloseButton={false} className="max-h-[85dvh] overflow-y-auto bg-[var(--sm-surface)] text-[var(--sm-ink)] sm:max-w-2xl print:hidden" onOpenAutoFocus={() => { previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null }} onCloseAutoFocus={event => { event.preventDefault(); const target = previousFocus.current; if (target?.isConnected && !target.matches(":disabled")) target.focus() }}>
+    <DialogContent overlayClassName="print:hidden" showCloseButton={false} className="max-h-[85dvh] overflow-y-auto bg-[var(--sm-surface)] text-[var(--sm-ink)] sm:max-w-2xl print:hidden" onOpenAutoFocus={() => { previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null }} onCloseAutoFocus={restoreFocus}>
       <div className="flex items-center justify-between gap-3"><DialogTitle>Execução do exercício</DialogTitle><DialogClose asChild><Button type="button" variant="outline" className="min-h-11">Fechar</Button></DialogClose></div>
       <DialogDescription>{saved ? "Demonstração registrada nesta ficha." : "Consulte as orientações e os créditos da demonstração."}</DialogDescription>
       {open ? saved ? <><h3 className="break-words text-xl font-bold">{saved.name}</h3><ExerciseDemonstration snapshot={saved.snapshot} /></> : exerciseId ? <CurrentDetail key={`${user.sub}:${exerciseId}`} exerciseId={exerciseId} onSelect={onSelect} allowVideoEdit={allowVideoEdit} /> : null : null}

@@ -13,6 +13,11 @@ import {
   personalRealSpecs,
 } from './personal-real-runner-options';
 
+import {
+  assertBuildProof,
+  recordBuildProof,
+} from './personal-real-build-proof';
+
 const API_PORT = 3000;
 const WEB_PORT = 3001;
 const E2E_JWT_SECRET = 'synthetic-local-test-secret-at-least-32-characters';
@@ -119,6 +124,8 @@ export async function runPersonalP1Real(
   args: readonly string[] = process.argv.slice(2),
 ): Promise<number> {
   const specs = personalRealSpecs(args);
+  const mediaFixture = args.includes('--media-fixture');
+  const reuseBuild = args.includes('--reuse-build');
   const previousDatabaseUrl = process.env.DATABASE_URL;
   const previousDirectUrl = process.env.DIRECT_URL;
 
@@ -128,6 +135,16 @@ export async function runPersonalP1Real(
   }
 
   assertIsolationDatabase();
+  if (
+    reuseBuild &&
+    (process.env.NODE_ENV !== 'test' ||
+      process.env.DATABASE_URL !==
+        'postgresql://postgres:postgres@localhost:5434/ecossistema_resiliencia_test')
+  ) {
+    throw new Error(
+      'Build reuse requires NODE_ENV=test and the literal local database',
+    );
+  }
   await assertPortFree(API_PORT);
   await assertPortFree(WEB_PORT);
 
@@ -152,7 +169,7 @@ export async function runPersonalP1Real(
     restoreRoles = () => roles.restore();
 
     runCommandSync('npm', ['run', 'seed:phase1-e2e'], apiDir, adminEnv);
-    runCommandSync('npm', ['run', 'build'], apiDir, adminEnv);
+    if (!reuseBuild) runCommandSync('npm', ['run', 'build'], apiDir, adminEnv);
 
     const webBuildEnv: NodeJS.ProcessEnv = {
       ...process.env,
@@ -163,12 +180,20 @@ export async function runPersonalP1Real(
     delete webBuildEnv.DIRECT_URL;
 
     // Webpack também permite o node_modules compartilhado dos worktrees isolados.
-    runCommandSync(
-      'npm',
-      ['run', 'build', '--', '--webpack'],
-      webDir,
-      webBuildEnv,
-    );
+    if (reuseBuild) {
+      assertBuildProof(resolve(apiDir, '..'));
+      console.log(
+        'Reusing verified API/web builds: unchanged application source/config digest and Next build ID',
+      );
+    } else {
+      runCommandSync(
+        'npm',
+        ['run', 'build', '--', '--webpack'],
+        webDir,
+        webBuildEnv,
+      );
+      recordBuildProof(resolve(apiDir, '..'));
+    }
 
     apiProcess = spawn(
       process.execPath,
@@ -221,7 +246,13 @@ export async function runPersonalP1Real(
     );
     const cypressResult = spawnSync(cypress.command, cypress.args, {
       cwd: webDir,
-      env: webBuildEnv,
+      env: {
+        ...webBuildEnv,
+        NODE_ENV: 'test',
+        DATABASE_URL: isolationDatabase,
+        DIRECT_URL: isolationDatabase,
+        SAFEMOVE_LICENSED_MEDIA_FIXTURE: mediaFixture ? '1' : '',
+      },
       stdio: 'inherit',
       windowsHide: true,
     });

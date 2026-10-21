@@ -6,10 +6,13 @@ export const PERSONAL_P1_SPECS = [
 ] as const;
 
 export function personalRealSpecs(args: readonly string[]): string {
+  args = args.filter(
+    (arg) => arg !== '--media-fixture' && arg !== '--reuse-build',
+  );
   if (!args.length) return PERSONAL_P1_SPECS.join(',');
   if (args.length !== 2 || args[0] !== '--spec' || !args[1].trim()) {
     throw new Error(
-      'Usage: run-personal-p1-real.ts [--spec <comma-separated list>]',
+      'Usage: run-personal-p1-real.ts [--media-fixture] [--reuse-build] [--spec <comma-separated list>]',
     );
   }
   return args[1];

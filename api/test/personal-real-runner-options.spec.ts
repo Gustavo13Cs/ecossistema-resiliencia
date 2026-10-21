@@ -21,6 +21,26 @@ describe('Personal real runner options', () => {
     expect(personalRealSpecs([])).toBe(PERSONAL_P1_SPECS.join(','));
   });
 
+  it('enables the isolated media harness without changing spec defaults', () => {
+    expect(personalRealSpecs(['--media-fixture'])).toBe(
+      PERSONAL_P1_SPECS.join(','),
+    );
+    expect(
+      personalRealSpecs(['--spec', 'visual.cy.ts', '--media-fixture']),
+    ).toBe('visual.cy.ts');
+  });
+
+  it('allows explicit artifact reuse while preserving default full builds/specs', () => {
+    expect(
+      personalRealSpecs([
+        '--reuse-build',
+        '--spec',
+        'visual.cy.ts',
+        '--media-fixture',
+      ]),
+    ).toBe('visual.cy.ts');
+  });
+
   it.each([['--spec'], ['--spec', ''], ['--other'], ['--spec', 'a', 'b']])(
     'rejects malformed arguments %j',
     (...args) => expect(() => personalRealSpecs(args)).toThrow('--spec'),

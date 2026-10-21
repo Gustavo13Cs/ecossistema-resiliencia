@@ -1,6 +1,6 @@
 "use client"
 
-import { useContext, useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useContext, useEffect, useLayoutEffect, useRef, useState, useId } from "react"
 import {
   QueryClient,
   QueryClientContext,
@@ -47,6 +47,8 @@ function ExerciseLibraryComboboxInner({
   disabled,
   onSelect,
 }: ExerciseLibraryComboboxProps) {
+  const previewPrefix = useId()
+  const searchFocus = useRef<HTMLInputElement>(null)
   const [previewId, setPreviewId] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const [searchInput, setSearchInput] = useState("")
@@ -233,6 +235,7 @@ function ExerciseLibraryComboboxInner({
 
         <Command shouldFilter={false} className="border border-[var(--sm-border)]">
           <CommandInput
+            ref={searchFocus}
             placeholder="Buscar exercício (ex.: supino, agachamento)..."
             value={searchInput}
             onValueChange={setSearchInput}
@@ -264,7 +267,7 @@ function ExerciseLibraryComboboxInner({
                             {MUSCLE_GROUP_LABELS[item.muscleGroup]} · Próprio
                           </p>
                         </div>
-                        <button type="button" aria-label={`Ver execução de ${item.name}`} className="min-h-11 min-w-11 shrink-0 rounded px-2 text-xs font-semibold text-[var(--sm-brand)] hover:bg-[var(--sm-subtle-hover)]" onKeyDown={event => event.stopPropagation()} onClick={event => { event.stopPropagation(); beginIntent(); setPreviewId(item.id) }}>Ver execução</button>
+                        <button type="button" id={`${previewPrefix}-${item.id}`} aria-label={`Ver execução de ${item.name}`} className="min-h-11 min-w-11 shrink-0 rounded px-2 text-xs font-semibold text-[var(--sm-brand)] hover:bg-[var(--sm-subtle-hover)]" onKeyDown={event => event.stopPropagation()} onClick={event => { event.stopPropagation(); beginIntent(); setPreviewId(item.id) }}>Ver execução</button>
                         <button
                           type="button"
                           aria-label={`Excluir exercício próprio ${item.name}`}
@@ -299,7 +302,7 @@ function ExerciseLibraryComboboxInner({
                               : ""}
                           </p>
                         </div>
-                        <button type="button" aria-label={`Ver execução de ${item.name}`} className="min-h-11 min-w-11 shrink-0 rounded px-2 text-xs font-semibold text-[var(--sm-brand)] hover:bg-[var(--sm-subtle-hover)]" onKeyDown={event => event.stopPropagation()} onClick={event => { event.stopPropagation(); beginIntent(); setPreviewId(item.id) }}>Ver execução</button>
+                        <button type="button" id={`${previewPrefix}-${item.id}`} aria-label={`Ver execução de ${item.name}`} className="min-h-11 min-w-11 shrink-0 rounded px-2 text-xs font-semibold text-[var(--sm-brand)] hover:bg-[var(--sm-subtle-hover)]" onKeyDown={event => event.stopPropagation()} onClick={event => { event.stopPropagation(); beginIntent(); setPreviewId(item.id) }}>Ver execução</button>
                       </CommandItem>
                     ))}
                   </CommandGroup>
@@ -385,7 +388,7 @@ function ExerciseLibraryComboboxInner({
             </div>
           </div>
         )}
-        <ExerciseLibraryDetail exerciseId={previewId ?? undefined} open={Boolean(previewId)} onOpenChange={next => { if (!next) setPreviewId(null) }} onSelect={id => { setPreviewId(null); void selectItem(id) }} />
+        <ExerciseLibraryDetail fallbackFocus={() => searchFocus.current} exerciseId={previewId ?? undefined} open={Boolean(previewId)} onOpenChange={next => { if (!next) setPreviewId(null) }} onSelect={id => { setPreviewId(null); void selectItem(id) }} />
       </PopoverContent>
     </Popover>
   )

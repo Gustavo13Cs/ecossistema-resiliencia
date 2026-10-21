@@ -73,7 +73,7 @@ describe('explicit demonstration maintenance probes (offline)', () => {
         verifyExerciseDemonstrations('--check'),
       ).resolves.toBeUndefined();
       await expect(verifyExerciseDemonstrations('--unknown')).rejects.toThrow(
-        'Use --check or --probe',
+        'Use --check, --probe or --write-public-rules',
       );
     } finally {
       log.mockRestore();

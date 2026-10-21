@@ -261,8 +261,49 @@ describe("ExerciseLibraryCombobox", () => {
     expect(screen.getByLabelText("Nome manual")).toHaveValue("Nome editado")
     expect(screen.getByTestId("reference")).toHaveTextContent("sem vínculo")
   })
-})
 
+
+ it.each([true, false])("restores valid focus after pending filtering replaces the launcher (retained=%s)", async retained => {
+  let release!: (response: [number, unknown]) => void
+  http.resetHandlers()
+  http.onGet("/workouts/exercise-library").reply(config => config.params?.q
+    ? new Promise(resolve => { release = resolve }) : [200, sampleItems])
+  http.onGet("/workouts/exercise-library/cat-1").reply(200, { ...sampleItems[1], demonstration: { revision: "r1", instruction: "Execução conferida" } })
+  const user = userEvent.setup()
+  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><ExerciseLibraryCombobox exerciseId="filter-preview" currentName="Nome manual" currentMuscleGroup="" onSelect={vi.fn()} /></QueryClientProvider>)
+  await user.click(screen.getByRole("button", { name: /biblioteca/i }))
+  const oldPreview = await screen.findByRole("button", { name: "Ver execução de Agachamento livre com barra" })
+  await user.type(screen.getByPlaceholderText("Buscar exercício (ex.: supino, agachamento)..."), "A")
+  oldPreview.focus()
+  await user.keyboard("{Enter}")
+  expect(await screen.findByRole("dialog", { name: "Execução do exercício" })).toBeVisible()
+  await waitFor(() => expect(release).toBeTypeOf("function"))
+  expect(oldPreview.isConnected).toBe(false)
+  await act(async () => release([200, retained ? [sampleItems[1]] : []]))
+  await user.keyboard("{Escape}")
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "Execução do exercício" })).toBeNull())
+  if (retained) {
+    const replacement = screen.getByRole("button", { name: "Ver execução de Agachamento livre com barra" })
+    expect(replacement).not.toBe(oldPreview)
+    await waitFor(() => expect(replacement).toHaveFocus())
+  } else {
+    await waitFor(() => expect(screen.getByPlaceholderText("Buscar exercício (ex.: supino, agachamento)...")).toHaveFocus())
+  }
+ })
+ it("restores the keyboard preview launcher after Escape inside the library popover", async () => {
+  const user = userEvent.setup()
+  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><ExerciseLibraryCombobox exerciseId="keyboard-preview" currentName="Nome manual" currentMuscleGroup="" onSelect={vi.fn()} /></QueryClientProvider>)
+  await user.click(screen.getByRole("button", { name: /biblioteca/i }))
+  const preview = await screen.findByRole("button", { name: "Ver execução de Agachamento livre com barra" })
+  preview.focus()
+  expect(preview).toHaveFocus()
+  await user.keyboard("{Enter}")
+  expect(await screen.findByRole("dialog", { name: "Execução do exercício" })).toBeVisible()
+  await user.keyboard("{Escape}")
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "Execução do exercício" })).toBeNull())
+  await waitFor(() => expect(preview).toHaveFocus())
+ })
+})
  it("preview_does_not_select_or_lose_editor_text", async () => {
   http.resetHandlers()
   http.onGet("/workouts/exercise-library").reply(200, sampleItems)
