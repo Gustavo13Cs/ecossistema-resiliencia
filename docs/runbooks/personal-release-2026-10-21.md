@@ -1,6 +1,6 @@
 # Publicação Personal — 21/10/2026
 
-Publicação em andamento, autorizada pelo mantenedor: enviar a branch, abrir PR, integrar na main e publicar frontend/API. O resultado remoto será acrescentado após os checks e a verificação dos serviços.
+Publicação concluída: [PR #30](https://github.com/Gustavo13Cs/ecossistema-resiliencia/pull/30) integrado na main em `0d81b14b2b9242faf8c68b16685bee85031682e8`, com frontend e API confirmados em produção nesse mesmo commit. O registro abaixo preserva a preparação e acrescenta o resultado remoto.
 
 ## Artefato e validação local
 
@@ -27,3 +27,14 @@ Verificação isolada em PostgreSQL16 local, sem dados clínicos: schema e metad
 Depois da migração: 22 migrations concluídas, três novos SHA corretos, histórico anterior intacto, nenhuma falha não revertida; tabela/enums/sete colunas/índices/FKs/checks/RLS/ACLs conferidos por catálogos. Depois do merge: todos os checks do PR, Vercel READY e Render live no commit integrado; log de startup sem migrations pendentes. Probes sem sessão: /api/ping com pong, biblioteca/rascunhos exigindo autenticação; nenhuma consulta ou escrita clínica para smoke test.
 
 Evidências locais preservadas em `.superpowers/artifacts/personal-release-2026-10-21/`: relatório e logs da integração, inspeção de baseline, prova de rollback/replay e compatibilidade Prisma. Não contêm credenciais de produção nem conteúdo de prontuário. Evidências anteriores da implementação continuam nos runbooks de rascunhos e biblioteca visual.
+
+## Resultado remoto confirmado
+
+- CI do PR: [execução 39687518297](https://github.com/Gustavo13Cs/ecossistema-resiliencia/actions/runs/39687518297), quatro jobs aprovados, incluindo API unitária/E2E e Cypress. Preview Vercel aprovado. Revisão independente da integração/payload aprovada sem achados.
+- Migração aplicada uma vez, antes do merge, em 21/10/2026 às 22:38:53 UTC; operação Supabase `20261021223853`. Readback exato das 22 migrations, com os 19 pares anteriores e o registro revertido preservados, nenhuma falha pendente e os três novos checksums corretos. Tabela, 13 colunas próprias mais sete adições, enums, políticas, cinco índices e dez constraints conferidos. Role clínica com CRUD; demais papéis sem privilégios na nova tabela; checker limitado a SELECT no histórico. Auditoria independente do readback aprovada; Security Advisor sem lints.
+- Merge normal do PR em `0d81b14`, às 22:40:53 UTC. A árvore integrada é idêntica à árvore revisada da branch `bbef3e6`, conferida por diff vazio.
+- Vercel de produção `dpl_GWeR2pKg5g9AnYpW17LViyiTvUio`: READY, SHA `0d81b14`, domínio `ecossistema-resiliencia.vercel.app` atribuído.
+- Render `dep-dbcjutrm8hqs73adctag`: live no mesmo SHA, concluído às 22:42:37 UTC. Startup registrou `No pending migrations to apply.` e `Nest application successfully started`; as sete rotas de rascunho foram registradas. Credenciais e configuração de runtime não foram alteradas.
+- HTTP pelo domínio de produção: `/auth/login` 200 com HTML, `/api/ping` 200 com `pong`, `/api/workouts/exercise-library` e `/api/workouts/drafts` 401 sem sessão. O campo `success:false` do conector nas respostas 401 indica o HTTP esperado, não falha da publicação.
+
+Evidência de conclusão: subdiretório `production/` do arquivo de release, com readbacks somente de metadados, consulta de pós-verificação, revisões, CI e resumo sanitizado de deploy/HTTP/startup. As jornadas autenticadas foram verificadas no ambiente isolado; o smoke remoto não leu nem escreveu conteúdo clínico. Este registro documental posterior ao deploy fica na branch da entrega e no PR; não altera o commit de aplicação já publicado na main. Branch/worktree preservadas.

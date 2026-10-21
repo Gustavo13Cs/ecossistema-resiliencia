@@ -1,0 +1,14 @@
+{
+  "workflow_runs": [
+    {
+      "id": 39687518297,
+      "name": "CI",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 89,
+      "jobs_url": "https://api.github.com/repos/Gustavo13Cs/ecossistema-resiliencia/actions/runs/39687518297/jobs",
+      "logs_url": "https://api.github.com/repos/Gustavo13Cs/ecossistema-resiliencia/actions/runs/39687518297/logs",
+      "workflow_id": 334381496
+    }
+  ]
+}

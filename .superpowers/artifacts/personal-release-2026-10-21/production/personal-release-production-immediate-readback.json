@@ -1,0 +1,154 @@
+{
+  "actor": "postgres",
+  "database": "postgres",
+  "completed": [
+    {
+      "checksum": "6ce679695eddaae42098b497adece191f48aa3f14071f3552f85e7e83b72fc06",
+      "migration_name": "20260813000000_baseline"
+    },
+    {
+      "checksum": "418751d33c9681e6057c8ccefb8441bdc3d032000f15e42bea5b9682722c57b8",
+      "migration_name": "20260813120000_add_agenda_core"
+    },
+    {
+      "checksum": "0f9f18da007f18395ba8d0e2e93d505d5c1ad8f99a991b9f7cd49796c6ec470f",
+      "migration_name": "20260821190000_add_client_foundation"
+    },
+    {
+      "checksum": "cb4771a2cb2af33cccad5c9070c8b157d0795bb900b500dcb4148060d8b0ddc8",
+      "migration_name": "20260908194000_backfill_legacy_clients"
+    },
+    {
+      "checksum": "4ed2250c38ae16e385a3858725064b7943795d8f3c73e60395b1dc550f71efa1",
+      "migration_name": "20260909130000_attach_diet_plans_to_clients"
+    },
+    {
+      "checksum": "8962674a2f36025e82100a3692ce9daf7ee5ebfa3fcd16825225925c4c822dac",
+      "migration_name": "20260909165000_index_client_foreign_keys"
+    },
+    {
+      "checksum": "5198fdad7ef7a4135ab15697bc44ea3e0a062620b39af4a7926de6063863fbf2",
+      "migration_name": "20260911113000_attach_physical_assessments_to_clients"
+    },
+    {
+      "checksum": "d7b75b940d1c0350cc1058ae8548955b4aab9fd0fc92eb9de34167ae12fabe3e",
+      "migration_name": "20260914133000_add_professional_appointments"
+    },
+    {
+      "checksum": "7d87e9a28b6baca25e80e094afefc44fb10e12c3628f9e44f8ef844a9213c923",
+      "migration_name": "20260915133000_harden_supabase_data_api_rls"
+    },
+    {
+      "checksum": "2e1c6949926609c6428d3c7bbec894b5b3b1d98730e2abcc7d8d05c13b1fe4a7",
+      "migration_name": "20260921193053_add_versioned_recipe_bank"
+    },
+    {
+      "checksum": "b37c06896fb902e4caef76a6d804b593edeb333a7855d3dd4281a0c7b3e00be1",
+      "migration_name": "20260929115900_prepare_legacy_consultation_notes_index"
+    },
+    {
+      "checksum": "f5ffbd83141d190fb995d8b13e1498002048c14d5f593bc52e64090303357630",
+      "migration_name": "20260929120000_add_client_owned_clinical_resources"
+    },
+    {
+      "checksum": "875ebb013d75f05062c26148851038fda88f5652dcd746d56e9ed1f7dc89c72c",
+      "migration_name": "20260929123000_add_revocable_auth_sessions"
+    },
+    {
+      "checksum": "428a99cf17330feba1dc050af9f4961c624a28ebd0f723292812cb83c3ddbcef",
+      "migration_name": "20260929130000_harden_recipe_function_search_paths"
+    },
+    {
+      "checksum": "40a3e6748e1e0670208317a80aad0e69496cdaf2afe8a8e8232a1bcf6a08cd6f",
+      "migration_name": "20260929133000_index_client_owned_foreign_keys"
+    },
+    {
+      "checksum": "d341ff0639b848d6dfe11a5317a632467ec5d945128adeaf007a5917038c5ac1",
+      "migration_name": "20261001130000_harden_consultation_notes_data_api"
+    },
+    {
+      "checksum": "66bbd17d21f8bddb4ad36df13e7e9fe2ac7cd64adb0ece2646cc659116adc407",
+      "migration_name": "20261006120000_read_audit_tenant_roles"
+    },
+    {
+      "checksum": "a3ead2773928767f7e7baa034e5d2051f6ad61e8b17b2e9d48255e7698134a8b",
+      "migration_name": "20261008120000_remove_read_access_history"
+    },
+    {
+      "checksum": "9c1e41a87c1a832d8e8c774422d8bc76a7bb75a976cc213b1af467d74eb32a8a",
+      "migration_name": "20261016150000_advanced_workout_prescription"
+    },
+    {
+      "checksum": "8ed10193a00878c58abc8e54cefd343a4a458534de66e3c7f05fe571f7a8f802",
+      "migration_name": "20261017120000_workout_drafts"
+    },
+    {
+      "checksum": "da03840afc89c7929d06add63e67e9fa9341bc8e218fdb5ae38909d08b5800d4",
+      "migration_name": "20261017123000_workout_draft_client_index"
+    },
+    {
+      "checksum": "08fceddf1b20acc7cfdcca7cae95664f31231d5c37975c3a40410ba90ad832d9",
+      "migration_name": "20261017130000_exercise_demonstrations"
+    }
+  ],
+  "draft_rls": true,
+  "draft_table": "workout_drafts",
+  "new_columns": [
+    {
+      "type": "int4",
+      "table": "custom_exercises",
+      "column": "mediaVersion",
+      "default": "1",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "custom_exercises",
+      "column": "videoUrl",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "jsonb",
+      "table": "workout_exercises",
+      "column": "demonstrationSnapshot",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "workout_exercises",
+      "column": "libraryExerciseId",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "ExerciseLibrarySource",
+      "table": "workout_exercises",
+      "column": "librarySource",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp",
+      "table": "workouts",
+      "column": "finalizedAt",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "workouts",
+      "column": "revisionOfId",
+      "default": null,
+      "nullable": "YES"
+    }
+  ],
+  "rolled_back": [
+    {
+      "checksum": "6b989ac7c65a692b2940163ff7c567e1a24a9343ba79f739c820d8f18e0f9ba9",
+      "migration_name": "20261006120000_read_audit_tenant_roles"
+    }
+  ],
+  "unresolved_count": 0
+}

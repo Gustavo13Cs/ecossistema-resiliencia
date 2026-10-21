@@ -1,0 +1,1077 @@
+[
+  {
+    "json_build_object": {
+      "identity": {
+        "database": "postgres",
+        "actor": "postgres",
+        "server_version": "17.6"
+      },
+      "prisma": {
+        "expected_completed_count": 22,
+        "completed_count": 22,
+        "exact_expected_22": true,
+        "differences": [],
+        "completed_metadata": [
+          {
+            "id": "d678942f-24db-4afd-9829-6418eea11b5f",
+            "migration_name": "20260813000000_baseline",
+            "checksum": "6ce679695eddaae42098b497adece191f48aa3f14071f3552f85e7e83b72fc06",
+            "started_at": "2026-08-14T13:56:25.52305+00:00",
+            "finished_at": "2026-08-14T13:56:25.52305+00:00",
+            "applied_steps_count": 0
+          },
+          {
+            "id": "965fb5ba-5ed6-4ed7-83ed-3799b0ecaa02",
+            "migration_name": "20260813120000_add_agenda_core",
+            "checksum": "418751d33c9681e6057c8ccefb8441bdc3d032000f15e42bea5b9682722c57b8",
+            "started_at": "2026-08-14T13:56:34.07007+00:00",
+            "finished_at": "2026-08-14T13:56:35.720097+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "737b98d6-ac8d-4445-96d1-c535ff49bfbd",
+            "migration_name": "20260821190000_add_client_foundation",
+            "checksum": "0f9f18da007f18395ba8d0e2e93d505d5c1ad8f99a991b9f7cd49796c6ec470f",
+            "started_at": "2026-09-08T19:12:13.986163+00:00",
+            "finished_at": "2026-09-08T19:12:15.043768+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "977bceda-4c0d-462c-a18a-4b7f9f6c4b16",
+            "migration_name": "20260908194000_backfill_legacy_clients",
+            "checksum": "cb4771a2cb2af33cccad5c9070c8b157d0795bb900b500dcb4148060d8b0ddc8",
+            "started_at": "2026-09-09T16:44:31.941937+00:00",
+            "finished_at": "2026-09-09T16:44:31.941937+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "1d7bb7f4-857f-4a12-87cc-dc27f71141a2",
+            "migration_name": "20260909130000_attach_diet_plans_to_clients",
+            "checksum": "4ed2250c38ae16e385a3858725064b7943795d8f3c73e60395b1dc550f71efa1",
+            "started_at": "2026-09-09T16:47:12.599368+00:00",
+            "finished_at": "2026-09-09T16:47:12.599368+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "2c63d651-fe10-4800-beeb-060fd83235b2",
+            "migration_name": "20260909165000_index_client_foreign_keys",
+            "checksum": "8962674a2f36025e82100a3692ce9daf7ee5ebfa3fcd16825225925c4c822dac",
+            "started_at": "2026-09-09T16:49:01.778787+00:00",
+            "finished_at": "2026-09-09T16:49:01.778787+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "095ee7b2-a164-4559-b7c3-2750a2c6272b",
+            "migration_name": "20260911113000_attach_physical_assessments_to_clients",
+            "checksum": "5198fdad7ef7a4135ab15697bc44ea3e0a062620b39af4a7926de6063863fbf2",
+            "started_at": "2026-09-11T16:56:35.815207+00:00",
+            "finished_at": "2026-09-11T16:56:37.581035+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "d3ece453-a388-45dc-be50-07d9445fd4ee",
+            "migration_name": "20260914133000_add_professional_appointments",
+            "checksum": "d7b75b940d1c0350cc1058ae8548955b4aab9fd0fc92eb9de34167ae12fabe3e",
+            "started_at": "2026-09-14T16:21:20.946673+00:00",
+            "finished_at": "2026-09-14T16:21:24.48525+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "e472b2ef-7b58-4ace-bd1d-e083165c0dc1",
+            "migration_name": "20260915133000_harden_supabase_data_api_rls",
+            "checksum": "7d87e9a28b6baca25e80e094afefc44fb10e12c3628f9e44f8ef844a9213c923",
+            "started_at": "2026-09-16T12:02:11.171077+00:00",
+            "finished_at": "2026-09-16T12:02:11.591949+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "d7461b12-c2ec-42b7-ad1a-b9c571ae1ed8",
+            "migration_name": "20260921193053_add_versioned_recipe_bank",
+            "checksum": "2e1c6949926609c6428d3c7bbec894b5b3b1d98730e2abcc7d8d05c13b1fe4a7",
+            "started_at": "2026-09-28T17:44:09.634646+00:00",
+            "finished_at": "2026-09-28T17:44:10.926384+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "65c454f6-9b17-4b74-ba15-a1f42117cf65",
+            "migration_name": "20260929115900_prepare_legacy_consultation_notes_index",
+            "checksum": "b37c06896fb902e4caef76a6d804b593edeb333a7855d3dd4281a0c7b3e00be1",
+            "started_at": "2026-10-02T19:03:35.430889+00:00",
+            "finished_at": "2026-10-02T19:03:36.328696+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "31d5bd9a-4f3c-4f31-a236-840b914ea230",
+            "migration_name": "20260929120000_add_client_owned_clinical_resources",
+            "checksum": "f5ffbd83141d190fb995d8b13e1498002048c14d5f593bc52e64090303357630",
+            "started_at": "2026-10-02T19:03:36.684746+00:00",
+            "finished_at": "2026-10-02T19:03:37.999132+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "0fcfedca-b70e-4a99-be7d-9e1814df32b8",
+            "migration_name": "20260929123000_add_revocable_auth_sessions",
+            "checksum": "875ebb013d75f05062c26148851038fda88f5652dcd746d56e9ed1f7dc89c72c",
+            "started_at": "2026-10-02T19:03:38.353208+00:00",
+            "finished_at": "2026-10-02T19:03:39.258236+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "c2e93cd8-2fc6-4b7a-a541-c96c86c19e3a",
+            "migration_name": "20260929130000_harden_recipe_function_search_paths",
+            "checksum": "428a99cf17330feba1dc050af9f4961c624a28ebd0f723292812cb83c3ddbcef",
+            "started_at": "2026-10-02T19:03:39.613356+00:00",
+            "finished_at": "2026-10-02T19:03:40.502+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "d33883ff-21b2-4053-a53c-a11090d40d62",
+            "migration_name": "20260929133000_index_client_owned_foreign_keys",
+            "checksum": "40a3e6748e1e0670208317a80aad0e69496cdaf2afe8a8e8232a1bcf6a08cd6f",
+            "started_at": "2026-10-02T19:03:40.856079+00:00",
+            "finished_at": "2026-10-02T19:03:45.135384+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "9865f8d7-f190-43db-9c22-3230a9c130d1",
+            "migration_name": "20261001130000_harden_consultation_notes_data_api",
+            "checksum": "d341ff0639b848d6dfe11a5317a632467ec5d945128adeaf007a5917038c5ac1",
+            "started_at": "2026-10-02T19:03:45.489429+00:00",
+            "finished_at": "2026-10-02T19:03:46.377266+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "7b0e1e5a-4839-4344-b6fe-d47186ea3b83",
+            "migration_name": "20261006120000_read_audit_tenant_roles",
+            "checksum": "66bbd17d21f8bddb4ad36df13e7e9fe2ac7cd64adb0ece2646cc659116adc407",
+            "started_at": "2026-10-07T20:02:16.238449+00:00",
+            "finished_at": "2026-10-07T20:02:17.116194+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "06c57f88-6ea1-43b3-9879-38a20c13fa45",
+            "migration_name": "20261008120000_remove_read_access_history",
+            "checksum": "a3ead2773928767f7e7baa034e5d2051f6ad61e8b17b2e9d48255e7698134a8b",
+            "started_at": "2026-10-08T18:22:02.25914+00:00",
+            "finished_at": "2026-10-08T18:22:03.122497+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "2d69b654-7977-46e9-a53d-da317a250b24",
+            "migration_name": "20261016150000_advanced_workout_prescription",
+            "checksum": "9c1e41a87c1a832d8e8c774422d8bc76a7bb75a976cc213b1af467d74eb32a8a",
+            "started_at": "2026-10-16T20:37:24.281661+00:00",
+            "finished_at": "2026-10-16T20:37:24.520124+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "385bb087-d373-41fd-8402-140be5888e48",
+            "migration_name": "20261017120000_workout_drafts",
+            "checksum": "8ed10193a00878c58abc8e54cefd343a4a458534de66e3c7f05fe571f7a8f802",
+            "started_at": "2026-10-21T22:38:53.272902+00:00",
+            "finished_at": "2026-10-21T22:38:53.44508+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "322def69-726e-4014-8bb1-ba95af6642f5",
+            "migration_name": "20261017123000_workout_draft_client_index",
+            "checksum": "da03840afc89c7929d06add63e67e9fa9341bc8e218fdb5ae38909d08b5800d4",
+            "started_at": "2026-10-21T22:38:53.272902+00:00",
+            "finished_at": "2026-10-21T22:38:53.446618+00:00",
+            "applied_steps_count": 1
+          },
+          {
+            "id": "949cb9bd-f2dc-4976-9ee7-367ee8d8afcc",
+            "migration_name": "20261017130000_exercise_demonstrations",
+            "checksum": "08fceddf1b20acc7cfdcca7cae95664f31231d5c37975c3a40410ba90ad832d9",
+            "started_at": "2026-10-21T22:38:53.272902+00:00",
+            "finished_at": "2026-10-21T22:38:53.446705+00:00",
+            "applied_steps_count": 1
+          }
+        ],
+        "unresolved": [],
+        "rolled_back": [
+          {
+            "id": "4f27dfad-4b10-475a-8ec6-4658a4f9e64d",
+            "name": "20261006120000_read_audit_tenant_roles",
+            "checksum": "6b989ac7c65a692b2940163ff7c567e1a24a9343ba79f739c820d8f18e0f9ba9",
+            "started_at": "2026-10-07T16:43:52.850871+00:00",
+            "finished_at": null,
+            "rolled_back_at": "2026-10-07T17:29:41.625655+00:00",
+            "applied_steps_count": 0
+          }
+        ]
+      },
+      "supabase_operation_history": {
+        "expected_operation_name": "personal_workout_drafts_demonstrations_prisma_sync",
+        "matching_count": 1,
+        "matching_metadata": [
+          {
+            "version": "20261021223853",
+            "name": "personal_workout_drafts_demonstrations_prisma_sync"
+          }
+        ]
+      },
+      "schema": {
+        "draft_table": {
+          "name": "workout_drafts",
+          "owner": "postgres",
+          "rls_enabled": true,
+          "rls_forced": false
+        },
+        "exact_expected_20_columns": true,
+        "columns": [
+          {
+            "table_name": "custom_exercises",
+            "column_name": "mediaVersion",
+            "type_name": "int4",
+            "not_null": true,
+            "formatted_type": "integer",
+            "default_expression": "1"
+          },
+          {
+            "table_name": "custom_exercises",
+            "column_name": "videoUrl",
+            "type_name": "text",
+            "not_null": false,
+            "formatted_type": "text",
+            "default_expression": null
+          },
+          {
+            "table_name": "workout_drafts",
+            "column_name": "baseActiveWorkoutId",
+            "type_name": "text",
+            "not_null": false,
+            "formatted_type": "text",
+            "default_expression": null
+          },
+          {
+            "table_name": "workout_drafts",
+            "column_name": "clientId",
+            "type_name": "text",
+            "not_null": true,
+            "formatted_type": "text",
+            "default_expression": null
+          },
+          {
+            "table_name": "workout_drafts",
+            "column_name": "closedAt",
+            "type_name": "timestamp",
+            "not_null": false,
+            "formatted_type": "timestamp(3) without time zone",
+            "default_expression": null
+          },
+          {
+            "table_name": "workout_drafts",
+            "column_name": "content",
+            "type_name": "jsonb",
+            "not_null": false,
+            "formatted_type": "jsonb",
+            "default_expression": null
+          },
+          {
+            "table_name": "workout_drafts",
+            "column_name": "createdAt",
+            "type_name": "timestamp",
+            "not_null": true,
+            "formatted_type": "timestamp(3) without time zone",
+            "default_expression": "CURRENT_TIMESTAMP"
+          },
+          {
+            "table_name": "workout_drafts",
+            "column_name": "finalizedWorkoutId",
+            "type_name": "text",
+            "not_null": false,
+            "formatted_type": "text",
+            "default_expression": null
+          },
+          {
+            "table_name": "workout_drafts",
+            "column_name": "id",
+            "type_name": "text",
+            "not_null": true,
+            "formatted_type": "text",
+            "default_expression": null
+          },
+          {
+            "table_name": "workout_drafts",
+            "column_name": "professionalId",
+            "type_name": "text",
+            "not_null": true,
+            "formatted_type": "text",
+            "default_expression": null
+          },
+          {
+            "table_name": "workout_drafts",
+            "column_name": "schemaVersion",
+            "type_name": "int4",
+            "not_null": true,
+            "formatted_type": "integer",
+            "default_expression": "1"
+          },
+          {
+            "table_name": "workout_drafts",
+            "column_name": "sourceWorkoutId",
+            "type_name": "text",
+            "not_null": false,
+            "formatted_type": "text",
+            "default_expression": null
+          },
+          {
+            "table_name": "workout_drafts",
+            "column_name": "status",
+            "type_name": "WorkoutDraftStatus",
+            "not_null": true,
+            "formatted_type": "\"WorkoutDraftStatus\"",
+            "default_expression": "'OPEN'::\"WorkoutDraftStatus\""
+          },
+          {
+            "table_name": "workout_drafts",
+            "column_name": "updatedAt",
+            "type_name": "timestamp",
+            "not_null": true,
+            "formatted_type": "timestamp(3) without time zone",
+            "default_expression": null
+          },
+          {
+            "table_name": "workout_drafts",
+            "column_name": "version",
+            "type_name": "int4",
+            "not_null": true,
+            "formatted_type": "integer",
+            "default_expression": "1"
+          },
+          {
+            "table_name": "workout_exercises",
+            "column_name": "demonstrationSnapshot",
+            "type_name": "jsonb",
+            "not_null": false,
+            "formatted_type": "jsonb",
+            "default_expression": null
+          },
+          {
+            "table_name": "workout_exercises",
+            "column_name": "libraryExerciseId",
+            "type_name": "text",
+            "not_null": false,
+            "formatted_type": "text",
+            "default_expression": null
+          },
+          {
+            "table_name": "workout_exercises",
+            "column_name": "librarySource",
+            "type_name": "ExerciseLibrarySource",
+            "not_null": false,
+            "formatted_type": "\"ExerciseLibrarySource\"",
+            "default_expression": null
+          },
+          {
+            "table_name": "workouts",
+            "column_name": "finalizedAt",
+            "type_name": "timestamp",
+            "not_null": false,
+            "formatted_type": "timestamp(3) without time zone",
+            "default_expression": null
+          },
+          {
+            "table_name": "workouts",
+            "column_name": "revisionOfId",
+            "type_name": "text",
+            "not_null": false,
+            "formatted_type": "text",
+            "default_expression": null
+          }
+        ],
+        "enums": [
+          {
+            "enum_name": "ExerciseLibrarySource",
+            "labels": [
+              "CATALOG",
+              "CUSTOM"
+            ]
+          },
+          {
+            "enum_name": "WorkoutDraftStatus",
+            "labels": [
+              "OPEN",
+              "FINALIZED",
+              "DISCARDED"
+            ]
+          }
+        ],
+        "enums_match": true,
+        "policies": [
+          {
+            "policy_name": "clinical_owner",
+            "permissive": true,
+            "command": "*",
+            "roles": [
+              "safemove_clinical"
+            ],
+            "using_expression": "(safemove_private.is_clinical() AND (current_setting('safemove.role'::text, true) = 'PERSONAL'::text) AND (\"professionalId\" = safemove_private.professional_id()) AND safemove_private.owned_client(\"clientId\"))",
+            "check_expression": "(safemove_private.is_clinical() AND (current_setting('safemove.role'::text, true) = 'PERSONAL'::text) AND (\"professionalId\" = safemove_private.professional_id()) AND safemove_private.owned_client(\"clientId\"))"
+          },
+          {
+            "policy_name": "deny_data_api_access",
+            "permissive": false,
+            "command": "*",
+            "roles": [
+              "safemove_data_api_denied"
+            ],
+            "using_expression": "false",
+            "check_expression": "false"
+          }
+        ],
+        "policy_roles_and_modes_match": true,
+        "indexes": [
+          {
+            "index_name": "workout_drafts_clientId_idx",
+            "unique_index": false,
+            "primary_index": false,
+            "valid": true,
+            "ready": true,
+            "live": true,
+            "definition": "CREATE INDEX \"workout_drafts_clientId_idx\" ON public.workout_drafts USING btree (\"clientId\")",
+            "predicate": null
+          },
+          {
+            "index_name": "workout_drafts_finalizedWorkoutId_key",
+            "unique_index": true,
+            "primary_index": false,
+            "valid": true,
+            "ready": true,
+            "live": true,
+            "definition": "CREATE UNIQUE INDEX \"workout_drafts_finalizedWorkoutId_key\" ON public.workout_drafts USING btree (\"finalizedWorkoutId\")",
+            "predicate": null
+          },
+          {
+            "index_name": "workout_drafts_one_open_per_owner_client",
+            "unique_index": true,
+            "primary_index": false,
+            "valid": true,
+            "ready": true,
+            "live": true,
+            "definition": "CREATE UNIQUE INDEX workout_drafts_one_open_per_owner_client ON public.workout_drafts USING btree (\"professionalId\", \"clientId\") WHERE (status = 'OPEN'::\"WorkoutDraftStatus\")",
+            "predicate": "(status = 'OPEN'::\"WorkoutDraftStatus\")"
+          },
+          {
+            "index_name": "workout_drafts_pkey",
+            "unique_index": true,
+            "primary_index": true,
+            "valid": true,
+            "ready": true,
+            "live": true,
+            "definition": "CREATE UNIQUE INDEX workout_drafts_pkey ON public.workout_drafts USING btree (id)",
+            "predicate": null
+          },
+          {
+            "index_name": "workout_drafts_professionalId_status_updatedAt_id_idx",
+            "unique_index": false,
+            "primary_index": false,
+            "valid": true,
+            "ready": true,
+            "live": true,
+            "definition": "CREATE INDEX \"workout_drafts_professionalId_status_updatedAt_id_idx\" ON public.workout_drafts USING btree (\"professionalId\", status, \"updatedAt\" DESC, id)",
+            "predicate": null
+          }
+        ],
+        "expected_5_indexes_ready": true,
+        "constraints": [
+          {
+            "table_name": "custom_exercises",
+            "constraint_name": "custom_exercises_mediaVersion_positive",
+            "kind": "c",
+            "validated": true,
+            "reference_table": null,
+            "delete_action": " ",
+            "update_action": " ",
+            "definition": "CHECK (\"mediaVersion\" > 0)"
+          },
+          {
+            "table_name": "workout_drafts",
+            "constraint_name": "workout_drafts_baseActiveWorkoutId_fkey",
+            "kind": "f",
+            "validated": true,
+            "reference_table": "workouts",
+            "delete_action": "r",
+            "update_action": "c",
+            "definition": "FOREIGN KEY (\"baseActiveWorkoutId\") REFERENCES workouts(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+          },
+          {
+            "table_name": "workout_drafts",
+            "constraint_name": "workout_drafts_clientId_fkey",
+            "kind": "f",
+            "validated": true,
+            "reference_table": "clients",
+            "delete_action": "r",
+            "update_action": "c",
+            "definition": "FOREIGN KEY (\"clientId\") REFERENCES clients(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+          },
+          {
+            "table_name": "workout_drafts",
+            "constraint_name": "workout_drafts_finalizedWorkoutId_fkey",
+            "kind": "f",
+            "validated": true,
+            "reference_table": "workouts",
+            "delete_action": "r",
+            "update_action": "c",
+            "definition": "FOREIGN KEY (\"finalizedWorkoutId\") REFERENCES workouts(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+          },
+          {
+            "table_name": "workout_drafts",
+            "constraint_name": "workout_drafts_pkey",
+            "kind": "p",
+            "validated": true,
+            "reference_table": null,
+            "delete_action": " ",
+            "update_action": " ",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "table_name": "workout_drafts",
+            "constraint_name": "workout_drafts_positive_versions",
+            "kind": "c",
+            "validated": true,
+            "reference_table": null,
+            "delete_action": " ",
+            "update_action": " ",
+            "definition": "CHECK (version > 0 AND \"schemaVersion\" > 0)"
+          },
+          {
+            "table_name": "workout_drafts",
+            "constraint_name": "workout_drafts_professionalId_fkey",
+            "kind": "f",
+            "validated": true,
+            "reference_table": "User",
+            "delete_action": "r",
+            "update_action": "c",
+            "definition": "FOREIGN KEY (\"professionalId\") REFERENCES \"User\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+          },
+          {
+            "table_name": "workout_drafts",
+            "constraint_name": "workout_drafts_sourceWorkoutId_fkey",
+            "kind": "f",
+            "validated": true,
+            "reference_table": "workouts",
+            "delete_action": "r",
+            "update_action": "c",
+            "definition": "FOREIGN KEY (\"sourceWorkoutId\") REFERENCES workouts(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+          },
+          {
+            "table_name": "workout_drafts",
+            "constraint_name": "workout_drafts_state_shape",
+            "kind": "c",
+            "validated": true,
+            "reference_table": null,
+            "delete_action": " ",
+            "update_action": " ",
+            "definition": "CHECK (status = 'OPEN'::\"WorkoutDraftStatus\" AND content IS NOT NULL AND content <> 'null'::jsonb AND \"closedAt\" IS NULL AND \"finalizedWorkoutId\" IS NULL OR status = 'FINALIZED'::\"WorkoutDraftStatus\" AND content IS NULL AND \"closedAt\" IS NOT NULL AND \"finalizedWorkoutId\" IS NOT NULL OR status = 'DISCARDED'::\"WorkoutDraftStatus\" AND content IS NULL AND \"closedAt\" IS NOT NULL AND \"finalizedWorkoutId\" IS NULL)"
+          },
+          {
+            "table_name": "workouts",
+            "constraint_name": "workouts_revisionOfId_fkey",
+            "kind": "f",
+            "validated": true,
+            "reference_table": "workouts",
+            "delete_action": "r",
+            "update_action": "c",
+            "definition": "FOREIGN KEY (\"revisionOfId\") REFERENCES workouts(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+          }
+        ],
+        "expected_10_constraints_valid": true
+      },
+      "privileges": {
+        "roles": [
+          {
+            "role_name": "anon",
+            "present": true,
+            "can_login": false,
+            "superuser": false,
+            "bypass_rls": false,
+            "create_db": false,
+            "create_role": false,
+            "inherit": true,
+            "memberships": []
+          },
+          {
+            "role_name": "authenticated",
+            "present": true,
+            "can_login": false,
+            "superuser": false,
+            "bypass_rls": false,
+            "create_db": false,
+            "create_role": false,
+            "inherit": true,
+            "memberships": []
+          },
+          {
+            "role_name": "safemove_auth",
+            "present": true,
+            "can_login": false,
+            "superuser": false,
+            "bypass_rls": false,
+            "create_db": false,
+            "create_role": false,
+            "inherit": true,
+            "memberships": []
+          },
+          {
+            "role_name": "safemove_clinical",
+            "present": true,
+            "can_login": false,
+            "superuser": false,
+            "bypass_rls": false,
+            "create_db": false,
+            "create_role": false,
+            "inherit": true,
+            "memberships": []
+          },
+          {
+            "role_name": "safemove_data_api_denied",
+            "present": true,
+            "can_login": false,
+            "superuser": false,
+            "bypass_rls": false,
+            "create_db": false,
+            "create_role": false,
+            "inherit": true,
+            "memberships": []
+          },
+          {
+            "role_name": "safemove_jobs",
+            "present": true,
+            "can_login": false,
+            "superuser": false,
+            "bypass_rls": false,
+            "create_db": false,
+            "create_role": false,
+            "inherit": true,
+            "memberships": []
+          },
+          {
+            "role_name": "safemove_migration_check",
+            "present": true,
+            "can_login": true,
+            "superuser": false,
+            "bypass_rls": false,
+            "create_db": false,
+            "create_role": false,
+            "inherit": true,
+            "memberships": []
+          },
+          {
+            "role_name": "service_role",
+            "present": true,
+            "can_login": false,
+            "superuser": false,
+            "bypass_rls": true,
+            "create_db": false,
+            "create_role": false,
+            "inherit": true,
+            "memberships": []
+          }
+        ],
+        "draft_direct_acl": [
+          {
+            "grantee": "postgres",
+            "privilege": "DELETE",
+            "grantable": false
+          },
+          {
+            "grantee": "postgres",
+            "privilege": "INSERT",
+            "grantable": false
+          },
+          {
+            "grantee": "postgres",
+            "privilege": "MAINTAIN",
+            "grantable": false
+          },
+          {
+            "grantee": "postgres",
+            "privilege": "REFERENCES",
+            "grantable": false
+          },
+          {
+            "grantee": "postgres",
+            "privilege": "SELECT",
+            "grantable": false
+          },
+          {
+            "grantee": "postgres",
+            "privilege": "TRIGGER",
+            "grantable": false
+          },
+          {
+            "grantee": "postgres",
+            "privilege": "TRUNCATE",
+            "grantable": false
+          },
+          {
+            "grantee": "postgres",
+            "privilege": "UPDATE",
+            "grantable": false
+          },
+          {
+            "grantee": "safemove_clinical",
+            "privilege": "DELETE",
+            "grantable": false
+          },
+          {
+            "grantee": "safemove_clinical",
+            "privilege": "INSERT",
+            "grantable": false
+          },
+          {
+            "grantee": "safemove_clinical",
+            "privilege": "SELECT",
+            "grantable": false
+          },
+          {
+            "grantee": "safemove_clinical",
+            "privilege": "UPDATE",
+            "grantable": false
+          }
+        ],
+        "draft_effective_privileges": [
+          {
+            "role_name": "anon",
+            "privilege": "DELETE",
+            "allowed": false
+          },
+          {
+            "role_name": "anon",
+            "privilege": "INSERT",
+            "allowed": false
+          },
+          {
+            "role_name": "anon",
+            "privilege": "MAINTAIN",
+            "allowed": false
+          },
+          {
+            "role_name": "anon",
+            "privilege": "REFERENCES",
+            "allowed": false
+          },
+          {
+            "role_name": "anon",
+            "privilege": "SELECT",
+            "allowed": false
+          },
+          {
+            "role_name": "anon",
+            "privilege": "TRIGGER",
+            "allowed": false
+          },
+          {
+            "role_name": "anon",
+            "privilege": "TRUNCATE",
+            "allowed": false
+          },
+          {
+            "role_name": "anon",
+            "privilege": "UPDATE",
+            "allowed": false
+          },
+          {
+            "role_name": "authenticated",
+            "privilege": "DELETE",
+            "allowed": false
+          },
+          {
+            "role_name": "authenticated",
+            "privilege": "INSERT",
+            "allowed": false
+          },
+          {
+            "role_name": "authenticated",
+            "privilege": "MAINTAIN",
+            "allowed": false
+          },
+          {
+            "role_name": "authenticated",
+            "privilege": "REFERENCES",
+            "allowed": false
+          },
+          {
+            "role_name": "authenticated",
+            "privilege": "SELECT",
+            "allowed": false
+          },
+          {
+            "role_name": "authenticated",
+            "privilege": "TRIGGER",
+            "allowed": false
+          },
+          {
+            "role_name": "authenticated",
+            "privilege": "TRUNCATE",
+            "allowed": false
+          },
+          {
+            "role_name": "authenticated",
+            "privilege": "UPDATE",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_auth",
+            "privilege": "DELETE",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_auth",
+            "privilege": "INSERT",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_auth",
+            "privilege": "MAINTAIN",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_auth",
+            "privilege": "REFERENCES",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_auth",
+            "privilege": "SELECT",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_auth",
+            "privilege": "TRIGGER",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_auth",
+            "privilege": "TRUNCATE",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_auth",
+            "privilege": "UPDATE",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_clinical",
+            "privilege": "DELETE",
+            "allowed": true
+          },
+          {
+            "role_name": "safemove_clinical",
+            "privilege": "INSERT",
+            "allowed": true
+          },
+          {
+            "role_name": "safemove_clinical",
+            "privilege": "MAINTAIN",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_clinical",
+            "privilege": "REFERENCES",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_clinical",
+            "privilege": "SELECT",
+            "allowed": true
+          },
+          {
+            "role_name": "safemove_clinical",
+            "privilege": "TRIGGER",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_clinical",
+            "privilege": "TRUNCATE",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_clinical",
+            "privilege": "UPDATE",
+            "allowed": true
+          },
+          {
+            "role_name": "safemove_data_api_denied",
+            "privilege": "DELETE",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_data_api_denied",
+            "privilege": "INSERT",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_data_api_denied",
+            "privilege": "MAINTAIN",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_data_api_denied",
+            "privilege": "REFERENCES",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_data_api_denied",
+            "privilege": "SELECT",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_data_api_denied",
+            "privilege": "TRIGGER",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_data_api_denied",
+            "privilege": "TRUNCATE",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_data_api_denied",
+            "privilege": "UPDATE",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_jobs",
+            "privilege": "DELETE",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_jobs",
+            "privilege": "INSERT",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_jobs",
+            "privilege": "MAINTAIN",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_jobs",
+            "privilege": "REFERENCES",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_jobs",
+            "privilege": "SELECT",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_jobs",
+            "privilege": "TRIGGER",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_jobs",
+            "privilege": "TRUNCATE",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_jobs",
+            "privilege": "UPDATE",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_migration_check",
+            "privilege": "DELETE",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_migration_check",
+            "privilege": "INSERT",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_migration_check",
+            "privilege": "MAINTAIN",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_migration_check",
+            "privilege": "REFERENCES",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_migration_check",
+            "privilege": "SELECT",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_migration_check",
+            "privilege": "TRIGGER",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_migration_check",
+            "privilege": "TRUNCATE",
+            "allowed": false
+          },
+          {
+            "role_name": "safemove_migration_check",
+            "privilege": "UPDATE",
+            "allowed": false
+          },
+          {
+            "role_name": "service_role",
+            "privilege": "DELETE",
+            "allowed": false
+          },
+          {
+            "role_name": "service_role",
+            "privilege": "INSERT",
+            "allowed": false
+          },
+          {
+            "role_name": "service_role",
+            "privilege": "MAINTAIN",
+            "allowed": false
+          },
+          {
+            "role_name": "service_role",
+            "privilege": "REFERENCES",
+            "allowed": false
+          },
+          {
+            "role_name": "service_role",
+            "privilege": "SELECT",
+            "allowed": false
+          },
+          {
+            "role_name": "service_role",
+            "privilege": "TRIGGER",
+            "allowed": false
+          },
+          {
+            "role_name": "service_role",
+            "privilege": "TRUNCATE",
+            "allowed": false
+          },
+          {
+            "role_name": "service_role",
+            "privilege": "UPDATE",
+            "allowed": false
+          }
+        ],
+        "clinical_crud_allowed": true,
+        "nonclinical_draft_denied": true,
+        "checker_relation_grants": [
+          {
+            "schema_name": "public",
+            "relation_name": "_prisma_migrations",
+            "privilege": "SELECT"
+          }
+        ],
+        "checker_history_select_only": true,
+        "checker_schema_privileges": {
+          "public_usage": true,
+          "public_create": false,
+          "private_usage": false,
+          "private_create": false
+        }
+      }
+    }
+  }
+]

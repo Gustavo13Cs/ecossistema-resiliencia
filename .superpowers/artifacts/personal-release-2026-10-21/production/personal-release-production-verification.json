@@ -1,0 +1,102 @@
+{
+  "merge_sha": "0d81b14b2b9242faf8c68b16685bee85031682e8",
+  "pr": "https://github.com/Gustavo13Cs/ecossistema-resiliencia/pull/30",
+  "ci": {
+    "run": 39687518297,
+    "conclusion": "success",
+    "jobs": 4
+  },
+  "supabase": {
+    "operation_version": "20261021223853",
+    "completed_prisma": 22,
+    "postflight": "PASS",
+    "security_advisor_lints": []
+  },
+  "vercel": {
+    "id": "dpl_GWeR2pKg5g9AnYpW17LViyiTvUio",
+    "state": "READY",
+    "target": "production",
+    "sha": "0d81b14b2b9242faf8c68b16685bee85031682e8",
+    "production_alias": "ecossistema-resiliencia.vercel.app"
+  },
+  "render": {
+    "id": "dep-dbcjutrm8hqs73adctag",
+    "status": "live",
+    "sha": "0d81b14b2b9242faf8c68b16685bee85031682e8",
+    "createdAt": "2026-10-21T22:40:56.046203Z",
+    "finishedAt": "2026-10-21T22:42:37.976513Z"
+  },
+  "probes": [
+    {
+      "path": "/auth/login",
+      "success": true,
+      "status": 200,
+      "hasHtml": true,
+      "hasLoginForm": false
+    },
+    {
+      "path": "/api/ping",
+      "success": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "pong": true
+    },
+    {
+      "path": "/api/workouts/exercise-library",
+      "success": false,
+      "status": 401,
+      "expectedStatus": 401
+    },
+    {
+      "path": "/api/workouts/drafts",
+      "success": false,
+      "status": 401,
+      "expectedStatus": 401
+    }
+  ],
+  "startup_logs": [
+    {
+      "timestamp": "2026-10-21T22:42:20.052029903Z",
+      "message": "No pending migrations to apply."
+    },
+    {
+      "timestamp": "2026-10-21T22:42:33.526033234Z",
+      "message": "[Nest] 73  - 10/21/2026, 10:42:33 PM     LOG [NestApplication] Nest application successfully started +4298ms"
+    },
+    {
+      "timestamp": "2026-10-21T22:42:28.434645643Z",
+      "message": "[Nest] 73  - 10/21/2026, 10:42:28 PM     LOG [RoutesResolver] WorkoutDraftsController {/workouts/drafts}: +0ms"
+    },
+    {
+      "timestamp": "2026-10-21T22:42:28.434913289Z",
+      "message": "[Nest] 73  - 10/21/2026, 10:42:28 PM     LOG [RouterExplorer] Mapped {/workouts/drafts, GET} route +0ms"
+    },
+    {
+      "timestamp": "2026-10-21T22:42:28.435093342Z",
+      "message": "[Nest] 73  - 10/21/2026, 10:42:28 PM     LOG [RouterExplorer] Mapped {/workouts/drafts, POST} route +1ms"
+    },
+    {
+      "timestamp": "2026-10-21T22:42:28.435381779Z",
+      "message": "[Nest] 73  - 10/21/2026, 10:42:28 PM     LOG [RouterExplorer] Mapped {/workouts/drafts/:draftId, GET} route +0ms"
+    },
+    {
+      "timestamp": "2026-10-21T22:42:28.435603654Z",
+      "message": "[Nest] 73  - 10/21/2026, 10:42:28 PM     LOG [RouterExplorer] Mapped {/workouts/drafts/:draftId, PUT} route +0ms"
+    },
+    {
+      "timestamp": "2026-10-21T22:42:28.43588993Z",
+      "message": "[Nest] 73  - 10/21/2026, 10:42:28 PM     LOG [RouterExplorer] Mapped {/workouts/drafts/:draftId/rebase, POST} route +0ms"
+    },
+    {
+      "timestamp": "2026-10-21T22:42:28.436074954Z",
+      "message": "[Nest] 73  - 10/21/2026, 10:42:28 PM     LOG [RouterExplorer] Mapped {/workouts/drafts/:draftId/finalize, POST} route +1ms"
+    },
+    {
+      "timestamp": "2026-10-21T22:42:28.436310369Z",
+      "message": "[Nest] 73  - 10/21/2026, 10:42:28 PM     LOG [RouterExplorer] Mapped {/workouts/drafts/:draftId/discard, POST} route +0ms"
+    }
+  ],
+  "limits": [
+    "Production HTTP smoke uses no application session and no clinical rows; authenticated functional flows were verified against the isolated local API/PostgreSQL."
+  ]
+}
