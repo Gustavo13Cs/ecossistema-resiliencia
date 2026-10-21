@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, within } from "@testing-library/react"
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import AxiosMockAdapter from "axios-mock-adapter"
@@ -86,4 +86,25 @@ it("record_separates_active_and_open_draft", async () => {
   expect(await screen.findByText("Treino de força")).toBeVisible()
   expect(await screen.findByRole("region", { name: "Rascunhos" })).toHaveTextContent("Elaboração incompleta")
   expect(screen.getByRole("link", { name: "Ver ficha" })).toHaveAttribute("href", "/clientes/c1/treinos/w1")
+})
+
+it("refreshes assessment history after a pending dialog save", async () => {
+  const user = userEvent.setup()
+  let completeSave!: (response: [number, unknown]) => void
+  const created = { ...assessment, id: "a3", squat1RM: 95, notes: "Avaliação recém-salva" }
+  http.onPost("/assessments").reply(() => new Promise(resolve => { completeSave = resolve }))
+  mount()
+  await screen.findByText("Treino de força")
+  await user.click(screen.getByRole("button", { name: "Nova avaliação física" }))
+  await user.type(screen.getByLabelText("Agachamento 1RM informado (kg)"), "95")
+  await user.click(screen.getByRole("button", { name: "Salvar avaliação física" }))
+  await screen.findByRole("button", { name: "Salvando avaliação..." })
+  await waitFor(() => expect(completeSave).toBeTypeOf("function"))
+  http.onGet("/assessments/client/c1").reply(200, [created, assessment])
+  await act(async () => { completeSave([201, created]) })
+  const history = screen.getByRole("region", { name: "Avaliações registradas" })
+  expect(await within(history).findByText("Avaliação recém-salva")).toBeInTheDocument()
+  expect(within(history).getByText("95 kg")).toBeInTheDocument()
+  expect(screen.queryByText("Avaliações indisponíveis")).not.toBeInTheDocument()
+  expect(http.history.get.filter(request => request.url === "/assessments/client/c1")).toHaveLength(2)
 })

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { navigateToWorkoutPage } from "@/lib/workout-editor-navigation"
 import { isAxiosError } from "axios"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ReauthenticateButton } from "@/components/auth/ReauthenticateButton"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { useTrainingWorkspace } from "@/hooks/features/useTrainingWorkspace"
 import { usePersonalDayAgenda } from "@/hooks/features/usePersonalDayAgenda"
@@ -25,7 +26,7 @@ export function PersonalDashboard() {
   const router = useRouter()
   const denied = pickerAccessDenied || (isAxiosError(workspace.error) && [401, 403].includes(workspace.error.response?.status ?? 0)) || agenda.state === "unauthorized"
 
-  if (denied) return <AsyncState kind="error" title="Restabeleça seu acesso" description="Sua sessão não permite acessar estes registros. Entre novamente ou restabeleça seu acesso para continuar." action={<Link href="/login" className={actionClass}>Entrar novamente</Link>} />
+  if (denied) return <AsyncState kind="error" title="Restabeleça seu acesso" description="Sua sessão não permite acessar estes registros. Entre novamente ou restabeleça seu acesso para continuar." action={<ReauthenticateButton />} />
 
   const data = workspace.data
   return (

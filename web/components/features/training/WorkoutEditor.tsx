@@ -34,6 +34,7 @@ import { WorkoutSplitCard } from "./WorkoutSplitCard"
 
 export interface WorkoutEditorProps {
   client: Client
+  contextUnavailable?: boolean
   activeWorkout: WorkoutPrescription | null
   onSubmit: (input: CreateWorkoutInput) => Promise<WorkoutPrescription>
   onCancel?: () => void
@@ -42,6 +43,7 @@ export interface WorkoutEditorProps {
 
 export function WorkoutEditor({
   client,
+  contextUnavailable = false,
   activeWorkout,
   onSubmit,
   onCancel,
@@ -258,7 +260,7 @@ export function WorkoutEditor({
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
-    if (archived || invalid || submittingRef.current) return
+    if (contextUnavailable || archived || invalid || submittingRef.current) return
     submittingRef.current = true
     setSubmitting(true)
     setSaveError(null)
@@ -290,7 +292,7 @@ export function WorkoutEditor({
     }
   }
 
-  const disabled = archived || submitting
+  const disabled = contextUnavailable || archived || submitting
   const durationError = form.durationWeeks.trim() ? errors.durationWeeks : undefined
 
   return (
