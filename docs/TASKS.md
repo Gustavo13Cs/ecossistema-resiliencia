@@ -10,10 +10,10 @@
 ## Personal P3 — planejamento em 23/10/2026
 
 - ✅ **Codex**: PDF P3 confrontado com o projeto; [direção técnica](superpowers/specs/2026-10-23-personal-p3-design.md) preparada e revisada independentemente, sem lacunas importantes apontadas. Consulta/impressão na ficha atual confirmadas pelo mantenedor; base web focada 61/61.
-- ⏳ Aprovação do mantenedor para a direção e edição local de schema/migrations; depois detalhar o plano executável e implementar.
-- ⏳ Monitor de volume semanal com frequência, séries diretas/sinérgicas e snapshot histórico.
-- ⏳ Biblioteca de modelos globais/privados com RLS e importação para rascunho.
-- ⏳ Periodização opcional de 4–12 semanas, progressão de repetições/esforço e deload.
+- ✅ Mantenedor aprovou direção e edição local de schema/migrations em 23/10/2026. [Plano executável](superpowers/plans/2026-10-23-personal-p3.md) registrado; desenvolvimento/testes em andamento (Codex).
+- 🔄 Monitor de volume semanal implementado e revisado; validação integrada final pendente.
+- 🔄 Biblioteca de modelos: API/RLS em validação, interface em integração.
+- 🔄 Periodização opcional de 4–12 semanas implementada; validação integrada final pendente.
 - ⏳ Testes de domínio, integração PostgreSQL/RLS, jornadas reais e regressão P1/P2/rascunhos.
 
 ## Correções das revisões — 2026-10-17
