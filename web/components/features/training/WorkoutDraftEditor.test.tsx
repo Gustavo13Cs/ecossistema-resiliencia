@@ -28,6 +28,26 @@ beforeEach(() => {
   vi.stubGlobal("navigation", Object.assign(new EventTarget(), { traverseTo: vi.fn() })); auth.user = { sub: "personal", role: "PERSONAL" }; navigation.push.mockReset(); navigation.replace.mockReset() })
 afterEach(cleanup)
 describe("WorkoutDraftEditor", () => {
+  it("updates weekly volume locally with frequency and editable manual secondary weights", () => {
+    const p = props({ draft: { ...draft, schemaVersion: 3, content: { ...content, splits: [{ ...content.splits[0], weeklyFrequency: 1, exercises: [{ ...content.splits[0].exercises[0], muscleGroup: "CHEST", sets: "6" }] }] } } })
+    render(<WorkoutDraftEditor {...p} />)
+    const panel = screen.getByRole("region", { name: "Volume semanal estimado" })
+    expect(within(panel).getByRole("row", { name: /Peitoral 6 0 6/ })).toBeVisible()
+    fireEvent.change(screen.getByLabelText("Frequência semanal"), { target: { value: "2" } })
+    expect(within(panel).getByRole("row", { name: /Peitoral 12 0 12/ })).toBeVisible()
+    expect(within(panel).getByText(/Peitoral \/ costas: revise/)).toBeVisible()
+    fireEvent.click(screen.getByRole("button", { name: "Parâmetros avançados" }))
+    fireEvent.change(screen.getByLabelText("Adicionar músculo secundário"), { target: { value: "TRICEPS" } })
+    expect(within(panel).getByRole("row", { name: /Tríceps 0 6 6/ })).toBeVisible()
+    fireEvent.change(screen.getByLabelText("Peso de Tríceps"), { target: { value: "1" } })
+    expect(within(panel).getByRole("row", { name: /Tríceps 0 12 12/ })).toBeVisible()
+    fireEvent.change(screen.getByLabelText("Séries"), { target: { value: "3 + drop" } })
+    expect(within(panel).getByText(/Cobertura parcial/)).toBeVisible()
+    expect(within(panel).getByText(/Treino A.*Supino.*Séries não numéricas/)).toBeVisible()
+    expect(within(panel).queryByText(/Peitoral \/ costas: revise/)).not.toBeInTheDocument()
+    expect(p.onSave).not.toHaveBeenCalled()
+    expect(p.onCreate).not.toHaveBeenCalled()
+  })
   it("manual_rename_clears_demonstration_with_notice while parameter edits retain the link", async () => {
     const reference = { source: "CATALOG" as const, exerciseId: "cat-1", demonstrationRevision: "r1" }
     const linked = { ...content, splits: [{ ...content.splits[0], exercises: [{ ...content.splits[0].exercises[0], libraryReference: reference, demonstrationSnapshot: { revision: "r1", instruction: "Execução" } }] }] }

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useState } from "react"
 import { AsyncState } from "@/components/feedback/AsyncState"
+import { WeeklyVolumePanel } from "./WeeklyVolumePanel"
 import { WorkoutRevisionAction } from "./WorkoutRevisionAction"
 import { ExerciseLibraryDetail } from "./ExerciseLibraryDetail"
 import { Button } from "@/components/ui/button"
@@ -97,6 +98,8 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
         </dl>
       </section>
 
+      {workout.weeklyVolumeSnapshot ? <WeeklyVolumePanel summary={workout.weeklyVolumeSnapshot} splits={workout.splits} saved /> : <p className="text-sm text-[var(--sm-muted)]">Volume semanal não registrado nesta ficha.</p>}
+
       <div className="space-y-5">
         {orderedSplits.map(split => {
           const orderedExercises = [...split.exercises].sort(
@@ -110,6 +113,7 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
             >
               <header className="border-b border-[var(--sm-border)] pb-3">
                 <h2 className="break-words text-xl font-bold">{split.name}</h2>
+                <p className="mt-1 text-sm">Frequência semanal: {split.weeklyFrequency != null ? `${split.weeklyFrequency} vez(es)/semana` : "Não informada"}</p>
                 <p className="mt-1 break-words text-sm text-[var(--sm-muted)]">
                   Foco: <span className="font-semibold text-[var(--sm-ink)]">{split.focus || "Não informado"}</span>
                 </p>

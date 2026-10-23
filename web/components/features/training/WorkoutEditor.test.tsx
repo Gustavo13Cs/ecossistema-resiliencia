@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import AxiosMockAdapter from "axios-mock-adapter"
@@ -277,7 +277,7 @@ describe("WorkoutEditor", () => {
 
     // Collapse advanced parameters
     await user.click(toggleBtn)
-    expect(screen.getByText("Quadríceps")).toBeVisible()
+    expect(within(screen.getByLabelText("Resumo avançado do exercício 1")).getByText("Quadríceps")).toBeVisible()
     expect(screen.getByText("Rest-pause")).toBeVisible()
     expect(screen.getByText("RIR 2")).toBeVisible()
     expect(screen.getByText("Cadência 3-0-1-0")).toBeVisible()

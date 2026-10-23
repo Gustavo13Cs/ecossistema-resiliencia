@@ -19,8 +19,10 @@ import {
   duplicateSplit,
   isWorkoutFormDirty,
   moveItem,
+  suggestedSecondaryMuscles,
   validateWorkoutForm,
   type WorkoutForm,
+  type WorkoutFormSplit,
   type WorkoutFormExercise,
 } from "@/lib/workout-form"
 import type { Client } from "@/types/client"
@@ -30,6 +32,8 @@ import type {
   WorkoutPrescription,
 } from "@/types/workout"
 import type { LibraryReference } from "@/types/exercise-demonstration"
+import { useWeeklyVolumeSummary } from "@/hooks/features/useWeeklyVolumeSummary"
+import { WeeklyVolumePanel } from "./WeeklyVolumePanel"
 import { WorkoutSplitCard } from "./WorkoutSplitCard"
 
 export interface WorkoutEditorProps {
@@ -51,6 +55,7 @@ export function WorkoutEditor({
 }: WorkoutEditorProps) {
   const router = useRouter()
   const [form, setForm] = useState<WorkoutForm>(() => createEmptyWorkoutForm())
+  const weeklyVolume = useWeeklyVolumeSummary(form.splits)
   const [submitting, setSubmitting] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [denied, setDenied] = useState(false)
@@ -149,7 +154,7 @@ export function WorkoutEditor({
     })
   }
 
-  const updateSplit = (splitId: string, field: "name" | "focus", value: string) => {
+  const updateSplit = <K extends "name" | "focus" | "weeklyFrequency">(splitId: string, field: K, value: WorkoutFormSplit[K]) => {
     setForm(current => ({
       ...current,
       splits: current.splits.map(split => (split.id === splitId ? { ...split, [field]: value } : split)),
@@ -248,6 +253,7 @@ export function WorkoutEditor({
                       name: selection.name,
                       muscleGroup: selection.muscleGroup,
                       libraryReference: selection.libraryReference,
+                      secondaryMuscles: suggestedSecondaryMuscles(selection.libraryReference),
                       demonstrationSnapshot: null,
                     }
                   : ex,
@@ -388,6 +394,7 @@ export function WorkoutEditor({
         </section>
 
         <div className="space-y-5">
+          <WeeklyVolumePanel summary={weeklyVolume} splits={form.splits} />
           {form.splits.map((split, splitIndex) => (
             <WorkoutSplitCard
               key={split.id}

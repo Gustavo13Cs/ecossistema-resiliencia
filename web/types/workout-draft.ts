@@ -1,3 +1,4 @@
+import type { Periodization, SecondaryMuscle } from "./workout-p3"
 import type { ClientStatus } from "./client"
 import type { EffortType, MuscleGroup, TrainingMethod, WorkoutDetail } from "./workout"
 import type { DemonstrationPresentation, LibraryReference } from "./exercise-demonstration"
@@ -24,11 +25,11 @@ export type DraftContentV1 = {
   notes: string
   splits: DraftSplitV1[]
 }
-export type DraftExerciseInput = DraftExerciseV1 & { libraryReference?: LibraryReference | null }
-export type DraftContentInput = Omit<DraftContentV1, "splits"> & { splits: (Omit<DraftSplitV1, "exercises"> & { exercises: DraftExerciseInput[] })[] }
+export type DraftExerciseInput = DraftExerciseV1 & { secondaryMuscles?: SecondaryMuscle[] | null; libraryReference?: LibraryReference | null }
+export type DraftContentInput = Omit<DraftContentV1, "splits"> & { periodization?: Periodization | null; splits: (Omit<DraftSplitV1, "exercises"> & { weeklyFrequency?: number | null; exercises: DraftExerciseInput[] })[] }
 export type DraftExercisePresentation = DraftExerciseInput & { libraryReference: LibraryReference | null; demonstrationSnapshot: DemonstrationPresentation | null }
-export type DraftContentPresentation = Omit<DraftContentV1, "splits"> & { splits: (Omit<DraftSplitV1, "exercises"> & { exercises: DraftExercisePresentation[] })[] }
-export type DraftContentReadable = Omit<DraftContentV1, "splits"> & { splits: (Omit<DraftSplitV1, "exercises"> & { exercises: (DraftExerciseV1 & { libraryReference?: LibraryReference | null; demonstrationSnapshot?: DemonstrationPresentation | null })[] })[] }
+export type DraftContentPresentation = Omit<DraftContentV1, "splits"> & { periodization?: Periodization | null; splits: (Omit<DraftSplitV1, "exercises"> & { weeklyFrequency?: number | null; exercises: DraftExercisePresentation[] })[] }
+export type DraftContentReadable = Omit<DraftContentV1, "splits"> & { periodization?: Periodization | null; splits: (Omit<DraftSplitV1, "exercises"> & { weeklyFrequency?: number | null; exercises: (DraftExerciseV1 & { secondaryMuscles?: SecondaryMuscle[] | null; libraryReference?: LibraryReference | null; demonstrationSnapshot?: DemonstrationPresentation | null })[] })[] }
 export type DraftVersionInput = { expectedVersion: number }
 export type DraftSaveInput = DraftVersionInput & { content: DraftContentInput }
 export type DraftRebaseInput = DraftVersionInput & { expectedActiveWorkoutId: string | null }

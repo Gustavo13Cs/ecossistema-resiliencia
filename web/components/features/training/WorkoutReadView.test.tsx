@@ -7,6 +7,7 @@ import WorkoutDetailPage from "@/app/clientes/[id]/treinos/[workoutId]/page"
 import TreinosHubPage from "@/app/treinos/page"
 import { api } from "@/lib/api"
 import type { WorkoutDetail } from "@/types/workout"
+import { summarizeWeeklyVolume } from "@/lib/workout-volume"
 import { WorkoutReadView } from "./WorkoutReadView"
 
 const navigation = vi.hoisted(() => ({
@@ -296,4 +297,17 @@ it("saved_demonstration_never_fetches_current_library_and_media_failure_keeps_pr
   expect(screen.getByRole("button", { name: "Imprimir ficha salva" })).toBeEnabled()
   expect(screen.getByRole("button", { name: "Revisar esta ficha" })).toBeEnabled()
   expect(http.history.get.filter(request => request.url?.includes("exercise-library"))).toHaveLength(0)
+})
+
+it("reads saved weekly snapshot without recalculating historical exercises", () => {
+  const snapshot = summarizeWeeklyVolume([{ weeklyFrequency: 2, exercises: [{ name: "Prescrito", sets: "7", muscleGroup: "CHEST" }] }])
+  renderWithQuery(<WorkoutReadView workout={makeWorkoutDetail({ weeklyVolumeSnapshot: snapshot })} />)
+  const panel = screen.getByRole("region", { name: "Volume semanal estimado" })
+  expect(within(panel).getByRole("row", { name: /Peitoral 14 0 14/ })).toBeVisible()
+  expect(within(panel).getByText(/Resumo salvo na finalização/)).toBeVisible()
+})
+it("does not invent a volume snapshot for legacy records", () => {
+  renderWithQuery(<WorkoutReadView workout={makeWorkoutDetail()} />)
+  expect(screen.getByText(/Volume semanal não registrado nesta ficha/)).toBeVisible()
+  expect(screen.queryByRole("region", { name: "Volume semanal estimado" })).not.toBeInTheDocument()
 })

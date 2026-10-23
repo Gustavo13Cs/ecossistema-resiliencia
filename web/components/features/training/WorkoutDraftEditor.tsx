@@ -14,10 +14,12 @@ import { useDraftNavigationGuard } from "@/hooks/features/useDraftNavigationGuar
 import { useAuth } from "@/contexts/auth-context"
 import { fromDraftContent, toDraftContent, validateDraftForm } from "@/lib/workout-draft-form"
 import { adoptSavedFormDemonstrations } from "@/lib/exercise-reference"
-import { createEmptyWorkoutForm, createWorkoutExercise, createWorkoutSplit, duplicateExercise, duplicateSplit, moveItem, validateWorkoutForm, type WorkoutForm, type WorkoutFormSplit } from "@/lib/workout-form"
+import { createEmptyWorkoutForm, createWorkoutExercise, createWorkoutSplit, duplicateExercise, duplicateSplit, moveItem, suggestedSecondaryMuscles, validateWorkoutForm, type WorkoutForm, type WorkoutFormSplit } from "@/lib/workout-form"
 import type { Client } from "@/types/client"
 import type { WorkoutPrescription } from "@/types/workout"
 import type { DraftAck, DraftContentInput, DraftRebaseInput, DraftSaveInput, DraftVersionInput, FinalizedDraftResult, WorkoutDraftResource } from "@/types/workout-draft"
+import { useWeeklyVolumeSummary } from "@/hooks/features/useWeeklyVolumeSummary"
+import { WeeklyVolumePanel } from "./WeeklyVolumePanel"
 import { WorkoutSplitCard } from "./WorkoutSplitCard"
 
 export interface WorkoutDraftEditorProps {
@@ -64,6 +66,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
   const router = useRouter()
   const [resource, setResource] = useState(draft)
   const [form, setForm] = useState(() => initialForm(draft))
+  const weeklyVolume = useWeeklyVolumeSummary(form.splits)
   const [baseline, setBaseline] = useState(() => JSON.stringify(form))
   const [busy, setBusy] = useState<Busy>(null)
   const [handoff, setHandoff] = useState<string | null>(null)
@@ -282,6 +285,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
         <div className="space-y-2"><Label htmlFor="draft-duration">Duração (semanas)</Label><Input id="draft-duration" inputMode="numeric" disabled={fieldsDisabled} aria-invalid={Boolean(errors.durationWeeks)} value={form.durationWeeks} onChange={event => edit(current => ({ ...current, durationWeeks: event.target.value }))} /></div>
         <div className="space-y-2 sm:col-span-2"><Label htmlFor="draft-notes">Orientações gerais</Label><Textarea id="draft-notes" disabled={fieldsDisabled} value={form.notes} onChange={event => edit(current => ({ ...current, notes: event.target.value }))} /></div>
       </div>
+      <WeeklyVolumePanel summary={weeklyVolume} splits={form.splits} />
       {form.splits.map((split, index) => <WorkoutSplitCard
         key={split.id} split={split} splitIndex={index} totalSplits={form.splits.length} disabled={fieldsDisabled} errors={errors}
         onUpdateField={(field, value) => updateSplit(split.id, item => ({ ...item, [field]: value }))}
@@ -291,7 +295,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
         onRemoveSplit={() => edit(current => ({ ...current, splits: current.splits.filter(item => item.id !== split.id) }))}
         onAddExercise={() => updateSplit(split.id, item => ({ ...item, exercises: [...item.exercises, createWorkoutExercise()] }))}
         onUpdateExercise={(id, field, value) => updateSplit(split.id, item => ({ ...item, exercises: item.exercises.map(exercise => exercise.id === id ? { ...exercise, [field]: value } : exercise) }))}
-        onSelectLibraryExercise={(id, selection) => updateSplit(split.id, item => ({ ...item, exercises: item.exercises.map(exercise => exercise.id === id ? { ...exercise, ...selection, demonstrationSnapshot: null } : exercise) }))}
+        onSelectLibraryExercise={(id, selection) => updateSplit(split.id, item => ({ ...item, exercises: item.exercises.map(exercise => exercise.id === id ? { ...exercise, ...selection, secondaryMuscles: suggestedSecondaryMuscles(selection.libraryReference), demonstrationSnapshot: null } : exercise) }))}
         onMoveExerciseUp={position => updateSplit(split.id, item => ({ ...item, exercises: moveItem(item.exercises, position, -1) }))}
         onMoveExerciseDown={position => updateSplit(split.id, item => ({ ...item, exercises: moveItem(item.exercises, position, 1) }))}
         onDuplicateExercise={id => updateSplit(split.id, item => ({ ...item, exercises: item.exercises.flatMap(exercise => exercise.id === id ? [exercise, duplicateExercise(exercise)] : [exercise]) }))}

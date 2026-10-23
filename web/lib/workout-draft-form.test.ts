@@ -21,7 +21,7 @@ describe("workout draft form", () => {
     form.durationWeeks = "8"
     form.splits[0].exercises = [{ ...createWorkoutExercise(), name: "Supino", sets: "", reps: "8", muscleGroup: "CHEST", load: "20 kg", effortType: "RIR", effortTarget: "2", tempo: "3-0-1-0", method: "DROP_SET", notes: "Pausa" }]
     const content = toDraftContent(form)
-    expect(content).toEqual({ title: "Força", goal: "", durationWeeks: 8, notes: "", splits: [{ name: "Treino A", focus: "", exercises: [{ name: "Supino", sets: "", reps: "8", rest: "", notes: "Pausa", muscleGroup: "CHEST", load: "20 kg", effortType: "RIR", effortTarget: "2", tempo: "3-0-1-0", method: "DROP_SET" }] }] })
+    expect(content).toEqual({ title: "Força", goal: "", durationWeeks: 8, notes: "", splits: [{ name: "Treino A", focus: "", weeklyFrequency: 1, exercises: [{ name: "Supino", sets: "", reps: "8", rest: "", notes: "Pausa", muscleGroup: "CHEST", load: "20 kg", effortType: "RIR", effortTarget: "2", tempo: "3-0-1-0", method: "DROP_SET" }] }] })
     expect(toDraftContent(fromDraftContent(content))).toEqual(content)
     expect(content.splits[0]).not.toHaveProperty("id")
     expect(content.splits[0].exercises[0]).not.toHaveProperty("id")
