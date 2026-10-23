@@ -10,6 +10,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { WorkoutsModule } from './workouts.module';
 import { WorkoutDraftsService } from './workout-drafts.service';
+import { WorkoutTemplatesService } from './workout-templates.service';
 import { WorkoutsService } from './workouts.service';
 import { TrainingReadService } from './training-read.service';
 import { ExerciseLibraryService } from './exercise-library.service';
@@ -54,6 +55,7 @@ describe('Workout draft HTTP controller', () => {
       providers: [
         RolesGuard,
         { provide: WorkoutDraftsService, useValue: service },
+        { provide: WorkoutTemplatesService, useValue: {} },
         { provide: WorkoutsService, useValue: {} },
         { provide: TrainingReadService, useValue: {} },
         { provide: ExerciseLibraryService, useValue: {} },
