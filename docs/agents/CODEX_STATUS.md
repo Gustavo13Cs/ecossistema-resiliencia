@@ -8,6 +8,8 @@
 
 ## Current Task
 
+- **2026-10-23 — Direção do Personal P3 preparada; aguardando aprovação (Codex)**: PDF lido e confrontado com rascunhos/finalização/catálogo/RLS. [Proposta](../superpowers/specs/2026-10-23-personal-p3-design.md) cobre volume semanal, modelos e periodização, com sequência e critérios de teste. Mantenedor confirmou consulta/impressão na ficha atual, sem portal novo. Revisão independente: `nothing important left`. Base web focada: 61/61 em 4 arquivos; diff documental sem erros. Produto/schema/migrations sem alterações; implementação e plano executável seguem após aprovação da direção e da edição local dos arquivos protegidos, conforme AGENTS.md.
+
 - **2026-10-21 — Publicação do Personal autorizada e em andamento (Codex)**: mantenedor solicitou push da branch, PR e integração/publicação em main. Main `677eb3d` incorporada no merge `25fdf65`; web666/87, tipos/lint/builds e navegador real32/32 aprovados, API sem alterações na integração. Payload das três migrations preparado com baseline de produção preservado e rollback/replay/Prisma verificados localmente. Conexões de runtime restritas mantidas. Revisão do artefato de release, push/PR/checks, migração owner e confirmação Vercel/Render são os próximos passos. [Runbook](../runbooks/personal-release-2026-10-21.md).
 
 - **2026-10-21 — Integração local da publicação em andamento (Codex)**: merge ordinário de `origin/main`/`677eb3d` sobre a entrega concluída em `66ff87b`; cronologias e correções do PR #29 preservadas. Verificação web completa e seis specs reais com rebuild ainda em execução; backend e arquivos protegidos sem alterações nesta integração. Nenhuma ação remota por este agente.

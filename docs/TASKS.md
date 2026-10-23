@@ -7,6 +7,15 @@
 
 ---
 
+## Personal P3 — planejamento em 23/10/2026
+
+- ✅ **Codex**: PDF P3 confrontado com o projeto; [direção técnica](superpowers/specs/2026-10-23-personal-p3-design.md) preparada e revisada independentemente, sem lacunas importantes apontadas. Consulta/impressão na ficha atual confirmadas pelo mantenedor; base web focada 61/61.
+- ⏳ Aprovação do mantenedor para a direção e edição local de schema/migrations; depois detalhar o plano executável e implementar.
+- ⏳ Monitor de volume semanal com frequência, séries diretas/sinérgicas e snapshot histórico.
+- ⏳ Biblioteca de modelos globais/privados com RLS e importação para rascunho.
+- ⏳ Periodização opcional de 4–12 semanas, progressão de repetições/esforço e deload.
+- ⏳ Testes de domínio, integração PostgreSQL/RLS, jornadas reais e regressão P1/P2/rascunhos.
+
 ## Correções das revisões — 2026-10-17
 
 - ✅ Codex: PR #27 — prescrição preservada em falhas transitórias, histórico após avaliação e reautenticação nas cinco telas corrigidos. PR #28 — suíte API pendente validada (602/602); web 525/525, tipos/lint/builds aprovados. Publicado no PR #29 (rascunho), após autorização do mantenedor em 2026-10-17.
