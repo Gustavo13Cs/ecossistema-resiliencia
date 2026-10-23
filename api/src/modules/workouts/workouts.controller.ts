@@ -141,13 +141,6 @@ export class WorkoutsController {
     return this.workoutsService.saveAsTemplate(request.user, id);
   }
 
-  // Listar todos os templates do personal logado (com splits e exercícios para pré-preencher)
-  @ClinicalResponse({ shape: 'resource' })
-  @Get('templates')
-  listTemplates(@Request() request: AuthenticatedRequest) {
-    return this.workoutsService.listTemplates(request.user);
-  }
-
   @ClinicalResponse({ shape: 'resource' })
   @Get(':workoutId')
   getWorkout(
