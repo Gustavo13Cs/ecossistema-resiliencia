@@ -1,6 +1,6 @@
 # Personal P3 — volume semanal, modelos e periodização
 
-Data: 23/10/2026. Estado: proposta revisada; aguardando aprovação; não implementada.
+Data: 23/10/2026. Estado: direção aprovada pelo mantenedor; implementação em andamento.
 
 Fonte de requisitos: PDF do mantenedor `SafeMove_Personal_P3_Especificacao.pdf`,
 7 páginas. O PDF descreve o produto desejado; sugestões de arquitetura, exemplos
@@ -17,10 +17,9 @@ Confirmou nesta conversa que a periodização será consultada e impressa na fic
 atual pelo personal. Criar autenticação ou portal novo para o aluno está fora
 desta entrega.
 
-As escolhas detalhadas abaixo são propostas do Codex, ainda não aprovadas.
-A aprovação desta direção deve também abranger a edição local dos arquivos
-protegidos de schema/migrations identificados na seção 8. Aplicação em produção
-e publicação exigem uma decisão posterior sobre o resultado implementado.
+O mantenedor aprovou esta direção e a edição local de schema/migrations em
+23/10/2026 ("sim aprovo"). Aplicação em produção e publicação exigem uma decisão
+posterior sobre o resultado implementado.
 
 ## 2. O que existe e o que precisa mudar
 
@@ -62,8 +61,7 @@ Alternativas consideradas:
    quantidade de entidades, mas confundiria modelo global com prescrição de
    aluno e criaria outro caminho para ativar treino, contornando o rascunho.
 
-Há um caminho coerente com as fundações atuais: a evolução aditiva. A proposta
-deve ser confirmada pelo mantenedor antes da implementação.
+O mantenedor aprovou a evolução aditiva antes da implementação.
 
 ## 4. Volume semanal
 
