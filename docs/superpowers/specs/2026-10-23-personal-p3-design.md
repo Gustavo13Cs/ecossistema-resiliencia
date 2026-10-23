@@ -181,8 +181,8 @@ Endpoints propostos no `WorkoutsModule`, antes de rotas `:id` genéricas:
 
 Todas as rotas requerem sessão PERSONAL, guardas existentes e `no-store`.
 Listagem/detalhe de modelo usam classificação `private-template`; criação de
-rascunho mantém a classificação de recurso clínico e auditoria do Client.
-Salvar a partir de ficha também deve auditar o acesso ao Client de origem:
+rascunho mantém a classificação de recurso clínico e validação de ownership do Client.
+Salvar a partir de ficha também deve validar o Client de origem:
 retornar envelope `{ clientId, template }` classificado como `resource`, sem
 persistir essa associação no modelo. A listagem futura nunca inclui esse envelope.
 Registrar o delegate de template no PrismaService vinculado ao contexto atual.
@@ -362,7 +362,7 @@ erro/retry, troca de conta, restauração V1/V2/V3 e tamanho de payload.
 finalização, snapshot recalculado, fonte imutável, concorrência de imports e
 finalização, Client arquivado, proprietário de exercício, corpo/semana inválidos,
 RLS com dois profissionais e LOGIN clínico, globais não graváveis pelo runtime,
-Data API negada e classificação/auditoria dos endpoints novos.
+Data API negada e classificação/validação de Client nos endpoints novos.
 
 **Cypress com API/banco reais:** editar volume → salvar rascunho → reabrir →
 finalizar → ler/imprimir; salvar modelo → filtrar/visualizar → importar para
@@ -414,3 +414,8 @@ P3 ainda não desenvolvidas. `git diff --check` também passou para a documenta�
 A API possui dependências, mas o cliente Prisma gerado não foi encontrado no
 caminho padrão nesta inspeção; preparar/verificar geração ao iniciar a execução.
 Não foram executados migration, banco remoto, deploy ou testes reais P3.
+
+Decisão de execução (23/10/2026): a referência anterior a auditoria de leitura
+foi corrigida para classificação/validação de ownership. Conforme
+`docs/SECURITY.md:94`, o mantenedor removeu a trilha persistente de leituras em
+08/10/2026; P3 preserva essa decisão e não recria tabelas ou logs de acessos.
