@@ -45,16 +45,25 @@ export function normalizeDraftContent(
   assertValid(dto);
   const text = (value?: string) => value?.trim() ?? '';
   return {
+    ...(dto.periodization !== undefined
+      ? { periodization: dto.periodization }
+      : {}),
     title: text(dto.title),
     goal: text(dto.goal),
     durationWeeks: dto.durationWeeks ?? null,
     notes: text(dto.notes),
     splits: dto.splits.map((split) => ({
+      ...(split.weeklyFrequency !== undefined
+        ? { weeklyFrequency: split.weeklyFrequency }
+        : {}),
       name: text(split.name),
       focus: text(split.focus),
       exercises: split.exercises.map((exercise) => ({
         ...(exercise.libraryReference
           ? { libraryReference: { ...exercise.libraryReference } }
+          : {}),
+        ...(exercise.secondaryMuscles !== undefined
+          ? { secondaryMuscles: exercise.secondaryMuscles }
           : {}),
         name: text(exercise.name),
         sets: text(exercise.sets),
@@ -103,14 +112,23 @@ export function toFinalizedWorkoutInput(
   const optionalText = (value: string) => value || undefined;
   const dto = plainToInstance(CreateWorkoutDto, {
     clientId,
+    ...(normalized.periodization !== undefined
+      ? { periodization: normalized.periodization }
+      : {}),
     title: normalized.title,
     goal: optionalText(normalized.goal),
     durationWeeks: normalized.durationWeeks ?? undefined,
     notes: optionalText(normalized.notes),
     splits: normalized.splits.map((split) => ({
+      ...(split.weeklyFrequency !== undefined
+        ? { weeklyFrequency: split.weeklyFrequency }
+        : {}),
       name: split.name,
       focus: optionalText(split.focus),
       exercises: split.exercises.map((exercise) => ({
+        ...(exercise.secondaryMuscles !== undefined
+          ? { secondaryMuscles: exercise.secondaryMuscles }
+          : {}),
         libraryReference: exercise.libraryReference,
         name: exercise.name,
         sets: exercise.sets,

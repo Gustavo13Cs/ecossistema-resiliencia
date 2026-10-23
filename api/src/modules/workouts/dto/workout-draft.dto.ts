@@ -1,3 +1,9 @@
+import {
+  P3ExerciseDto,
+  P3SplitDto,
+  PeriodizationConstraint,
+  type Periodization,
+} from './workout-p3.dto';
 import { LibraryReferenceDto } from './library-reference.dto';
 import { Type } from 'class-transformer';
 import {
@@ -22,7 +28,7 @@ import {
 import { EffortType, MuscleGroup, TrainingMethod } from '@prisma/client';
 import { WORKOUT_TEMPO_REGEX } from './create-workout.dto';
 
-export class DraftExerciseDto {
+export class DraftExerciseDto extends P3ExerciseDto {
   @ValidateIf(
     (_object, value: unknown) => value !== undefined && value !== null,
   )
@@ -91,7 +97,7 @@ export class DraftExerciseDto {
   method?: TrainingMethod | null;
 }
 
-export class DraftSplitDto {
+export class DraftSplitDto extends P3SplitDto {
   @IsString()
   @MaxLength(200)
   name!: string;
@@ -110,6 +116,9 @@ export class DraftSplitDto {
 }
 
 export class DraftContentDto {
+  @Validate(PeriodizationConstraint, [false])
+  periodization?: Periodization | null;
+
   @IsString()
   @MaxLength(200)
   title!: string;

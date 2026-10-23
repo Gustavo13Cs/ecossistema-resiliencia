@@ -8,6 +8,11 @@ const exercise = { name: "Supino", sets: "4", reps: "6-8", muscleGroup: "CHEST",
 const splits = [{ name: "A", weeklyFrequency: 2, exercises: [exercise] }]
 
 describe("volume prescrito", () => {
+  it("trata séries ausentes como cobertura parcial sem lançar TypeError", () => {
+    const input = [{...splits[0],exercises:[{...exercise,sets:undefined as unknown as string}]}]
+    expect(summarizeWeeklyVolume(input).complete).toBe(false)
+    expect(apiVolume(input).complete).toBe(false)
+  })
   it("conta frequência e sinergia por exercício com paridade no servidor", () => {
     const result = summarizeWeeklyVolume(splits)
     expect(result.rows.find(row => row.muscleGroup === "CHEST")).toMatchObject({ direct: 8, synergistic: 0, total: 8 })

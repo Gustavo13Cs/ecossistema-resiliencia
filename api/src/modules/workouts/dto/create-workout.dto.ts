@@ -1,3 +1,9 @@
+import {
+  P3ExerciseDto,
+  P3SplitDto,
+  PeriodizationConstraint,
+  type Periodization,
+} from './workout-p3.dto';
 import { LibraryReferenceDto } from './library-reference.dto';
 import {
   ArrayMaxSize,
@@ -14,6 +20,7 @@ import {
   MaxLength,
   Min,
   MinLength,
+  Validate,
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
@@ -23,7 +30,7 @@ import { EffortType, MuscleGroup, TrainingMethod } from '@prisma/client';
 export const WORKOUT_TEMPO_REGEX =
   /^\d{1,2}-[0-9xX]{1,2}-[0-9xX]{1,2}-\d{1,2}$/;
 
-export class CreateExerciseDto {
+export class CreateExerciseDto extends P3ExerciseDto {
   @ValidateIf(
     (_object, value: unknown) => value !== undefined && value !== null,
   )
@@ -98,7 +105,7 @@ export class CreateExerciseDto {
   method?: TrainingMethod;
 }
 
-export class CreateSplitDto {
+export class CreateSplitDto extends P3SplitDto {
   @IsString()
   @MinLength(1)
   @MaxLength(200)
@@ -118,6 +125,9 @@ export class CreateSplitDto {
 }
 
 export class CreateWorkoutDto {
+  @Validate(PeriodizationConstraint, [true])
+  periodization?: Periodization | null;
+
   @IsString()
   @MinLength(1)
   @MaxLength(200)

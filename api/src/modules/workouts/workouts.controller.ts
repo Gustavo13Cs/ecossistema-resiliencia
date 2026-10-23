@@ -11,6 +11,7 @@ import {
   Request,
   UseGuards,
   ParseUUIDPipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { WorkoutsService } from './workouts.service';
 import { TrainingReadService } from './training-read.service';
@@ -152,7 +153,10 @@ export class WorkoutsController {
   getWorkout(
     @Request() request: AuthenticatedRequest,
     @Param('workoutId', ParseUUIDPipe) workoutId: string,
+    @Query('week', new ParseIntPipe({ optional: true })) week?: number,
   ) {
-    return this.trainingReadService.getWorkout(request.user, workoutId);
+    return week === undefined
+      ? this.trainingReadService.getWorkout(request.user, workoutId)
+      : this.trainingReadService.getWorkout(request.user, workoutId, week);
   }
 }

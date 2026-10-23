@@ -165,7 +165,7 @@ describe('Authorized demonstration snapshots through JWT and PostgreSQL', () => 
       demonstrationRevision: snapshot.revision,
     };
     const created = await draft(input(reference));
-    expect(created.schemaVersion).toBe(2);
+    expect(created.schemaVersion).toBe(3);
     const stored = await prisma.workoutDraft.findUniqueOrThrow({
       where: { id: created.id },
     });
@@ -576,7 +576,7 @@ describe('Authorized demonstration snapshots through JWT and PostgreSQL', () => 
         .expect(200)
     ).body as WorkoutDraftResource;
     expect(read).toMatchObject({
-      schemaVersion: 2,
+      schemaVersion: 3,
       content: {
         splits: [
           {
@@ -588,11 +588,11 @@ describe('Authorized demonstration snapshots through JWT and PostgreSQL', () => 
       },
     });
     const saved = await save(old.id, 1, input());
-    expect(saved.schemaVersion).toBe(2);
+    expect(saved.schemaVersion).toBe(3);
     expect(
       (await prisma.workoutDraft.findUniqueOrThrow({ where: { id: old.id } }))
         .schemaVersion,
-    ).toBe(2);
+    ).toBe(3);
     await finalize(old.id, 2);
     const item = await create('https://vimeo.com/123');
     const created = await draft(input(ref(item.id)));

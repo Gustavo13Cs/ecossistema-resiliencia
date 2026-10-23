@@ -10,6 +10,7 @@ export function volumeLandmark(total: number): VolumeLandmark {
   return "MRV";
 }
 export function recognizedSets(value: string): number | null {
+  if (typeof value !== "string") return null;
   const text = value.trim();
   return /^\d{1,3}$/.test(text) && Number(text) >= 1 && Number(text) <= 100 ? Number(text) : null;
 }
