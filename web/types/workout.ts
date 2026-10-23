@@ -162,6 +162,7 @@ export interface WorkoutPrescription extends TrainingActiveWorkout {
 }
 
 export interface WorkoutDetail extends WorkoutPrescription {
+  weekProjection?: { week: number; planWeek: import("./workout-p3").PlanWeek; phase: import("./workout-p3").PeriodPhase; volume: import("./workout-p3").WeeklyVolumeSummary; exercises: { id: string; sets: string; reps: string; effortType?: EffortType | null; effortTarget?: string | null; warnings: string[] }[] }
   client: WorkoutSummary["client"]
 }
 

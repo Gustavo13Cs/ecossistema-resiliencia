@@ -1,3 +1,4 @@
+import { validatePeriodization } from "./workout-periodization"
 import { VOLUME_MUSCLES, type Periodization, type SecondaryMuscle } from "@/types/workout-p3"
 import {
   MUSCLE_GROUP_LABELS,
@@ -200,6 +201,8 @@ function parseDurationWeeks(raw: string): number | null {
 
 export function validateWorkoutForm(form: WorkoutForm): Record<string, string> {
   const errors: Record<string, string> = {}
+  const periodErrors = validatePeriodization(form.periodization, form.durationWeeks.trim() ? Number(form.durationWeeks) : null, true)
+  if (periodErrors.length) errors.periodization = periodErrors.join(" ")
   const title = form.title.trim()
   if (!title) {
     errors.title = "Informe o título da prescrição."

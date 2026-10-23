@@ -1,3 +1,4 @@
+import { validatePeriodization } from "./workout-periodization"
 import { clonePeriodization, createWorkoutExercise, createWorkoutSplit, validateWorkoutForm, type WorkoutForm } from "./workout-form"
 import type { DraftContentInput, DraftContentReadable } from "@/types/workout-draft"
 
@@ -46,6 +47,9 @@ export function fromDraftContent(content: DraftContentReadable): WorkoutForm {
 // Reutiliza os limites do formulário completo, permitindo campos clínicos pendentes.
 export function validateDraftForm(form: WorkoutForm): Record<string, string> {
   const errors = validateWorkoutForm(form)
+  delete errors.periodization
+  const periodErrors = validatePeriodization(form.periodization, form.durationWeeks.trim() ? Number(form.durationWeeks) : null, false)
+  if (periodErrors.length) errors.periodization = periodErrors.join(" ")
   if (!form.title.trim()) delete errors.title
   if (!form.splits.length) delete errors.splits
   form.splits.forEach(split => {

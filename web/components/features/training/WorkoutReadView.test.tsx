@@ -12,6 +12,7 @@ import { WorkoutReadView } from "./WorkoutReadView"
 
 const navigation = vi.hoisted(() => ({
   push: vi.fn(),
+  search: "",
   params: { id: "c1", workoutId: "w-older" },
 }))
 const auth = vi.hoisted(() => ({
@@ -20,6 +21,7 @@ const auth = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({
   useParams: () => navigation.params,
+  useSearchParams: () => new URLSearchParams(navigation.search),
   useRouter: () => ({ push: navigation.push }),
 }))
 
@@ -88,6 +90,7 @@ beforeEach(() => {
   http.reset()
   http.onGet("/workouts/drafts").reply(200, { items: [], nextCursor: null })
   navigation.push.mockReset()
+  navigation.search = ""
   navigation.params = { id: "c1", workoutId: "w-older" }
   auth.user = { sub: "personal-1", role: "PERSONAL", name: "Ana Personal" }
 })
@@ -98,6 +101,16 @@ afterEach(() => {
 })
 
 describe("WorkoutReadView and exact workout route", () => {
+  it("requests selected week from the server without changing the workout identity", async () => {
+    navigation.search = "week=3"
+    http.onGet("/workouts/w-older").reply(config => {
+      expect(config.params).toEqual({ week: 3 })
+      return [200, makeWorkoutDetail()]
+    })
+    renderWithQuery(<WorkoutDetailPage />)
+    expect(await screen.findByRole("heading", { name: "Mesociclo Base — Força" })).toBeInTheDocument()
+    expect(http.history.get.filter(request => request.url === "/workouts/w-older")).toHaveLength(1)
+  })
   it("selected_history_row_opens_its_workout_id", async () => {
     const user = userEvent.setup()
     const clientId = "c1"

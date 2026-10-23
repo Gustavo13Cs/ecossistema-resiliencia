@@ -33,6 +33,7 @@ import type {
 } from "@/types/workout"
 import type { LibraryReference } from "@/types/exercise-demonstration"
 import { useWeeklyVolumeSummary } from "@/hooks/features/useWeeklyVolumeSummary"
+import { PeriodizationEditor } from "./PeriodizationEditor"
 import { WeeklyVolumePanel } from "./WeeklyVolumePanel"
 import { WorkoutSplitCard } from "./WorkoutSplitCard"
 
@@ -394,6 +395,7 @@ export function WorkoutEditor({
         </section>
 
         <div className="space-y-5">
+          <PeriodizationEditor durationWeeks={form.durationWeeks} value={form.periodization} disabled={submitting || archived || contextUnavailable} onChange={(periodization, durationWeeks) => setForm(current => ({ ...current, periodization, ...(durationWeeks !== undefined ? { durationWeeks } : {}) }))} />
           <WeeklyVolumePanel summary={weeklyVolume} splits={form.splits} />
           {form.splits.map((split, splitIndex) => (
             <WorkoutSplitCard

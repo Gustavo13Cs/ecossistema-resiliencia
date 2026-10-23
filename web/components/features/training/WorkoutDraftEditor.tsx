@@ -19,6 +19,7 @@ import type { Client } from "@/types/client"
 import type { WorkoutPrescription } from "@/types/workout"
 import type { DraftAck, DraftContentInput, DraftRebaseInput, DraftSaveInput, DraftVersionInput, FinalizedDraftResult, WorkoutDraftResource } from "@/types/workout-draft"
 import { useWeeklyVolumeSummary } from "@/hooks/features/useWeeklyVolumeSummary"
+import { PeriodizationEditor } from "./PeriodizationEditor"
 import { WeeklyVolumePanel } from "./WeeklyVolumePanel"
 import { WorkoutSplitCard } from "./WorkoutSplitCard"
 
@@ -285,6 +286,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
         <div className="space-y-2"><Label htmlFor="draft-duration">Duração (semanas)</Label><Input id="draft-duration" inputMode="numeric" disabled={fieldsDisabled} aria-invalid={Boolean(errors.durationWeeks)} value={form.durationWeeks} onChange={event => edit(current => ({ ...current, durationWeeks: event.target.value }))} /></div>
         <div className="space-y-2 sm:col-span-2"><Label htmlFor="draft-notes">Orientações gerais</Label><Textarea id="draft-notes" disabled={fieldsDisabled} value={form.notes} onChange={event => edit(current => ({ ...current, notes: event.target.value }))} /></div>
       </div>
+      <PeriodizationEditor durationWeeks={form.durationWeeks} value={form.periodization} disabled={fieldsDisabled} onChange={(periodization, durationWeeks) => edit(current => ({ ...current, periodization, ...(durationWeeks !== undefined ? { durationWeeks } : {}) }))} />
       <WeeklyVolumePanel summary={weeklyVolume} splits={form.splits} />
       {form.splits.map((split, index) => <WorkoutSplitCard
         key={split.id} split={split} splitIndex={index} totalSplits={form.splits.length} disabled={fieldsDisabled} errors={errors}

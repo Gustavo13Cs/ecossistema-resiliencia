@@ -1,17 +1,25 @@
 import { describe, expect, it } from "vitest"
 import { buildWorkoutInput, copyWorkoutToForm, createEmptyWorkoutForm, createWorkoutExercise, duplicateExercise, duplicateSplit, isWorkoutFormDirty, suggestedSecondaryMuscles, validateWorkoutForm } from "./workout-form"
-import { fromDraftContent, toDraftContent } from "./workout-draft-form"
+import { fromDraftContent, toDraftContent, validateDraftForm } from "./workout-draft-form"
 import type { Periodization } from "@/types/workout-p3"
 const periodization: Periodization = { version: 1, startsOn: "2026-10-26", timeZone: "America/Sao_Paulo", phases: [{ name: "Base", type: "ADAPTATION", startWeek: 1, endWeek: 4, effortType: "RIR", effortTarget: "2" }], progression: null }
 function configuredForm() {
   const form = createEmptyWorkoutForm()
   form.title = "Força"
+  form.durationWeeks = "4"
   form.periodization = structuredClone(periodization)
   form.splits[0].weeklyFrequency = 3
   form.splits[0].exercises = [{ ...createWorkoutExercise(), name: "Supino", sets: "3 + drop", reps: "8–10", muscleGroup: "CHEST", secondaryMuscles: [{ muscleGroup: "TRICEPS", weight: 0.5 }] }]
   return form
 }
 describe("P3 form metadata", () => {
+  it("permite data pendente no rascunho e exige para finalizar", () => {
+    const form = configuredForm()
+    form.durationWeeks = "4"
+    form.periodization!.startsOn = ""
+    expect(validateWorkoutForm(form).periodization).toBeTruthy()
+    expect(validateDraftForm(form).periodization).toBeUndefined()
+  })
   it("new splits default to one while legacy frequency remains unknown", () => {
     expect(createEmptyWorkoutForm().splits[0].weeklyFrequency).toBe(1)
     const legacy = fromDraftContent({ title: "Antigo", goal: "", durationWeeks: null, notes: "", splits: [{ name: "A", focus: "", exercises: [] }] })

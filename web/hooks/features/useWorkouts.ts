@@ -7,11 +7,11 @@ import { queryKeys } from "@/lib/query-keys"
 import type { CreateWorkoutInput, WorkoutDetail, WorkoutPrescription, WorkoutSummary } from "@/types/workout"
 import { useClinicalQuery } from "./useClinicalQuery"
 
-export function useWorkouts(options: { clientId?: string; workoutId?: string; enabled?: boolean }) {
+export function useWorkouts(options: { clientId?: string; workoutId?: string; week?: number; enabled?: boolean }) {
   const { user } = useAuth()
   const cache = useQueryClient()
   const sessionUserId = user?.sub ?? "anonymous"
-  const { clientId, workoutId } = options
+  const { clientId, workoutId, week } = options
   const isPersonal = Boolean(user?.sub && user.role === "PERSONAL")
   const enabled = isPersonal && options.enabled !== false
 
@@ -24,10 +24,10 @@ export function useWorkouts(options: { clientId?: string; workoutId?: string; en
     },
   )
   const detailQuery = useClinicalQuery(
-    queryKeys.workout(sessionUserId, clientId ?? "missing", workoutId ?? "missing"),
+    queryKeys.workout(sessionUserId, clientId ?? "missing", workoutId ?? "missing", week),
     Boolean(enabled && clientId && workoutId),
     async signal => {
-      const { data } = await api.get<WorkoutDetail>(`/workouts/${workoutId}`, { signal })
+      const { data } = await api.get<WorkoutDetail>(`/workouts/${workoutId}`, { signal, ...(week !== undefined ? { params: { week } } : {}) })
       if (data.id !== workoutId || data.clientId !== clientId || data.client.id !== clientId) {
         throw new Error("Treino incompatível com o prontuário solicitado")
       }

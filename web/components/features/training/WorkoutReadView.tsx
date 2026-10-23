@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useState } from "react"
 import { AsyncState } from "@/components/feedback/AsyncState"
+import { WorkoutPeriodizationView } from "./WorkoutPeriodizationView"
 import { WeeklyVolumePanel } from "./WeeklyVolumePanel"
 import { WorkoutRevisionAction } from "./WorkoutRevisionAction"
 import { ExerciseLibraryDetail } from "./ExerciseLibraryDetail"
@@ -98,6 +99,7 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
         </dl>
       </section>
 
+      <WorkoutPeriodizationView workout={workout} />
       {workout.weeklyVolumeSnapshot ? <WeeklyVolumePanel summary={workout.weeklyVolumeSnapshot} splits={workout.splits} saved /> : <p className="text-sm text-[var(--sm-muted)]">Volume semanal não registrado nesta ficha.</p>}
 
       <div className="space-y-5">
@@ -174,6 +176,10 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
                         ) : null}
                       </dl>
 
+                      {workout.weekProjection ? (() => {
+                        const projected = workout.weekProjection.exercises.find(item => item.id === exercise.id)
+                        return projected ? <div className="space-y-1 rounded-md border border-[var(--sm-border)] p-3 text-sm"><h4 className="font-bold">Meta da semana {workout.weekProjection.week}</h4><p>{projected.sets} séries × {projected.reps} repetições{projected.effortType ? ` · ${projected.effortType} ${projected.effortTarget}` : ""}</p><p className="text-[var(--sm-muted)]">Valores base: {exercise.sets} séries × {exercise.reps} repetições. Carga: {exercise.load || "Não informada"}.</p>{projected.warnings.map(warning => <p key={warning}>{warning}</p>)}</div> : null
+                      })() : null}
                       {exercise.demonstrationSnapshot ? <Button type="button" variant="outline" className="min-h-11 print:hidden" aria-label={`Ver execução de ${exercise.name}`} onClick={() => setExecutionTarget({ workoutId: workout.id, exerciseId: exercise.id })}>Ver execução</Button> : null}
                       {exercise.notes ? (
                         <p className="whitespace-pre-wrap break-words text-sm text-[var(--sm-muted)]">
