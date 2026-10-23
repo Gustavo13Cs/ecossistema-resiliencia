@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useState } from "react"
 import { AsyncState } from "@/components/feedback/AsyncState"
+import { SaveWorkoutTemplateDialog } from "./SaveWorkoutTemplateDialog"
 import { WorkoutPeriodizationView } from "./WorkoutPeriodizationView"
 import { WeeklyVolumePanel } from "./WeeklyVolumePanel"
 import { WorkoutRevisionAction } from "./WorkoutRevisionAction"
@@ -33,6 +34,7 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
     ? { name: executionExercise.name, snapshot: executionExercise.demonstrationSnapshot }
     : undefined
   const [denied, setDenied] = useState(false)
+  const [savingTemplate, setSavingTemplate] = useState(false)
   const archived = workout.client.status === "ARCHIVED"
   const statusLabel = workout.isActive ? "Treino ativo" : "Treino anterior"
 
@@ -57,6 +59,7 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
           <Button type="button" variant="outline" className="min-h-11" onClick={() => window.print()}>
             Imprimir ficha salva
           </Button>
+          <Button type="button" variant="outline" className="min-h-11" disabled={archived || !workout.finalizedAt} onClick={() => setSavingTemplate(true)}>Salvar como modelo</Button>
           {archived ? (
             <Button type="button" disabled className="min-h-11">
               Criar prescrição
@@ -205,6 +208,7 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
           {workout.notes || "Nenhuma orientação registrada"}
         </p>
       </section>
+      {savingTemplate ? <SaveWorkoutTemplateDialog open workout={workout} onClose={() => setSavingTemplate(false)} onAccessDenied={() => setDenied(true)} /> : null}
       <ExerciseLibraryDetail open={Boolean(execution)} onOpenChange={open => { if (!open) setExecutionTarget(null) }} saved={execution ?? undefined} />
     </article>
   )
