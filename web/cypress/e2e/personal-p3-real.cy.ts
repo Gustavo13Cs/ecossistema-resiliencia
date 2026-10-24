@@ -68,6 +68,7 @@ describe("Personal P3 with real API, PostgreSQL and browser", () => {
                 cy.findByRole("button",{name:"Usar este modelo"}).click()
               })
               cy.location("pathname").should("match",new RegExp(`/clientes/${destinationId}/rascunhos/`))
+              cy.findByLabelText("Objetivo").should("have.value","Hipertrofia")
               cy.findByLabelText("Repetições").clear().type("12")
               cy.findByLabelText("Data de início").type("2026-10-23")
               cy.intercept("POST","**/workouts/drafts/*/finalize").as("copyFinalP3")
