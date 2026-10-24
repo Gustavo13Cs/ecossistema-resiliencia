@@ -7,14 +7,15 @@
 
 ---
 
-## Personal P3 — planejamento em 23/10/2026
+## Personal P3 — concluído localmente em 24/10/2026
 
-- ✅ **Codex**: PDF P3 confrontado com o projeto; [direção técnica](superpowers/specs/2026-10-23-personal-p3-design.md) preparada e revisada independentemente, sem lacunas importantes apontadas. Consulta/impressão na ficha atual confirmadas pelo mantenedor; base web focada 61/61.
-- ✅ Mantenedor aprovou direção e edição local de schema/migrations em 23/10/2026. [Plano executável](superpowers/plans/2026-10-23-personal-p3.md) registrado; desenvolvimento/testes em andamento (Codex).
-- 🔄 Monitor de volume semanal implementado e revisado; validação integrada final pendente.
-- 🔄 Biblioteca de modelos: API/RLS em validação, interface em integração.
-- 🔄 Periodização opcional de 4–12 semanas implementada; validação integrada final pendente.
-- ⏳ Testes de domínio, integração PostgreSQL/RLS, jornadas reais e regressão P1/P2/rascunhos.
+- ✅ **Codex**: PDF confrontado com o projeto; [especificação](superpowers/specs/2026-10-23-personal-p3-design.md) e [plano](superpowers/plans/2026-10-23-personal-p3.md) aprovados e executados. Consulta/impressão na ficha atual, conforme escolha do mantenedor.
+- ✅ Monitor de volume semanal, frequência, sinergia, cobertura e snapshot do servidor implementados e revisados.
+- ✅ Modelos globais/privados imutáveis, filtros, prévia, cópia sanitizada para rascunho e isolamento por conta implementados e revisados.
+- ✅ Periodização opcional de 4–12 semanas, prévia antes de finalizar, progressão/deload e datas da semana na consulta/impressão implementados e revisados.
+- ✅ API 755/755, web 748/748, PostgreSQL/HTTP/RLS 253/253; tipos, lint, builds e verificações de produção local aprovados. Nove verificações reais Chromium/Playwright, desktop/mobile e PDF A4 aprovados; rerevisão final sem achados materiais.
+- ℹ️ Cenários Cypress versionados; runner nativo não executado porque o download do binário recebeu HTTP 403. Jornada real validada com Chromium/Playwright disponível, sem contornar a política de rede.
+- ✅ [Relatório final e decisões](runbooks/personal-p3-verification.md). Branch `agent/codex/personal-p3` mantida localmente; migrations somente no PostgreSQL sintético. Sem push, merge, deploy ou produção.
 
 ## Correções das revisões — 2026-10-17
 

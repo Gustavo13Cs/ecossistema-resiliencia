@@ -1,6 +1,8 @@
 # Personal P3 — volume semanal, modelos e periodização
 
-Data: 23/10/2026. Estado: direção aprovada pelo mantenedor; implementação em andamento.
+Data: 23/10/2026. Estado: direção aprovada, implementação e validação local
+concluídas em 24/10/2026. [Relatório final](../../runbooks/personal-p3-verification.md)
+com testes, revisão, decisões e limitação do runner Cypress.
 
 Fonte de requisitos: PDF do mantenedor `SafeMove_Personal_P3_Especificacao.pdf`,
 7 páginas. O PDF descreve o produto desejado; sugestões de arquitetura, exemplos
