@@ -173,3 +173,14 @@ as correções de interface, passou com 748.
   no PostgreSQL sintético. Certificação clínica e adequação individual dos
   sete modelos/referências também estão fora do escopo: são bases editáveis e
   referências gerais, conforme a especificação, sem certificação atribuída.
+
+## Envio ao GitHub — 24/10/2026
+
+Após a validação local, o mantenedor solicitou enviar a entrega ao GitHub.
+A branch `agent/codex/personal-p3` foi publicada e o [PR #31](https://github.com/Gustavo13Cs/ecossistema-resiliencia/pull/31)
+foi aberto para `main`, cuja base conferida é `0d81b14`. As fontes de aplicação
+continuam idênticas ao build e aos testes registrados acima; este fechamento
+altera somente documentação. O PR inclui o resumo das funcionalidades, os
+resultados, as duas migrations e a limitação de execução do Cypress.
+Branch e checkout preservados. Merge, deploy e aplicação em produção não foram
+executados nesta etapa.
