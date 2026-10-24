@@ -24,7 +24,7 @@ describe("Personal P3 with real API, PostgreSQL and browser", () => {
     createClient("Origem").then(clientId => {
       request<{id:string}>("POST","/workouts/drafts",{clientId,content:content("Task7 P3 Ficha origem")}).then(({body:draft}) => {
         cy.visit(`/clientes/${clientId}/rascunhos/${draft.id}`)
-        cy.findByLabelText("Frequência semanal").clear().type("2")
+        cy.findByLabelText("Frequência semanal").select("2")
         cy.findByRole("region",{name:"Volume semanal estimado"}).within(() => cy.findByRole("row",{name:/Peitoral/}).should("contain.text","8"))
         cy.intercept("PUT",`**/workouts/drafts/${draft.id}`).as("savedP3")
         cy.findByRole("button",{name:"Salvar rascunho"}).click()
