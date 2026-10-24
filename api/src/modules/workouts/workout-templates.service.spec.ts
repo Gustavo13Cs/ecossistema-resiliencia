@@ -83,12 +83,14 @@ describe('WorkoutTemplatesService', () => {
     prisma.workoutTemplate.findFirst.mockResolvedValue({
       id,
       professionalId: null,
+      goal: 'MUSCLE_GAIN',
       content,
       schemaVersion: 3,
     });
     await service.createDraft(user, id, { clientId: id });
     expect(library.get).toHaveBeenCalledWith(user, id);
     const expected = structuredClone(content);
+    expected.goal = 'Hipertrofia';
     expected.splits[0].exercises[0].libraryReference.demonstrationRevision =
       '2';
     expect(drafts.create).toHaveBeenCalledWith(user, {
@@ -99,6 +101,31 @@ describe('WorkoutTemplatesService', () => {
       content.splits[0].exercises[0].libraryReference.demonstrationRevision,
     ).toBe('1');
   });
+  it.each([
+    ['MUSCLE_GAIN', 'Hipertrofia'],
+    ['STRENGTH', 'Força'],
+    ['WEIGHT_LOSS', 'Emagrecimento'],
+    ['CONDITIONING', 'Condicionamento'],
+  ])(
+    'imports %s as %s without mutating the template snapshot',
+    async (goal, label) => {
+      const { service, prisma, drafts } = setup();
+      const savedContent = { ...structuredClone(content), goal };
+      const snapshot = { id, goal, content: savedContent, schemaVersion: 3 };
+      const before = structuredClone(snapshot);
+      prisma.workoutTemplate.findFirst.mockResolvedValue(snapshot);
+      await service.createDraft(user, id, { clientId: id });
+      const expected = structuredClone(savedContent);
+      expected.goal = label;
+      expected.splits[0].exercises[0].libraryReference.demonstrationRevision =
+        '2';
+      expect(drafts.create).toHaveBeenCalledWith(user, {
+        clientId: id,
+        content: expected,
+      });
+      expect(snapshot).toEqual(before);
+    },
+  );
   it('fails atomically on an inaccessible reference and never calls the draft service', async () => {
     const { service, prisma, drafts, library } = setup();
     prisma.workoutTemplate.findFirst.mockResolvedValue({

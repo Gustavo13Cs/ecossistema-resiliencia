@@ -26,6 +26,13 @@ import {
 import { storedExerciseDemonstration } from './exercise-demonstration';
 import { Periodization, SecondaryMuscle } from './workout-p3.types';
 
+const TEMPLATE_GOAL_LABELS: Readonly<Record<string, string>> = {
+  MUSCLE_GAIN: 'Hipertrofia',
+  STRENGTH: 'Força',
+  WEIGHT_LOSS: 'Emagrecimento',
+  CONDITIONING: 'Condicionamento',
+};
+
 const metadataSelect = {
   id: true,
   professionalId: true,
@@ -246,7 +253,10 @@ export class WorkoutTemplatesService {
   }
   async createDraft(user: AuthUser, id: string, dto: ImportWorkoutTemplateDto) {
     const row = await this.authorized(user, id);
-    const content = this.content(row);
+    const content = {
+      ...this.content(row),
+      goal: TEMPLATE_GOAL_LABELS[row.goal],
+    };
     await this.refreshReferences(user, content);
     return this.drafts.create(user, { clientId: dto.clientId, content });
   }

@@ -401,6 +401,12 @@ describe('Workout templates HTTP and real LOGIN RLS', () => {
     const before = await admin.workoutDraft.findUniqueOrThrow({
       where: { id: draft.id },
     });
+    expect(before.content).toMatchObject({ goal: 'Hipertrofia' });
+    expect(
+      await admin.workoutTemplate.findUniqueOrThrow({
+        where: { id: template.id },
+      }),
+    ).toMatchObject({ goal: 'MUSCLE_GAIN', content: { goal: 'MUSCLE_GAIN' } });
     await importRequest().expect(409).expect('Cache-Control', 'no-store');
     expect(
       await admin.workoutDraft.findUniqueOrThrow({ where: { id: draft.id } }),
