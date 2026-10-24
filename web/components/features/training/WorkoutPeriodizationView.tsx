@@ -2,16 +2,20 @@
 
 import Link from "next/link"
 import type { WorkoutDetail } from "@/types/workout"
+import { getWorkoutWeekDates } from "@/lib/workout-week-dates"
 import { WeeklyVolumePanel } from "./WeeklyVolumePanel"
 
 export function WorkoutPeriodizationView({ workout }: { workout: WorkoutDetail }) {
   const config = workout.periodization
   const projection = workout.weekProjection
   if (!config || !projection) return null
+  const dates = getWorkoutWeekDates(config.startsOn, projection.week)
+  const displayDate = (date: string) => date.split("-").reverse().join("/")
   const status = projection.planWeek.status === "NOT_STARTED" ? "Não iniciado" : projection.planWeek.status === "COMPLETED" ? "Concluído" : `Semana atual: ${projection.planWeek.week}`
   return <section aria-label="Mesociclo e semana consultada" className="space-y-4 rounded-md border border-[var(--sm-border)] bg-[var(--sm-surface)] p-5 print:break-inside-avoid">
     <h2 className="text-xl font-bold">Semana {projection.week} de {workout.durationWeeks} · {projection.phase.name}</h2>
     <p>{status} · Início: {config.startsOn} · Fuso: {config.timeZone}</p>
+    <p>Período da semana consultada: {dates ? <><time dateTime={dates.start}>{displayDate(dates.start)}</time> a <time dateTime={dates.end}>{displayDate(dates.end)}</time>.</> : "data de início pendente."}</p>
     <nav aria-label="Semanas do mesociclo" className="flex flex-wrap gap-2 print:hidden">
       {Array.from({length:workout.durationWeeks ?? 0},(_,index) => index+1).map(week => {
         const phase = config.phases.find(item => week >= item.startWeek && week <= item.endWeek)

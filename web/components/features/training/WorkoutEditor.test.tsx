@@ -63,6 +63,24 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe("WorkoutEditor", () => {
+  it("liga a prévia semanal aos exercícios atuais sem enviar ou modificar a prescrição base", () => {
+    const onSubmit = vi.fn()
+    render(<WorkoutEditor client={makeTestClient("c1", "Ana", "ACTIVE")} activeWorkout={activeWorkoutFixture} onSubmit={onSubmit} />)
+    fireEvent.click(screen.getByRole("button", { name: "Usar treino atual como base" }))
+    fireEvent.click(screen.getByRole("button", { name: "Configurar periodização" }))
+    fireEvent.change(screen.getByLabelText("Data de início"), { target: { value: "2026-10-23" } })
+    fireEvent.click(screen.getByLabelText("Ativar progressão programada"))
+    const preview = screen.getByRole("region", { name: "Prévia semanal da prescrição" })
+    fireEvent.change(within(preview).getByLabelText("Semana da prévia"), { target: { value: "3" } })
+    expect(within(preview).getByText("Supino Reto com Barra")).toBeVisible()
+    expect(within(preview).getByText("Projetado: 4 séries · 9 repetições · RIR 2")).toBeVisible()
+    fireEvent.change(within(preview).getByLabelText("Semana da prévia"), { target: { value: "8" } })
+    expect(within(preview).getByText("Projetado: 2 séries · 8 repetições · RIR 4-5")).toBeVisible()
+    expect(screen.getByLabelText("Séries")).toHaveValue("4")
+    expect(screen.getByLabelText("Repetições")).toHaveValue("8")
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(Object.values(http.history).flat()).toHaveLength(0)
+  })
   it("starts_blank_and_copies_only_after_click", async () => {
     const user = userEvent.setup()
     const onSubmit = vi.fn().mockResolvedValue(activeWorkoutFixture)

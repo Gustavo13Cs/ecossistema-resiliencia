@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { suggestPeriodization, validatePeriodization } from "@/lib/workout-periodization"
 import type { Periodization, PeriodPhase } from "@/types/workout-p3"
+import type { WorkoutFormSplit } from "@/lib/workout-form"
+import { PeriodizationWeeklyPreview } from "./PeriodizationWeeklyPreview"
 
 const fieldClass = "min-h-11 rounded-md border border-[var(--sm-border)] bg-[var(--sm-surface)] px-3 text-sm"
-type Props = { durationWeeks: string; value?: Periodization | null; disabled?: boolean; onChange: (value: Periodization | null, durationWeeks?: string) => void }
+type Props = { durationWeeks: string; value?: Periodization | null; splits?: readonly WorkoutFormSplit[]; disabled?: boolean; onChange: (value: Periodization | null, durationWeeks?: string) => void }
 
-export function PeriodizationEditor({ durationWeeks, value, disabled, onChange }: Props) {
+export function PeriodizationEditor({ durationWeeks, value, splits = [], disabled, onChange }: Props) {
   if (!value) return <section aria-label="Periodização" className="space-y-2 rounded-md border p-4"><h2 className="font-bold">Periodização opcional</h2><p className="text-sm">Organize adaptação, sobrecarga, pico e recuperação em um mesociclo.</p><Button type="button" variant="outline" disabled={disabled} onClick={() => {
     const weeks = Number(durationWeeks) >= 4 && Number(durationWeeks) <= 12 ? Number(durationWeeks) : 8
     onChange(suggestPeriodization(weeks), String(weeks))
@@ -41,5 +43,6 @@ export function PeriodizationEditor({ durationWeeks, value, disabled, onChange }
       <p className="text-sm text-[var(--sm-muted)]">Repetições acumulam desde o início. A progressão do esforço reinicia na primeira semana de cada fase com meta própria. No deload, a progressão é suspensa e as séries numéricas são reduzidas em aproximadamente 40%.</p>
       {errors.length ? <ul aria-label="Pendências para finalizar periodização" className="list-inside list-disc text-sm text-amber-700">{errors.map(error => <li key={error}>{error}</li>)}</ul> : null}
     </fieldset>
+    <PeriodizationWeeklyPreview config={value} durationWeeks={durationWeeks} splits={splits} />
   </section>
 }
