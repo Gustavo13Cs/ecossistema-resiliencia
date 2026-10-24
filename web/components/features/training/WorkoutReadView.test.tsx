@@ -7,10 +7,12 @@ import WorkoutDetailPage from "@/app/clientes/[id]/treinos/[workoutId]/page"
 import TreinosHubPage from "@/app/treinos/page"
 import { api } from "@/lib/api"
 import type { WorkoutDetail } from "@/types/workout"
+import { summarizeWeeklyVolume } from "@/lib/workout-volume"
 import { WorkoutReadView } from "./WorkoutReadView"
 
 const navigation = vi.hoisted(() => ({
   push: vi.fn(),
+  search: "",
   params: { id: "c1", workoutId: "w-older" },
 }))
 const auth = vi.hoisted(() => ({
@@ -19,6 +21,7 @@ const auth = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({
   useParams: () => navigation.params,
+  useSearchParams: () => new URLSearchParams(navigation.search),
   useRouter: () => ({ push: navigation.push }),
 }))
 
@@ -87,6 +90,7 @@ beforeEach(() => {
   http.reset()
   http.onGet("/workouts/drafts").reply(200, { items: [], nextCursor: null })
   navigation.push.mockReset()
+  navigation.search = ""
   navigation.params = { id: "c1", workoutId: "w-older" }
   auth.user = { sub: "personal-1", role: "PERSONAL", name: "Ana Personal" }
 })
@@ -97,6 +101,16 @@ afterEach(() => {
 })
 
 describe("WorkoutReadView and exact workout route", () => {
+  it("requests selected week from the server without changing the workout identity", async () => {
+    navigation.search = "week=3"
+    http.onGet("/workouts/w-older").reply(config => {
+      expect(config.params).toEqual({ week: 3 })
+      return [200, makeWorkoutDetail()]
+    })
+    renderWithQuery(<WorkoutDetailPage />)
+    expect(await screen.findByRole("heading", { name: "Mesociclo Base — Força" })).toBeInTheDocument()
+    expect(http.history.get.filter(request => request.url === "/workouts/w-older")).toHaveLength(1)
+  })
   it("selected_history_row_opens_its_workout_id", async () => {
     const user = userEvent.setup()
     const clientId = "c1"
@@ -296,4 +310,17 @@ it("saved_demonstration_never_fetches_current_library_and_media_failure_keeps_pr
   expect(screen.getByRole("button", { name: "Imprimir ficha salva" })).toBeEnabled()
   expect(screen.getByRole("button", { name: "Revisar esta ficha" })).toBeEnabled()
   expect(http.history.get.filter(request => request.url?.includes("exercise-library"))).toHaveLength(0)
+})
+
+it("reads saved weekly snapshot without recalculating historical exercises", () => {
+  const snapshot = summarizeWeeklyVolume([{ weeklyFrequency: 2, exercises: [{ name: "Prescrito", sets: "7", muscleGroup: "CHEST" }] }])
+  renderWithQuery(<WorkoutReadView workout={makeWorkoutDetail({ weeklyVolumeSnapshot: snapshot })} />)
+  const panel = screen.getByRole("region", { name: "Volume semanal estimado" })
+  expect(within(panel).getByRole("row", { name: /Peitoral 14 0 14/ })).toBeVisible()
+  expect(within(panel).getByText(/Resumo salvo na finalização/)).toBeVisible()
+})
+it("does not invent a volume snapshot for legacy records", () => {
+  renderWithQuery(<WorkoutReadView workout={makeWorkoutDetail()} />)
+  expect(screen.getByText(/Volume semanal não registrado nesta ficha/)).toBeVisible()
+  expect(screen.queryByRole("region", { name: "Volume semanal estimado" })).not.toBeInTheDocument()
 })

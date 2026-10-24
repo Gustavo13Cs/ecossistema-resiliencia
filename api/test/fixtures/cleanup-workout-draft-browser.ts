@@ -10,6 +10,10 @@ async function cleanup() {
   const connection = await pool.connect();
   try {
     await connection.query('BEGIN');
+    await connection.query(
+      'DELETE FROM workout_templates WHERE professional_id=$1 AND title LIKE $2',
+      ['31000000-0000-4000-8000-000000000002', 'Task7 P3 %'],
+    );
     const { rows } = await connection.query<{ id: string }>(
       `SELECT id FROM clients WHERE "professionalId" = $1 AND name LIKE 'Task7 %'`,
       ['31000000-0000-4000-8000-000000000002'],

@@ -10,10 +10,14 @@ const http = new AxiosMockAdapter(api);
 beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-10-15T02:59:59.000Z"));
-    const original = Intl.DateTimeFormat.prototype.resolvedOptions;
-    vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockImplementation(function (this: Intl.DateTimeFormat) {
-        return { ...original.call(this), timeZone: "America/Sao_Paulo" };
-    });
+    const OriginalDateTimeFormat = Intl.DateTimeFormat;
+    // Fake timers podem retornar instâncias do construtor nativo, fora do prototype mockado.
+    const browserDateTimeFormat = function (locales?: Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions) {
+        return new OriginalDateTimeFormat(locales, { ...options, timeZone: options?.timeZone ?? "America/Sao_Paulo" });
+    } as unknown as typeof Intl.DateTimeFormat;
+    browserDateTimeFormat.supportedLocalesOf = OriginalDateTimeFormat.supportedLocalesOf.bind(OriginalDateTimeFormat);
+    vi.spyOn(Intl, "DateTimeFormat").mockImplementation(browserDateTimeFormat);
+    expect(Intl.DateTimeFormat().resolvedOptions().timeZone).toBe("America/Sao_Paulo");
     http.onGet("/appointments").reply(200, []);
 });
 afterEach(() => {

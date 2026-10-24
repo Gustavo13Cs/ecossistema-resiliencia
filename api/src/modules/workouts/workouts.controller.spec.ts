@@ -438,10 +438,10 @@ describe('WorkoutsController Client contract', () => {
     },
   );
 
-  it('preserves templates before the generic workout route', async () => {
-    await request(app.getHttpServer()).get('/workouts/templates').expect(200);
-    expect(service.listTemplates).toHaveBeenCalledWith(user);
-    expect(readService.getWorkout).not.toHaveBeenCalled();
+  it('leaves template bank routes to the dedicated controller', () => {
+    expect(
+      Object.getOwnPropertyNames(WorkoutsController.prototype),
+    ).not.toContain('listTemplates');
   });
 
   it.each(['getClientOverview', 'getWorkout'] as const)(

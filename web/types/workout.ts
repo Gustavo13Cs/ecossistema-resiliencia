@@ -1,3 +1,4 @@
+import type { Periodization, SecondaryMuscle, WeeklyVolumeSummary } from "./workout-p3"
 import type { ClientStatus } from "@/types/client"
 import type { TrainingActiveWorkout } from "@/types/training"
 import type { DemonstrationPresentation, LibraryReference } from "./exercise-demonstration"
@@ -123,6 +124,7 @@ export interface WorkoutSummary extends Omit<TrainingActiveWorkout, "durationWee
 }
 
 export interface WorkoutPrescriptionExercise {
+  secondaryMuscles?: SecondaryMuscle[] | null
   id: string
   name: string
   sets: string
@@ -141,6 +143,7 @@ export interface WorkoutPrescriptionExercise {
 }
 
 export interface WorkoutPrescriptionSplit {
+  weeklyFrequency?: number | null
   id: string
   name: string
   focus: string | null
@@ -149,6 +152,8 @@ export interface WorkoutPrescriptionSplit {
 }
 
 export interface WorkoutPrescription extends TrainingActiveWorkout {
+  periodization?: Periodization | null
+  weeklyVolumeSnapshot?: WeeklyVolumeSummary | null
   finalizedAt?: string | null
   revisionOfId?: string | null
   isTemplate: boolean
@@ -157,10 +162,12 @@ export interface WorkoutPrescription extends TrainingActiveWorkout {
 }
 
 export interface WorkoutDetail extends WorkoutPrescription {
+  weekProjection?: { week: number; planWeek: import("./workout-p3").PlanWeek; phase: import("./workout-p3").PeriodPhase; volume: import("./workout-p3").WeeklyVolumeSummary; exercises: { id: string; sets: string; reps: string; effortType?: EffortType | null; effortTarget?: string | null; warnings: string[] }[] }
   client: WorkoutSummary["client"]
 }
 
 export interface CreateWorkoutExerciseInput {
+  secondaryMuscles?: SecondaryMuscle[] | null
   name: string
   sets: string
   reps: string
@@ -176,12 +183,14 @@ export interface CreateWorkoutExerciseInput {
 }
 
 export interface CreateWorkoutInput {
+  periodization?: Periodization | null
   clientId: string
   title: string
   goal?: string
   durationWeeks?: number
   notes?: string
   splits: {
+    weeklyFrequency?: number | null
     name: string
     focus?: string
     exercises: CreateWorkoutExerciseInput[]

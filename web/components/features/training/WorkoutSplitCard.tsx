@@ -15,7 +15,7 @@ export interface WorkoutSplitCardProps {
   totalSplits: number
   disabled?: boolean
   errors: Record<string, string>
-  onUpdateField: (field: "name" | "focus", value: string) => void
+  onUpdateField: <K extends "name" | "focus" | "weeklyFrequency">(field: K, value: WorkoutFormSplit[K]) => void
   onMoveSplitUp: () => void
   onMoveSplitDown: () => void
   onDuplicateSplit: () => void
@@ -124,6 +124,17 @@ export function WorkoutSplitCard({
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor={`split-frequency-${split.id}`}>Frequência semanal</Label>
+            <select id={`split-frequency-${split.id}`} value={split.weeklyFrequency ?? ""} disabled={disabled}
+              aria-invalid={Boolean(errors[`splits.${split.id}.weeklyFrequency`])}
+              onChange={event => onUpdateField("weeklyFrequency", event.target.value ? Number(event.target.value) : null)}
+              className="min-h-11 w-full rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-3 text-sm">
+              <option value="">Não informada</option>
+              {[1, 2, 3, 4, 5, 6, 7].map(frequency => <option key={frequency} value={frequency}>{frequency} {frequency === 1 ? "vez" : "vezes"}/semana</option>)}
+            </select>
+            {errors[`splits.${split.id}.weeklyFrequency`] ? <p className="text-xs text-[var(--sm-danger)]">{errors[`splits.${split.id}.weeklyFrequency`]}</p> : null}
+          </div>
           <div className="space-y-2">
             <Label htmlFor={`split-name-${split.id}`}>Nome da divisão</Label>
             <Input

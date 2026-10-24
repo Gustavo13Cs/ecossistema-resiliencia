@@ -48,8 +48,12 @@ export interface TrainingClientOverview {
 
 export type WorkoutDetail = TrainingActiveWorkout &
   Pick<Workout, 'notes' | 'isTemplate'> & {
+    periodization?: Workout['periodization'];
+    weeklyVolumeSnapshot?: Workout['weeklyVolumeSnapshot'];
+    weekProjection?: import('./workout-week-projection').WorkoutWeekProjection;
     client: Pick<Client, 'id' | 'name' | 'status'>;
     splits: (Pick<WorkoutSplit, 'id' | 'name' | 'focus' | 'position'> & {
+      weeklyFrequency?: number | null;
       exercises: (Pick<
         WorkoutExercise,
         | 'id'
@@ -66,6 +70,7 @@ export type WorkoutDetail = TrainingActiveWorkout &
         | 'tempo'
         | 'method'
       > & {
+        secondaryMuscles?: WorkoutExercise['secondaryMuscles'];
         libraryReference: LibraryReference | null;
         demonstrationSnapshot: DemonstrationPresentation | null;
       })[];

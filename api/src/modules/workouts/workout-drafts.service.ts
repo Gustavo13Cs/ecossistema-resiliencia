@@ -166,15 +166,30 @@ export class WorkoutDraftsService {
         if (!source)
           throw new NotFoundException('Treino de origem não encontrado');
         const copied = upgradeDraftContent({
+          ...(source.periodization
+            ? {
+                periodization:
+                  source.periodization as unknown as import('./workout-p3.types').Periodization,
+              }
+            : {}),
           title: source.title,
           goal: source.goal ?? '',
           durationWeeks: source.durationWeeks,
           notes: source.notes ?? '',
           splits: source.splits.map((split) => ({
+            ...(split.weeklyFrequency != null
+              ? { weeklyFrequency: split.weeklyFrequency }
+              : {}),
             name: split.name,
             focus: split.focus ?? '',
             exercises: split.exercises.map((exercise) => ({
               ...storedExerciseDemonstration(exercise),
+              ...(exercise.secondaryMuscles
+                ? {
+                    secondaryMuscles:
+                      exercise.secondaryMuscles as unknown as import('./workout-p3.types').SecondaryMuscle[],
+                  }
+                : {}),
               name: exercise.name,
               sets: exercise.sets,
               reps: exercise.reps,
@@ -491,6 +506,7 @@ export class WorkoutDraftsService {
   private content(draft: WorkoutDraft): DraftContentV2 {
     if (
       draft.schemaVersion !== 1 &&
+      draft.schemaVersion !== 2 &&
       draft.schemaVersion !== WORKOUT_DRAFT_SCHEMA_VERSION
     )
       throw new BadRequestException('Formato de rascunho não suportado');

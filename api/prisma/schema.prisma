@@ -66,6 +66,8 @@ model User {
 
   workoutDrafts WorkoutDraft[] @relation("ProfessionalWorkoutDrafts")
 
+  workoutTemplates WorkoutTemplate[] @relation("ProfessionalWorkoutTemplates")
+
   customExercises CustomExercise[] @relation("ProfessionalCustomExercises")
 
   assessments PhysicalAssessment[] @relation("UserAssessments")
@@ -608,6 +610,8 @@ model Workout {
   title         String // Ex: "Fase de Adaptação"
   goal          String? // Ex: "Hipertrofia"
   durationWeeks Int? // Ex: 4
+  weeklyVolumeSnapshot Json?
+  periodization Json?
   notes         String? @db.Text
 
   // 🔗 Relações
@@ -643,6 +647,7 @@ model Workout {
 
 // Tabela 10: As Fichas do Treino (Ex: Treino A, Treino B)
 model WorkoutSplit {
+  weeklyFrequency Int?
   id       String  @id @default(uuid())
   name     String // Ex: "Treino A"
   focus    String? // Ex: "Peito e Tríceps"
@@ -712,6 +717,7 @@ enum ExerciseLibrarySource {
 
 // Tabela 11: Os Exercícios dentro da Ficha
 model WorkoutExercise {
+  secondaryMuscles Json?
   id       String  @id @default(uuid())
   name     String // Ex: "Supino Reto"
   sets     String // Ex: "4"
@@ -1301,4 +1307,24 @@ model WorkoutDraft {
   @@index([clientId])
   @@index([professionalId, status, updatedAt(sort: Desc), id])
   @@map("workout_drafts")
+}
+
+
+model WorkoutTemplate {
+  id String @id @default(uuid())
+  professionalId String? @map("professional_id")
+  professional User? @relation("ProfessionalWorkoutTemplates", fields: [professionalId], references: [id], onDelete: Restrict)
+  title String
+  description String?
+  goal String
+  level String
+  targetAudience String?
+  estimatedWeeks Int @default(8)
+  schemaVersion Int @default(3)
+  content Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([professionalId, createdAt, id])
+  @@map("workout_templates")
 }

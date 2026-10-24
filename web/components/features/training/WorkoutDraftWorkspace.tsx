@@ -14,6 +14,7 @@ import type { Client } from "@/types/client"
 import type { DraftSummary, WorkoutDraftResource } from "@/types/workout-draft"
 import { WorkoutDocumentBoundary } from "./WorkoutDocumentBoundary"
 import { navigateToWorkoutPage } from "@/lib/workout-editor-navigation"
+import { WorkoutTemplatePicker } from "./WorkoutTemplatePicker"
 import { WorkoutDraftEditor } from "./WorkoutDraftEditor"
 import { WorkoutDraftList } from "./WorkoutDraftList"
 import { DraftDiscardDialog, draftAccessDenied } from "./WorkoutDraftSection"
@@ -53,6 +54,7 @@ function DraftContext({ client, draftId }: { client: Client; draftId?: string })
   const { activeQuery } = useWorkouts({ clientId: client.id })
   const drafts = useWorkoutDrafts({ clientId: client.id, draftId, accessError: activeQuery.error })
   const [editing, setEditing] = useState(Boolean(draftId))
+  const [pickingTemplate, setPickingTemplate] = useState(false)
   const [denied, setDenied] = useState(false)
   const [selected, setSelected] = useState<DraftSummary | null>(null)
   const [copyError, setCopyError] = useState(false)
@@ -98,9 +100,9 @@ function DraftContext({ client, draftId }: { client: Client; draftId?: string })
   const page = drafts.listQuery.data
   if (page?.items.length) return <div className="space-y-4 p-4"><h1 className="text-2xl font-bold">Já existe um rascunho aberto</h1><p>Continue a elaboração salva ou descarte explicitamente antes de começar outra.</p><WorkoutDraftList page={page} onContinue={item => navigateToWorkoutPage(router, `/clientes/${client.id}/rascunhos/${item.id}`)} onDiscard={setSelected} onNextPage={() => undefined} />{selected ? <DraftDiscardDialog draft={selected} onClose={() => setSelected(null)} onAccessDenied={() => setDenied(true)} /> : null}</div>
   if (client.status === "ARCHIVED") return <AsyncState kind="empty" title="Aluno arquivado" description="Novas elaborações estão bloqueadas. O histórico permanece disponível no prontuário." action={<Link href={`/clientes/${client.id}`}>Voltar ao prontuário</Link>} />
-  return <div className="space-y-4 p-4"><h1 className="text-2xl font-bold">Nova elaboração de treino</h1><p>{client.name}</p><p>Comece do zero ou copie o treino ativo. O salvamento do rascunho é manual.</p><div className="flex flex-wrap gap-3"><Button onClick={() => setEditing(true)} disabled={drafts.createMutation.isPending}>Começar do zero</Button><Button variant="outline" disabled={!activeQuery.data || activeQuery.isPending || Boolean(activeQuery.error) || drafts.createMutation.isPending} onClick={() => {
+  return <div className="space-y-4 p-4"><h1 className="text-2xl font-bold">Nova elaboração de treino</h1><p>{client.name}</p><p>Comece do zero, use um modelo ou copie o treino ativo. O salvamento do rascunho é manual.</p><div className="flex flex-wrap gap-3"><Button onClick={() => setEditing(true)} disabled={drafts.createMutation.isPending}>Começar do zero</Button><Button variant="outline" onClick={() => setPickingTemplate(true)}>Começar a partir de modelo</Button><Button variant="outline" disabled={!activeQuery.data || activeQuery.isPending || Boolean(activeQuery.error) || drafts.createMutation.isPending} onClick={() => {
     if (!activeQuery.data || activeQuery.data.clientId !== client.id) return
     setCopyError(false)
     void drafts.createMutation.mutateAsync({ sourceWorkoutId: activeQuery.data.id }).then(created => navigateToWorkoutPage(router, `/clientes/${client.id}/rascunhos/${created.id}`)).catch(error => { if (draftAccessDenied(error)) setDenied(true); setCopyError(true); void drafts.listQuery.refetch() })
-  }}>Usar treino ativo como base</Button></div>{activeQuery.error ? <p role="alert">Não foi possível consultar o treino ativo. <Button variant="outline" onClick={() => void activeQuery.refetch()}>Tentar novamente o treino ativo</Button></p> : null}{copyError ? <p role="alert">Não foi possível criar a cópia. Verifique os rascunhos e tente novamente.</p> : null}</div>
+  }}>Usar treino ativo como base</Button></div>{pickingTemplate ? <WorkoutTemplatePicker open clientId={client.id} onClose={() => setPickingTemplate(false)} onAccessDenied={() => setDenied(true)} /> : null}{activeQuery.error ? <p role="alert">Não foi possível consultar o treino ativo. <Button variant="outline" onClick={() => void activeQuery.refetch()}>Tentar novamente o treino ativo</Button></p> : null}{copyError ? <p role="alert">Não foi possível criar a cópia. Verifique os rascunhos e tente novamente.</p> : null}</div>
 }

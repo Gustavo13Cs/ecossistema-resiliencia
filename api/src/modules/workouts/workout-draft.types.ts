@@ -1,3 +1,4 @@
+import type { Periodization, SecondaryMuscle } from './workout-p3.types';
 import {
   EffortType,
   MuscleGroup,
@@ -10,10 +11,11 @@ import type {
   DemonstrationPresentation,
   LibraryReference,
 } from './exercise-demonstration.types';
-export const WORKOUT_DRAFT_SCHEMA_VERSION = 2 as const;
+export const WORKOUT_DRAFT_SCHEMA_VERSION = 3 as const;
 export const WORKOUT_DRAFT_MAX_BYTES = 65536;
 
 export type DraftExerciseV1 = {
+  secondaryMuscles?: SecondaryMuscle[] | null;
   name: string;
   sets: string;
   reps: string;
@@ -27,11 +29,13 @@ export type DraftExerciseV1 = {
   method: TrainingMethod | null;
 };
 export type DraftSplitV1 = {
+  weeklyFrequency?: number | null;
   name: string;
   focus: string;
   exercises: DraftExerciseV1[];
 };
 export type DraftContentV1 = {
+  periodization?: Periodization | null;
   title: string;
   goal: string;
   durationWeeks: number | null;

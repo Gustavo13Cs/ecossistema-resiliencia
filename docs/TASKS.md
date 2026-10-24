@@ -7,6 +7,16 @@
 
 ---
 
+## Personal P3 — concluído localmente em 24/10/2026
+
+- ✅ **Codex**: PDF confrontado com o projeto; [especificação](superpowers/specs/2026-10-23-personal-p3-design.md) e [plano](superpowers/plans/2026-10-23-personal-p3.md) aprovados e executados. Consulta/impressão na ficha atual, conforme escolha do mantenedor.
+- ✅ Monitor de volume semanal, frequência, sinergia, cobertura e snapshot do servidor implementados e revisados.
+- ✅ Modelos globais/privados imutáveis, filtros, prévia, cópia sanitizada para rascunho e isolamento por conta implementados e revisados.
+- ✅ Periodização opcional de 4–12 semanas, prévia antes de finalizar, progressão/deload e datas da semana na consulta/impressão implementados e revisados.
+- ✅ API 755/755, web 748/748, PostgreSQL/HTTP/RLS 253/253; tipos, lint, builds e verificações de produção local aprovados. Nove verificações reais Chromium/Playwright, desktop/mobile e PDF A4 aprovados; rerevisão final sem achados materiais.
+- ℹ️ Cenários Cypress versionados; runner nativo não executado porque o download do binário recebeu HTTP 403. Jornada real validada com Chromium/Playwright disponível, sem contornar a política de rede.
+- ✅ [Relatório final e decisões](runbooks/personal-p3-verification.md). Branch `agent/codex/personal-p3` publicada, por solicitação posterior do mantenedor, no [PR #31](https://github.com/Gustavo13Cs/ecossistema-resiliencia/pull/31). Migrations somente no PostgreSQL sintético; sem merge, deploy ou produção.
+
 ## Correções das revisões — 2026-10-17
 
 - ✅ Codex: PR #27 — prescrição preservada em falhas transitórias, histórico após avaliação e reautenticação nas cinco telas corrigidos. PR #28 — suíte API pendente validada (602/602); web 525/525, tipos/lint/builds aprovados. Publicado no PR #29 (rascunho), após autorização do mantenedor em 2026-10-17.

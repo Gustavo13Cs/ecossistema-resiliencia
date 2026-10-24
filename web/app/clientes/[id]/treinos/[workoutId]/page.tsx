@@ -1,7 +1,9 @@
 "use client"
 
+import { Suspense } from "react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
+import { useWorkoutWeekRefresh } from "@/hooks/features/useWorkoutWeekRefresh"
 import { isAxiosError } from "axios"
 import { ReauthenticateButton } from "@/components/auth/ReauthenticateButton"
 import { AsyncState } from "@/components/feedback/AsyncState"
@@ -14,11 +16,19 @@ const actionClass =
   "inline-flex min-h-11 items-center justify-center rounded-[var(--sm-radius-sm)] px-4 py-2.5 text-sm font-bold text-[var(--sm-brand)] hover:bg-[var(--sm-subtle-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sm-focus)]"
 
 export default function WorkoutDetailPage() {
+  return <Suspense fallback={<AsyncState kind="loading" title="Carregando ficha" description="Consultando prescrição." />}><WorkoutDetailContent /></Suspense>
+}
+
+function WorkoutDetailContent() {
   const params = useParams<{ id: string; workoutId: string }>()
   const clientId = params.id
   const workoutId = params.workoutId
   const { user } = useAuth()
-  const { detailQuery } = useWorkouts({ clientId, workoutId })
+  const search = useSearchParams()
+  const weekText = search.get("week")
+  const week = weekText === null ? undefined : /^\d{1,2}$/.test(weekText) ? Number(weekText) : NaN
+  const { detailQuery } = useWorkouts({ clientId, workoutId, week })
+  useWorkoutWeekRefresh(detailQuery.data?.periodization?.timeZone, detailQuery.refetch)
 
   if (user?.role !== "PERSONAL") {
     return (

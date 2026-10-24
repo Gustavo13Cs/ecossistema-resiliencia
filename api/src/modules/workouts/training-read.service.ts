@@ -1,3 +1,4 @@
+import { withWeekProjection } from './workout-week-projection';
 import {
   ForbiddenException,
   Injectable,
@@ -61,6 +62,8 @@ const assessmentSelect = {
 export const workoutDetailSelect = {
   ...activeWorkoutSelect,
   notes: true,
+  periodization: true,
+  weeklyVolumeSnapshot: true,
   isTemplate: true,
   client: { select: { id: true, name: true, status: true } },
   splits: {
@@ -69,6 +72,7 @@ export const workoutDetailSelect = {
       id: true,
       name: true,
       focus: true,
+      weeklyFrequency: true,
       position: true,
       exercises: {
         orderBy: [{ position: 'asc' }, { id: 'asc' }],
@@ -81,6 +85,7 @@ export const workoutDetailSelect = {
           notes: true,
           position: true,
           muscleGroup: true,
+          secondaryMuscles: true,
           load: true,
           effortType: true,
           effortTarget: true,
@@ -188,7 +193,11 @@ export class TrainingReadService {
     };
   }
 
-  async getWorkout(user: AuthUser, workoutId: string): Promise<WorkoutDetail> {
+  async getWorkout(
+    user: AuthUser,
+    workoutId: string,
+    week?: number,
+  ): Promise<WorkoutDetail> {
     this.assertTrainingProfessional(user);
     const plan = await this.prisma.workout.findFirst({
       where: {
@@ -216,11 +225,14 @@ export class TrainingReadService {
     ) {
       throw new NotFoundException('Treino não encontrado');
     }
-    return presentWorkout({
-      ...detail,
-      clientId: client.id,
-      client: detail.client,
-    });
+    return withWeekProjection(
+      presentWorkout({
+        ...detail,
+        clientId: client.id,
+        client: detail.client,
+      }),
+      week,
+    );
   }
 
   private assertTrainingProfessional(user: AuthUser) {

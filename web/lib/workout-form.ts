@@ -1,3 +1,5 @@
+import { validatePeriodization } from "./workout-periodization"
+import { VOLUME_MUSCLES, type Periodization, type SecondaryMuscle } from "@/types/workout-p3"
 import {
   MUSCLE_GROUP_LABELS,
   TRAINING_METHOD_LABELS,
@@ -13,6 +15,7 @@ import type { DemonstrationPresentation, LibraryReference } from "@/types/exerci
 export const WORKOUT_TEMPO_REGEX = /^\d{1,2}-[0-9xX]{1,2}-[0-9xX]{1,2}-\d{1,2}$/
 
 export interface WorkoutFormExercise {
+  secondaryMuscles?: SecondaryMuscle[] | null
   id: string
   name: string
   sets: string
@@ -30,6 +33,7 @@ export interface WorkoutFormExercise {
 }
 
 export interface WorkoutFormSplit {
+  weeklyFrequency?: number | null
   id: string
   name: string
   focus: string
@@ -37,6 +41,7 @@ export interface WorkoutFormSplit {
 }
 
 export interface WorkoutForm {
+  periodization?: Periodization | null
   title: string
   goal: string
   durationWeeks: string
@@ -60,6 +65,7 @@ export function createWorkoutExercise(): WorkoutFormExercise {
     effortTarget: "",
     tempo: "",
     method: "STANDARD",
+    secondaryMuscles: null,
     libraryReference: null,
     demonstrationSnapshot: null,
   }
@@ -72,6 +78,7 @@ export function createWorkoutSplit(index = 0): WorkoutFormSplit {
     id: `split-${nextLocalId++}`,
     name: `Treino ${letter}${suffix}`,
     focus: "",
+    weeklyFrequency: 1,
     exercises: [],
   }
 }
@@ -79,6 +86,7 @@ export function createWorkoutSplit(index = 0): WorkoutFormSplit {
 export function duplicateExercise(exercise: WorkoutFormExercise): WorkoutFormExercise {
   return {
     ...exercise,
+    secondaryMuscles: exercise.secondaryMuscles?.map(item => ({ ...item })) ?? null,
     id: `exercise-${nextLocalId++}`,
   }
 }
@@ -89,6 +97,7 @@ export function duplicateSplit(split: WorkoutFormSplit): WorkoutFormSplit {
     id: `split-${nextLocalId++}`,
     name: `${baseName} (cópia)`,
     focus: split.focus,
+    weeklyFrequency: split.weeklyFrequency ?? null,
     exercises: split.exercises.map(duplicateExercise),
   }
 }
@@ -106,6 +115,7 @@ export function moveItem<T>(items: readonly T[], index: number, direction: -1 | 
 
 export function createEmptyWorkoutForm(): WorkoutForm {
   return {
+    periodization: null,
     title: "",
     goal: "",
     durationWeeks: "",
@@ -129,8 +139,10 @@ export function copyWorkoutToForm(workout: WorkoutPrescription): WorkoutForm {
             id: `split-${nextLocalId++}`,
             name: split.name,
             focus: split.focus ?? "",
+            weeklyFrequency: split.weeklyFrequency ?? null,
             exercises: orderedExercises.map(exercise => ({
               id: `exercise-${nextLocalId++}`,
+              secondaryMuscles: exercise.secondaryMuscles?.map(item => ({ ...item })) ?? null,
               name: exercise.name,
               sets: exercise.sets,
               reps: exercise.reps,
@@ -150,6 +162,7 @@ export function copyWorkoutToForm(workout: WorkoutPrescription): WorkoutForm {
       : [createWorkoutSplit(0)]
 
   return {
+    periodization: clonePeriodization(workout.periodization),
     title: workout.title,
     goal: workout.goal ?? "",
     durationWeeks: workout.durationWeeks != null ? String(workout.durationWeeks) : "",
@@ -188,6 +201,8 @@ function parseDurationWeeks(raw: string): number | null {
 
 export function validateWorkoutForm(form: WorkoutForm): Record<string, string> {
   const errors: Record<string, string> = {}
+  const periodErrors = validatePeriodization(form.periodization, form.durationWeeks.trim() ? Number(form.durationWeeks) : null, true)
+  if (periodErrors.length) errors.periodization = periodErrors.join(" ")
   const title = form.title.trim()
   if (!title) {
     errors.title = "Informe o título da prescrição."
@@ -220,6 +235,9 @@ export function validateWorkoutForm(form: WorkoutForm): Record<string, string> {
   }
 
   form.splits.forEach(split => {
+    if (split.weeklyFrequency != null && (!Number.isInteger(split.weeklyFrequency) || split.weeklyFrequency < 1 || split.weeklyFrequency > 7)) {
+      errors[`splits.${split.id}.weeklyFrequency`] = "Informe uma frequência inteira entre 1 e 7 vezes por semana."
+    }
     const splitName = split.name.trim()
     if (!splitName) {
       errors[`splits.${split.id}.name`] = "Informe o nome da divisão."
@@ -238,6 +256,13 @@ export function validateWorkoutForm(form: WorkoutForm): Record<string, string> {
     }
 
     split.exercises.forEach(exercise => {
+      const seen = new Set<string>(exercise.muscleGroup ? [exercise.muscleGroup] : [])
+      for (const secondary of exercise.secondaryMuscles ?? []) {
+        if (!(VOLUME_MUSCLES as readonly string[]).includes(secondary.muscleGroup) || seen.has(secondary.muscleGroup) || ![0, 0.5, 1].includes(secondary.weight)) {
+          errors[`exercises.${exercise.id}.secondaryMuscles`] = "Músculos secundários devem ser distintos do principal e entre si, com peso 0, 0,5 ou 1."
+        }
+        seen.add(secondary.muscleGroup)
+      }
       const exerciseName = exercise.name.trim()
       const sets = exercise.sets.trim()
       const reps = exercise.reps.trim()
@@ -292,11 +317,13 @@ export function validateWorkoutForm(form: WorkoutForm): Record<string, string> {
 export function buildWorkoutInput(form: WorkoutForm, clientId: string): CreateWorkoutInput {
   const payload: CreateWorkoutInput = {
     clientId,
+    ...(form.periodization ? { periodization: clonePeriodization(form.periodization) } : {}),
     title: form.title.trim(),
     splits: form.splits.map(split => {
       const focus = split.focus.trim()
       return {
         name: split.name.trim(),
+        ...(split.weeklyFrequency != null ? { weeklyFrequency: split.weeklyFrequency } : {}),
         ...(focus ? { focus } : {}),
         exercises: split.exercises.map(exercise => {
           const rest = exercise.rest.trim()
@@ -307,6 +334,7 @@ export function buildWorkoutInput(form: WorkoutForm, clientId: string): CreateWo
 
           const item: CreateWorkoutExerciseInput = {
             name: exercise.name.trim(),
+            ...(exercise.secondaryMuscles != null ? { secondaryMuscles: exercise.secondaryMuscles.map(item => ({ ...item })) } : {}),
             sets: exercise.sets.trim(),
             reps: exercise.reps.trim(),
             ...(rest ? { rest } : {}),
@@ -343,7 +371,7 @@ export function buildWorkoutInput(form: WorkoutForm, clientId: string): CreateWo
 }
 
 export function isWorkoutFormDirty(form: WorkoutForm): boolean {
-  if (form.title.trim() || form.goal.trim() || form.durationWeeks.trim() || form.notes.trim()) {
+  if (form.periodization || form.title.trim() || form.goal.trim() || form.durationWeeks.trim() || form.notes.trim()) {
     return true
   }
   if (form.splits.length !== 1) {
@@ -353,6 +381,37 @@ export function isWorkoutFormDirty(form: WorkoutForm): boolean {
   return (
     firstSplit.name.trim() !== "Treino A" ||
     Boolean(firstSplit.focus.trim()) ||
+    (firstSplit.weeklyFrequency === null || (firstSplit.weeklyFrequency != null && firstSplit.weeklyFrequency !== 1)) ||
     firstSplit.exercises.length > 0
   )
+}
+
+export function clonePeriodization(value: Periodization | null | undefined): Periodization | null {
+  return value ? { ...value, phases: value.phases.map(phase => ({ ...phase })), progression: value.progression ? { ...value.progression } : null } : null
+}
+
+// IDs verificados no catálogo; o nome e o grupo principal não definem sinergia.
+const CATALOG_SECONDARIES: Record<string, readonly string[]> = {
+  "cat-chest-01": ["TRICEPS", "SHOULDERS"],
+  "cat-chest-02": ["TRICEPS", "SHOULDERS"],
+  "cat-chest-03": ["TRICEPS", "SHOULDERS"],
+  "cat-chest-04": ["TRICEPS", "SHOULDERS"],
+  "cat-chest-05": ["TRICEPS", "SHOULDERS"],
+  "cat-chest-06": ["TRICEPS", "SHOULDERS"],
+  "cat-chest-07": ["TRICEPS", "SHOULDERS"],
+  "cat-back-06": ["BICEPS", "SHOULDERS"],
+  "cat-back-07": ["BICEPS", "SHOULDERS"],
+  "cat-back-08": ["BICEPS", "SHOULDERS"],
+  "cat-back-09": ["BICEPS", "SHOULDERS"],
+  "cat-back-10": ["BICEPS", "SHOULDERS"],
+  "cat-back-11": ["BICEPS", "SHOULDERS"],
+  "cat-back-12": ["BICEPS", "SHOULDERS"],
+  "cat-quads-01": ["GLUTES", "ADDUCTORS"],
+  "cat-quads-02": ["GLUTES", "ADDUCTORS"],
+  "cat-quads-03": ["GLUTES", "ADDUCTORS"],
+  "cat-quads-04": ["GLUTES", "ADDUCTORS"],
+}
+export function suggestedSecondaryMuscles(reference: LibraryReference | null | undefined): SecondaryMuscle[] | null {
+  const muscles = reference?.source === "CATALOG" ? CATALOG_SECONDARIES[reference.exerciseId] : undefined
+  return muscles?.map(muscleGroup => ({ muscleGroup, weight: 0.5 })) ?? null
 }

@@ -11,6 +11,7 @@ import {
   Request,
   UseGuards,
   ParseUUIDPipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { WorkoutsService } from './workouts.service';
 import { TrainingReadService } from './training-read.service';
@@ -140,19 +141,15 @@ export class WorkoutsController {
     return this.workoutsService.saveAsTemplate(request.user, id);
   }
 
-  // Listar todos os templates do personal logado (com splits e exercícios para pré-preencher)
-  @ClinicalResponse({ shape: 'resource' })
-  @Get('templates')
-  listTemplates(@Request() request: AuthenticatedRequest) {
-    return this.workoutsService.listTemplates(request.user);
-  }
-
   @ClinicalResponse({ shape: 'resource' })
   @Get(':workoutId')
   getWorkout(
     @Request() request: AuthenticatedRequest,
     @Param('workoutId', ParseUUIDPipe) workoutId: string,
+    @Query('week', new ParseIntPipe({ optional: true })) week?: number,
   ) {
-    return this.trainingReadService.getWorkout(request.user, workoutId);
+    return week === undefined
+      ? this.trainingReadService.getWorkout(request.user, workoutId)
+      : this.trainingReadService.getWorkout(request.user, workoutId, week);
   }
 }

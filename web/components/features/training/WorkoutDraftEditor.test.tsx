@@ -7,6 +7,7 @@ import { makeTestClient } from "@/test/client-fixture"
 import type { DraftContentV1, WorkoutDraftResource } from "@/types/workout-draft"
 import type { WorkoutPrescription } from "@/types/workout"
 import { WorkoutDraftEditor, type WorkoutDraftEditorProps } from "./WorkoutDraftEditor"
+import { suggestPeriodization } from "@/lib/workout-periodization"
 const auth = vi.hoisted(() => ({ user: { sub: "personal", role: "PERSONAL" } }))
 const navigation = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }))
 vi.mock("@/contexts/auth-context", () => ({ useAuth: () => auth }))
@@ -28,6 +29,67 @@ beforeEach(() => {
   vi.stubGlobal("navigation", Object.assign(new EventTarget(), { traverseTo: vi.fn() })); auth.user = { sub: "personal", role: "PERSONAL" }; navigation.push.mockReset(); navigation.replace.mockReset() })
 afterEach(cleanup)
 describe("WorkoutDraftEditor", () => {
+  it("permite conferir semanas 3/8 antes de finalizar sem salvar, requisitar ou alterar os valores base", () => {
+    const periodization = { ...suggestPeriodization(8), startsOn: "2026-10-23", progression: { intervalWeeks: 2, repsDelta: 1, effortDelta: 1 } }
+    const configured = { ...content, durationWeeks: 8, periodization, splits: [{ ...content.splits[0], exercises: [{ ...content.splits[0].exercises[0], sets: "4", reps: "6-8", effortType: "RIR" as const, effortTarget: "3" }] }] }
+    const original = JSON.stringify(configured)
+    const p = props({ draft: { ...draft, schemaVersion: 3, content: configured } })
+    const http = new AxiosMockAdapter(api)
+    try {
+      render(<WorkoutDraftEditor {...p} />)
+      const preview = screen.getByRole("region", { name: "Prévia semanal da prescrição" })
+      fireEvent.change(within(preview).getByLabelText("Semana da prévia"), { target: { value: "3" } })
+      expect(within(preview).getByText("Projetado: 4 séries · 7-9 repetições · RIR 2")).toBeVisible()
+      fireEvent.change(within(preview).getByLabelText("Semana da prévia"), { target: { value: "8" } })
+      expect(within(preview).getByText("Projetado: 2 séries · 6-8 repetições · RIR 4-5")).toBeVisible()
+      expect(screen.getByLabelText("Séries")).toHaveValue("4")
+      expect(screen.getByLabelText("Repetições")).toHaveValue("6-8")
+      fireEvent.change(screen.getByLabelText("Séries"), { target: { value: "6" } })
+      expect(within(preview).getByText("Projetado: 4 séries · 6-8 repetições · RIR 4-5")).toBeVisible()
+      fireEvent.change(screen.getByLabelText("Repetições"), { target: { value: "30s" } })
+      expect(within(preview).getByText("Repetições textuais: revisão manual.")).toBeVisible()
+      expect(p.onSave).not.toHaveBeenCalled()
+      expect(p.onCreate).not.toHaveBeenCalled()
+      expect(p.onFinalize).not.toHaveBeenCalled()
+      expect(Object.values(http.history).flat()).toHaveLength(0)
+      expect(JSON.stringify(configured)).toBe(original)
+    } finally { http.restore() }
+  })
+  it("salva periodização parcial sem prévia inválida e continua exigindo configuração completa para finalizar", async () => {
+    const p = props()
+    render(<WorkoutDraftEditor {...p} />)
+    fireEvent.click(screen.getByRole("button", { name: "Configurar periodização" }))
+    fireEvent.change(screen.getByLabelText("Início da fase 1"), { target: { value: "" } })
+    fireEvent.click(screen.getByLabelText("Ativar progressão programada"))
+    fireEvent.change(screen.getByLabelText("A cada quantas semanas"), { target: { value: "" } })
+    expect(screen.getByText(/Complete a configuração para consultar a prévia/)).toBeVisible()
+    fireEvent.click(screen.getByRole("button", { name: "Finalizar prescrição" }))
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument()
+    expect(p.onFinalize).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }))
+    await waitFor(() => expect(p.onSave).toHaveBeenCalled())
+    expect(vi.mocked(p.onSave).mock.calls[0][0].content.periodization).toMatchObject({ startsOn: "", phases: [expect.objectContaining({ startWeek: 0 }), expect.anything(), expect.anything(), expect.anything()], progression: { intervalWeeks: 0 } })
+  })
+  it("updates weekly volume locally with frequency and editable manual secondary weights", () => {
+    const p = props({ draft: { ...draft, schemaVersion: 3, content: { ...content, splits: [{ ...content.splits[0], weeklyFrequency: 1, exercises: [{ ...content.splits[0].exercises[0], muscleGroup: "CHEST", sets: "6" }] }] } } })
+    render(<WorkoutDraftEditor {...p} />)
+    const panel = screen.getByRole("region", { name: "Volume semanal estimado" })
+    expect(within(panel).getByRole("row", { name: /Peitoral 6 0 6/ })).toBeVisible()
+    fireEvent.change(screen.getByLabelText("Frequência semanal"), { target: { value: "2" } })
+    expect(within(panel).getByRole("row", { name: /Peitoral 12 0 12/ })).toBeVisible()
+    expect(within(panel).getByText(/Peitoral \/ costas: revise/)).toBeVisible()
+    fireEvent.click(screen.getByRole("button", { name: "Parâmetros avançados" }))
+    fireEvent.change(screen.getByLabelText("Adicionar músculo secundário"), { target: { value: "TRICEPS" } })
+    expect(within(panel).getByRole("row", { name: /Tríceps 0 6 6/ })).toBeVisible()
+    fireEvent.change(screen.getByLabelText("Peso de Tríceps"), { target: { value: "1" } })
+    expect(within(panel).getByRole("row", { name: /Tríceps 0 12 12/ })).toBeVisible()
+    fireEvent.change(screen.getByLabelText("Séries"), { target: { value: "3 + drop" } })
+    expect(within(panel).getByText(/Cobertura parcial/)).toBeVisible()
+    expect(within(panel).getByText(/Treino A.*Supino.*Séries não numéricas/)).toBeVisible()
+    expect(within(panel).queryByText(/Peitoral \/ costas: revise/)).not.toBeInTheDocument()
+    expect(p.onSave).not.toHaveBeenCalled()
+    expect(p.onCreate).not.toHaveBeenCalled()
+  })
   it("manual_rename_clears_demonstration_with_notice while parameter edits retain the link", async () => {
     const reference = { source: "CATALOG" as const, exerciseId: "cat-1", demonstrationRevision: "r1" }
     const linked = { ...content, splits: [{ ...content.splits[0], exercises: [{ ...content.splits[0].exercises[0], libraryReference: reference, demonstrationSnapshot: { revision: "r1", instruction: "Execução" } }] }] }

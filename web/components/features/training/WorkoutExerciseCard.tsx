@@ -1,5 +1,6 @@
 "use client"
 
+import { VOLUME_MUSCLES, type VolumeMuscle } from "@/types/workout-p3"
 import { useState } from "react"
 import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -12,6 +13,7 @@ import {
 import {
   EFFORT_TYPE_LABELS,
   MUSCLE_GROUP_OPTIONS,
+  MUSCLE_GROUP_LABELS,
   TRAINING_METHOD_LABELS,
   type EffortType,
   type MuscleGroup,
@@ -79,7 +81,7 @@ export function WorkoutExerciseCard({
   const effortTargetError = errors[`exercises.${exercise.id}.effortTarget`]
   const loadError = errors[`exercises.${exercise.id}.load`]
   const hasAdvancedError = Boolean(
-    tempoError || effortTypeError || effortTargetError,
+    tempoError || effortTypeError || effortTargetError || errors[`exercises.${exercise.id}.secondaryMuscles`],
   )
   const isExpanded = advancedOpen || hasAdvancedError
   const summaryChips = summarizeAdvancedExercise(exercise)
@@ -269,12 +271,12 @@ export function WorkoutExerciseCard({
                 id={`ex-group-${exercise.id}`}
                 value={exercise.muscleGroup}
                 disabled={disabled}
-                onChange={event =>
-                  onChange(
-                    "muscleGroup",
-                    event.target.value as MuscleGroup | "",
-                  )
-                }
+                onChange={event => {
+                  onChange("muscleGroup", event.target.value as MuscleGroup | "")
+                  if (exercise.secondaryMuscles?.some(item => item.muscleGroup === event.target.value)) {
+                    onChange("secondaryMuscles", exercise.secondaryMuscles.filter(item => item.muscleGroup !== event.target.value))
+                  }
+                }}
                 className="min-h-11 w-full rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-surface)] px-3 text-sm text-[var(--sm-ink)]"
               >
                 <option value="">Não informado</option>
@@ -372,6 +374,30 @@ export function WorkoutExerciseCard({
               ) : null}
             </div>
           </div>
+
+          <fieldset className="space-y-3 rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] p-3" disabled={disabled}>
+            <legend className="px-1 font-semibold">Músculos secundários</legend>
+            <p className="text-xs text-[var(--sm-muted)]">Contribuição para o volume semanal. Peso padrão 0,5; ajuste conforme a prescrição.</p>
+            {exercise.secondaryMuscles == null ? <p className="text-xs">Secundários não informados.</p> : exercise.secondaryMuscles.length === 0 ? <p className="text-xs">Nenhum músculo secundário informado.</p> : null}
+            {(exercise.secondaryMuscles ?? []).map((secondary, secondaryIndex) => <div key={secondary.muscleGroup} className="flex flex-wrap items-center gap-3">
+              <Label htmlFor={`ex-secondary-${exercise.id}-${secondaryIndex}`}>Peso de {MUSCLE_GROUP_LABELS[secondary.muscleGroup as VolumeMuscle] || secondary.muscleGroup}</Label>
+              <select id={`ex-secondary-${exercise.id}-${secondaryIndex}`} value={secondary.weight}
+                className="min-h-11 rounded border border-[var(--sm-border)] bg-[var(--sm-surface)] px-3"
+                onChange={event => onChange("secondaryMuscles", (exercise.secondaryMuscles ?? []).map((item, position) => position === secondaryIndex ? { ...item, weight: Number(event.target.value) } : item))}>
+                <option value={0}>0</option><option value={0.5}>0,5</option><option value={1}>1</option>
+              </select>
+              <Button type="button" variant="outline" className="min-h-11" onClick={() => onChange("secondaryMuscles", (exercise.secondaryMuscles ?? []).filter((_, position) => position !== secondaryIndex))}>Remover {MUSCLE_GROUP_LABELS[secondary.muscleGroup as VolumeMuscle] || secondary.muscleGroup}</Button>
+            </div>)}
+            <div className="space-y-1.5">
+              <Label htmlFor={`ex-add-secondary-${exercise.id}`}>Adicionar músculo secundário</Label>
+              <select id={`ex-add-secondary-${exercise.id}`} value="" className="min-h-11 w-full rounded border border-[var(--sm-border)] bg-[var(--sm-surface)] px-3"
+                onChange={event => { if (event.target.value) onChange("secondaryMuscles", [...(exercise.secondaryMuscles ?? []), { muscleGroup: event.target.value, weight: 0.5 }]) }}>
+                <option value="">Selecione o músculo</option>
+                {VOLUME_MUSCLES.filter(muscle => muscle !== exercise.muscleGroup && !exercise.secondaryMuscles?.some(item => item.muscleGroup === muscle)).map(muscle => <option key={muscle} value={muscle}>{MUSCLE_GROUP_LABELS[muscle]}</option>)}
+              </select>
+            </div>
+            {errors[`exercises.${exercise.id}.secondaryMuscles`] ? <p className="text-xs text-[var(--sm-danger)]">{errors[`exercises.${exercise.id}.secondaryMuscles`]}</p> : null}
+          </fieldset>
 
           <div className="space-y-1.5">
             <Label htmlFor={`ex-notes-${exercise.id}`}>

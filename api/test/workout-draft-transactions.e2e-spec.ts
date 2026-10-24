@@ -231,7 +231,7 @@ describe('Workout draft lifecycle transactions (PostgreSQL)', () => {
     );
     expect(draft).toMatchObject({
       version: 1,
-      schemaVersion: 2,
+      schemaVersion: 3,
       baseActiveWorkoutId: previousId,
       content: { title: '', splits: [] },
     });

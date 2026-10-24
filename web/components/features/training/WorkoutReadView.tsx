@@ -3,6 +3,9 @@
 import Link from "next/link"
 import { useState } from "react"
 import { AsyncState } from "@/components/feedback/AsyncState"
+import { SaveWorkoutTemplateDialog } from "./SaveWorkoutTemplateDialog"
+import { WorkoutPeriodizationView } from "./WorkoutPeriodizationView"
+import { WeeklyVolumePanel } from "./WeeklyVolumePanel"
 import { WorkoutRevisionAction } from "./WorkoutRevisionAction"
 import { ExerciseLibraryDetail } from "./ExerciseLibraryDetail"
 import { Button } from "@/components/ui/button"
@@ -31,6 +34,7 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
     ? { name: executionExercise.name, snapshot: executionExercise.demonstrationSnapshot }
     : undefined
   const [denied, setDenied] = useState(false)
+  const [savingTemplate, setSavingTemplate] = useState(false)
   const archived = workout.client.status === "ARCHIVED"
   const statusLabel = workout.isActive ? "Treino ativo" : "Treino anterior"
 
@@ -55,6 +59,7 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
           <Button type="button" variant="outline" className="min-h-11" onClick={() => window.print()}>
             Imprimir ficha salva
           </Button>
+          <Button type="button" variant="outline" className="min-h-11" disabled={archived || !workout.finalizedAt} onClick={() => setSavingTemplate(true)}>Salvar como modelo</Button>
           {archived ? (
             <Button type="button" disabled className="min-h-11">
               Criar prescrição
@@ -97,6 +102,9 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
         </dl>
       </section>
 
+      <WorkoutPeriodizationView workout={workout} />
+      {workout.weeklyVolumeSnapshot ? <WeeklyVolumePanel summary={workout.weeklyVolumeSnapshot} splits={workout.splits} saved /> : <p className="text-sm text-[var(--sm-muted)]">Volume semanal não registrado nesta ficha.</p>}
+
       <div className="space-y-5">
         {orderedSplits.map(split => {
           const orderedExercises = [...split.exercises].sort(
@@ -110,6 +118,7 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
             >
               <header className="border-b border-[var(--sm-border)] pb-3">
                 <h2 className="break-words text-xl font-bold">{split.name}</h2>
+                <p className="mt-1 text-sm">Frequência semanal: {split.weeklyFrequency != null ? `${split.weeklyFrequency} vez(es)/semana` : "Não informada"}</p>
                 <p className="mt-1 break-words text-sm text-[var(--sm-muted)]">
                   Foco: <span className="font-semibold text-[var(--sm-ink)]">{split.focus || "Não informado"}</span>
                 </p>
@@ -170,6 +179,10 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
                         ) : null}
                       </dl>
 
+                      {workout.weekProjection ? (() => {
+                        const projected = workout.weekProjection.exercises.find(item => item.id === exercise.id)
+                        return projected ? <div className="space-y-1 rounded-md border border-[var(--sm-border)] p-3 text-sm"><h4 className="font-bold">Meta da semana {workout.weekProjection.week}</h4><p>{projected.sets} séries × {projected.reps} repetições{projected.effortType ? ` · ${projected.effortType} ${projected.effortTarget}` : ""}</p><p className="text-[var(--sm-muted)]">Valores base: {exercise.sets} séries × {exercise.reps} repetições. Carga: {exercise.load || "Não informada"}.</p>{projected.warnings.map(warning => <p key={warning}>{warning}</p>)}</div> : null
+                      })() : null}
                       {exercise.demonstrationSnapshot ? <Button type="button" variant="outline" className="min-h-11 print:hidden" aria-label={`Ver execução de ${exercise.name}`} onClick={() => setExecutionTarget({ workoutId: workout.id, exerciseId: exercise.id })}>Ver execução</Button> : null}
                       {exercise.notes ? (
                         <p className="whitespace-pre-wrap break-words text-sm text-[var(--sm-muted)]">
@@ -195,6 +208,7 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
           {workout.notes || "Nenhuma orientação registrada"}
         </p>
       </section>
+      {savingTemplate ? <SaveWorkoutTemplateDialog open workout={workout} onClose={() => setSavingTemplate(false)} onAccessDenied={() => setDenied(true)} /> : null}
       <ExerciseLibraryDetail open={Boolean(execution)} onOpenChange={open => { if (!open) setExecutionTarget(null) }} saved={execution ?? undefined} />
     </article>
   )

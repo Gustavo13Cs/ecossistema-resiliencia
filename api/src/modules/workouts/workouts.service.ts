@@ -1,4 +1,7 @@
+import { summarizeWeeklyVolume } from './workout-volume';
+import { validatePeriodization } from './workout-periodization';
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -109,6 +112,12 @@ export class WorkoutsService {
     revisionOfId: string | null,
     resolved: ResolvedWorkoutDemonstrations,
   ) {
+    const periodErrors = validatePeriodization(
+      data.periodization,
+      data.durationWeeks,
+      true,
+    );
+    if (periodErrors.length) throw new BadRequestException(periodErrors);
     await lockActiveOwnedClient(tx, clientId, user.sub);
     if (revisionOfId !== null) {
       const source = await tx.workout.findFirst({
@@ -130,6 +139,12 @@ export class WorkoutsService {
     return tx.workout.create({
       include: { splits: orderedSplitsInclude },
       data: {
+        periodization: data.periodization
+          ? (data.periodization as unknown as Prisma.InputJsonValue)
+          : Prisma.DbNull,
+        weeklyVolumeSnapshot: summarizeWeeklyVolume(
+          data.splits,
+        ) as unknown as Prisma.InputJsonValue,
         title: data.title,
         goal: data.goal,
         durationWeeks: data.durationWeeks,
@@ -142,6 +157,7 @@ export class WorkoutsService {
         revisionOfId,
         splits: {
           create: data.splits.map((split, splitIndex) => ({
+            weeklyFrequency: split.weeklyFrequency ?? null,
             name: split.name,
             focus: split.focus,
             position: splitIndex,
@@ -157,6 +173,9 @@ export class WorkoutsService {
                   (resolved.splits[splitIndex].exercises[exerciseIndex]
                     .demonstrationSnapshot as Prisma.InputJsonValue | null) ??
                   Prisma.DbNull,
+                secondaryMuscles: exercise.secondaryMuscles
+                  ? (exercise.secondaryMuscles as unknown as Prisma.InputJsonValue)
+                  : Prisma.DbNull,
                 name: exercise.name,
                 sets: exercise.sets,
                 reps: exercise.reps,
