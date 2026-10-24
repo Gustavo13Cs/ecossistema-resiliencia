@@ -55,10 +55,21 @@ function PickerSession({ open, clientId, onClose, onAccessDenied }: PickerProps)
 }
 
 type ParameterContent = { durationWeeks?: number | null; periodization?: Periodization | null; splits: { name: string; focus?: string | null; weeklyFrequency?: number | null; exercises: { name: string; sets: string; reps: string; rest?: string | null; muscleGroup?: MuscleGroup | null; secondaryMuscles?: SecondaryMuscle[] | null; effortType?: EffortType | null; effortTarget?: string | null; tempo?: string | null; method?: TrainingMethod | null }[] }[] }
+const PHASE_TYPE_LABELS = { ADAPTATION: "Adaptação", OVERLOAD: "Sobrecarga", PEAK: "Pico", DELOAD: "Deload" } as const
+
 export function WorkoutTemplateParameters({ content }: { content: ParameterContent }) {
   return <div aria-label="Parâmetros incluídos no modelo" className="space-y-3 text-sm">
     <p>Duração: {content.durationWeeks == null ? "Não informada" : `${content.durationWeeks} semanas`}</p>
-    {content.periodization ? <p>Periodização: {content.periodization.phases.at(-1)?.endWeek} semanas · {content.periodization.progression ? `progressão a cada ${content.periodization.progression.intervalWeeks} semana(s), repetições +${content.periodization.progression.repsDelta}, esforço ${content.periodization.progression.effortDelta}` : "sem progressão automática"}. A data inicial será definida no rascunho.</p> : null}
+    {content.periodization ? <section aria-label="Fases da periodização" className="space-y-2">
+      <p>Periodização: {content.periodization.phases.at(-1)?.endWeek} semanas · {content.periodization.progression ? `progressão a cada ${content.periodization.progression.intervalWeeks} semana(s), repetições +${content.periodization.progression.repsDelta}, esforço ${content.periodization.progression.effortDelta}` : "sem progressão automática"}. A data inicial será definida no rascunho.</p>
+      <p>Fuso: {content.periodization.timeZone}</p>
+      <ul className="space-y-2">
+        {content.periodization.phases.map((phase, index) => <li key={index} className="rounded-md border p-3">
+          <h3 className="font-semibold">{phase.name} · {PHASE_TYPE_LABELS[phase.type]}</h3>
+          <p>Semanas {phase.startWeek} a {phase.endWeek} · Esforço: {phase.effortType ? `${phase.effortType} ${phase.effortTarget || "Não informado"}` : "Não informado"}</p>
+        </li>)}
+      </ul>
+    </section> : null}
     {content.splits.map((split, index) => <section key={index} className="space-y-2 rounded-md border p-3"><h3 className="font-bold">{split.name}</h3><p>Frequência: {split.weeklyFrequency == null ? "Não informada" : `${split.weeklyFrequency} vez(es)/semana`}{split.focus ? ` · Foco: ${split.focus}` : ""}</p><ul className="space-y-3">{split.exercises.map((exercise, exerciseIndex) => <li key={exerciseIndex}><h4 className="font-semibold">{exercise.name}</h4><p>{exercise.sets} séries × {exercise.reps} repetições · Descanso: {exercise.rest || "Não informado"}</p><p>Grupo principal: {exercise.muscleGroup ? MUSCLE_GROUP_LABELS[exercise.muscleGroup] : "Não informado"}</p><p>Secundários: {exercise.secondaryMuscles == null ? "Não informados" : exercise.secondaryMuscles.length ? exercise.secondaryMuscles.map(item => `${(MUSCLE_GROUP_LABELS[item.muscleGroup as MuscleGroup] ?? item.muscleGroup)} (${item.weight})`).join(", ") : "Nenhum"}</p><p>Esforço: {exercise.effortType ? `${exercise.effortType} ${exercise.effortTarget || "Não informado"}` : "Não informado"} · Cadência: {exercise.tempo || "Não informada"} · Método: {exercise.method ? TRAINING_METHOD_LABELS[exercise.method] : "Não informado"}</p></li>)}</ul></section>)}
   </div>
 }

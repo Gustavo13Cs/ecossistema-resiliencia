@@ -1,7 +1,8 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import AxiosMockAdapter from "axios-mock-adapter"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import type { Periodization } from "@/types/workout-p3"
 import { api } from "@/lib/api"
 import { WorkoutDraftWorkspace } from "./WorkoutDraftWorkspace"
 import { makeTestClient } from "@/test/client-fixture"
@@ -37,6 +38,33 @@ describe("WorkoutTemplatePicker", () => {
     expect(await screen.findByRole("heading", { name: "Já existe um rascunho aberto" })).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Começar a partir de modelo" })).not.toBeInTheDocument()
     expect(http.history.post).toHaveLength(0)
+  })
+  it("previews distinct phase names, types, intervals and effort without the clinical start date", async () => {
+    const periodization: Periodization = {
+      version: 1, startsOn: "2037-05-19", timeZone: "America/Sao_Paulo", progression: null,
+      phases: [
+        { name: "Base técnica", type: "ADAPTATION", startWeek: 1, endWeek: 2, effortType: "RIR", effortTarget: "3–4" },
+        { name: "Força progressiva", type: "OVERLOAD", startWeek: 3, endWeek: 5, effortType: "RPE", effortTarget: "7-8" },
+        { name: "Auge", type: "PEAK", startWeek: 6, endWeek: 7, effortType: "RIR", effortTarget: "1" },
+        { name: "Recuperação", type: "DELOAD", startWeek: 8, endWeek: 8, effortType: null, effortTarget: "" },
+      ],
+    }
+    http.onGet("/workouts/templates/t1").reply(200, { ...template, content: { ...template.content, periodization } })
+    render(ui())
+    fireEvent.click(await screen.findByRole("button", { name: "Pré-visualizar PPL Base" }))
+    const phases = within(await screen.findByRole("region", { name: "Fases da periodização" })).getAllByRole("listitem")
+    expect(phases).toHaveLength(4)
+    expect(phases[0]).toHaveTextContent("Base técnica · Adaptação")
+    expect(phases[0]).toHaveTextContent("Semanas 1 a 2 · Esforço: RIR 3–4")
+    expect(phases[1]).toHaveTextContent("Força progressiva · Sobrecarga")
+    expect(phases[1]).toHaveTextContent("Semanas 3 a 5 · Esforço: RPE 7-8")
+    expect(phases[2]).toHaveTextContent("Auge · Pico")
+    expect(phases[2]).toHaveTextContent("Semanas 6 a 7 · Esforço: RIR 1")
+    expect(phases[3]).toHaveTextContent("Recuperação · Deload")
+    expect(phases[3]).toHaveTextContent("Semanas 8 a 8 · Esforço: Não informado")
+    expect(screen.getByText(/Fuso: America\/Sao_Paulo/)).toBeInTheDocument()
+    expect(screen.getByRole("dialog")).not.toHaveTextContent("2037-05-19")
+    expect(screen.getByRole("dialog")).not.toHaveTextContent("19/05/2037")
   })
   it("filters, previews structured prescription and imports without activation", async () => {
     http.onPost("/workouts/templates/t1/create-draft").reply(201, { id: "d1", clientId: "c1", status: "OPEN" })
