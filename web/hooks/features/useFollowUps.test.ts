@@ -85,16 +85,17 @@ describe("Gestão de Retornos - Regras de Negócio e Classificação de Ciclos",
   })
 
   it("reconhece consulta agendada para Hoje como próximo retorno iminente", () => {
-    const now = new Date("2026-09-16T15:00:00-03:00")
+    // O cálculo usa o calendário local do navegador; a fixture deve usar o mesmo fuso.
+    const now = new Date(2026, 8, 16, 15)
     const appointmentToday = {
       id: "app-today",
       clientId: "client-1",
-      startsAt: "2026-09-16T23:00:00-03:00",
-      endsAt: "2026-09-16T23:50:00-03:00",
+      startsAt: new Date(2026, 8, 16, 23).toISOString(),
+      endsAt: new Date(2026, 8, 16, 23, 50).toISOString(),
       status: "CONFIRMED" as const,
       kind: "FOLLOW_UP" as const,
       modality: "ONLINE" as const,
-      timeZone: "America/Sao_Paulo",
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       location: null,
       meetingUrl: null,
       notes: null,
