@@ -25,6 +25,19 @@ const base = {
   ],
 };
 describe('P3 draft/finalization contracts', () => {
+  it('preserves pending phase values in drafts and rejects finalization', () => {
+    const periodization = suggestPeriodization(8);
+    periodization.phases[0].effortTarget = '';
+    periodization.phases[0].endWeek = 0;
+    const normalized = normalizeDraftContent({ ...base, periodization });
+    expect(normalized.periodization).toEqual(periodization);
+    expect(() =>
+      toFinalizedWorkoutInput(
+        '91000000-0000-4000-8000-000000000001',
+        normalized,
+      ),
+    ).toThrow(BadRequestException);
+  });
   it('roundtrips frequency, secondary muscles and periodization', () => {
     const input = {
       ...base,

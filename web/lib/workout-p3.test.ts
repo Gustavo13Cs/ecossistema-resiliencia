@@ -38,6 +38,14 @@ describe("volume prescrito", () => {
 })
 
 describe("mesociclo", () => {
+  it("salva fases ainda em edição como rascunho e exige consistência na finalização", () => {
+    const config = suggestPeriodization(8)
+    config.timeZone = "America/"
+    config.phases[0] = {...config.phases[0],startWeek:0,endWeek:0,effortTarget:"2-"}
+    config.progression = {intervalWeeks:0,repsDelta:0,effortDelta:0}
+    expect(validatePeriodization(config,3,false)).toEqual([])
+    expect(validatePeriodization(config,3,true).length).toBeGreaterThan(0)
+  })
   it.each([4,5,6,7,8,9,10,11,12])("cobre %s semanas com fases editáveis válidas", duration => {
     const config = { ...suggestPeriodization(duration), startsOn: "2026-10-23" }
     expect(validatePeriodization(config, duration, true)).toEqual([])

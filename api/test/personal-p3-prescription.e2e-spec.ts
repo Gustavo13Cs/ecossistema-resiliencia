@@ -5,6 +5,7 @@ import { WorkoutDraftsService } from '../src/modules/workouts/workout-drafts.ser
 import { TrainingReadService } from '../src/modules/workouts/training-read.service';
 import { suggestPeriodization } from '../src/modules/workouts/workout-periodization';
 import { testAdminPrisma } from './fixtures/test-admin';
+import type { WeeklyVolumeSummary } from '../src/modules/workouts/workout-p3.types';
 
 describe('Personal P3 persisted prescription (synthetic PostgreSQL)', () => {
   const owner = {
@@ -93,18 +94,15 @@ describe('Personal P3 persisted prescription (synthetic PostgreSQL)', () => {
     const saved = await admin.workout.findFirstOrThrow({
       where: { id: finalized.finalizedWorkoutId },
     });
-    expect(saved.weeklyVolumeSnapshot).toMatchObject({
-      algorithmVersion: 1,
-      complete: true,
-      rows: expect.arrayContaining([
-        {
-          muscleGroup: 'CHEST',
-          direct: 8,
-          synergistic: 0,
-          total: 8,
-          landmark: 'MEV',
-        },
-      ]),
+    const volume = saved.weeklyVolumeSnapshot as unknown as WeeklyVolumeSummary;
+    expect(volume.algorithmVersion).toBe(1);
+    expect(volume.complete).toBe(true);
+    expect(volume.rows.find((row) => row.muscleGroup === 'CHEST')).toEqual({
+      muscleGroup: 'CHEST',
+      direct: 8,
+      synergistic: 0,
+      total: 8,
+      landmark: 'MEV',
     });
     const read = await scoped(() => reads.getWorkout(owner, saved.id, 8));
     expect(read.weekProjection).toMatchObject({
