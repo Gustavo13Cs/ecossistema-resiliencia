@@ -144,7 +144,7 @@ describe("professional Client record", () => {
     expect(await screen.findByText("Nenhum treino ativo registrado")).toBeVisible()
     expect(screen.getByRole("heading", { name: "Contexto de treinamento" })).toBeVisible()
     expect(screen.queryByText(/em migração/i)).not.toBeInTheDocument()
-    expect(http.history.get.map(request => request.url).sort()).toEqual(["/assessments/client/client-one", "/workouts/client/client-one/overview", "/workouts/drafts"])
+    expect(http.history.get.map(request => request.url).sort()).toEqual(["/assessments/client/client-one", "/workouts/anamneses/client/client-one", "/workouts/client/client-one/overview", "/workouts/drafts"])
     expect(http.history.get.find(request => request.url === "/workouts/drafts")?.params.clientId).toBe("client-one")
   })
 

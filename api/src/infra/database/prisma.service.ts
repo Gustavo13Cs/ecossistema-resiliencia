@@ -182,6 +182,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get foodPreference() {
     return this.current().tx.foodPreference;
   }
+  get trainingAnamnesis() {
+    return this.current().tx.trainingAnamnesis;
+  }
   get workoutTemplate() {
     return this.current().tx.workoutTemplate;
   }

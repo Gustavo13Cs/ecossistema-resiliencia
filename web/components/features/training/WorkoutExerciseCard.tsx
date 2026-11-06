@@ -16,6 +16,7 @@ import {
   MUSCLE_GROUP_LABELS,
   TRAINING_METHOD_LABELS,
   type EffortType,
+  type ExerciseEquipment,
   type MuscleGroup,
   type TrainingMethod,
 } from "@/types/workout"
@@ -28,6 +29,7 @@ export interface WorkoutExerciseCardProps {
   index: number
   totalExercises: number
   disabled?: boolean
+  availableEquipment?: readonly ExerciseEquipment[] | null
   errors: Record<string, string>
   onChange: <K extends Exclude<keyof WorkoutFormExercise, "id">>(
     field: K,
@@ -63,6 +65,7 @@ export function WorkoutExerciseCard({
   index,
   totalExercises,
   disabled,
+  availableEquipment,
   errors,
   onChange,
   onSelectLibraryExercise,
@@ -184,6 +187,7 @@ export function WorkoutExerciseCard({
               currentName={exercise.name}
               currentMuscleGroup={exercise.muscleGroup}
               disabled={disabled}
+              availableEquipment={availableEquipment}
               onSelect={selection => { setDetachNotice(false); onSelectLibraryExercise(selection) }}
             />
           </div>

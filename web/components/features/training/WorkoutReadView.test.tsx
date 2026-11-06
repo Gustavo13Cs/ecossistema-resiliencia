@@ -324,3 +324,56 @@ it("does not invent a volume snapshot for legacy records", () => {
   expect(screen.getByText(/Volume semanal não registrado nesta ficha/)).toBeVisible()
   expect(screen.queryByRole("region", { name: "Volume semanal estimado" })).not.toBeInTheDocument()
 })
+
+
+it("exports typographic A4 PDF in Modo Ficha de Academia and Planilha do Bloco and handles blocked popups", async () => {
+  const user = userEvent.setup()
+  const detail = makeWorkoutDetail({
+    splits: [
+      {
+        id: "s1",
+        name: "Treino A",
+        focus: "Inferiores",
+        exercises: [{ id: "e1", name: "Agachamento Livre", sets: "4", reps: "6", rest: "120s", load: "100 kg", notes: "Pausa 1s" }],
+      },
+    ],
+  })
+  renderWithQuery(<WorkoutReadView workout={detail} />)
+
+  vi.spyOn(window, "open").mockReturnValueOnce(null)
+  await user.click(screen.getByRole("button", { name: "Exportar PDF A4" }))
+  const dialog = screen.getByRole("dialog", { name: "Exportar PDF A4" })
+  await user.type(within(dialog).getByLabelText(/Registro \/ identificação no cabeçalho/i), "CREF 099999-G/SP")
+  await user.click(within(dialog).getByRole("button", { name: "Gerar PDF A4" }))
+  expect(within(dialog).getByRole("alert")).toHaveTextContent(/bloqueou a janela de impressão/i)
+
+  let writtenHtml = ""
+  const events = new EventTarget()
+  const printFn = vi.fn()
+  const popupMock = {
+    document: {
+      open: vi.fn(),
+      write: vi.fn((content: string) => {
+        writtenHtml = content
+      }),
+      close: vi.fn(),
+    },
+    addEventListener: events.addEventListener.bind(events),
+    print: printFn,
+    focus: vi.fn(),
+    closed: false,
+    opener: window,
+  }
+  vi.spyOn(window, "open").mockReturnValueOnce(popupMock as unknown as Window)
+
+  await user.click(within(dialog).getByLabelText(/Planilha do Bloco/i))
+  await user.click(within(dialog).getByRole("button", { name: "Gerar PDF A4" }))
+
+  expect(writtenHtml).toContain("Planilha do Bloco (Mesociclo)")
+  expect(writtenHtml).toContain("Ana Personal")
+  expect(writtenHtml).toContain("CREF 099999-G/SP")
+  expect(writtenHtml).toContain("Carga: _________")
+  expect(writtenHtml).not.toContain("<script")
+  events.dispatchEvent(new Event("load"))
+  expect(printFn).toHaveBeenCalledOnce()
+})
