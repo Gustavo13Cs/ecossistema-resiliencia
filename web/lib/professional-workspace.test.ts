@@ -69,6 +69,8 @@ describe("professional workspace policy", () => {
 
 it("restricts_exercise_library_and_training_navigation_to_personal", () => {
   expect(canAccessProfessionalPath("PERSONAL", "/exercicios")).toBe(true)
-  expect(getNavigationForRole("PERSONAL").filter(item => item.section === "TREINAMENTO").map(item => item.label)).toEqual(["Treinos", "Exercícios"])
+  expect(canAccessProfessionalPath("PERSONAL", "/modelos-treinos")).toBe(true)
+  expect(getNavigationForRole("PERSONAL").filter(item => item.section === "TREINAMENTO").map(item => item.label)).toEqual(["Treinos", "Modelos de treino", "Exercícios"])
+  for (const role of ["NUTRITIONIST", "PHYSIO", "ADMIN"] as const) expect(canAccessProfessionalPath(role, "/modelos-treinos")).toBe(false)
   for (const role of ["NUTRITIONIST", "PHYSIO", "ADMIN"] as const) expect(canAccessProfessionalPath(role, "/exercicios")).toBe(false)
 })

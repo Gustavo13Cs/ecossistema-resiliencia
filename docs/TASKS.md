@@ -63,9 +63,9 @@ Entrega do Personal aprovada pelo usuário em 17/10/2026, com execução por sub
 | # | Tarefa | Status | Agente |
 |---|--------|--------|--------|
 | 3.1 | Rascunhos e revisões de prescrição do Personal | ✅ | Codex |
-| 3.2 | Modelos reutilizáveis com cópia profunda | ⏳ | — |
-| 3.3 | Geração de PDF para prescrições | ⏳ | — |
-| 3.4 | Impressão de planos | ⏳ | — |
+| 3.2 | Modelos reutilizáveis com cópia profunda (`/modelos-treinos`) | 🔄 | Antigravity |
+| 3.3 | Geração de PDF A4 tipográfico para prescrições do Personal | ✅ | Antigravity |
+| 3.4 | Impressão de planos | ✅ | Antigravity |
 | 3.5 | Compartilhamento por WhatsApp/e-mail | ⏳ | — |
 | 3.6 | Banco versionado de receitas com macros, restrições e associação às refeições | ✅ | Codex |
 | 3.7 | Biblioteca visual de exercícios e referências nas prescrições | ✅ | Codex |
@@ -140,9 +140,9 @@ Entrega do Personal aprovada pelo usuário em 17/10/2026, com execução por sub
 |---|--------|--------|--------|
 | P.0 | Diagnóstico Obsidian/código e proposta de evolução de uso exclusivo do Personal | ✅ proposta documentada | Codex |
 | P.1 | Workspace e prontuário do Personal integrados à avaliação, treino ativo e agenda ([verificação](runbooks/personal-p1-verification.md)) | ✅ concluído | Antigravity |
-| P.2 | Contexto/anamnese de treinamento e avaliações completas | ⏳ proposta | — |
+| P.2 | Contexto/anamnese de treinamento, PAR-Q+ e mapeamento de equipamentos | ✅ concluído | Antigravity |
 | P.3 | Editor profissional e biblioteca de exercícios | ⏳ proposta | — |
-| P.4 | Versões, modelos independentes e documentos (entregas encadeadas) | ⏳ proposta | — |
+| P.4 | Versões, modelos independentes (/modelos-treinos) e PDF A4 tipográfico | ✅ concluído | Antigravity |
 | P.5 | Sessões, evolução e revisão periódica registradas pelo Personal | ⏳ proposta | — |
 | P.6 | Periodização e gestão do acompanhamento | ⏳ proposta | — |
 

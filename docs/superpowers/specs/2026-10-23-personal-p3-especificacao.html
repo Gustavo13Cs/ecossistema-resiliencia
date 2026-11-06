@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>SafeMove — Especificação Técnica P3 (Personal Trainer)</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 16mm 14mm 16mm 14mm;
+      @bottom-right {
+        content: counter(page);
+      }
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.5;
+      font-size: 13px;
+      background: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+    .cover {
+      page-break-after: always;
+      padding-top: 40px;
+      padding-bottom: 30px;
+    }
+    .header-tag {
+      display: inline-block;
+      background: #0284c7;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+    .cover h1 {
+      font-size: 32px;
+      line-height: 1.2;
+      color: #0f172a;
+      margin: 0 0 12px 0;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .cover .subtitle {
+      font-size: 18px;
+      color: #475569;
+      line-height: 1.4;
+      margin: 0 0 28px 0;
+      font-weight: 500;
+    }
+    .meta-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 28px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      font-size: 12px;
+    }
+    .meta-item strong {
+      color: #0f172a;
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+    .executive-summary {
+      background: #f0fdf4;
+      border-left: 4px solid #16a34a;
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 24px;
+    }
+    .executive-summary h3 {
+      color: #15803d;
+      margin: 0 0 8px 0;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .executive-summary p {
+      margin: 0;
+      color: #166534;
+      font-size: 13px;
+    }
+
+    h2 {
+      font-size: 20px;
+      color: #0f172a;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 6px;
+      margin: 32px 0 16px 0;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h3 {
+      font-size: 15px;
+      color: #1e293b;
+      margin: 18px 0 8px 0;
+      font-weight: 600;
+    }
+    p {
+      margin: 0 0 10px 0;
+      color: #334155;
+    }
+    ul, ol {
+      margin: 0 0 12px 0;
+      padding-left: 20px;
+      color: #334155;
+    }
+    li {
+      margin-bottom: 4px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-blue { background: #e0f2fe; color: #0369a1; }
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-amber { background: #fef3c7; color: #b45309; }
+    .badge-purple { background: #f3e8ff; color: #7e22ce; }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      page-break-inside: avoid;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 12px;
+      page-break-inside: avoid;
+    }
+    th, td {
+      padding: 9px 12px;
+      border: 1px solid #e2e8f0;
+      text-align: left;
+    }
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    tr:nth-child(even) td {
+      background: #fbfcfe;
+    }
+
+    .callout {
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin: 14px 0;
+      font-size: 12px;
+      page-break-inside: avoid;
+    }
+    .callout-info {
+      background: #f0f9ff;
+      border-left: 4px solid #0284c7;
+      color: #0369a1;
+    }
+    .callout-warning {
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      color: #92400e;
+    }
+
+    .mockup-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 6px;
+      padding: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.6;
+      margin: 12px 0;
+      overflow-x: auto;
+      page-break-inside: avoid;
+    }
+    .mockup-box .highlight { color: #38bdf8; font-weight: bold; }
+    .mockup-box .green { color: #4ade80; }
+    .mockup-box .amber { color: #fbbf24; }
+
+    .page-break {
+      page-break-after: always;
+    }
+    .footer {
+      margin-top: 30px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 11px;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CAPA E SUMÁRIO EXECUTIVO -->
+  <div class="cover">
+    <span class="header-tag">SafeMove • Roadmap Técnico P3</span>
+    <h1>Arquitetura & Especificação Funcional:<br>Módulo Avançado de Personal Trainer</h1>
+    <p class="subtitle">Detalhamento dos 3 Pilares Científicos para Prescrição e Gestão de Treino de Alta Performance</p>
+
+    <div class="meta-box">
+      <div class="meta-item">
+        <strong>Plataforma</strong>
+        SafeMove Clinical & Performance SaaS (Multi-Tenant)
+      </div>
+      <div class="meta-item">
+        <strong>Data de Emissão</strong>
+        23 de Outubro de 2026
+      </div>
+      <div class="meta-item">
+        <strong>Público-Alvo</strong>
+        Personal Trainers, Gestores Técnicos e Desenvolvedores
+      </div>
+      <div class="meta-item">
+        <strong>Status do Documento</strong>
+        Proposta Executiva & Especificação de Engenharia (Escopo Focado)
+      </div>
+    </div>
+
+    <div class="executive-summary">
+      <h3>Sumário Executivo</h3>
+      <p>
+        Com as fundações do <strong>P1</strong> (Workspace clínico, prontuário individualizado e bloqueios transacionais) 
+        e do <strong>P2</strong> (Parâmetros avançados de esforço RIR/RPE, cadência, métodos de treino e biblioteca com mais de 150 exercícios com RLS) 
+        consolidadas, este documento detalha com precisão cirúrgica os <strong>3 pilares de prescrição de alta performance</strong> para a <strong>Fase P3</strong>:
+        <strong>(1) Monitor de Volume Semanal por Grupo Muscular (Volume Landmarks)</strong>, 
+        <strong>(2) Banco de Modelos e Templates de Treino Reutilizáveis</strong> e 
+        <strong>(3) Periodização em Blocos e Progressão Programada de Esforço</strong>.
+      </p>
+    </div>
+
+    <div class="card" style="margin-top: 24px;">
+      <div class="card-header">
+        <h4 class="card-title">Matriz das Funcionalidades Integradas (P3)</h4>
+        <span class="badge badge-green">Escopo Consolidado</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Inovação</th>
+            <th>Foco do Recurso</th>
+            <th>Impacto no Personal</th>
+            <th>Camada Técnica</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1. Volume Semanal</strong></td>
+            <td>Contador dinâmico de séries semanais por grupo muscular com faixas de MEV/MAV/MRV.</td>
+            <td>Prescrição baseada em evidências científicas, eliminando treinos desbalanceados.</td>
+            <td>Frontend reativo (hooks + tipagem rigorosa) sem custo de I/O de banco.</td>
+          </tr>
+          <tr>
+            <td><strong>2. Banco de Templates</strong></td>
+            <td>Fichas prontas SafeMove + biblioteca privada do personal com clonagem em 1 clique.</td>
+            <td>Redução do tempo de criação de uma rotina completa de 25 min para 2 min.</td>
+            <td>Prisma (tabela <code>workout_templates</code> com isolamento PostgreSQL RLS).</td>
+          </tr>
+          <tr>
+            <td><strong>3. Periodização em Blocos</strong></td>
+            <td>Mesociclos de 4 a 12 semanas com progressão de esforço (RIR/RPE) e deload estruturado.</td>
+            <td>Planos dinâmicos com ciclo de vida completo sem precisar recriar a ficha a cada mês.</td>
+            <td>Backend NestJS (regras de mesociclo) + régua temporal visual na ficha.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer">
+      <span>SafeMove SaaS • Documento Confidencial Interno</span>
+      <span>Página 1</span>
+    </div>
+  </div>
+
+  <!-- SEÇÃO 1: VOLUME SEMANAL -->
+  <div class="page-break">
+    <h2>
+      <span class="badge badge-blue">Módulo 1</span>
+      Monitor de Volume Semanal por Grupo Muscular (Volume Landmarks)
+    </h2>
+
+    <p>
+      O volume semanal de treinamento (medido pelo número de séries efetivas por grupo muscular por semana) é a 
+      <strong>variável primária para hipertrofia muscular e adaptação de força</strong>, de acordo com as meta-análises 
+      mais recentes (Schoenfeld et al., Eric Helms, Mike Israetel).
+    </p>
+
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title">Classificação Científica de Séries Semanais Adotada no SafeMove</h4>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Classificação</th>
+            <th>Faixa Típica (Séries/Semana)</th>
+            <th>Comportamento Fisiológico</th>
+            <th>Feedback Visual no Editor</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>MV (Volume de Manutenção)</strong></td>
+            <td>4 a 6 séries/semana</td>
+            <td>Mantém a massa muscular atual sem ganhos adicionais.</td>
+            <td><span class="badge badge-amber">Amarelo / Baixo</span></td>
+          </tr>
+          <tr>
+            <td><strong>MEV (Volume Mínimo Efetivo)</strong></td>
+            <td>8 a 12 séries/semana</td>
+            <td>Gera os primeiros ganhos hipertróficos detectáveis.</td>
+            <td><span class="badge badge-blue">Azul / Moderado</span></td>
+          </tr>
+          <tr>
+            <td><strong>MAV (Volume Adaptativo Máximo)</strong></td>
+            <td>12 a 20 séries/semana</td>
+            <td><strong>Faixa ótima:</strong> máxima taxa de progresso para a maioria dos praticantes.</td>
+            <td><span class="badge badge-green">Verde / Ótimo</span></td>
+          </tr>
+          <tr>
+            <td><strong>MRV (Volume Máximo Recuperável)</strong></td>
+            <td>22 a 26+ séries/semana</td>
+            <td>Teto de recuperação. Ultrapassar gera estagnação ou lesão articular.</td>
+            <td><span class="badge" style="background:#fee2e2; color:#b91c1c;">Vermelho / Atenção</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Experiência do Usuário (UI/UX no Editor de Treino)</h3>
+    <p>
+      Durante a edição da ficha no <code>WorkoutEditor</code>, o personal visualiza uma barra lateral ou cabeçalho retrátil 
+      <strong>"Balanço de Volume Semanal"</strong>. O cálculo é dinâmico e leva em conta:
+    </p>
+    <ul>
+      <li><strong>Frequência da Divisão:</strong> Se a divisão <em>A (Peito e Tríceps)</em> for realizada 2 vezes na semana, suas séries são multiplicadas pelo fator 2 automaticamente.</li>
+      <li><strong>Séries Diretas vs. Sinérgicas:</strong> Exercícios compostos (ex: Supino Reto) computam 100% de volume para Peitoral e 50% de volume sinérgico secundário para Tríceps e Deltóide Anterior (configurável pelo profissional).</li>
+      <li><strong>Alertas de Desbalanceamento:</strong> Alerta em tempo real se a relação entre agonistas e antagonistas estiver desequilibrada (ex: 24 séries de Peito para apenas 6 séries de Costas, o que predispõe a anteriorização dos ombros).</li>
+    </ul>
+
+    <div class="mockup-box">
+<span class="highlight">PAINEL DE VOLUME SEMANAL (SafeMove Live Engine):</span>
+────────────────────────────────────────────────────────────────────────
+Peitoral:         [██████████████░░░░░░]  <span class="green">14 séries</span> / sem  (MAV • Ótimo)
+Dorsais:          [████████████████░░░░]  <span class="green">16 séries</span> / sem  (MAV • Ótimo)
+Quadríceps:       [████████████████████]  <span class="amber">20 séries</span> / sem  (MAV • Limite superior)
+Isquiotibiais:    [██████░░░░░░░░░░░░░░]  <span class="amber">6 séries</span> / sem  (MEV • Atenção: Baixo)
+Deltóide Lat.:    [████████████░░░░░░░░]  <span class="green">12 séries</span> / sem  (MAV • Ótimo)
+────────────────────────────────────────────────────────────────────────
+<span class="amber">⚠ Recomendação SafeMove:</span> Considere adicionar 1 exercício para cadeia posterior (Isquiotibiais).
+    </div>
+
+    <h3>Engenharia & Arquitetura</h3>
+    <ul>
+      <li><strong>Sem Impacto de I/O no Banco:</strong> O cálculo ocorre inteiramente no frontend através de um hook puro de renderização (<code>useWeeklyVolumeSummary</code>) alimentado pelo estado dos splits e exercícios já carregados.</li>
+      <li><strong>Persistência no Resumo:</strong> Ao salvar o treino, o total semanal por músculo é gravado no snapshot de leitura para alimentar gráficos de evolução no prontuário.</li>
+    </ul>
+
+    <div class="footer">
+      <span>SafeMove SaaS • Documento Confidencial Interno</span>
+      <span>Página 2</span>
+    </div>
+  </div>
+
+  <!-- SEÇÃO 2: BANCO DE TEMPLATES -->
+  <div class="page-break">
+    <h2>
+      <span class="badge badge-green">Módulo 2</span>
+      Banco de Modelos e Templates de Treino (Template Bank)
+    </h2>
+
+    <p>
+      Atualmente, o personal cria cada prescrição de forma personalizada do zero. No entanto, na prática diária, 
+      profissionais experientes trabalham com <strong>estruturas-base validadas</strong> que são adaptadas para cada aluno. 
+      O módulo de templates traz a mesma maturidade já presente no módulo de Nutrição para a área de Treinamento.
+    </p>
+
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title">Tipos de Modelos Disponíveis</h4>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div style="background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+          <h4 style="margin: 0 0 6px 0; color: #0284c7; font-size: 13px;">Templates Globais SafeMove</h4>
+          <p style="font-size: 12px; margin: 0;">
+            Curados por especialistas em fisiologia do exercício:
+            Push/Pull/Legs 3x e 6x, Upper/Lower 4x, Fullbody 3x, Treino Adaptativo para Iniciantes, 
+            Hipertrofia Feminina com foco em Glúteos, e Treino de Condicionamento Funcional.
+          </p>
+        </div>
+        <div style="background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+          <h4 style="margin: 0 0 6px 0; color: #16a34a; font-size: 13px;">Templates Próprios do Personal</h4>
+          <p style="font-size: 12px; margin: 0;">
+            O personal pode transformar qualquer treino de sucesso em um template com 1 clique 
+            (<em>"Salvar como Modelo"</em>), criando seu próprio acervo exclusivo com metodologias autorais.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Fluxo Operacional de Prescrição Rápida</h3>
+    <ol>
+      <li><strong>No Prontuário do Aluno:</strong> O personal clica em <em>"Criar Prescrição"</em> e escolhe <em>"Começar a partir de Modelo"</em>.</li>
+      <li><strong>Modal de Seleção Inteligente:</strong> Navegação por objetivo (Hipertrofia, Força, Emagrecimento, Condicionamento) e nível (Iniciante, Intermediário, Avançado), com pré-visualização completa das divisões e exercícios.</li>
+      <li><strong>Clonagem Instantânea:</strong> Ao selecionar, todas as divisões, exercícios, métodos, cadências e descansos são injetados no editor com IDs novos, mantendo o treino original intacto.</li>
+      <li><strong>Ajuste Fino:</strong> O personal apenas ajusta as cargas e repetições específicas para a capacidade daquele aluno e clica em salvar.</li>
+    </ol>
+
+    <div class="callout callout-info">
+      <strong>Garantia de Segurança Multi-Tenant (RLS Inviolável):</strong>
+      Assim como na tabela <code>custom_exercises</code> implementada no P2, a tabela <code>workout_templates</code> 
+      opera sob estrita política RLS do PostgreSQL: nenhum personal tem acesso aos templates privados de outro profissional. 
+      Templates globais SafeMove possuem <code>professional_id = NULL</code> e permissão somente-leitura.
+    </div>
+
+    <h3>Estrutura de Dados Proposta (Prisma)</h3>
+    <div class="mockup-box">
+<span class="highlight">model WorkoutTemplate</span> {
+  id              String   @id @default(uuid())
+  professionalId  String?  @map("professional_id") // null = Modelo Oficial SafeMove
+  title           String   // Ex: "Upper / Lower Hipertrofia 4x"
+  description     String?
+  targetAudience  String?  // Ex: "Intermediário a Avançado"
+  estimatedWeeks  Int      @default(8)
+  splits          Json     // Snapshot imutável da estrutura de splits e exercícios
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([professionalId])
+  @@map("workout_templates")
+}
+    </div>
+
+    <div class="footer">
+      <span>SafeMove SaaS • Documento Confidencial Interno</span>
+      <span>Página 3</span>
+    </div>
+  </div>
+
+  <!-- SEÇÃO 3: PERIODIZAÇÃO EM BLOCOS -->
+  <div class="page-break">
+    <h2>
+      <span class="badge badge-purple">Módulo 3</span>
+      Periodização em Blocos e Progressão Programada de Esforço
+    </h2>
+
+    <p>
+      Atletas e alunos que treinam com a mesma carga e esforço semana após semana sofrem rápida estagnação neuromuscular. 
+      A <strong>periodização em blocos (mesociclos)</strong> é o recurso que separa consultorias de alto valor de simples 
+      "fichas estáticas de academia".
+    </p>
+
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title">Estrutura Clássica de um Mesociclo de 6 a 8 Semanas no SafeMove</h4>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Fase do Bloco</th>
+            <th>Semanas</th>
+            <th>Meta de Intensidade (RIR / RPE)</th>
+            <th>Objetivo Fisiológico</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1. Calibração Técnica</strong></td>
+            <td>Semanas 1 e 2</td>
+            <td>RIR 3 a 4 (RPE 6 - 7)</td>
+            <td>Ajuste neuromuscular, aprendizado motor, adaptação tendínea sem fadiga excessiva.</td>
+          </tr>
+          <tr>
+            <td><strong>2. Sobrecarga Progressiva</strong></td>
+            <td>Semanas 3 e 4</td>
+            <td>RIR 2 (RPE 8)</td>
+            <td>Aumento gradual de carga (+2 a 5%) ou acréscimo de 1 a 2 repetições por série.</td>
+          </tr>
+          <tr>
+            <td><strong>3. Pico de Esforço</strong></td>
+            <td>Semanas 5 e 6</td>
+            <td>RIR 1 a 0 (RPE 9 - 10)</td>
+            <td>Estímulo hipertrófico máximo, aproximação da falha concêntrica com segurança.</td>
+          </tr>
+          <tr>
+            <td><strong>4. Deload Ativo</strong></td>
+            <td>Semana 7 (ou 8)</td>
+            <td>RIR 4 a 5 (RPE 5 - 6)</td>
+            <td><strong>Supercompensação:</strong> redução de 40% das séries para regenerar SNC e cartilagens.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Funcionalidades de Periodização na Interface</h3>
+    <ul>
+      <li><strong>Régua Temporal da Ficha:</strong> O treino exibe a duração do mesociclo (ex: 8 semanas) e um marcador dinâmico da <em>"Semana Atual"</em> baseado na data de início do plano.</li>
+      <li><strong>Regra de Progressão Automática:</strong> O personal pode preencher a ficha base e configurar: <em>"Aumentar 1 repetição a cada 2 semanas e diminuir 1 RIR a cada ciclo"</em>.</li>
+      <li><strong>Marcação Explícita de Deload:</strong> Ao chegar na semana de deload, a ficha do aluno sinaliza visualmente que aquela semana tem como objetivo a recuperação, evitando que o aluno se lesione por tentar bater recordes no período regenerativo.</li>
+    </ul>
+
+    <div class="mockup-box">
+<span class="highlight">VISÃO DO ALUNO NA SEMANA 5 DE 8 (SafeMove Student Portal / Ficha):</span>
+────────────────────────────────────────────────────────────────────────
+[ Sem 1: Adaptação ] → [ Sem 2-3: Carga ] → <span class="green">[ Sem 4-6: PICO ATUAL ]</span> → [ Sem 7: Deload ]
+────────────────────────────────────────────────────────────────────────
+<span class="amber">Foco da Semana 5:</span> Pico de Intensidade. Chegar a 1 repetição da falha (RIR 1).
+Exemplo: Agachamento Livre — 4 séries × 6 a 8 reps (Carga alvo: 110 kg | RIR 1).
+    </div>
+
+    <div class="footer">
+      <span>SafeMove SaaS • Documento Confidencial Interno</span>
+      <span>Página 4</span>
+    </div>
+  </div>
+
+  <!-- SEÇÃO 4: QUADRO DE IMPLEMENTAÇÃO E CONCLUSÃO -->
+  <div>
+    <h2>
+      <span class="badge badge-blue">Roteiro Técnico</span>
+      Ordem de Implementação & Esforço Estimado
+    </h2>
+
+    <p>
+      A implementação dos 3 pilares do <strong>P3</strong> está organizada por prioridade lógica de dependências:
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Etapa</th>
+          <th>Funcionalidade</th>
+          <th>Esforço</th>
+          <th>Impacto Técnico & Negócio</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Passo 1</strong></td>
+          <td><strong>Monitor de Volume Semanal (Landmarks)</strong></td>
+          <td>Baixo / Rápido</td>
+          <td>100% frontend e tipagem. Não altera banco; gera impacto visual e valor científico imediato no editor e na ficha de leitura.</td>
+        </tr>
+        <tr>
+          <td><strong>Passo 2</strong></td>
+          <td><strong>Banco de Templates de Treino</strong></td>
+          <td>Médio</td>
+          <td>Criação da tabela <code>workout_templates</code> no Prisma com RLS, clonador de treino no backend e modal de importação rápida no frontend.</td>
+        </tr>
+        <tr>
+          <td><strong>Passo 3</strong></td>
+          <td><strong>Periodização em Blocos e Semanas</strong></td>
+          <td>Médio</td>
+          <td>Adição de campos de fase/mesociclo no DTO e régua visual de progresso por semana na visualização do aluno.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card" style="margin-top: 24px; background: #f8fafc;">
+      <h4 style="margin: 0 0 8px 0; color: #0f172a;">Conclusão & Próximos Passos</h4>
+      <p style="font-size: 12px; margin: 0;">
+        Focando nesses 3 módulos, o SafeMove entrega as ferramentas de maior impacto e valor percebido para o Personal Trainer: 
+        <strong>precisão no volume de séries</strong>, <strong>agilidade massiva com templates reutilizáveis</strong> e 
+        <strong>periodização inteligente com sobrecarga progressiva e deload</strong>.
+      </p>
+    </div>
+
+    <div class="footer" style="margin-top: 50px;">
+      <span>SafeMove SaaS • Engenharia de Software & Produto</span>
+      <span>Página 5</span>
+    </div>
+  </div>
+
+</body>
+</html>

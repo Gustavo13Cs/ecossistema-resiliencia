@@ -8,6 +8,7 @@ export const queryKeys = {
   workoutDraft: (sub: string, clientId: string, draftId: string) => ["workout-drafts", sub, "client", clientId, "detail", draftId] as const,
   trainingWorkspace: (sub: string) => ["training-workspace", sub] as const,
   trainingOverview: (sub: string, clientId: string) => ["training-overview", sub, clientId] as const,
+  trainingAnamneses: (sub: string, clientId: string) => ["training-anamneses", sub, clientId] as const,
   workoutsRoot: (sub: string) => ["workouts", sub] as const,
   workouts: (sub: string) => ["workouts", sub, "list"] as const,
   workout: (sub: string, clientId: string, workoutId: string, week?: number) => ["workouts", sub, "client", clientId, "detail", workoutId, ...(week !== undefined ? ["week", String(week)] : [])] as const,

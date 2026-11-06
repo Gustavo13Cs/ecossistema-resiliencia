@@ -14,6 +14,7 @@ import { WorkoutTemplatesService } from './workout-templates.service';
 import { WorkoutsService } from './workouts.service';
 import { TrainingReadService } from './training-read.service';
 import { ExerciseLibraryService } from './exercise-library.service';
+import { TrainingAnamnesesService } from './training-anamneses.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { CLINICAL_RESPONSE } from '../../common/decorators/clinical-response.decorator';
@@ -59,6 +60,7 @@ describe('Workout draft HTTP controller', () => {
         { provide: WorkoutsService, useValue: {} },
         { provide: TrainingReadService, useValue: {} },
         { provide: ExerciseLibraryService, useValue: {} },
+        { provide: TrainingAnamnesesService, useValue: {} },
       ],
     })
       .overrideGuard(JwtAuthGuard)

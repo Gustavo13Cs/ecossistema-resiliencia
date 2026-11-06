@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { WorkoutFormExercise, WorkoutFormSplit } from "@/lib/workout-form"
-import type { MuscleGroup } from "@/types/workout"
+import type { ExerciseEquipment, MuscleGroup } from "@/types/workout"
 import type { LibraryReference } from "@/types/exercise-demonstration"
 import { WorkoutExerciseCard } from "./WorkoutExerciseCard"
 
@@ -14,6 +14,7 @@ export interface WorkoutSplitCardProps {
   splitIndex: number
   totalSplits: number
   disabled?: boolean
+  availableEquipment?: readonly ExerciseEquipment[] | null
   errors: Record<string, string>
   onUpdateField: <K extends "name" | "focus" | "weeklyFrequency">(field: K, value: WorkoutFormSplit[K]) => void
   onMoveSplitUp: () => void
@@ -41,6 +42,7 @@ export function WorkoutSplitCard({
   splitIndex,
   totalSplits,
   disabled,
+  availableEquipment,
   errors,
   onUpdateField,
   onMoveSplitUp,
@@ -172,6 +174,7 @@ export function WorkoutSplitCard({
               index={exIndex}
               totalExercises={split.exercises.length}
               disabled={disabled}
+              availableEquipment={availableEquipment}
               errors={errors}
               onChange={(field, value) =>
                 onUpdateExercise(exercise.id, field, value)

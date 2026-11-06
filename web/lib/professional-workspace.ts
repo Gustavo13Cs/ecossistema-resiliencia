@@ -65,6 +65,7 @@ const WORKSPACES = {
     "Alunos",
     [
       { id: "workouts", label: "Treinos", href: "/treinos", section: "TREINAMENTO" },
+      { id: "workout-templates", label: "Modelos de treino", href: "/modelos-treinos", section: "TREINAMENTO" },
       { id: "exercises", label: "Exercícios", href: "/exercicios", section: "TREINAMENTO" },
     ],
   ),
@@ -90,6 +91,7 @@ const ROLE_ONLY_PREFIXES: ReadonlyArray<[string, readonly ProfessionalRole[]]> =
   ["/exames", ["NUTRITIONIST"]],
   ["/relatorios", ["NUTRITIONIST"]],
   ["/treinos", ["PERSONAL"]],
+  ["/modelos-treinos", ["PERSONAL"]],
   ["/exercicios", ["PERSONAL"]],
   ["/reabilitacao", ["PHYSIO"]],
   ["/clientes/:id/nova-dieta", ["NUTRITIONIST"]],
