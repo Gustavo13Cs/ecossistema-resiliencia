@@ -47,6 +47,7 @@ export const queryKeys = {
   dietHistory: (sessionUserId: string, patientId: string) => ["diet-history", sessionUserId, patientId] as const,
   dashboardSummary: (sessionUserId: string) => ["dashboard-summary", sessionUserId] as const,
   evolution: (sessionUserId: string) => ["evolution", sessionUserId] as const,
+  personalEvolution: (sessionUserId: string) => ["personal-evolution", sessionUserId] as const,
   recipesRoot: (sessionUserId: string) => ["recipes", sessionUserId] as const,
   recipes: (sessionUserId: string, filters: RecipeFilters) =>
     ["recipes", sessionUserId, filters] as const,

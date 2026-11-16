@@ -7,15 +7,13 @@ import {
   CalendarClock,
   CalendarPlus,
   Search,
-  Filter,
   AlertTriangle,
   Users,
   Clock,
-  CheckCircle2,
-  Calendar,
   RefreshCw,
 } from "lucide-react"
 import { toast } from "sonner"
+import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AsyncState } from "@/components/feedback/AsyncState"
@@ -24,15 +22,24 @@ import { FollowUpsKpiSummary } from "@/components/features/follow-ups/FollowUpsK
 import { FollowUpClientCard } from "@/components/features/follow-ups/FollowUpClientCard"
 import { FollowUpQuickMessageModal } from "@/components/features/follow-ups/FollowUpQuickMessageModal"
 import { ClientCadenceDrawer } from "@/components/features/follow-ups/ClientCadenceDrawer"
+import { PersonalFollowUpsWorkspace } from "@/components/features/follow-ups/personal/PersonalFollowUpsWorkspace"
 import { AppointmentDialog } from "@/components/features/appointments/AppointmentDialog"
 import { api } from "@/lib/api"
-import type { ClientFollowUpSummary, FollowUpStatus } from "@/types/follow-up"
-import type { CreateAppointmentCommand, UpdateAppointmentCommand, Appointment } from "@/types/appointment"
+import type { ClientFollowUpSummary } from "@/types/follow-up"
+import type { CreateAppointmentCommand, Appointment } from "@/types/appointment"
 
 type TabType = "upcoming" | "overdue" | "unscheduled" | "all"
 type HorizonFilter = "all" | "7_days" | "15_days" | "30_days"
 
 export default function RetornosPage() {
+  const { user } = useAuth()
+  if (user?.role === "PERSONAL") {
+    return <PersonalFollowUpsWorkspace />
+  }
+  return <NutritionFollowUpsPage />
+}
+
+function NutritionFollowUpsPage() {
   const {
     followUpSummaries,
     kpiSummary,
@@ -235,7 +242,7 @@ export default function RetornosPage() {
             }`}
           >
             <AlertTriangle className="size-4 text-rose-600" />
-            Em Atraso & Evasão
+            Em Atraso &amp; Evasão
             {kpiSummary.overdueCount > 0 && (
               <span className="rounded-full bg-rose-600 px-2 py-0.5 text-xs font-bold text-white">
                 {kpiSummary.overdueCount}
