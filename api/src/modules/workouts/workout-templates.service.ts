@@ -261,13 +261,17 @@ export class WorkoutTemplatesService {
     return this.drafts.create(user, { clientId: dto.clientId, content });
   }
   private async refreshReferences(user: AuthUser, content: DraftContentInput) {
-    for (const exercise of content.splits.flatMap((split) => split.exercises)) {
+    const exercises = content.splits.flatMap((split) => split.exercises);
+    const lookup = this.library.createLookup(
+      user,
+      exercises.flatMap((exercise) =>
+        exercise.libraryReference ? [exercise.libraryReference.exerciseId] : [],
+      ),
+    );
+    for (const exercise of exercises) {
       if (!exercise.libraryReference) continue;
       try {
-        const item = await this.library.get(
-          user,
-          exercise.libraryReference.exerciseId,
-        );
+        const item = await lookup(exercise.libraryReference.exerciseId);
         if (item.source !== exercise.libraryReference.source)
           throw new NotFoundException();
         exercise.libraryReference.demonstrationRevision =
