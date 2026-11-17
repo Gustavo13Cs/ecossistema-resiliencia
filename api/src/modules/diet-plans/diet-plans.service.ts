@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
 import { lockOwnedClient } from '../../common/client-access/lock-owned-client';
 import { PrismaService } from '../../infra/database/prisma.service';
 import {
@@ -123,6 +124,10 @@ export class DietPlansService {
         include: fullPlanInclude,
       });
 
+      const preferences = new Map<
+        string,
+        { foodId: string; quantity: number; measure: string }
+      >();
       for (const meal of preparedMeals) {
         for (const item of meal.items) {
           if (
@@ -131,24 +136,34 @@ export class DietPlansService {
             item.measure.trim() &&
             item.measure !== 'g'
           ) {
-            await tx.foodPreference.upsert({
-              where: {
-                nutritionistId_foodId_quantity: {
-                  nutritionistId: creatorId,
-                  foodId: item.foodId,
-                  quantity: item.quantity,
-                },
-              },
-              update: { measure: item.measure },
-              create: {
-                nutritionistId: creatorId,
-                foodId: item.foodId,
-                quantity: item.quantity,
-                measure: item.measure,
-              },
+            // A última medida elegível prevalece, sem arredondar a quantidade.
+            preferences.set(JSON.stringify([item.foodId, item.quantity]), {
+              foodId: item.foodId,
+              quantity: item.quantity,
+              measure: item.measure,
             });
           }
         }
+      }
+
+      if (preferences.size > 0) {
+        const rows = [...preferences.values()].map((preference) => ({
+          id: randomUUID(),
+          ...preference,
+        }));
+        // SQL direto precisa preencher os valores normalmente gerados pelo Prisma.
+        const updatedAt = new Date();
+        await tx.$executeRaw(Prisma.sql`
+          INSERT INTO "food_preferences"
+            ("id", "nutritionistId", "foodId", "quantity", "measure", "updatedAt")
+          SELECT preference."id", ${creatorId}, preference."foodId",
+            preference."quantity", preference."measure", ${updatedAt}::timestamp(3)
+          FROM jsonb_to_recordset(${JSON.stringify(rows)}::jsonb) AS preference(
+            "id" text, "foodId" text, "quantity" double precision, "measure" text
+          )
+          ON CONFLICT ("nutritionistId", "foodId", "quantity") DO UPDATE
+          SET "measure" = EXCLUDED."measure", "updatedAt" = EXCLUDED."updatedAt"
+        `);
       }
 
       return plan;
