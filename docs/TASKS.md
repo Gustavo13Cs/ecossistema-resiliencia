@@ -9,6 +9,8 @@
 
 ## Personal P3 — concluído localmente em 24/10/2026
 
+- 🔄 **Codex — Performance 19 (17/11/2026)**: regiões confirmadas, sondas reais PostgreSQL Oregon/Virgínia (178,23→114,36 ms), custos/rollback e candidata preparados. API 811, build/lint/tipos aprovados. Migração/tráfego bloqueados pela revisão automática, que exige autorização específica para a API pública conectada à produção. [Evidência e passo pendente](runbooks/performance-19-regional-migration.md).
+
 - ✅ **Codex — Performance 08 (17/11/2026)**: preferências alimentares, demonstrações/referências de modelos e tracking agrupados; SQL e duração medidos antes/depois com papéis restritos. API 801 unitários/255 PostgreSQL, web 751, builds/lint/tipos aprovados. Entrega na branch `agent/codex/performance-diagnosis`, com publicação autorizada. [Evidência e limites](runbooks/performance-08-verification.md).
 
 - ✅ **Codex**: PDF confrontado com o projeto; [especificação](superpowers/specs/2026-10-23-personal-p3-design.md) e [plano](superpowers/plans/2026-10-23-personal-p3.md) aprovados e executados. Consulta/impressão na ficha atual, conforme escolha do mantenedor.

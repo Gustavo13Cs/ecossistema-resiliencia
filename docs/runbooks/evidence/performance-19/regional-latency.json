@@ -1,0 +1,109 @@
+{
+  "capturedDate": "2026-11-17",
+  "production": {
+    "api": {
+      "provider": "Render",
+      "serviceId": "srv-d8fmspjbc2fs73brg8p0",
+      "region": "oregon",
+      "plan": "free",
+      "url": "https://ecossistema-resiliencia.onrender.com",
+      "deployId": "dep-dbn2vvqfngtc73aui6g0",
+      "commit": "81a850f6b72b94b9a7bb6f8790c9c90389078c9f"
+    },
+    "database": {
+      "provider": "Supabase",
+      "projectId": "zmjcxysenzrqycktckip",
+      "region": "sa-east-1",
+      "location": "São Paulo",
+      "postgres": "17.6.1.084"
+    },
+    "web": {
+      "provider": "Vercel",
+      "projectId": "prj_Q4HElpVnkrbUVlogPwTtUCjbosot",
+      "deploymentId": "dpl_H9dEYUdgaXcPPCvp2E8hNme7benf",
+      "region": "iad1",
+      "commit": "69fd92145e47833f3aec83637c454c1660f9ea0b"
+    }
+  },
+  "method": {
+    "sql": "SELECT 1 AS region_probe",
+    "transaction": "READ ONLY",
+    "warmups": 3,
+    "repetitions": 15,
+    "credentials": "Render fromService reference to existing CLINICAL_DATABASE_URL; no values stored",
+    "sourceCommit": "308192cd974ddf74796da08ea7062e8f789ff45a"
+  },
+  "oregon": {
+    "kind": "postgres-region-latency",
+    "region": "oregon",
+    "capturedAt": "2026-11-17T23:02:57.894Z",
+    "connectionMs": 1340.1571099999999,
+    "warmups": 3,
+    "readOnly": true,
+    "samplesMs": [
+      178.39561299999968,
+      178.24588900000026,
+      178.63168899999982,
+      178.3186209999999,
+      178.227398,
+      178.286071,
+      178.13650599999983,
+      178.0708450000002,
+      178.15227700000014,
+      178.21054800000002,
+      178.29073999999946,
+      178.5429779999995,
+      178.00243299999966,
+      178.22133899999972,
+      178.14458699999977
+    ],
+    "count": 15,
+    "minMs": 178.00243299999966,
+    "medianMs": 178.227398,
+    "p95Ms": 178.63168899999982,
+    "maxMs": 178.63168899999982,
+    "serviceId": "srv-dbudpb6c6qcc73deve80",
+    "deployId": "dep-dbudpbmc6qcc73devfa0"
+  },
+  "virginia": {
+    "kind": "postgres-region-latency",
+    "region": "virginia",
+    "capturedAt": "2026-11-17T23:03:25.282Z",
+    "connectionMs": 793.092371,
+    "warmups": 3,
+    "readOnly": true,
+    "samplesMs": [
+      114.33919999999989,
+      114.53387399999974,
+      114.81995099999995,
+      114.5589359999999,
+      114.60240699999986,
+      114.23219699999981,
+      114.64816800000017,
+      114.56653500000039,
+      114.32663999999977,
+      114.4559119999999,
+      114.32535999999982,
+      114.24261800000022,
+      114.33173099999976,
+      114.35775999999987,
+      114.29422900000009
+    ],
+    "count": 15,
+    "minMs": 114.23219699999981,
+    "medianMs": 114.35775999999987,
+    "p95Ms": 114.81995099999995,
+    "maxMs": 114.81995099999995,
+    "serviceId": "srv-dbudpb6c6qcc73deve70",
+    "deployId": "dep-dbudpbuc6qcc73devg2g"
+  },
+  "medianReductionPercent": 35.83603795865332,
+  "productionMigration": {
+    "status": "blocked_by_automatic_approval_review",
+    "candidateBlueprint": "exs-dbudsmajnfac73cuol0g",
+    "candidateSync": "exe-dbudsmajnfac73cuolh0",
+    "sourceCommit": "721016c39b1095639d7ced09ce3d76cb7d730a5c",
+    "apiCutoverPerformed": false,
+    "databaseMigrationPerformed": false
+  }
+}
