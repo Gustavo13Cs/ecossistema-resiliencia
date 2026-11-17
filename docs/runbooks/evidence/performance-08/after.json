@@ -1,0 +1,189 @@
+{
+  "source": "/workspace/ecossistema-resiliencia/api",
+  "postgres": "PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "node": "v24.19.0",
+  "warmups": 2,
+  "repetitions": 7,
+  "trackingRows": 8475,
+  "rls": "clinical/jobs NOSUPERUSER NOBYPASSRLS; onModuleInit role checks",
+  "results": [
+    {
+      "name": "diet-30-foods",
+      "samples": [
+        {
+          "milliseconds": 32.699743000000126,
+          "totalSql": 29,
+          "targetSql": 1
+        },
+        {
+          "milliseconds": 33.071562999999514,
+          "totalSql": 29,
+          "targetSql": 1
+        },
+        {
+          "milliseconds": 33.98734499999955,
+          "totalSql": 29,
+          "targetSql": 1
+        },
+        {
+          "milliseconds": 33.3339390000001,
+          "totalSql": 29,
+          "targetSql": 1
+        },
+        {
+          "milliseconds": 31.281942999999956,
+          "totalSql": 29,
+          "targetSql": 1
+        },
+        {
+          "milliseconds": 30.212650000000394,
+          "totalSql": 29,
+          "targetSql": 1
+        },
+        {
+          "milliseconds": 31.006728000000294,
+          "totalSql": 29,
+          "targetSql": 1
+        }
+      ],
+      "medianMs": 32.699743000000126,
+      "totalSql": 29,
+      "targetSql": 1
+    },
+    {
+      "name": "demonstrations-30-custom",
+      "samples": [
+        {
+          "milliseconds": 2.8532539999996516,
+          "totalSql": 5,
+          "targetSql": 1
+        },
+        {
+          "milliseconds": 2.5422459999999774,
+          "totalSql": 5,
+          "targetSql": 1
+        },
+        {
+          "milliseconds": 2.4056689999997616,
+          "totalSql": 5,
+          "targetSql": 1
+        },
+        {
+          "milliseconds": 2.9323229999999967,
+          "totalSql": 5,
+          "targetSql": 1
+        },
+        {
+          "milliseconds": 2.6441589999994903,
+          "totalSql": 5,
+          "targetSql": 1
+        },
+        {
+          "milliseconds": 2.4853400000001784,
+          "totalSql": 5,
+          "targetSql": 1
+        },
+        {
+          "milliseconds": 2.9136050000006435,
+          "totalSql": 5,
+          "targetSql": 1
+        }
+      ],
+      "medianMs": 2.6441589999994903,
+      "totalSql": 5,
+      "targetSql": 1
+    },
+    {
+      "name": "template-import-30-custom",
+      "samples": [
+        {
+          "milliseconds": 24.279489000000467,
+          "totalSql": 13,
+          "targetSql": 2
+        },
+        {
+          "milliseconds": 17.660784000000604,
+          "totalSql": 13,
+          "targetSql": 2
+        },
+        {
+          "milliseconds": 15.530038999999306,
+          "totalSql": 13,
+          "targetSql": 2
+        },
+        {
+          "milliseconds": 15.228925000000345,
+          "totalSql": 13,
+          "targetSql": 2
+        },
+        {
+          "milliseconds": 15.44751499999984,
+          "totalSql": 13,
+          "targetSql": 2
+        },
+        {
+          "milliseconds": 15.168032999999923,
+          "totalSql": 13,
+          "targetSql": 2
+        },
+        {
+          "milliseconds": 20.022265999999945,
+          "totalSql": 13,
+          "targetSql": 2
+        }
+      ],
+      "medianMs": 15.530038999999306,
+      "totalSql": 13,
+      "targetSql": 2
+    },
+    {
+      "name": "alerts-100-clients",
+      "samples": [
+        {
+          "milliseconds": 51.838536000000204,
+          "totalSql": 8,
+          "targetSql": 2
+        },
+        {
+          "milliseconds": 42.389470000000074,
+          "totalSql": 8,
+          "targetSql": 2
+        },
+        {
+          "milliseconds": 41.04915799999981,
+          "totalSql": 8,
+          "targetSql": 2
+        },
+        {
+          "milliseconds": 43.46935500000018,
+          "totalSql": 8,
+          "targetSql": 2
+        },
+        {
+          "milliseconds": 42.576842999999826,
+          "totalSql": 8,
+          "targetSql": 2
+        },
+        {
+          "milliseconds": 44.67953600000055,
+          "totalSql": 8,
+          "targetSql": 2
+        },
+        {
+          "milliseconds": 43.315771999999924,
+          "totalSql": 8,
+          "targetSql": 2
+        }
+      ],
+      "medianMs": 43.315771999999924,
+      "totalSql": 8,
+      "targetSql": 2
+    }
+  ],
+  "equivalence": {
+    "preferences": "7fdf43a173d2cdfd34b033a30100267dc9ded81a1b8df3cfb5fb493d6dc83fc8",
+    "demonstrations": "d4f7a298f5e866c1f05e17e6484b6679cff126a80a1505b58b15084e866ee67d",
+    "alerts": "87eb9f60750db288bc325d4ffa0b922871c6f1ff0514aad9295a2a0a86c2f6e5"
+  },
+  "explainArtifact": "after-plans.json.gz"
+}

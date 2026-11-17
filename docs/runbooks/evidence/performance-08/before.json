@@ -1,0 +1,189 @@
+{
+  "source": "/tmp/safemove-nplus1-before/api",
+  "postgres": "PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "node": "v24.19.0",
+  "warmups": 2,
+  "repetitions": 7,
+  "trackingRows": 8475,
+  "rls": "clinical/jobs NOSUPERUSER NOBYPASSRLS; onModuleInit role checks",
+  "results": [
+    {
+      "name": "diet-30-foods",
+      "samples": [
+        {
+          "milliseconds": 58.59108600000036,
+          "totalSql": 58,
+          "targetSql": 30
+        },
+        {
+          "milliseconds": 57.60343700000158,
+          "totalSql": 58,
+          "targetSql": 30
+        },
+        {
+          "milliseconds": 55.79428700000062,
+          "totalSql": 58,
+          "targetSql": 30
+        },
+        {
+          "milliseconds": 54.96850099999938,
+          "totalSql": 58,
+          "targetSql": 30
+        },
+        {
+          "milliseconds": 51.00566299999991,
+          "totalSql": 58,
+          "targetSql": 30
+        },
+        {
+          "milliseconds": 50.48319900000024,
+          "totalSql": 58,
+          "targetSql": 30
+        },
+        {
+          "milliseconds": 52.41674100000091,
+          "totalSql": 58,
+          "targetSql": 30
+        }
+      ],
+      "medianMs": 54.96850099999938,
+      "totalSql": 58,
+      "targetSql": 30
+    },
+    {
+      "name": "demonstrations-30-custom",
+      "samples": [
+        {
+          "milliseconds": 18.23846599999888,
+          "totalSql": 34,
+          "targetSql": 30
+        },
+        {
+          "milliseconds": 21.759769000000233,
+          "totalSql": 34,
+          "targetSql": 30
+        },
+        {
+          "milliseconds": 17.34761199999957,
+          "totalSql": 34,
+          "targetSql": 30
+        },
+        {
+          "milliseconds": 16.388726000001043,
+          "totalSql": 34,
+          "targetSql": 30
+        },
+        {
+          "milliseconds": 19.144560000000638,
+          "totalSql": 34,
+          "targetSql": 30
+        },
+        {
+          "milliseconds": 18.123616000000766,
+          "totalSql": 34,
+          "targetSql": 30
+        },
+        {
+          "milliseconds": 17.759964000000764,
+          "totalSql": 34,
+          "targetSql": 30
+        }
+      ],
+      "medianMs": 18.123616000000766,
+      "totalSql": 34,
+      "targetSql": 30
+    },
+    {
+      "name": "template-import-30-custom",
+      "samples": [
+        {
+          "milliseconds": 41.92540199999894,
+          "totalSql": 71,
+          "targetSql": 60
+        },
+        {
+          "milliseconds": 59.10827900000004,
+          "totalSql": 71,
+          "targetSql": 60
+        },
+        {
+          "milliseconds": 43.78510200000164,
+          "totalSql": 71,
+          "targetSql": 60
+        },
+        {
+          "milliseconds": 44.564807999999175,
+          "totalSql": 71,
+          "targetSql": 60
+        },
+        {
+          "milliseconds": 44.01333599999998,
+          "totalSql": 71,
+          "targetSql": 60
+        },
+        {
+          "milliseconds": 53.656120999999985,
+          "totalSql": 71,
+          "targetSql": 60
+        },
+        {
+          "milliseconds": 56.83936100000028,
+          "totalSql": 71,
+          "targetSql": 60
+        }
+      ],
+      "medianMs": 44.564807999999175,
+      "totalSql": 71,
+      "targetSql": 60
+    },
+    {
+      "name": "alerts-100-clients",
+      "samples": [
+        {
+          "milliseconds": 189.02329699999973,
+          "totalSql": 206,
+          "targetSql": 200
+        },
+        {
+          "milliseconds": 171.77880699999878,
+          "totalSql": 206,
+          "targetSql": 200
+        },
+        {
+          "milliseconds": 196.42080899999928,
+          "totalSql": 206,
+          "targetSql": 200
+        },
+        {
+          "milliseconds": 198.00173499999983,
+          "totalSql": 206,
+          "targetSql": 200
+        },
+        {
+          "milliseconds": 197.95924399999967,
+          "totalSql": 206,
+          "targetSql": 200
+        },
+        {
+          "milliseconds": 175.28783499999918,
+          "totalSql": 206,
+          "targetSql": 200
+        },
+        {
+          "milliseconds": 159.77304399999957,
+          "totalSql": 206,
+          "targetSql": 200
+        }
+      ],
+      "medianMs": 189.02329699999973,
+      "totalSql": 206,
+      "targetSql": 200
+    }
+  ],
+  "equivalence": {
+    "preferences": "7fdf43a173d2cdfd34b033a30100267dc9ded81a1b8df3cfb5fb493d6dc83fc8",
+    "demonstrations": "d4f7a298f5e866c1f05e17e6484b6679cff126a80a1505b58b15084e866ee67d",
+    "alerts": "87eb9f60750db288bc325d4ffa0b922871c6f1ff0514aad9295a2a0a86c2f6e5"
+  },
+  "explainArtifact": "before-plans.json.gz"
+}
