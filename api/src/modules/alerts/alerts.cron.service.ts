@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
 import { JobsPrismaService } from '../../infra/database/database-clients';
+import { alertsCronDisabled } from './alerts-cron-config';
 
 export const ALERT_SNAPSHOT_LOCK = 0x534146454d4f5645n;
 const DAY = 86_400_000;
@@ -12,7 +13,9 @@ export class AlertsCronService {
   private readonly logger = new Logger(AlertsCronService.name);
   constructor(private readonly prisma: JobsPrismaService) {}
 
-  @Cron(CronExpression.EVERY_DAY_AT_2AM)
+  @Cron(CronExpression.EVERY_DAY_AT_2AM, {
+    disabled: alertsCronDisabled(),
+  })
   async generateDailyAlerts(
     now = new Date(),
   ): Promise<{ generated: number; skipped: boolean }> {

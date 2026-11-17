@@ -1,0 +1,72 @@
+# API candidata. O agendador fica desligado até a troca de tráfego.
+# Segredos são copiados dentro do Render; não passam pelo repositório.
+services:
+  - type: web
+    name: safemove-api-virginia
+    runtime: node
+    rootDir: api
+    region: virginia
+    plan: free
+    autoDeployTrigger: 'off'
+    buildCommand: npm ci --include=dev && npx prisma generate && npm run build
+    # Mudança regional não deve executar migrations em produção.
+    startCommand: node dist/src/main.js
+    envVars:
+      - key: NODE_VERSION
+        value: 24.19.0
+      - key: NODE_ENV
+        value: production
+      - key: DIRECT_URL
+        value: postgresql://unused:unused@localhost:5432/unused
+      - key: DISABLE_SCHEDULED_ALERTS
+        value: 'true'
+      - key: CLINICAL_DATABASE_URL
+        fromService:
+          type: web
+          name: ecossistema-resiliencia
+          envVarKey: CLINICAL_DATABASE_URL
+      - key: AUTH_DATABASE_URL
+        fromService:
+          type: web
+          name: ecossistema-resiliencia
+          envVarKey: AUTH_DATABASE_URL
+      - key: JOBS_DATABASE_URL
+        fromService:
+          type: web
+          name: ecossistema-resiliencia
+          envVarKey: JOBS_DATABASE_URL
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: ecossistema-resiliencia
+          envVarKey: JWT_SECRET
+      - key: ALLOWED_ORIGINS
+        fromService:
+          type: web
+          name: ecossistema-resiliencia
+          envVarKey: ALLOWED_ORIGINS
+      - key: AUTH_COOKIE_SECURE
+        fromService:
+          type: web
+          name: ecossistema-resiliencia
+          envVarKey: AUTH_COOKIE_SECURE
+      - key: AUTH_COOKIE_SAME_SITE
+        fromService:
+          type: web
+          name: ecossistema-resiliencia
+          envVarKey: AUTH_COOKIE_SAME_SITE
+      - key: AUTH_COOKIE_DOMAIN
+        fromService:
+          type: web
+          name: ecossistema-resiliencia
+          envVarKey: AUTH_COOKIE_DOMAIN
+      - key: AUTH_REFRESH_COOKIE_PATH
+        fromService:
+          type: web
+          name: ecossistema-resiliencia
+          envVarKey: AUTH_REFRESH_COOKIE_PATH
+      - key: TZ
+        fromService:
+          type: web
+          name: ecossistema-resiliencia
+          envVarKey: TZ
