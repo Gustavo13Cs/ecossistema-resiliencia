@@ -10,12 +10,14 @@ services:
     autoDeployTrigger: 'off'
     buildCommand: npm ci --include=dev && npx prisma generate && npm run build
     # Mudança regional não deve executar migrations em produção.
-    startCommand: node dist/src/main.js
+    startCommand: REGIONAL_DATABASE_URL="$CLINICAL_DATABASE_URL" PROBE_REGION=virginia node dist/scripts/region-latency.js && exec node dist/src/main.js
     envVars:
       - key: NODE_VERSION
         value: 24.19.0
       - key: NODE_ENV
         value: production
+      - key: API_REGION
+        value: virginia
       - key: DIRECT_URL
         value: postgresql://unused:unused@localhost:5432/unused
       - key: DISABLE_SCHEDULED_ALERTS
@@ -55,16 +57,6 @@ services:
           type: web
           name: ecossistema-resiliencia
           envVarKey: AUTH_COOKIE_SAME_SITE
-      - key: AUTH_COOKIE_DOMAIN
-        fromService:
-          type: web
-          name: ecossistema-resiliencia
-          envVarKey: AUTH_COOKIE_DOMAIN
-      - key: AUTH_REFRESH_COOKIE_PATH
-        fromService:
-          type: web
-          name: ecossistema-resiliencia
-          envVarKey: AUTH_REFRESH_COOKIE_PATH
       - key: TZ
         fromService:
           type: web
