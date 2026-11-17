@@ -84,15 +84,6 @@ export function safeFailure(error: unknown) {
 }
 
 export async function main() {
-  const connectionString = process.env.REGIONAL_DATABASE_URL;
-  const region = process.env.PROBE_REGION;
-  if (!connectionString || !region || !['oregon', 'virginia'].includes(region))
-    throw new Error('Configuração regional incompleta.');
-  const client = new Client({
-    connectionString,
-    connectionTimeoutMillis: 10_000,
-    query_timeout: 10_000,
-  });
   if (process.env.PROBE_SERVE === 'true') {
     // HTTP só responde saúde; chamadas externas não disparam novas consultas.
     const server = createServer((request, response) => {
@@ -108,6 +99,23 @@ export async function main() {
     server.listen(port, '0.0.0.0');
     process.once('SIGTERM', () => server.close());
   }
+  // Após a coleta, remove-se a credencial e a sonda não abre novas conexões.
+  if (process.env.PROBE_DISABLED === 'true') {
+    console.log(
+      'REGION_PROBE ' +
+        JSON.stringify({ kind: 'postgres-region-probe-disabled' }),
+    );
+    return;
+  }
+  const connectionString = process.env.REGIONAL_DATABASE_URL;
+  const region = process.env.PROBE_REGION;
+  if (!connectionString || !region || !['oregon', 'virginia'].includes(region))
+    throw new Error('Configuração regional incompleta.');
+  const client = new Client({
+    connectionString,
+    connectionTimeoutMillis: 10_000,
+    query_timeout: 10_000,
+  });
   console.log(
     'REGION_PROBE ' + JSON.stringify(await measureRegion(client, region)),
   );
