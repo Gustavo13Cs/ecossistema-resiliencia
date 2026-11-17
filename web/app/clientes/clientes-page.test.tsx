@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import AxiosMockAdapter from "axios-mock-adapter"
@@ -122,5 +122,45 @@ describe("ClientesPage status query", () => {
     await waitFor(() => {
       expect(navigation.replace).toHaveBeenCalledWith("/clientes?status=ARCHIVED")
     })
+  })
+
+  it.each<{
+    outcome: string
+    response: [number, Client[] | { message: string }]
+    expected: string
+  }>([
+    {
+      outcome: "client records",
+      response: [200, [makeClient("loaded", "Registro após espera", "ACTIVE")]],
+      expected: "Registro após espera",
+    },
+    {
+      outcome: "an empty list",
+      response: [200, []],
+      expected: "Nenhum paciente ativo",
+    },
+    {
+      outcome: "a request error",
+      response: [500, { message: "Falha temporária" }],
+      expected: "Não foi possível carregar os pacientes",
+    },
+  ])("replaces the accessible loading skeleton with $outcome", async ({ response, expected }) => {
+    let finishRequest!: (reply: [number, Client[] | { message: string }]) => void
+    const pendingResponse = new Promise<[number, Client[] | { message: string }]>(resolve => {
+      finishRequest = resolve
+    })
+    http.onGet("/clients", { params: { status: "ACTIVE" } }).reply(() => pendingResponse)
+    renderPage()
+
+    const loading = screen.getByRole("status", { name: "Carregando pacientes" })
+    expect(loading).toHaveAttribute("aria-busy", "true")
+    expect(loading).toHaveAccessibleDescription("Buscando os registros da sua base privada.")
+    expect(loading.querySelector('[data-slot="skeleton"]')).not.toBeNull()
+    expect(screen.queryByRole("link", { name: "Abrir prontuário de Registro após espera" })).not.toBeInTheDocument()
+
+    await act(async () => finishRequest(response))
+
+    expect(await screen.findByText(expected)).toBeInTheDocument()
+    expect(screen.queryByRole("status", { name: "Carregando pacientes" })).not.toBeInTheDocument()
   })
 })

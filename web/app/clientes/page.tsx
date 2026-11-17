@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { ClientFilters } from "@/components/features/clients/ClientFilters"
 import { ClientList } from "@/components/features/clients/ClientList"
+import { ClientListSkeleton } from "@/components/features/clients/ClientListSkeleton"
 import { useAuth } from "@/contexts/auth-context"
 import { useClients } from "@/hooks/features/useClients"
 import { api } from "@/lib/api"
@@ -127,9 +128,7 @@ export default function ClientesPage() {
         />
 
         {isPending ? (
-          <div className="p-4 sm:p-5">
-            <AsyncState kind="loading" title={`Carregando ${plural}`} description="Buscando os registros da sua base privada." />
-          </div>
+          <ClientListSkeleton title={`Carregando ${plural}`} description="Buscando os registros da sua base privada." />
         ) : null}
 
         {error ? (
