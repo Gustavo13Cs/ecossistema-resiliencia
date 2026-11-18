@@ -1,0 +1,44 @@
+[
+  {
+    "viewport": "desktop",
+    "checks": [
+      "drawer opens/closes",
+      "registry opens/adds marker/closes",
+      "order opens/closes",
+      "chart tab renders SVG"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "viewport": "mobile",
+    "checks": [
+      "drawer opens/closes",
+      "registry opens/adds marker/closes",
+      "order opens/closes",
+      "chart tab renders SVG"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "path": "/clientes/c1",
+    "viewport": "mobile",
+    "checks": [
+      "placeholder while chart chunk is delayed",
+      "reserved height",
+      "SVG replaces placeholder"
+    ],
+    "reservedHeight": 300
+  },
+  {
+    "path": "/clientes/c1/exames",
+    "viewport": "mobile",
+    "checks": [
+      "placeholder while chart chunk is delayed",
+      "reserved height",
+      "SVG replaces placeholder"
+    ],
+    "reservedHeight": 400
+  }
+]

@@ -9,6 +9,9 @@
 
 ## Personal P3 — concluído localmente em 24/10/2026
 
+- ✅ **Codex — Performance 22 (17/11/2026)**: gráficos e modais sob demanda implementados em `5f1aad2`; comparação antes/depois com 21 capturas por build e redução de JS gzip de 30,65–31,88% nos quatro cenários sem gráfico inicial. Web773, tipos/lint/build/32 páginas e interações desktop/mobile aprovados. Gráficos críticos mantidos automáticos; pequenos aumentos em dois cenários e LCP local inconclusivo documentados. Publicação na mesma branch, sem banco/API ou deploy de produção. [Relatório e reprodução](runbooks/performance-22-progressive-loading.md).
+
+
 - ✅ **Codex — Performance 19 (17/11/2026)**: API ativa na Virgínia, banco mantido em São Paulo e Oregon como reserva sem cron. Mediana SQL real177,81→116,13 ms (−34,69%), 15 amostras de leitura por região. Domínio principal validado, frontend de produção preservado; API819/PostgreSQL256/web773 e builds/lint/tipos aprovados. Bloqueio inicial resolvido pela autorização específica posterior; paridade com main corrigida antes da promoção final. Rollback testado, env sensível original preservado e zero DDL/RLS/auth alterados em produção. [Resultado, métricas, limites e rollback](runbooks/performance-19-regional-migration.md).
 
 - ✅ **Codex — Performance 08 (17/11/2026)**: preferências alimentares, demonstrações/referências de modelos e tracking agrupados; SQL e duração medidos antes/depois com papéis restritos. API 801 unitários/255 PostgreSQL, web 751, builds/lint/tipos aprovados. Entrega na branch `agent/codex/performance-diagnosis`, com publicação autorizada. [Evidência e limites](runbooks/performance-08-verification.md).
