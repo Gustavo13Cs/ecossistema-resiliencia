@@ -119,6 +119,7 @@ export default function LoginPage() {
             alt=""
             width={36}
             height={36}
+            sizes="36px"
             className="size-9 object-contain"
             priority
           />
@@ -153,6 +154,7 @@ export default function LoginPage() {
               alt=""
               width={24}
               height={24}
+              sizes="24px"
               className="size-6 object-contain"
             />
             <span>SafeMove</span>

@@ -60,6 +60,7 @@ export function MobileNavigation({ user, role, roleLabel }: MobileNavigationProp
                 alt=""
                 width={36}
                 height={36}
+                sizes="36px"
                 className="size-9 shrink-0 object-contain drop-shadow-sm"
               />
               <div>

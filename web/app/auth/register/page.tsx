@@ -177,6 +177,7 @@ export default function RegisterPage() {
             alt=""
             width={24}
             height={24}
+            sizes="24px"
             className="size-6 object-contain"
           />
           <span>SafeMove</span>
