@@ -11,7 +11,8 @@ services:
     plan: free
     autoDeployTrigger: 'off'
     buildCommand: npm ci --include=dev && npx prisma generate && npm run build
-    startCommand: REGIONAL_DATABASE_URL="$CLINICAL_DATABASE_URL" PROBE_REGION=oregon node dist/scripts/region-latency.js && exec node dist/src/main.js
+    # A medição inicial foi arquivada; a reserva inicia sem consultas da sonda.
+    startCommand: node dist/src/main.js
     envVars:
       - key: NODE_VERSION
         value: 24.19.0
