@@ -1,4 +1,4 @@
-# API candidata. O agendador fica desligado até a troca de tráfego.
+# API ativa após validação e troca regional; a reserva mantém o cron desligado.
 # Segredos são copiados dentro do Render; não passam pelo repositório.
 services:
   - type: web
@@ -10,7 +10,7 @@ services:
     autoDeployTrigger: 'off'
     buildCommand: npm ci --include=dev && npx prisma generate && npm run build
     # Mudança regional não deve executar migrations em produção.
-    startCommand: REGIONAL_DATABASE_URL="$CLINICAL_DATABASE_URL" PROBE_REGION=virginia node dist/scripts/region-latency.js && exec node dist/src/main.js
+    startCommand: node dist/src/main.js
     envVars:
       - key: NODE_VERSION
         value: 24.19.0
@@ -21,7 +21,7 @@ services:
       - key: DIRECT_URL
         value: postgresql://unused:unused@localhost:5432/unused
       - key: DISABLE_SCHEDULED_ALERTS
-        value: 'true'
+        value: 'false'
       - key: CLINICAL_DATABASE_URL
         fromService:
           type: web

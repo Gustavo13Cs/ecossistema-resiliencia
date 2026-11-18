@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { SchedulerRegistry } from '@nestjs/schedule';
 import cookieParser from 'cookie-parser';
 import type { NextFunction, Request, Response } from 'express';
 import { createCsrfProtection } from './common/security/csrf-protection';
@@ -62,6 +63,17 @@ async function bootstrap() {
   app.use(createCsrfProtection(allowedOrigins));
 
   await app.listen(3000);
+  if (apiRegion) {
+    // Confere os jobs realmente ativos, sem executar a rotina ou ler dados clínicos.
+    const jobs = [...app.get(SchedulerRegistry).getCronJobs().values()];
+    console.log(
+      JSON.stringify({
+        event: 'regional_api_ready',
+        region: apiRegion,
+        activeScheduledJobs: jobs.filter((job) => job.isActive).length,
+      }),
+    );
+  }
   console.log('🚀 API do Ecossistema rodando na porta 3000');
 }
 
