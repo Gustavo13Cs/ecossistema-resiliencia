@@ -105,5 +105,7 @@
     "sourceCommit": "721016c39b1095639d7ced09ce3d76cb7d730a5c",
     "apiCutoverPerformed": false,
     "databaseMigrationPerformed": false
-  }
+  },
+  "snapshotScope": "Initial regional measurement before explicit authorization; historical state superseded by migration-result.json",
+  "latestResult": "migration-result.json"
 }

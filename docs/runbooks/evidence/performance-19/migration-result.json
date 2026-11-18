@@ -1,0 +1,229 @@
+{
+  "recordVersion": 1,
+  "capturedDateLocal": "2026-11-17",
+  "timezone": "America/Fortaleza",
+  "status": "production_cutover_complete",
+  "branch": "agent/codex/performance-diagnosis",
+  "sourceParity": {
+    "mergedProductionMain": "69fd92145e47833f3aec83637c454c1660f9ea0b",
+    "mergeCommit": "47ded8295db34d6236d5c479a3ad67199c821199",
+    "schemaMigrationsAuthGuardsSecurityDiffFromMain": "empty"
+  },
+  "database": {
+    "provider": "Supabase",
+    "projectId": "zmjcxysenzrqycktckip",
+    "region": "sa-east-1",
+    "location": "São Paulo",
+    "productionDdlExecuted": false,
+    "rlsAuthGrantsChanged": false
+  },
+  "api": {
+    "active": {
+      "provider": "Render",
+      "region": "virginia",
+      "serviceId": "srv-dbueksec6qcc73dhgp50",
+      "url": "https://safemove-api-virginia-6yha.onrender.com",
+      "plan": "free",
+      "blueprintId": "exs-dbudsmajnfac73cuol0g",
+      "autoSync": false,
+      "autoDeploy": false,
+      "deployId": "dep-dbuf5fec6qcc73dj3l90",
+      "deployCommit": "d92a6287239b0a7cc71ac5d2d6764b7ae00d3896",
+      "liveAt": "2026-11-18T00:36:45.264977Z",
+      "activeScheduledJobs": 1,
+      "schedulerLogAt": "2026-11-18T00:36:42.287319445Z",
+      "startCommand": "node dist/src/main.js"
+    },
+    "standby": {
+      "provider": "Render",
+      "region": "oregon",
+      "serviceId": "srv-d8fmspjbc2fs73brg8p0",
+      "url": "https://ecossistema-resiliencia.onrender.com",
+      "plan": "free",
+      "blueprintId": "exs-dbueoto8v5cc738sqk00",
+      "autoSync": false,
+      "autoDeploy": false,
+      "deployId": "dep-dbuf6qmc6qcc73dj7ju0",
+      "deployCommit": "4f1fc649631bfa01da5b5031789c906fb2f730f6",
+      "activeScheduledJobs": 0,
+      "schedulerLogAt": "2026-11-18T00:39:29.242445208Z",
+      "liveAt": "2026-11-18T00:39:33.640015Z",
+      "startCommand": "node dist/src/main.js"
+    }
+  },
+  "web": {
+    "provider": "Vercel",
+    "projectId": "prj_Q4HElpVnkrbUVlogPwTtUCjbosot",
+    "productionDomain": "https://ecossistema-resiliencia.vercel.app",
+    "deploymentId": "dpl_3XdVSb1ePTopfobrCPuwxxp74KyK",
+    "readyState": "READY",
+    "sourceCommit": "69fd92145e47833f3aec83637c454c1660f9ea0b",
+    "frontendSourceChanged": false,
+    "rollbackDeploymentId": "dpl_H9dEYUdgaXcPPCvp2E8hNme7benf",
+    "upstreamEnvId": "TLXzIEvfKTDrwkw6",
+    "upstreamEnvTargets": [
+      "preview",
+      "production"
+    ],
+    "preservedOriginalEnvId": "R4dgDm6zH17Wk9aB",
+    "preservedOriginalEnvTarget": [
+      "preview"
+    ],
+    "preservedOriginalEnvGitBranch": "agent/codex/performance-diagnosis",
+    "preservedOriginalValueOverwritten": false
+  },
+  "measurements": {
+    "method": {
+      "sql": "SELECT 1 AS region_probe",
+      "transaction": "BEGIN READ ONLY; ROLLBACK;",
+      "credentials": "Same restricted CLINICAL_DATABASE_URL referenced internally in Render",
+      "warmups": 3,
+      "samplesPerRegion": 15,
+      "scope": "Actual API instances; warm SQL round-trip, not authenticated page or save duration"
+    },
+    "oregon": {
+      "kind": "postgres-region-latency",
+      "region": "oregon",
+      "capturedAt": "2026-11-18T00:31:45.256Z",
+      "connectionMs": 1188.430746,
+      "warmups": 3,
+      "readOnly": true,
+      "samplesMs": [
+        177.65382,
+        177.770763,
+        178.20038499999964,
+        177.86337700000013,
+        178.6436590000003,
+        177.84753600000022,
+        178.18724499999962,
+        178.33860000000004,
+        177.81104499999947,
+        177.79897400000027,
+        177.86449600000014,
+        177.7239129999998,
+        177.69882099999995,
+        177.67439099999956,
+        177.64083000000028
+      ],
+      "count": 15,
+      "minMs": 177.64083000000028,
+      "medianMs": 177.81104499999947,
+      "p95Ms": 178.6436590000003,
+      "maxMs": 178.6436590000003,
+      "measuredDeployId": "dep-dbuf2tuc6qcc73diqnt0"
+    },
+    "virginia": {
+      "kind": "postgres-region-latency",
+      "region": "virginia",
+      "capturedAt": "2026-11-18T00:23:16.186Z",
+      "connectionMs": 812.981537,
+      "warmups": 3,
+      "readOnly": true,
+      "samplesMs": [
+        116.42304200000012,
+        116.68158900000003,
+        116.19834699999979,
+        116.18708600000036,
+        116.32051000000001,
+        116.30457999999999,
+        116.12879500000008,
+        115.98569099999986,
+        116.22159800000009,
+        115.94210999999996,
+        116.08030400000007,
+        115.90542000000005,
+        115.96540099999993,
+        115.97346100000004,
+        115.90297899999996
+      ],
+      "count": 15,
+      "minMs": 115.90297899999996,
+      "medianMs": 116.12879500000008,
+      "p95Ms": 116.68158900000003,
+      "maxMs": 116.68158900000003,
+      "measuredDeployId": "dep-dbuevaoae00c73eba9l0"
+    },
+    "medianReductionPercent": 34.68977419259842,
+    "p95ReductionPercent": 34.68472955986653
+  },
+  "smoke": [
+    {
+      "path": "/api/auth/csrf",
+      "status": 200,
+      "region": "virginia",
+      "cacheControl": "no-store",
+      "cookieSecure": true,
+      "cookieHttpOnly": true
+    },
+    {
+      "path": "/api/auth/me",
+      "status": 401
+    },
+    {
+      "path": "/api/clients",
+      "status": 401
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "cacheControl": "private, no-cache, no-store, max-age=0, must-revalidate"
+    }
+  ],
+  "verification": {
+    "api": {
+      "tests": 819,
+      "suites": 63
+    },
+    "postgresHttpRls": {
+      "tests": 256,
+      "suites": 41,
+      "environment": "isolated local Docker PostgreSQL"
+    },
+    "web": {
+      "tests": 773,
+      "files": 99
+    },
+    "builds": [
+      "NestJS",
+      "Next.js"
+    ],
+    "lint": [
+      "API standard scope plus new probe",
+      "web"
+    ],
+    "typescript": [
+      "API",
+      "web"
+    ],
+    "productionPages": 32
+  },
+  "limitations": [
+    "No authenticated production session; UI reads/saves not measured",
+    "No Render HTTP p95 time series available",
+    "15-sample p95 is maximum of this set",
+    "Free plan cold starts remain",
+    "Shared Free 750-hour monthly quota includes awake standby and retired probes"
+  ],
+  "rollbackExercisedDuringSourceParityCheck": true,
+  "initialAutomaticApprovalRejection": "Resolved by explicit user authorization; superseded",
+  "postActivationSmoke": {
+    "path": "/api/auth/csrf",
+    "status": 200,
+    "region": "virginia",
+    "cacheControl": "no-store",
+    "cookieSecure": true,
+    "cookieHttpOnly": true,
+    "checkedAfterFinalLive": true
+  },
+  "postActivationLogScan": {
+    "serviceId": "srv-dbueksec6qcc73dhgp50",
+    "startTime": "2026-11-18T00:36:42Z",
+    "textFilters": [
+      "ERROR",
+      "Exception",
+      "REGION_PROBE"
+    ],
+    "matchingLogs": 0,
+    "scope": "bounded connector log scan; not continuous monitoring"
+  }
+}
