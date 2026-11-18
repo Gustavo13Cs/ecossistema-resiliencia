@@ -1,0 +1,82 @@
+{
+  "baselineCommit": "d9d08ac90bbcb68fe272d020109085c52d6b1bb9",
+  "codeCommit": "dc27372",
+  "dateLocal": "2026-11-17",
+  "timezone": "America/Fortaleza",
+  "branch": "agent/codex/performance-diagnosis",
+  "web": {
+    "tests": 773,
+    "files": 99,
+    "build": "passed",
+    "typecheck": "passed (also checked by final build)",
+    "lint": "passed",
+    "postbuildPages": 32,
+    "standaloneDirectories": 311
+  },
+  "images": {
+    "beforeScenarios": 12,
+    "afterScenarios": 12,
+    "viewports": [
+      "1440x900 DPR1",
+      "1440x900 DPR2",
+      "390x844 DPR3"
+    ],
+    "formatsVerified": [
+      "AVIF",
+      "WEBP",
+      "PNG fallback"
+    ],
+    "quality": 85,
+    "widthsVerified": [
+      20,
+      24,
+      32,
+      36,
+      40,
+      48,
+      60,
+      64,
+      72,
+      96,
+      108
+    ],
+    "combinationsPerRuntime": 22,
+    "deniedRequestsPerRuntime": 6,
+    "rgbaPreserved": true,
+    "fallbackPngTransparency": true,
+    "cssDimensionsPreserved": true,
+    "bitmapWidthEqualsCssWidthTimesDpr": true,
+    "unhandledJavascriptErrors": 0,
+    "clsBeforeAndAfter": 0,
+    "renderedCropPairs": 9,
+    "sourceLogoSha256": "999db2245a61ca13b774071cce2c583dc121ff4f3fef50048c6023e74839b441"
+  },
+  "standalone": {
+    "copiedOutsideRepository": true,
+    "noRepositoryNodeModulesFallback": true,
+    "optimizerChecks": "passed",
+    "freshTransformCache": "MISS for all AVIF/WebP variants",
+    "sharpAndNativeModuleResolvedInsideArtifact": true
+  },
+  "productionDeploymentPerformed": false,
+  "newDependencies": false,
+  "databaseChanges": false,
+  "limitations": [
+    "Browser emulado, sem hardware de celular ou sessão de produção",
+    "Bytes medidos apenas para imagens da interface, sem favicons/JS/API",
+    "Compressão com perdas; PNG fonte preservado; PSNR também inclui reamostragem",
+    "Primeiro transform tem custo e consome cota de Image Optimization",
+    "Dois requests para variantes distintas na inicial desktop/login mobile",
+    "Docker não foi reconstruído; standalone Linux isolado foi testado"
+  ],
+  "commands": [
+    "NEXT_PUBLIC_API_URL=http://localhost:3000 npm --prefix web run build",
+    "npm --prefix web test",
+    "npm --prefix web run lint",
+    "npm --prefix web run typecheck",
+    "python docs/runbooks/evidence/performance-02/measure-images.py --phase after --output /tmp/perf02-after.json",
+    "python docs/runbooks/evidence/performance-02/verify-image-optimizer.py",
+    "PERF02_IMAGE_ORIGIN=http://127.0.0.1:3103 PERF02_RESULT_FILE=standalone-optimizer.json python docs/runbooks/evidence/performance-02/verify-image-optimizer.py",
+    "git diff --check"
+  ]
+}

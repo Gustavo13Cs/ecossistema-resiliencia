@@ -1,0 +1,81 @@
+[
+  {
+    "path": "web/public/apple-icon.png",
+    "bytes": 51394,
+    "width": 180,
+    "height": 180,
+    "format": "png",
+    "alpha": true
+  },
+  {
+    "path": "web/public/icon-dark-32x32.png",
+    "bytes": 3058,
+    "width": 32,
+    "height": 32,
+    "format": "png",
+    "alpha": true
+  },
+  {
+    "path": "web/public/icon-light-32x32.png",
+    "bytes": 3058,
+    "width": 32,
+    "height": 32,
+    "format": "png",
+    "alpha": true
+  },
+  {
+    "path": "web/public/icon.png",
+    "bytes": 56677,
+    "width": 192,
+    "height": 192,
+    "format": "png",
+    "alpha": true
+  },
+  {
+    "path": "web/public/logo-icon.png",
+    "bytes": 56677,
+    "width": 192,
+    "height": 192,
+    "format": "png",
+    "alpha": true
+  },
+  {
+    "path": "web/public/logo.png",
+    "bytes": 248272,
+    "width": 512,
+    "height": 512,
+    "format": "png",
+    "alpha": true
+  },
+  {
+    "path": "web/public/placeholder-logo.png",
+    "bytes": 760,
+    "format": "não decodificável pelo Sharp"
+  },
+  {
+    "path": "web/public/placeholder-user.jpg",
+    "bytes": 2180,
+    "format": "não decodificável pelo Sharp"
+  },
+  {
+    "path": "web/public/placeholder.jpg",
+    "bytes": 1420,
+    "format": "não decodificável pelo Sharp"
+  },
+  {
+    "path": "web/app/apple-icon.png",
+    "bytes": 51394,
+    "width": 180,
+    "height": 180,
+    "format": "png",
+    "alpha": true
+  },
+  {
+    "path": "web/app/icon.png",
+    "bytes": 56677,
+    "width": 192,
+    "height": 192,
+    "format": "png",
+    "alpha": true
+  }
+]

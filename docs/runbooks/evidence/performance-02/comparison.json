@@ -1,0 +1,223 @@
+{
+  "baselineCommit": "d9d08ac90bbcb68fe272d020109085c52d6b1bb9",
+  "quality": 85,
+  "rows": [
+    {
+      "route": "/",
+      "viewport": "desktop-1x",
+      "beforeBytes": 248272,
+      "afterBytes": 1763,
+      "reductionPercent": 99.28989173164916,
+      "beforeImageRequests": 1,
+      "afterImageRequests": 2,
+      "clsBefore": 0,
+      "clsAfter": 0
+    },
+    {
+      "route": "/auth/login",
+      "viewport": "desktop-1x",
+      "beforeBytes": 248272,
+      "afterBytes": 1164,
+      "reductionPercent": 99.53115937359026,
+      "beforeImageRequests": 1,
+      "afterImageRequests": 1,
+      "clsBefore": 0,
+      "clsAfter": 0
+    },
+    {
+      "route": "/auth/register",
+      "viewport": "desktop-1x",
+      "beforeBytes": 248272,
+      "afterBytes": 799,
+      "reductionPercent": 99.67817554939742,
+      "beforeImageRequests": 1,
+      "afterImageRequests": 1,
+      "clsBefore": 0,
+      "clsAfter": 0
+    },
+    {
+      "route": "/clientes",
+      "viewport": "desktop-1x",
+      "beforeBytes": 248272,
+      "afterBytes": 1164,
+      "reductionPercent": 99.53115937359026,
+      "beforeImageRequests": 1,
+      "afterImageRequests": 1,
+      "clsBefore": 0,
+      "clsAfter": 0
+    },
+    {
+      "route": "/",
+      "viewport": "desktop-2x",
+      "beforeBytes": 248272,
+      "afterBytes": 3088,
+      "reductionPercent": 98.75620287426693,
+      "beforeImageRequests": 1,
+      "afterImageRequests": 2,
+      "clsBefore": 0,
+      "clsAfter": 0
+    },
+    {
+      "route": "/auth/login",
+      "viewport": "desktop-2x",
+      "beforeBytes": 248272,
+      "afterBytes": 2092,
+      "reductionPercent": 99.15737578140104,
+      "beforeImageRequests": 1,
+      "afterImageRequests": 1,
+      "clsBefore": 0,
+      "clsAfter": 0
+    },
+    {
+      "route": "/auth/register",
+      "viewport": "desktop-2x",
+      "beforeBytes": 248272,
+      "afterBytes": 1404,
+      "reductionPercent": 99.4344912031965,
+      "beforeImageRequests": 1,
+      "afterImageRequests": 1,
+      "clsBefore": 0,
+      "clsAfter": 0
+    },
+    {
+      "route": "/clientes",
+      "viewport": "desktop-2x",
+      "beforeBytes": 248272,
+      "afterBytes": 2092,
+      "reductionPercent": 99.15737578140104,
+      "beforeImageRequests": 1,
+      "afterImageRequests": 1,
+      "clsBefore": 0,
+      "clsAfter": 0
+    },
+    {
+      "route": "/",
+      "viewport": "mobile-3x",
+      "beforeBytes": 248272,
+      "afterBytes": 2952,
+      "reductionPercent": 98.81098150415674,
+      "beforeImageRequests": 1,
+      "afterImageRequests": 1,
+      "clsBefore": 0,
+      "clsAfter": 0
+    },
+    {
+      "route": "/auth/login",
+      "viewport": "mobile-3x",
+      "beforeBytes": 248272,
+      "afterBytes": 5312,
+      "reductionPercent": 97.8604111619514,
+      "beforeImageRequests": 1,
+      "afterImageRequests": 2,
+      "clsBefore": 0,
+      "clsAfter": 0
+    },
+    {
+      "route": "/auth/register",
+      "viewport": "mobile-3x",
+      "beforeBytes": 248272,
+      "afterBytes": 2092,
+      "reductionPercent": 99.15737578140104,
+      "beforeImageRequests": 1,
+      "afterImageRequests": 1,
+      "clsBefore": 0,
+      "clsAfter": 0
+    },
+    {
+      "route": "/clientes",
+      "viewport": "mobile-3x",
+      "beforeBytes": 248272,
+      "afterBytes": 3220,
+      "reductionPercent": 98.70303538055036,
+      "beforeImageRequests": 1,
+      "afterImageRequests": 1,
+      "clsBefore": 0,
+      "clsAfter": 0
+    }
+  ],
+  "renderedCropComparison": [
+    {
+      "crop": "desktop-1x-clientes.png",
+      "pixelSize": [
+        36,
+        36
+      ],
+      "meanAbsoluteError": 10.24511316872428,
+      "psnrDb": 24.232969391429968
+    },
+    {
+      "crop": "mobile-3x-clientes.png",
+      "pixelSize": [
+        108,
+        108
+      ],
+      "meanAbsoluteError": 5.590020576131688,
+      "psnrDb": 28.9073740303025
+    },
+    {
+      "crop": "desktop-2x-auth-login.png",
+      "pixelSize": [
+        72,
+        72
+      ],
+      "meanAbsoluteError": 6.996399176954732,
+      "psnrDb": 27.11557542663302
+    },
+    {
+      "crop": "desktop-1x-landing.png",
+      "pixelSize": [
+        32,
+        32
+      ],
+      "meanAbsoluteError": 9.546875,
+      "psnrDb": 25.18157965584027
+    },
+    {
+      "crop": "desktop-2x-clientes.png",
+      "pixelSize": [
+        72,
+        72
+      ],
+      "meanAbsoluteError": 7.22704475308642,
+      "psnrDb": 26.922511573216173
+    },
+    {
+      "crop": "mobile-3x-auth-login.png",
+      "pixelSize": [
+        72,
+        72
+      ],
+      "meanAbsoluteError": 7.266460905349795,
+      "psnrDb": 26.886336676679576
+    },
+    {
+      "crop": "mobile-3x-landing.png",
+      "pixelSize": [
+        96,
+        96
+      ],
+      "meanAbsoluteError": 5.6596860532407405,
+      "psnrDb": 28.90832335254073
+    },
+    {
+      "crop": "desktop-1x-auth-login.png",
+      "pixelSize": [
+        36,
+        36
+      ],
+      "meanAbsoluteError": 9.846965020576132,
+      "psnrDb": 24.39818722285945
+    },
+    {
+      "crop": "desktop-2x-landing.png",
+      "pixelSize": [
+        64,
+        64
+      ],
+      "meanAbsoluteError": 6.888753255208333,
+      "psnrDb": 27.504442180544793
+    }
+  ],
+  "pixelMetricLimit": "PSNR compara screenshots; também inclui diferença entre reamostragem do Chromium e Sharp, não é medida isolada de nitidez.",
+  "sourceLogoUnchanged": true
+}

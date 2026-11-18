@@ -9,6 +9,9 @@
 
 ## Personal P3 — concluído localmente em 24/10/2026
 
+- ✅ **Codex — Performance 02 (17/11/2026)**: AVIF/WebP responsivos para a marca, qualidade85 e restrição local do otimizador em `dc27372`. 12 cenários antes/depois: imagens248.272→799–5.312bytes (−97,86% a−99,68%); nitidez/crops, alpha, dimensões porDPR eCLS0 conferidos. Web773, build/tipos/lint/32páginas e standalone isolado aprovados;22 variantes, fallbackPNG e6 bloqueios400. Sem API/banco/dependência/deploy de produção. [Relatório e reprodução](runbooks/performance-02-images.md).
+
+
 - ✅ **Codex — Performance 22 (17/11/2026)**: gráficos e modais sob demanda implementados em `5f1aad2`; comparação antes/depois com 21 capturas por build e redução de JS gzip de 30,65–31,88% nos quatro cenários sem gráfico inicial. Web773, tipos/lint/build/32 páginas e interações desktop/mobile aprovados. Gráficos críticos mantidos automáticos; pequenos aumentos em dois cenários e LCP local inconclusivo documentados. Publicação na mesma branch, sem banco/API ou deploy de produção. [Relatório e reprodução](runbooks/performance-22-progressive-loading.md).
 
 

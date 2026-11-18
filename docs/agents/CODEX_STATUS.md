@@ -8,6 +8,9 @@
 
 ## Current Task
 
+- **2026-11-17 — Performance 02 concluído e validado (Codex)**: commit `dc27372`; Next/Image AVIF/WebP, qualidade85, tamanhos20–108px para a marca e allowlist local exclusiva `/logo.png`. PNG de248.272 bytes substituído por799–5.312 bytes de imagens por tela (−97,86% a−99,68%), 12 cenários antes/depois em Chromium desktop1×/2× e mobile3×. Dimensões CSS preservadas, variantes físicas exatas porDPR, transparência mantida e CLS0/0. Nove pares de crops; qualidade85 melhorou PSNR em todos. Web773/99, build/tipos/lint e pós-build32páginas aprovados. Standalone isolado fora do checkout passou22 formatos/tamanhos, fallbackPNG e6 bloqueiosHTTP400. Sem pacote novo, PNGs/ícones, mídia externa, API/banco/segurança/produção alterados. [Resultado, evidências e rollback](../runbooks/performance-02-images.md). Mesma branch de performance, commits/push autorizados; sem promoção de produção nesta etapa.
+
+
 - **2026-11-17 — Performance 22 concluído e validado (Codex)**: código `5f1aad2`; gráficos e diálogos condicionais com next/dynamic, consultas e conteúdo principal imediatos. Baseline `ab9b735`, 21 capturas por build: JS gzip −30,65% na ficha Personal, −31,19% em exames vazios, −31,46% na central e −31,88% na evolução Nutrição. Gráficos já visíveis preservados; exames com gráfico +2,5 KiB e evolução Personal +315 bytes. LCP local sem ganho consistente, limitado por CPU compartilhada; sem promessa de tempo em produção. Web773/99 arquivos, tipos/lint/build e pós-build32/32 aprovados. Sete verificações mobile adicionais, diálogos desktop/mobile e placeholders300/400px conferidos; zero dados reais/segredos/API/banco alterados. [Relatório, evidências e rollback](../runbooks/performance-22-progressive-loading.md). Mesma branch de performance, commits/push autorizados; sem promoção de produção nesta etapa.
 
 

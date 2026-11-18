@@ -1,0 +1,256 @@
+{
+  "results": [
+    {
+      "width": 20,
+      "format": "AVIF",
+      "bodyBytes": 758,
+      "mode": "RGBA",
+      "elapsedMs": 19.43793799910054,
+      "cache": "HIT",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 20,
+      "format": "WEBP",
+      "bodyBytes": 722,
+      "mode": "RGBA",
+      "elapsedMs": 26.263611000103992,
+      "cache": "MISS",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 24,
+      "format": "AVIF",
+      "bodyBytes": 799,
+      "mode": "RGBA",
+      "elapsedMs": 4.255691001162631,
+      "cache": "HIT",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 24,
+      "format": "WEBP",
+      "bodyBytes": 906,
+      "mode": "RGBA",
+      "elapsedMs": 16.235671999311307,
+      "cache": "MISS",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 32,
+      "format": "AVIF",
+      "bodyBytes": 1005,
+      "mode": "RGBA",
+      "elapsedMs": 3.7777540001115995,
+      "cache": "HIT",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 32,
+      "format": "WEBP",
+      "bodyBytes": 1198,
+      "mode": "RGBA",
+      "elapsedMs": 14.82358399880468,
+      "cache": "MISS",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 36,
+      "format": "AVIF",
+      "bodyBytes": 1164,
+      "mode": "RGBA",
+      "elapsedMs": 3.759795999940252,
+      "cache": "HIT",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 36,
+      "format": "WEBP",
+      "bodyBytes": 1516,
+      "mode": "RGBA",
+      "elapsedMs": 15.004383001723909,
+      "cache": "MISS",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 40,
+      "format": "AVIF",
+      "bodyBytes": 1199,
+      "mode": "RGBA",
+      "elapsedMs": 3.8324680008372525,
+      "cache": "HIT",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 40,
+      "format": "WEBP",
+      "bodyBytes": 1780,
+      "mode": "RGBA",
+      "elapsedMs": 12.424345000908943,
+      "cache": "MISS",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 48,
+      "format": "AVIF",
+      "bodyBytes": 1404,
+      "mode": "RGBA",
+      "elapsedMs": 3.1901290003588656,
+      "cache": "HIT",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 48,
+      "format": "WEBP",
+      "bodyBytes": 2124,
+      "mode": "RGBA",
+      "elapsedMs": 17.700568998407107,
+      "cache": "MISS",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 60,
+      "format": "AVIF",
+      "bodyBytes": 1822,
+      "mode": "RGBA",
+      "elapsedMs": 30.867748999298783,
+      "cache": "MISS",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 60,
+      "format": "WEBP",
+      "bodyBytes": 2866,
+      "mode": "RGBA",
+      "elapsedMs": 12.373547000606777,
+      "cache": "MISS",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 64,
+      "format": "AVIF",
+      "bodyBytes": 1889,
+      "mode": "RGBA",
+      "elapsedMs": 2.887701999497949,
+      "cache": "HIT",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 64,
+      "format": "WEBP",
+      "bodyBytes": 3108,
+      "mode": "RGBA",
+      "elapsedMs": 15.04906199988909,
+      "cache": "MISS",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 72,
+      "format": "AVIF",
+      "bodyBytes": 2092,
+      "mode": "RGBA",
+      "elapsedMs": 5.0292349988012575,
+      "cache": "HIT",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 72,
+      "format": "WEBP",
+      "bodyBytes": 3748,
+      "mode": "RGBA",
+      "elapsedMs": 16.665933000695077,
+      "cache": "MISS",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 96,
+      "format": "AVIF",
+      "bodyBytes": 2952,
+      "mode": "RGBA",
+      "elapsedMs": 6.258508999962942,
+      "cache": "HIT",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 96,
+      "format": "WEBP",
+      "bodyBytes": 5220,
+      "mode": "RGBA",
+      "elapsedMs": 15.38803400035249,
+      "cache": "MISS",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 108,
+      "format": "AVIF",
+      "bodyBytes": 3220,
+      "mode": "RGBA",
+      "elapsedMs": 3.1935329989210004,
+      "cache": "HIT",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    },
+    {
+      "width": 108,
+      "format": "WEBP",
+      "bodyBytes": 6212,
+      "mode": "RGBA",
+      "elapsedMs": 15.322293000281206,
+      "cache": "MISS",
+      "vary": "Accept",
+      "cacheControl": "public, max-age=14400, must-revalidate"
+    }
+  ],
+  "fallbackPng": {
+    "status": 200,
+    "width": 36,
+    "mode": "P",
+    "transparency": true
+  },
+  "denied": [
+    {
+      "query": "url=%2Fapi%2Fclients&w=36&q=85",
+      "status": 400
+    },
+    {
+      "query": "url=https%3A%2F%2Fexample.com%2Flogo.png&w=36&q=85",
+      "status": 400
+    },
+    {
+      "query": "url=%2Flogo.png%3Fextra%3D1&w=36&q=85",
+      "status": 400
+    },
+    {
+      "query": "url=%2Ficon.svg&w=36&q=85",
+      "status": 400
+    },
+    {
+      "query": "url=%2Flogo.png&w=37&q=85",
+      "status": 400
+    },
+    {
+      "query": "url=%2Flogo.png&w=36&q=100",
+      "status": 400
+    }
+  ]
+}
