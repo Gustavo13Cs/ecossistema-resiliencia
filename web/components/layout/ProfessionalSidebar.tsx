@@ -44,6 +44,7 @@ const NAVIGATION_ICONS: Record<string, LucideIcon> = {
   "lab-exams": FlaskConical,
   reports: BarChart3,
   workouts: Dumbbell,
+  "workout-templates": Layers,
   exercises: BookOpen,
   rehab: HeartPulse,
 }

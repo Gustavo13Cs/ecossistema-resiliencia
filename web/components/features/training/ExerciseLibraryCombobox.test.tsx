@@ -303,6 +303,46 @@ describe("ExerciseLibraryCombobox", () => {
   await waitFor(() => expect(screen.queryByRole("dialog", { name: "Execução do exercício" })).toBeNull())
   await waitFor(() => expect(preview).toHaveFocus())
  })
+
+ it("flags exercises outside mapped student equipment and filters when checkbox is toggled", async () => {
+  const user = userEvent.setup()
+  const itemsWithDumbbell: ExerciseLibraryItem[] = [
+    ...sampleItems,
+    {
+      id: "cat-dumbbell",
+      name: "Supino reto com halteres",
+      muscleGroup: "CHEST",
+      equipment: "DUMBBELL",
+      notes: null,
+      source: "CATALOG",
+      hasDemonstration: false,
+      demonstrationTypes: [],
+    },
+  ]
+  http.resetHandlers()
+  http.onGet("/workouts/exercise-library").reply(200, itemsWithDumbbell)
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  render(
+    <QueryClientProvider client={queryClient}>
+      <ExerciseLibraryCombobox
+        exerciseId="equip-check"
+        currentName=""
+        currentMuscleGroup=""
+        availableEquipment={["DUMBBELL", "BODYWEIGHT"]}
+        onSelect={vi.fn()}
+      />
+    </QueryClientProvider>,
+  )
+  await user.click(screen.getByRole("button", { name: /biblioteca/i }))
+  expect(await screen.findByText("Supino reto com halteres")).toBeVisible()
+  expect(screen.getAllByText("Fora do ambiente do aluno (sem Barra)").length).toBeGreaterThanOrEqual(2)
+
+  const toggle = screen.getByRole("checkbox", { name: /somente equipamentos mapeados do aluno \(2\)/i })
+  await user.click(toggle)
+  expect(screen.queryByText("Supino reto com barra")).toBeNull()
+  expect(screen.queryByText("Agachamento pausa 2s")).toBeNull()
+  expect(screen.getByText("Supino reto com halteres")).toBeVisible()
+ })
 })
  it("preview_does_not_select_or_lose_editor_text", async () => {
   http.resetHandlers()

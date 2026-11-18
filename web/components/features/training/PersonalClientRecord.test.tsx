@@ -20,6 +20,7 @@ function mount(archived = false) {
 beforeEach(() => {
   http.reset()
   http.onGet("/workouts/drafts").reply(200, { items: [], nextCursor: null })
+  http.onGet("/workouts/anamneses/client/c1").reply(200, [])
   http.onGet("/workouts/client/c1/overview").reply(200, overview)
   http.onGet("/assessments/client/c1").reply(200, [assessment, { ...assessment, id: "a2", squat1RM: 70, date: "2026-09-14T12:00:00Z" }])
 })
@@ -27,7 +28,7 @@ afterEach(cleanup)
 it("does_not_query_other_domains", async () => {
   mount()
   expect(await screen.findByText("Treino de força")).toBeVisible()
-  expect(http.history.get.map(request => request.url).sort()).toEqual(["/assessments/client/c1", "/workouts/client/c1/overview", "/workouts/drafts"])
+  expect(http.history.get.map(request => request.url).sort()).toEqual(["/assessments/client/c1", "/workouts/anamneses/client/c1", "/workouts/client/c1/overview", "/workouts/drafts"])
   expect(screen.queryByText(/em migração/i)).not.toBeInTheDocument()
   expect(screen.getByRole("link", { name: "Ver ficha" })).toHaveAttribute("href", "/clientes/c1/treinos/w1")
   expect(screen.getByRole("link", { name: "Criar prescrição" })).toHaveAttribute("href", "/clientes/c1/novo-treino")
@@ -107,4 +108,54 @@ it("refreshes assessment history after a pending dialog save", async () => {
   expect(within(history).getByText("95 kg")).toBeInTheDocument()
   expect(screen.queryByText("Avaliações indisponíveis")).not.toBeInTheDocument()
   expect(http.history.get.filter(request => request.url === "/assessments/client/c1")).toHaveLength(2)
+})
+
+
+it("displays PAR-Q+ warning, mapped equipment and saves a new training anamnesis", async () => {
+  const user = userEvent.setup()
+  const savedAnamnesis = {
+    id: "ta-1",
+    clientId: "c1",
+    parqAnswers: {
+      heartCondition: false,
+      chestPainActivity: false,
+      chestPainRest: false,
+      dizzinessOrSyncope: false,
+      boneOrJointProblem: true,
+      bloodPressureMedication: false,
+      otherReason: false,
+    },
+    hasPositiveParq: true,
+    medicalClearanceNotes: "Liberado pelo ortopedista",
+    musculoskeletalHistory: "Condromalácia patelar leve",
+    trainingExperience: "INTERMEDIATE",
+    daysPerWeek: 4,
+    maxSessionMinutes: 50,
+    environment: "CONDO_GYM",
+    availableEquipment: ["DUMBBELL", "CABLE", "BODYWEIGHT"],
+    notes: "Treina antes do trabalho",
+    createdAt: "2026-11-06T12:00:00Z",
+    updatedAt: "2026-11-06T12:00:00Z",
+  }
+  http.onPost("/workouts/anamneses").reply(config => {
+    http.onGet("/workouts/anamneses/client/c1").reply(200, [savedAnamnesis])
+    return [201, { ...savedAnamnesis, ...(JSON.parse(config.data as string) as object) }]
+  })
+
+  mount()
+  await screen.findByText("Treino de força")
+  await user.click(screen.getByRole("button", { name: "Nova anamnese / PAR-Q+" }))
+  await user.click(screen.getByLabelText(/lesão óssea, articular ou tendínea/i))
+  await user.selectOptions(
+    screen.getByLabelText("Ambiente principal de treino do aluno"),
+    "CONDO_GYM",
+  )
+  await user.click(screen.getByRole("button", { name: "Salvar anamnese / PAR-Q+" }))
+
+  const section = await screen.findByRole("region", {
+    name: "Triagem PAR-Q+ e Ambiente de Treino",
+  })
+  expect(await within(section).findByText(/PAR-Q\+ positivo/i)).toBeVisible()
+  expect(within(section).getByText("Academia de condomínio / hotel")).toBeVisible()
+  expect(within(section).getByText("Halteres")).toBeVisible()
 })

@@ -4,15 +4,25 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, TrendingUp } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
 import { useEvolution } from "@/hooks/features/useEvolution"
 import { EvolutionSummaryCards } from "@/components/features/evolution/EvolutionSummaryCards"
 import { ClientEvolutionList } from "@/components/features/evolution/ClientEvolutionList"
 import { ClientEvolutionDetail } from "@/components/features/evolution/ClientEvolutionDetail"
+import { PersonalEvolutionWorkspace } from "@/components/features/evolution/personal/PersonalEvolutionWorkspace"
 import { AssessmentModal } from "@/components/AssessmentModal"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { Button } from "@/components/ui/button"
 
 export default function EvolucaoPage() {
+  const { user } = useAuth()
+  if (user?.role === "PERSONAL") {
+    return <PersonalEvolutionWorkspace />
+  }
+  return <NutritionEvolutionPage />
+}
+
+function NutritionEvolutionPage() {
   const router = useRouter()
   const { clientEvolutions, summary, loading, error, refetch } = useEvolution()
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null)

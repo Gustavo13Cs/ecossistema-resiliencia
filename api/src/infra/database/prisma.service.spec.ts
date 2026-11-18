@@ -11,6 +11,9 @@ describe('Clinical database boundary', () => {
     expect(() => prisma.workoutDraft).toThrow(
       'Clinical database context required',
     );
+    expect(() => prisma.trainingAnamnesis).toThrow(
+      'Clinical database context required',
+    );
     expect(() => prisma.client).toThrow('Clinical database context required');
     expect(() => prisma.$queryRaw).toThrow(
       'Clinical database context required',

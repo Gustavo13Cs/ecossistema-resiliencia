@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { useClientRecord } from "@/hooks/features/useClientRecord"
+import { useTrainingAnamnesis } from "@/hooks/features/useTrainingAnamnesis"
 import { useWorkouts } from "@/hooks/features/useWorkouts"
 import { useWorkoutDrafts } from "@/hooks/features/useWorkoutDrafts"
 import { AsyncState } from "@/components/feedback/AsyncState"
@@ -24,7 +25,7 @@ export function WorkoutDraftWorkspace({ clientId, draftId }: { clientId: string;
   if (!user?.sub || user.role !== "PERSONAL") return <AsyncState kind="error" title="Área de treinamento indisponível" description="Esta rota é exclusiva para profissionais de Educação Física." />
   return <WorkoutDocumentBoundary key={`${user.sub}:${clientId}:${draftId ?? "new"}`}><ResolveClient owner={user.sub} clientId={clientId} draftId={draftId} /></WorkoutDocumentBoundary>
 }
-function ResolveClient({ owner, clientId, draftId }: { owner: string; clientId: string; draftId?: string }) {
+function ResolveClient({ owner, clientId, draftId }: { clientId: string; owner: string; draftId?: string }) {
   const { client, status, refetch } = useClientRecord(clientId)
   const [verifiedClient, setVerifiedClient] = useState<Client | null>(null)
   const matches = client?.id === clientId && client?.professionalId === owner
@@ -52,6 +53,7 @@ function AccessDenied() {
 function DraftContext({ client, draftId }: { client: Client; draftId?: string }) {
   const router = useRouter()
   const { activeQuery } = useWorkouts({ clientId: client.id })
+  const anamnesis = useTrainingAnamnesis(client.id)
   const drafts = useWorkoutDrafts({ clientId: client.id, draftId, accessError: activeQuery.error })
   const [editing, setEditing] = useState(Boolean(draftId))
   const [pickingTemplate, setPickingTemplate] = useState(false)
@@ -71,7 +73,7 @@ function DraftContext({ client, draftId }: { client: Client; draftId?: string })
   const ownClosure = incomingDraft?.id === draftId && incomingDraft?.clientId === client.id && closingMutation &&
     (closingMutation.isPending || (closingMutation.data?.id === draftId && closingMutation.data?.status === incomingDraft.status))
   const draft = draftId ? ownClosure && verifiedDraft ? verifiedDraft : incomingDraft ?? (retryable ? verifiedDraft : null) : null
-  const accessDenied = denied || draftAccessDenied(query.error) || draftAccessDenied(activeQuery.error)
+  const accessDenied = denied || anamnesis.accessDenied || draftAccessDenied(query.error) || draftAccessDenied(activeQuery.error)
   const nextVerifiedDraft = !accessDenied && draft?.id === draftId && draft?.clientId === client.id && draft.status === "OPEN" ? draft : null
   // Ajuste condicionado aos dados da própria renderização; limpa também em erro duro.
   if (verifiedDraft !== nextVerifiedDraft) setVerifiedDraft(nextVerifiedDraft)
@@ -83,7 +85,7 @@ function DraftContext({ client, draftId }: { client: Client; draftId?: string })
   if (draftId && (!draft || draft.id !== draftId || draft.clientId !== client.id)) return <AsyncState kind="error" title="Rascunho indisponível" description="A elaboração não pertence ao prontuário solicitado." />
   if (draft && draft.status !== "OPEN") return <AsyncState kind="empty" title={draft.status === "FINALIZED" ? "Prescrição finalizada" : "Rascunho descartado"} description="Esta elaboração já foi encerrada." action={draft.status === "FINALIZED" && draft.finalizedWorkoutId ? <Link href={`/clientes/${client.id}/treinos/${draft.finalizedWorkoutId}`}>Abrir ficha finalizada</Link> : <Link href={`/clientes/${client.id}`}>Voltar ao prontuário</Link>} />
   // A criação invalida a lista; sua resposta não pode trocar a prop draft durante create→finalize.
-  if (editing) return <>{query.error ? error : null}<WorkoutDraftEditor client={client} draft={draft ?? null}
+  if (editing) return <>{query.error ? error : null}<WorkoutDraftEditor client={client} draft={draft ?? null} studentAnamnesis={anamnesis.latestAnamnesis}
     onCreate={content => drafts.createMutation.mutateAsync({ content })}
     onSave={input => drafts.saveMutation.mutateAsync(input)}
     onFinalize={input => drafts.finalizeMutation.mutateAsync(input)}

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { isAxiosError } from "axios"
+import { AlertTriangle, ShieldCheck } from "lucide-react"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { Button } from "@/components/ui/button"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle } from "@/components/ui/alert-dialog"
@@ -16,6 +17,11 @@ import { fromDraftContent, toDraftContent, validateDraftForm } from "@/lib/worko
 import { adoptSavedFormDemonstrations } from "@/lib/exercise-reference"
 import { createEmptyWorkoutForm, createWorkoutExercise, createWorkoutSplit, duplicateExercise, duplicateSplit, moveItem, suggestedSecondaryMuscles, validateWorkoutForm, type WorkoutForm, type WorkoutFormSplit } from "@/lib/workout-form"
 import type { Client } from "@/types/client"
+import {
+  TRAINING_ENVIRONMENT_LABELS,
+  TRAINING_EXPERIENCE_LABELS,
+  type TrainingAnamnesisRecord,
+} from "@/types/training-anamnesis"
 import type { WorkoutPrescription } from "@/types/workout"
 import type { DraftAck, DraftContentInput, DraftRebaseInput, DraftSaveInput, DraftVersionInput, FinalizedDraftResult, WorkoutDraftResource } from "@/types/workout-draft"
 import { useWeeklyVolumeSummary } from "@/hooks/features/useWeeklyVolumeSummary"
@@ -26,6 +32,7 @@ import { WorkoutSplitCard } from "./WorkoutSplitCard"
 export interface WorkoutDraftEditorProps {
   client: Client
   draft: WorkoutDraftResource | null
+  studentAnamnesis?: TrainingAnamnesisRecord | null
   onCreate: (content: DraftContentInput) => Promise<WorkoutDraftResource>
   onSave: (input: DraftSaveInput) => Promise<WorkoutDraftResource>
   onFinalize: (input: DraftVersionInput) => Promise<FinalizedDraftResult>
@@ -63,7 +70,7 @@ function initialForm(draft: WorkoutDraftResource | null) {
   return draft?.content ? fromDraftContent(draft.content) : createEmptyWorkoutForm()
 }
 
-function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onRebase, onDiscard, onLoadActiveWorkout, onAccessDenied }: WorkoutDraftEditorProps) {
+function DraftEditorSession({ client, draft, studentAnamnesis, onCreate, onSave, onFinalize, onRebase, onDiscard, onLoadActiveWorkout, onAccessDenied }: WorkoutDraftEditorProps) {
   const router = useRouter()
   const [resource, setResource] = useState(draft)
   const [form, setForm] = useState(() => initialForm(draft))
@@ -270,6 +277,58 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
       </div>
       {archived ? <p role="status">Aluno arquivado. Rascunho disponível apenas para leitura.</p> : null}
       <p role="status" aria-live="polite">{busy === "save" || busy === "create" ? "Salvando" : dirty ? "Alterações não salvas" : savedAt ? `Rascunho salvo às ${savedAt}` : "Salve o rascunho para retomar depois."}</p>
+      {studentAnamnesis ? (
+        <div
+          data-testid="student-anamnesis-banner"
+          className="space-y-2 rounded-[var(--sm-radius-md)] border border-[var(--sm-border)] bg-[var(--sm-surface)] p-4 text-xs"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-extrabold uppercase tracking-wider text-[var(--sm-muted)]">
+              Contexto do aluno
+            </span>
+            {studentAnamnesis.hasPositiveParq ? (
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 font-semibold text-amber-800 dark:text-amber-300">
+                <AlertTriangle className="size-3.5" aria-hidden="true" />
+                PAR-Q+ com cautela
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-0.5 font-semibold text-emerald-800 dark:text-emerald-300">
+                <ShieldCheck className="size-3.5" aria-hidden="true" />
+                PAR-Q+ liberado
+              </span>
+            )}
+            <span className="rounded-full border border-[var(--sm-border)] px-2.5 py-0.5 font-semibold text-[var(--sm-ink)]">
+              {TRAINING_ENVIRONMENT_LABELS[studentAnamnesis.environment]}
+            </span>
+            {studentAnamnesis.trainingExperience ? (
+              <span className="rounded-full border border-[var(--sm-border)] px-2.5 py-0.5 font-semibold text-[var(--sm-ink)]">
+                {TRAINING_EXPERIENCE_LABELS[studentAnamnesis.trainingExperience]}
+              </span>
+            ) : null}
+            {studentAnamnesis.daysPerWeek ? (
+              <span className="rounded-full border border-[var(--sm-border)] px-2.5 py-0.5 font-semibold text-[var(--sm-muted)] tabular-nums">
+                {studentAnamnesis.daysPerWeek}x/sem
+                {studentAnamnesis.maxSessionMinutes ? ` · até ${studentAnamnesis.maxSessionMinutes} min` : ""}
+              </span>
+            ) : null}
+            <span className="rounded-full border border-[var(--sm-border)] px-2.5 py-0.5 font-semibold text-[var(--sm-muted)] tabular-nums">
+              {studentAnamnesis.availableEquipment.length} equipamentos mapeados
+            </span>
+          </div>
+          {studentAnamnesis.musculoskeletalHistory ? (
+            <p className="text-[var(--sm-ink)]">
+              <strong className="font-semibold">Restrições / histórico:</strong>{" "}
+              {studentAnamnesis.musculoskeletalHistory}
+            </p>
+          ) : null}
+          {studentAnamnesis.hasPositiveParq && studentAnamnesis.medicalClearanceNotes ? (
+            <p className="text-amber-900 dark:text-amber-200">
+              <strong className="font-semibold">Liberação médica:</strong>{" "}
+              {studentAnamnesis.medicalClearanceNotes}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       {handoff ? <div className="space-y-3">
         <p role="status">O rascunho foi salvo. Abrindo a página para continuar.</p>
         <div className="flex flex-wrap items-center gap-3">
@@ -289,7 +348,7 @@ function DraftEditorSession({ client, draft, onCreate, onSave, onFinalize, onReb
       <PeriodizationEditor durationWeeks={form.durationWeeks} value={form.periodization} splits={form.splits} disabled={fieldsDisabled} onChange={(periodization, durationWeeks) => edit(current => ({ ...current, periodization, ...(durationWeeks !== undefined ? { durationWeeks } : {}) }))} />
       <WeeklyVolumePanel summary={weeklyVolume} splits={form.splits} />
       {form.splits.map((split, index) => <WorkoutSplitCard
-        key={split.id} split={split} splitIndex={index} totalSplits={form.splits.length} disabled={fieldsDisabled} errors={errors}
+        key={split.id} split={split} splitIndex={index} totalSplits={form.splits.length} disabled={fieldsDisabled} availableEquipment={studentAnamnesis?.availableEquipment ?? null} errors={errors}
         onUpdateField={(field, value) => updateSplit(split.id, item => ({ ...item, [field]: value }))}
         onMoveSplitUp={() => edit(current => ({ ...current, splits: moveItem(current.splits, index, -1) }))}
         onMoveSplitDown={() => edit(current => ({ ...current, splits: moveItem(current.splits, index, 1) }))}

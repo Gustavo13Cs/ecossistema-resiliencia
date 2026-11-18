@@ -68,6 +68,8 @@ model User {
 
   workoutTemplates WorkoutTemplate[] @relation("ProfessionalWorkoutTemplates")
 
+  trainingAnamneses TrainingAnamnesis[] @relation("ProfessionalTrainingAnamneses")
+
   customExercises CustomExercise[] @relation("ProfessionalCustomExercises")
 
   assessments PhysicalAssessment[] @relation("UserAssessments")
@@ -242,6 +244,7 @@ model Client {
   appointments      Appointment[]        @relation("ClientAppointments")
   workouts          Workout[]            @relation("ClientWorkouts")
   workoutDrafts     WorkoutDraft[]       @relation("ClientWorkoutDrafts")
+  trainingAnamneses TrainingAnamnesis[]  @relation("ClientTrainingAnamneses")
   physioAssessments PhysioAssessment[]   @relation("ClientPhysioAssessments")
   rehabPlans        RehabPlan[]          @relation("ClientRehabPlans")
   trackings         DailyTracking[]      @relation("ClientTrackings")
@@ -708,6 +711,14 @@ enum ExerciseEquipment {
   BAND
   BODYWEIGHT
   OTHER
+}
+
+enum TrainingEnvironment {
+  FULL_GYM
+  CONDO_GYM
+  STUDIO
+  HOME
+  OUTDOOR
 }
 
 enum ExerciseLibrarySource {
@@ -1319,12 +1330,39 @@ model WorkoutTemplate {
   goal String
   level String
   targetAudience String?
+  environment TrainingEnvironment?
   estimatedWeeks Int @default(8)
   schemaVersion Int @default(3)
   content Json
+  archivedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([professionalId, createdAt, id])
+  @@index([professionalId, archivedAt, createdAt, id])
   @@map("workout_templates")
+}
+
+model TrainingAnamnesis {
+  id                     String              @id @default(uuid())
+  clientId               String
+  client                 Client              @relation("ClientTrainingAnamneses", fields: [clientId], references: [id], onDelete: Restrict)
+  professionalId         String
+  professional           User                @relation("ProfessionalTrainingAnamneses", fields: [professionalId], references: [id], onDelete: Restrict)
+  parqAnswers            Json
+  hasPositiveParq        Boolean             @default(false)
+  medicalClearanceNotes  String?             @db.Text
+  musculoskeletalHistory String?             @db.Text
+  trainingExperience     String?
+  daysPerWeek            Int?
+  maxSessionMinutes      Int?
+  environment            TrainingEnvironment
+  availableEquipment     ExerciseEquipment[]
+  notes                  String?             @db.Text
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+
+  @@index([professionalId, clientId, createdAt(sort: Desc)])
+  @@index([clientId, createdAt(sort: Desc)])
+  @@map("training_anamneses")
 }

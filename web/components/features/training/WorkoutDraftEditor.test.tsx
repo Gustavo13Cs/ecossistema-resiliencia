@@ -354,6 +354,43 @@ describe("WorkoutDraftEditor", () => {
     expect(window.dispatchEvent(new Event("beforeunload", { cancelable: true }))).toBe(false)
     unmount(); expect(window.dispatchEvent(new Event("beforeunload", { cancelable: true }))).toBe(true)
   })
+  it("displays student PAR-Q+ and environment context banner when studentAnamnesis is provided", () => {
+    const p = props({
+      studentAnamnesis: {
+        id: "ta-1",
+        clientId: "c1",
+        parqAnswers: {
+          heartCondition: false,
+          chestPainActivity: false,
+          chestPainRest: false,
+          dizzinessOrSyncope: false,
+          boneOrJointProblem: true,
+          bloodPressureMedication: false,
+          otherReason: false,
+        },
+        hasPositiveParq: true,
+        medicalClearanceNotes: "Liberado pelo ortopedista com cautela em agachamento profundo",
+        musculoskeletalHistory: "Tendinopatia patelar bilateral leve",
+        trainingExperience: "INTERMEDIATE",
+        daysPerWeek: 4,
+        maxSessionMinutes: 50,
+        environment: "CONDO_GYM",
+        availableEquipment: ["DUMBBELL", "CABLE", "BODYWEIGHT"],
+        notes: null,
+        createdAt: "2026-11-06T12:00:00Z",
+        updatedAt: "2026-11-06T12:00:00Z",
+      },
+    })
+    render(<WorkoutDraftEditor {...p} />)
+    const banner = screen.getByTestId("student-anamnesis-banner")
+    expect(within(banner).getByText("PAR-Q+ com cautela")).toBeVisible()
+    expect(within(banner).getByText("Academia de condomínio / hotel")).toBeVisible()
+    expect(within(banner).getByText("Intermediário")).toBeVisible()
+    expect(within(banner).getByText("4x/sem · até 50 min")).toBeVisible()
+    expect(within(banner).getByText("3 equipamentos mapeados")).toBeVisible()
+    expect(within(banner).getByText(/Tendinopatia patelar bilateral leve/)).toBeVisible()
+    expect(within(banner).getByText(/Liberado pelo ortopedista/)).toBeVisible()
+  })
 })
 
 afterEach(() => vi.unstubAllGlobals())

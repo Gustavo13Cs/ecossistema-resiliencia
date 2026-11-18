@@ -68,7 +68,7 @@ describe("workout Client contracts", () => {
     expect(payload.clientId).toBe("client-1")
     for (const field of ["userId", "patientId", "creatorId", "professionalId"]) expect(payload).not.toHaveProperty(field)
     expect(new Set(http.history.get.map(request => request.url))).toEqual(
-      new Set(["/clients/client-1", "/workouts/client/client-1/active", "/workouts/drafts"]),
+      new Set(["/clients/client-1", "/workouts/anamneses/client/client-1", "/workouts/client/client-1/active", "/workouts/drafts"]),
     )
   })
 

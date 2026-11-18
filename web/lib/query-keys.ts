@@ -8,6 +8,7 @@ export const queryKeys = {
   workoutDraft: (sub: string, clientId: string, draftId: string) => ["workout-drafts", sub, "client", clientId, "detail", draftId] as const,
   trainingWorkspace: (sub: string) => ["training-workspace", sub] as const,
   trainingOverview: (sub: string, clientId: string) => ["training-overview", sub, clientId] as const,
+  trainingAnamneses: (sub: string, clientId: string) => ["training-anamneses", sub, clientId] as const,
   workoutsRoot: (sub: string) => ["workouts", sub] as const,
   workouts: (sub: string) => ["workouts", sub, "list"] as const,
   workout: (sub: string, clientId: string, workoutId: string, week?: number) => ["workouts", sub, "client", clientId, "detail", workoutId, ...(week !== undefined ? ["week", String(week)] : [])] as const,
@@ -46,6 +47,7 @@ export const queryKeys = {
   dietHistory: (sessionUserId: string, patientId: string) => ["diet-history", sessionUserId, patientId] as const,
   dashboardSummary: (sessionUserId: string) => ["dashboard-summary", sessionUserId] as const,
   evolution: (sessionUserId: string) => ["evolution", sessionUserId] as const,
+  personalEvolution: (sessionUserId: string) => ["personal-evolution", sessionUserId] as const,
   recipesRoot: (sessionUserId: string) => ["recipes", sessionUserId] as const,
   recipes: (sessionUserId: string, filters: RecipeFilters) =>
     ["recipes", sessionUserId, filters] as const,

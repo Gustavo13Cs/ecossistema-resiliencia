@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { SaveWorkoutTemplateDialog } from "./SaveWorkoutTemplateDialog"
+import { WorkoutPrintDialog } from "./WorkoutPrintDialog"
 import { WorkoutPeriodizationView } from "./WorkoutPeriodizationView"
 import { WeeklyVolumePanel } from "./WeeklyVolumePanel"
 import { WorkoutRevisionAction } from "./WorkoutRevisionAction"
@@ -35,6 +36,7 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
     : undefined
   const [denied, setDenied] = useState(false)
   const [savingTemplate, setSavingTemplate] = useState(false)
+  const [exportingPdf, setExportingPdf] = useState(false)
   const archived = workout.client.status === "ARCHIVED"
   const statusLabel = workout.isActive ? "Treino ativo" : "Treino anterior"
 
@@ -56,6 +58,9 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
           <Link href={`/clientes/${workout.clientId}`} className={actionClass}>
             Voltar ao prontuário
           </Link>
+          <Button type="button" variant="outline" className="min-h-11" onClick={() => setExportingPdf(true)}>
+            Exportar PDF A4
+          </Button>
           <Button type="button" variant="outline" className="min-h-11" onClick={() => window.print()}>
             Imprimir ficha salva
           </Button>
@@ -209,6 +214,7 @@ export function WorkoutReadView({ workout }: { workout: WorkoutDetail }) {
         </p>
       </section>
       {savingTemplate ? <SaveWorkoutTemplateDialog open workout={workout} onClose={() => setSavingTemplate(false)} onAccessDenied={() => setDenied(true)} /> : null}
+      {exportingPdf ? <WorkoutPrintDialog open workout={workout} onClose={() => setExportingPdf(false)} /> : null}
       <ExerciseLibraryDetail open={Boolean(execution)} onOpenChange={open => { if (!open) setExecutionTarget(null) }} saved={execution ?? undefined} />
     </article>
   )

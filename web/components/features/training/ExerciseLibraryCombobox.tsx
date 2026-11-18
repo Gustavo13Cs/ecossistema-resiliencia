@@ -37,6 +37,7 @@ export interface ExerciseLibraryComboboxProps {
   currentName: string
   currentMuscleGroup: MuscleGroup | ""
   disabled?: boolean
+  availableEquipment?: readonly ExerciseEquipment[] | null
   onSelect: (selection: { name: string; muscleGroup: MuscleGroup; libraryReference: LibraryReference }) => void
 }
 
@@ -45,6 +46,7 @@ function ExerciseLibraryComboboxInner({
   currentName,
   currentMuscleGroup,
   disabled,
+  availableEquipment,
   onSelect,
 }: ExerciseLibraryComboboxProps) {
   const previewPrefix = useId()
@@ -55,6 +57,7 @@ function ExerciseLibraryComboboxInner({
   const [debouncedQuery, setDebouncedQuery] = useState("")
   const [groupFilter, setGroupFilter] = useState<MuscleGroup | "">("")
   const [equipmentFilter, setEquipmentFilter] = useState<ExerciseEquipment | "">("")
+  const [onlyStudentEquipment, setOnlyStudentEquipment] = useState(false)
   const [pendingSelection, setPendingSelection] = useState<{ id: string; owner: string } | null>(null)
   const [selectionError, setSelectionError] = useState<string | null>(null)
   const { user } = useAuth()
@@ -91,7 +94,10 @@ function ExerciseLibraryComboboxInner({
       enabled: open,
     })
 
-  const items = libraryQuery.data ?? []
+  const rawItems = libraryQuery.data ?? []
+  const items = availableEquipment != null && onlyStudentEquipment
+    ? rawItems.filter(item => !item.equipment || availableEquipment.includes(item.equipment))
+    : rawItems
   const customItems = items.filter(item => item.source === "CUSTOM")
   const catalogItems = items.filter(item => item.source === "CATALOG")
 
@@ -230,6 +236,18 @@ function ExerciseLibraryComboboxInner({
           </select>
         </div>
 
+        {availableEquipment != null ? (
+          <label className="flex min-h-10 cursor-pointer items-center gap-2 rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-canvas)] px-2.5 py-1.5 text-xs font-semibold">
+            <input
+              type="checkbox"
+              checked={onlyStudentEquipment}
+              onChange={event => setOnlyStudentEquipment(event.target.checked)}
+              className="size-4 accent-[var(--sm-brand)]"
+            />
+            <span>Somente equipamentos mapeados do aluno ({availableEquipment.length})</span>
+          </label>
+        ) : null}
+
         {selectionError ? <p role="alert" className="text-xs text-[var(--sm-danger)]">{selectionError}</p> : null}
         {pendingSelection && !selectionError ? <p role="status" className="text-xs">Conferindo exercício...</p> : null}
 
@@ -265,7 +283,13 @@ function ExerciseLibraryComboboxInner({
                           <p className="truncate font-semibold">{item.name}</p>
                           <p className="text-xs text-[var(--sm-muted)]">
                             {MUSCLE_GROUP_LABELS[item.muscleGroup]} · Próprio
+                            {item.equipment ? ` · ${EXERCISE_EQUIPMENT_LABELS[item.equipment]}` : ""}
                           </p>
+                          {availableEquipment != null && item.equipment && !availableEquipment.includes(item.equipment) ? (
+                            <p className="mt-0.5 text-[11px] font-semibold text-amber-800 dark:text-amber-300">
+                              Fora do ambiente do aluno (sem {EXERCISE_EQUIPMENT_LABELS[item.equipment]})
+                            </p>
+                          ) : null}
                         </div>
                         <button type="button" id={`${previewPrefix}-${item.id}`} aria-label={`Ver execução de ${item.name}`} className="min-h-11 min-w-11 shrink-0 rounded px-2 text-xs font-semibold text-[var(--sm-brand)] hover:bg-[var(--sm-subtle-hover)]" onKeyDown={event => event.stopPropagation()} onClick={event => { event.stopPropagation(); beginIntent(); setPreviewId(item.id) }}>Ver execução</button>
                         <button
@@ -301,6 +325,11 @@ function ExerciseLibraryComboboxInner({
                               ? ` · ${EXERCISE_EQUIPMENT_LABELS[item.equipment]}`
                               : ""}
                           </p>
+                          {availableEquipment != null && item.equipment && !availableEquipment.includes(item.equipment) ? (
+                            <p className="mt-0.5 text-[11px] font-semibold text-amber-800 dark:text-amber-300">
+                              Fora do ambiente do aluno (sem {EXERCISE_EQUIPMENT_LABELS[item.equipment]})
+                            </p>
+                          ) : null}
                         </div>
                         <button type="button" id={`${previewPrefix}-${item.id}`} aria-label={`Ver execução de ${item.name}`} className="min-h-11 min-w-11 shrink-0 rounded px-2 text-xs font-semibold text-[var(--sm-brand)] hover:bg-[var(--sm-subtle-hover)]" onKeyDown={event => event.stopPropagation()} onClick={event => { event.stopPropagation(); beginIntent(); setPreviewId(item.id) }}>Ver execução</button>
                       </CommandItem>

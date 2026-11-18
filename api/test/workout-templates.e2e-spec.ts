@@ -550,7 +550,29 @@ describe('Workout templates HTTP and real LOGIN RLS', () => {
           () =>
             service.workoutTemplate.update({
               where: { id: template.id },
-              data: { title: 'Changed' },
+              data: { professionalId: null },
+            }),
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.runAsProfessional(
+          { ...actor, sessionId: 'synthetic-template-rls' },
+          'template-rls',
+          () =>
+            service.workoutTemplate.update({
+              where: { id: template.id },
+              data: { title: 'Updated own private model' },
+            }),
+        ),
+      ).resolves.toMatchObject({ title: 'Updated own private model' });
+      await expect(
+        service.runAsProfessional(
+          { ...other, sessionId: 'synthetic-template-rls' },
+          'template-rls',
+          () =>
+            service.workoutTemplate.update({
+              where: { id: template.id },
+              data: { title: 'Foreign attempt' },
             }),
         ),
       ).rejects.toThrow();
