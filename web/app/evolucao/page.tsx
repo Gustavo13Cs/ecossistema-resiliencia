@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -8,11 +9,15 @@ import { useAuth } from "@/contexts/auth-context"
 import { useEvolution } from "@/hooks/features/useEvolution"
 import { EvolutionSummaryCards } from "@/components/features/evolution/EvolutionSummaryCards"
 import { ClientEvolutionList } from "@/components/features/evolution/ClientEvolutionList"
-import { ClientEvolutionDetail } from "@/components/features/evolution/ClientEvolutionDetail"
 import { PersonalEvolutionWorkspace } from "@/components/features/evolution/personal/PersonalEvolutionWorkspace"
 import { AssessmentModal } from "@/components/AssessmentModal"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { Button } from "@/components/ui/button"
+
+const ClientEvolutionDetail = dynamic(
+  () => import("@/components/features/evolution/ClientEvolutionDetail").then((module) => module.ClientEvolutionDetail),
+  { loading: () => <AsyncState kind="loading" title="Carregando detalhes" description="Preparando a visualização dos dados..." /> },
+)
 
 export default function EvolucaoPage() {
   const { user } = useAuth()

@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -21,7 +22,11 @@ import { PersonalAssessmentDialog } from "@/components/features/training/Persona
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { PersonalEvolutionDetail } from "./PersonalEvolutionDetail"
+
+const PersonalEvolutionDetail = dynamic(
+  () => import("./PersonalEvolutionDetail").then((module) => module.PersonalEvolutionDetail),
+  { loading: () => <AsyncState kind="loading" title="Carregando detalhes" description="Preparando a visualização dos dados..." /> },
+)
 
 type FilterMode = "all" | "with_1rm" | "multi_assessments"
 

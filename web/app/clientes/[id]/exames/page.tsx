@@ -9,8 +9,17 @@ import { ArrowLeft, Save, Plus, Trash2, ActivitySquare, LineChart as ChartIcon, 
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useLabExams } from "@/hooks/features/useLabExams"
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts"
+import dynamic from "next/dynamic"
 import { toast } from "sonner"
+
+// A consulta permanece imediata; a biblioteca gráfica carrega quando há dados para exibir.
+const MarkerHistoryChart = dynamic(
+  () => import("@/components/features/lab-exams/MarkerHistoryChart").then((module) => module.MarkerHistoryChart),
+  {
+    ssr: false,
+    loading: () => <div className="mt-4 h-[400px] w-full animate-pulse rounded-lg bg-slate-100" role="status" aria-label="Carregando gráfico" />,
+  },
+)
 
 export default function ExamesLaboratoriaisPage() {
   const params = useParams()
@@ -82,20 +91,7 @@ export default function ExamesLaboratoriaisPage() {
                   </CardHeader>
                   <CardContent className="p-6 bg-white">
                      {chartData.length > 0 ? (
-                       <div className="h-[400px] w-full mt-4">
-                         <ResponsiveContainer width="100%" height="100%">
-                           <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                             <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                             <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} width={50} />
-                             <Tooltip 
-                               contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                               formatter={(value: number, name: string, props: any) => [`${value} ${props.payload.unit}`, selectedChartMarker]}
-                             />
-                             <Line type="monotone" dataKey="value" stroke="#e11d48" strokeWidth={3} dot={{ r: 6, strokeWidth: 2, fill: "#fff" }} activeDot={{ r: 8, fill: "#e11d48" }} />
-                           </LineChart>
-                         </ResponsiveContainer>
-                       </div>
+                       <MarkerHistoryChart data={chartData} marker={selectedChartMarker} />
                      ) : (
                        <p className="text-center text-slate-400 py-10">Dados insuficientes para gerar o gráfico.</p>
                      )}

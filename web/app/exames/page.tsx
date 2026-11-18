@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import React, { useState } from "react"
 import Link from "next/link"
 import {
@@ -30,14 +31,30 @@ import { Input } from "@/components/ui/input"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { useCentralLabExams } from "@/hooks/features/useCentralLabExams"
 import { LabExamsKpiSummary } from "@/components/features/lab-exams/LabExamsKpiSummary"
-import { LongitudinalMarkerChart } from "@/components/features/lab-exams/LongitudinalMarkerChart"
-import { ExamRegistryModal } from "@/components/features/lab-exams/ExamRegistryModal"
-import { ExamOrderIssuerModal } from "@/components/features/lab-exams/ExamOrderIssuerModal"
-import { LabExamDetailDrawer } from "@/components/features/lab-exams/LabExamDetailDrawer"
 import { ConsolidatedLabExam, ConsolidatedLabMarker, IssuedLabOrder, MarkerCategory, MarkerStatus } from "@/types/lab-exam"
 import { toast } from "sonner"
 import { buildLabOrderPrintHtml } from "@/lib/lab-print-document"
 import { openPrintWindow } from "@/lib/print-document"
+
+const LongitudinalMarkerChart = dynamic(
+  () => import("@/components/features/lab-exams/LongitudinalMarkerChart").then((module) => module.LongitudinalMarkerChart),
+  { loading: () => <AsyncState kind="loading" title="Carregando gráfico" description="Preparando a visualização dos dados..." /> },
+)
+
+const ExamRegistryModal = dynamic(
+  () => import("@/components/features/lab-exams/ExamRegistryModal").then((module) => module.ExamRegistryModal),
+  { loading: () => <AsyncState kind="loading" title="Carregando formulário" description="Preparando os campos para edição..." /> },
+)
+
+const ExamOrderIssuerModal = dynamic(
+  () => import("@/components/features/lab-exams/ExamOrderIssuerModal").then((module) => module.ExamOrderIssuerModal),
+  { loading: () => <AsyncState kind="loading" title="Carregando formulário" description="Preparando os campos para edição..." /> },
+)
+
+const LabExamDetailDrawer = dynamic(
+  () => import("@/components/features/lab-exams/LabExamDetailDrawer").then((module) => module.LabExamDetailDrawer),
+  { loading: () => <AsyncState kind="loading" title="Carregando detalhes" description="Preparando a visualização dos dados..." /> },
+)
 
 type MainTab = "exams" | "longitudinal" | "orders"
 

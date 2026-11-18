@@ -96,7 +96,7 @@ describe("professional Client record", () => {
     http.onPost("/physio-assessments").reply(201, { id: "assessment-one" })
     renderPage()
     fireEvent.click(screen.getByRole("button", { name: "Nova avaliação fisioterapêutica" }))
-    fireEvent.change(screen.getByPlaceholderText(/dor no joelho/i), { target: { value: "Queixa sintética" } })
+    fireEvent.change(await screen.findByPlaceholderText(/dor no joelho/i), { target: { value: "Queixa sintética" } })
     fireEvent.click(screen.getByRole("button", { name: "Salvar Avaliação Fisioterapêutica" }))
     await waitFor(() => expect(screen.queryByRole("button", { name: "Salvar Avaliação Fisioterapêutica" })).not.toBeInTheDocument())
     expect(JSON.parse(http.history.post[0].data as string)).toMatchObject({ clientId: "client-one", chiefComplaint: "Queixa sintética" })
