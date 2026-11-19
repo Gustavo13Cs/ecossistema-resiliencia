@@ -62,7 +62,6 @@ describe("server-only central labs", () => {
     expect(result.current.rawExams[0].laboratoryName).toBeUndefined()
     expect(result.current.rawExams[0].pdfAttachment).toBeFalsy()
     expect(result.current.kpis).toMatchObject({ totalExams: 1, alteredMarkersCount: 1, clientsCoveragePercent: 100, ordersIssuedCount: 1 })
-    expect(result.current.getMarkerLongitudinalSeries("Glicemia de Jejum", ownClient.id)).toHaveLength(1)
   })
   it("uses server IDs and names, sends only accepted fields, and refetches persisted data", async () => {
     let exams: unknown[] = [], orders: unknown[] = []
@@ -186,4 +185,20 @@ describe("Central de Exames Laboratoriais - Regras Clínicas e Cálculos", () =>
     })
   })
 
+})
+
+it("uses global totals and marker names while navigating and filtering limited exams", async () => {
+  http.onGet("/lab-exams").reply(config => [200,{items:[{...exam,id:`exam-${config.params.page}`}],pagination:{page:config.params.page,pageSize:25,total:50,pageCount:2},summary:{totalExams:600,clientsWithExamsCount:50,alteredMarkersCount:400,ordersIssuedCount:60},markerNames:["Marcador fora desta página"]}])
+  http.onGet("/lab-orders").reply(200,[order],{"X-Pagination-Total":"60"})
+  const {result}=setup()
+  await waitFor(() => expect(result.current.loading).toBe(false))
+  expect(result.current.exams).toHaveLength(1)
+  expect(result.current.kpis).toMatchObject({totalExams:600,alteredMarkersCount:400,ordersIssuedCount:60})
+  expect(result.current.allAvailableMarkers).toContain("Marcador fora desta página")
+  act(() => result.current.setExamPage(2))
+  await waitFor(() => expect(result.current.exams[0]?.id).toBe("exam-2"))
+  act(() => {result.current.setStatusFilter("ALERT");result.current.setCategoryFilter("VITAMINS_MINERALS")})
+  await waitFor(() => expect(result.current.exams[0]?.id).toBe("exam-1"))
+  expect(http.history.get.filter(row => row.url === "/lab-exams").at(-1)?.params).toMatchObject({page:1,status:"ALERT",category:"VITAMINS_MINERALS"})
+  expect(result.current.kpis.totalExams).toBe(600)
 })

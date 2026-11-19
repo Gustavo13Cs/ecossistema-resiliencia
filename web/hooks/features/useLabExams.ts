@@ -1,5 +1,6 @@
 "use client"
 
+import { collectPages, getArrayPage } from "@/lib/pagination"
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/auth-context"
@@ -24,7 +25,7 @@ export const useLabExams = (clientId: string) => {
   const query = useQuery({
     queryKey,
     enabled: Boolean(user?.sub && clientId),
-    queryFn: async () => (await api.get<LabExamRecord[]>(`/lab-exams/client/${clientId}`)).data,
+    queryFn: ({ signal }) => collectPages<LabExamRecord>(page => getArrayPage<LabExamRecord>(`/lab-exams/client/${clientId}`, { page, pageSize: 100 }, {}, signal)),
   })
   const exams = user?.sub ? query.data ?? [] : []
   const uniqueMarkers = Array.from(new Set(exams.flatMap(exam => exam.markers.map(marker => marker.name)))).sort()

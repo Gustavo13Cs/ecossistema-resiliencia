@@ -74,8 +74,8 @@ const renderDashboardHook = () => {
 }
 
 const replyWithEmptyLists = () => {
-  http.onGet("/clients", { params: { status: "ACTIVE" } }).reply(200, [])
-  http.onGet("/clients", { params: { status: "ARCHIVED" } }).reply(200, [])
+  http.onGet("/clients", { params: { status: "ACTIVE", page: 1, pageSize: 100 } }).reply(200, [])
+  http.onGet("/clients", { params: { status: "ARCHIVED", page: 1, pageSize: 100 } }).reply(200, [])
 }
 
 describe("useProfessionalDashboard", () => {
@@ -107,10 +107,10 @@ describe("useProfessionalDashboard", () => {
       makeClient("archived", "ARCHIVED", "2026-08-10T12:00:00.000Z"),
     ]
     http
-      .onGet("/clients", { params: { status: "ACTIVE" } })
+      .onGet("/clients", { params: { status: "ACTIVE", page: 1, pageSize: 100 } })
       .reply(200, activeClients)
     http
-      .onGet("/clients", { params: { status: "ARCHIVED" } })
+      .onGet("/clients", { params: { status: "ARCHIVED", page: 1, pageSize: 100 } })
       .reply(200, archivedClients)
 
     const { result } = renderDashboardHook()
@@ -161,10 +161,10 @@ describe("useProfessionalDashboard", () => {
     "maps HTTP %s to the private unavailable state instead of empty data",
     async (statusCode) => {
       http
-        .onGet("/clients", { params: { status: "ACTIVE" } })
+        .onGet("/clients", { params: { status: "ACTIVE", page: 1, pageSize: 100 } })
         .reply(statusCode)
       http
-        .onGet("/clients", { params: { status: "ARCHIVED" } })
+        .onGet("/clients", { params: { status: "ARCHIVED", page: 1, pageSize: 100 } })
         .reply(200, [])
 
       const { result } = renderDashboardHook()
@@ -176,10 +176,10 @@ describe("useProfessionalDashboard", () => {
 
   it("distinguishes a network failure from an empty client base", async () => {
     http
-      .onGet("/clients", { params: { status: "ACTIVE" } })
+      .onGet("/clients", { params: { status: "ACTIVE", page: 1, pageSize: 100 } })
       .networkError()
     http
-      .onGet("/clients", { params: { status: "ARCHIVED" } })
+      .onGet("/clients", { params: { status: "ARCHIVED", page: 1, pageSize: 100 } })
       .reply(200, [])
 
     const { result } = renderDashboardHook()
@@ -190,10 +190,10 @@ describe("useProfessionalDashboard", () => {
 
   it("distinguishes a server failure from an empty client base", async () => {
     http
-      .onGet("/clients", { params: { status: "ACTIVE" } })
+      .onGet("/clients", { params: { status: "ACTIVE", page: 1, pageSize: 100 } })
       .reply(503)
     http
-      .onGet("/clients", { params: { status: "ARCHIVED" } })
+      .onGet("/clients", { params: { status: "ARCHIVED", page: 1, pageSize: 100 } })
       .reply(200, [])
 
     const { result } = renderDashboardHook()

@@ -79,12 +79,9 @@ describe("ClientesPage status query", () => {
     navigation.search = ""
     navigation.replace.mockReset()
     http.reset()
-    http.onGet("/clients", { params: { status: "ACTIVE" } }).reply(200, [
-      makeClient("active", "Registro ativo", "ACTIVE"),
-    ])
-    http.onGet("/clients", { params: { status: "ARCHIVED" } }).reply(200, [
-      makeClient("archived", "Registro arquivado", "ARCHIVED"),
-    ])
+    http.onGet("/clients").reply(config => [200, config.params.status === "ARCHIVED"
+      ? [makeClient("archived", "Registro arquivado", "ARCHIVED")]
+      : [makeClient("active", "Registro ativo", "ACTIVE")]])
   })
 
   afterEach(cleanup)
@@ -98,7 +95,7 @@ describe("ClientesPage status query", () => {
     expect(screen.getByText("Pacientes arquivados")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Arquivados" })).toHaveAttribute("aria-pressed", "true")
     expect(
-      queryClient.getQueryCache().find({ queryKey: ["clients", "professional-one", "ARCHIVED"] }),
+      queryClient.getQueryCache().find({ queryKey: ["clients", "professional-one", "ARCHIVED"], exact: false }),
     ).toBeDefined()
 
     navigation.search = "status=ACTIVE"
@@ -149,7 +146,7 @@ describe("ClientesPage status query", () => {
     const pendingResponse = new Promise<[number, Client[] | { message: string }]>(resolve => {
       finishRequest = resolve
     })
-    http.onGet("/clients", { params: { status: "ACTIVE" } }).reply(() => pendingResponse)
+    http.onGet("/clients").reply(() => pendingResponse)
     renderPage()
 
     const loading = screen.getByRole("status", { name: "Carregando pacientes" })

@@ -14,7 +14,7 @@ afterEach(() => {
     http.reset();
 });
 it("fetches_only_active_clients_while_open_and_supports_keyboard_touch_and_close_focus", async () => {
-    http.onGet("/clients", { params: { status: "ACTIVE" } }).reply(200, [makeTestClient("c1", "Bruno", "ACTIVE")]);
+    http.onGet("/clients", { params: { status: "ACTIVE", page: 1, pageSize: 100 } }).reply(200, [makeTestClient("c1", "Bruno", "ACTIVE")]);
     const selected = vi.fn();
     function Harness() {
         const [open, setOpen] = useState(false);
@@ -36,7 +36,7 @@ it("fetches_only_active_clients_while_open_and_supports_keyboard_touch_and_close
     expect(selected).toHaveBeenCalledWith("c1");
     await waitFor(() => expect(trigger).toHaveFocus());
     expect(http.history.get).toHaveLength(1);
-    expect(http.history.get[0].params).toEqual({ status: "ACTIVE" });
+    expect(http.history.get[0].params).toEqual({ status: "ACTIVE", page: 1, pageSize: 100 });
 });
 it("reports_fetch_failure_instead_of_empty_list", async () => {
     http.onGet("/clients").reply(503);
