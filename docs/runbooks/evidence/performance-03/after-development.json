@@ -1,0 +1,81 @@
+{
+  "origin": "http://127.0.0.1:3105",
+  "method": {
+    "fixture": "one synthetic food; private session intercepted in browser",
+    "scope": "catalogue GET requests only; no production traffic",
+    "settleMs": 850,
+    "debounceMs": 500,
+    "viewport": "1440x900"
+  },
+  "counts": {
+    "initial": 1,
+    "source-TACO": 1,
+    "search": 1,
+    "clear": 1,
+    "source-TODAS": 1,
+    "reopen": 0,
+    "add-and-save": 0
+  },
+  "totalCatalogueRequests": 5,
+  "trace": [
+    {
+      "phase": "initial",
+      "path": "/foods",
+      "query": {
+        "source": [
+          "TODAS"
+        ]
+      },
+      "atMs": 4104.687282000043
+    },
+    {
+      "phase": "source-TACO",
+      "path": "/foods",
+      "query": {
+        "source": [
+          "TACO"
+        ]
+      },
+      "atMs": 5784.870638000029
+    },
+    {
+      "phase": "search",
+      "path": "/foods/search",
+      "query": {
+        "q": [
+          "arroz"
+        ],
+        "source": [
+          "TACO"
+        ]
+      },
+      "atMs": 7411.752201000013
+    },
+    {
+      "phase": "clear",
+      "path": "/foods",
+      "query": {
+        "source": [
+          "TACO"
+        ]
+      },
+      "atMs": 7925.463252000043
+    },
+    {
+      "phase": "source-TODAS",
+      "path": "/foods",
+      "query": {
+        "source": [
+          "TODAS"
+        ]
+      },
+      "atMs": 8889.855193000018
+    }
+  ],
+  "saveChecks": {
+    "singleSyntheticSave": true,
+    "clientId": "c1",
+    "foodId": "rice"
+  },
+  "errors": []
+}

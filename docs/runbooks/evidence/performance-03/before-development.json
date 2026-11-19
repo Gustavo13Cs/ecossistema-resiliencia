@@ -1,0 +1,111 @@
+{
+  "origin": "http://127.0.0.1:3105",
+  "method": {
+    "fixture": "one synthetic food; private session intercepted in browser",
+    "scope": "catalogue GET requests only; no production traffic",
+    "settleMs": 850,
+    "debounceMs": 500,
+    "viewport": "1440x900"
+  },
+  "counts": {
+    "initial": 2,
+    "source-TACO": 2,
+    "search": 1,
+    "clear": 1,
+    "source-TODAS": 2,
+    "reopen": 0,
+    "add-and-save": 0
+  },
+  "totalCatalogueRequests": 8,
+  "trace": [
+    {
+      "phase": "initial",
+      "path": "/foods",
+      "query": {
+        "source": [
+          "TODAS"
+        ]
+      },
+      "atMs": 8554.155804000004
+    },
+    {
+      "phase": "initial",
+      "path": "/foods",
+      "query": {
+        "source": [
+          "TODAS"
+        ]
+      },
+      "atMs": 9003.413249000005
+    },
+    {
+      "phase": "source-TACO",
+      "path": "/foods",
+      "query": {
+        "source": [
+          "TACO"
+        ]
+      },
+      "atMs": 10043.645138999978
+    },
+    {
+      "phase": "source-TACO",
+      "path": "/foods",
+      "query": {
+        "source": [
+          "TACO"
+        ]
+      },
+      "atMs": 10552.362054000014
+    },
+    {
+      "phase": "search",
+      "path": "/foods/search",
+      "query": {
+        "q": [
+          "arroz"
+        ],
+        "source": [
+          "TACO"
+        ]
+      },
+      "atMs": 11707.411977999982
+    },
+    {
+      "phase": "clear",
+      "path": "/foods",
+      "query": {
+        "source": [
+          "TACO"
+        ]
+      },
+      "atMs": 12621.816130000014
+    },
+    {
+      "phase": "source-TODAS",
+      "path": "/foods",
+      "query": {
+        "source": [
+          "TODAS"
+        ]
+      },
+      "atMs": 13024.034022000023
+    },
+    {
+      "phase": "source-TODAS",
+      "path": "/foods",
+      "query": {
+        "source": [
+          "TODAS"
+        ]
+      },
+      "atMs": 13533.71675599999
+    }
+  ],
+  "saveChecks": {
+    "singleSyntheticSave": true,
+    "clientId": "c1",
+    "foodId": "rice"
+  },
+  "errors": []
+}

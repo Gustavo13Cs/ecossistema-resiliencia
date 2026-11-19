@@ -9,6 +9,9 @@
 
 ## Personal P3 — concluído localmente em 24/10/2026
 
+- ✅ **Codex — Performance 03 (18/11/2026)**: catálogo da nova dieta unificado em `d208c02`; abertura/fonte2→1 e roteiro8→5requests (−37,5%) em produção local e desenvolvimento. Debounce500ms, filtros, CRUD e prescrição preservados; Strict Mode3→1 no teste de montagem e resposta obsoleta descartada. Web778/100, build/tipos/lint/32páginas e browser aprovados. Mesma branch, sem banco/API/auth ou deploy de produção. [Relatório e reprodução](runbooks/performance-03-food-catalogue.md).
+
+
 - ✅ **Codex — Performance 02 (17/11/2026)**: AVIF/WebP responsivos para a marca, qualidade85 e restrição local do otimizador em `dc27372`. 12 cenários antes/depois: imagens248.272→799–5.312bytes (−97,86% a−99,68%); nitidez/crops, alpha, dimensões porDPR eCLS0 conferidos. Web773, build/tipos/lint/32páginas e standalone isolado aprovados;22 variantes, fallbackPNG e6 bloqueios400. Sem API/banco/dependência/deploy de produção. [Relatório e reprodução](runbooks/performance-02-images.md).
 
 

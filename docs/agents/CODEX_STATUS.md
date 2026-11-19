@@ -8,6 +8,9 @@
 
 ## Current Task
 
+- **2026-11-18 — Performance 03 concluído e validado (Codex)**: `d208c02` unifica os efeitos do catálogo da nova dieta, mantém debounce500ms/mínimo2caracteres e cancela requisições obsoletas. Chromium com APIs sintéticas em produção local e desenvolvimento: abertura/troca de fonte2→1, roteiro8→5requests (−37,5%); reabertura inalterada0, busca/limpeza1. Teste Strict Mode pronto na montagem3→1; resposta antiga protegida. TDD baseline4falhas/1aprovado→5/5; suíte final778/100arquivos, build/tipos/lint e32páginas aprovados. Browser confirmou editar/excluir/cadastrar alimento e salvar com cliente/foodId corretos, sem GET extra. Sem API/banco/auth/dependências/produção alterados; mesma branch, commits/push autorizados. [Evidência, limites e rollback](../runbooks/performance-03-food-catalogue.md).
+
+
 - **2026-11-17 — Performance 02 concluído e validado (Codex)**: commit `dc27372`; Next/Image AVIF/WebP, qualidade85, tamanhos20–108px para a marca e allowlist local exclusiva `/logo.png`. PNG de248.272 bytes substituído por799–5.312 bytes de imagens por tela (−97,86% a−99,68%), 12 cenários antes/depois em Chromium desktop1×/2× e mobile3×. Dimensões CSS preservadas, variantes físicas exatas porDPR, transparência mantida e CLS0/0. Nove pares de crops; qualidade85 melhorou PSNR em todos. Web773/99, build/tipos/lint e pós-build32páginas aprovados. Standalone isolado fora do checkout passou22 formatos/tamanhos, fallbackPNG e6 bloqueiosHTTP400. Sem pacote novo, PNGs/ícones, mídia externa, API/banco/segurança/produção alterados. [Resultado, evidências e rollback](../runbooks/performance-02-images.md). Mesma branch de performance, commits/push autorizados; sem promoção de produção nesta etapa.
 
 
