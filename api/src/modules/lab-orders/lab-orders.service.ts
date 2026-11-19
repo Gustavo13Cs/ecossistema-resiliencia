@@ -1,3 +1,5 @@
+import { PageQueryDto } from '../../common/pagination/page-query.dto';
+import { pageWindow, paginationMeta } from '../../common/pagination/pagination';
 import {
   ForbiddenException,
   Injectable,
@@ -17,9 +19,30 @@ export class LabOrdersService {
     this.assertNutritionist(user);
     return this.prisma.labOrder.findMany({
       where: { professionalId: user.sub, client: { professionalId: user.sub } },
-      orderBy: { issuedAt: 'desc' },
+      orderBy: [{ issuedAt: 'desc' }, { id: 'desc' }],
+      take: 25,
+      skip: 0,
       include: { client: { select: { id: true, name: true } } },
     });
+  }
+  async findPage(user: AuthUser, query: PageQueryDto) {
+    this.assertNutritionist(user);
+    const where = {
+      professionalId: user.sub,
+      client: { professionalId: user.sub },
+    };
+    const { skip, take } = pageWindow(query);
+    const [items, total] = await Promise.all([
+      this.prisma.labOrder.findMany({
+        where,
+        skip,
+        take,
+        orderBy: [{ issuedAt: 'desc' }, { id: 'desc' }],
+        include: { client: { select: { id: true, name: true } } },
+      }),
+      this.prisma.labOrder.count({ where }),
+    ]);
+    return { items, pagination: paginationMeta(total, query) };
   }
   async create(user: AuthUser, dto: CreateLabOrderDto) {
     this.assertNutritionist(user);

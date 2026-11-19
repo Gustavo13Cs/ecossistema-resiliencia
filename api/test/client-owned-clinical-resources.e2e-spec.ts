@@ -192,14 +192,20 @@ describe('Client-owned clinical resources (PostgreSQL HTTP)', () => {
         .get(`/${domain.path}`)
         .set(asUser(a))
         .expect(200);
-      expect(own.body).toEqual(
-        expect.arrayContaining([expect.objectContaining({ id })]),
-      );
+      expect(
+        domain.path === 'lab-exams'
+          ? (own.body as { items: unknown[] }).items
+          : own.body,
+      ).toEqual(expect.arrayContaining([expect.objectContaining({ id })]));
       const other = await request(app.getHttpServer())
         .get(`/${domain.path}`)
         .set(asUser(b))
         .expect(200);
-      expect(other.body).toEqual([]);
+      expect(
+        domain.path === 'lab-exams'
+          ? (other.body as { items: unknown[] }).items
+          : other.body,
+      ).toEqual([]);
       await request(app.getHttpServer())
         .delete(`/${domain.path}/${id}`)
         .set(asUser(b))

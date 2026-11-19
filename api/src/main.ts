@@ -1,3 +1,4 @@
+import { PAGINATION_EXPOSED_HEADERS } from './common/pagination/pagination';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
@@ -58,6 +59,7 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
     credentials: true,
+    exposedHeaders: PAGINATION_EXPOSED_HEADERS,
   });
 
   app.use(createCsrfProtection(allowedOrigins));

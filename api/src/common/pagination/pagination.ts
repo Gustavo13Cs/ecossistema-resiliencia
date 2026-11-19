@@ -26,7 +26,18 @@ export function setPaginationHeaders(
   response.setHeader('X-Pagination-Page-Size', String(meta.pageSize));
   response.setHeader('X-Pagination-Total', String(meta.total));
 }
+export const PAGINATION_EXPOSED_HEADERS = [
+  'X-Pagination-Page',
+  'X-Pagination-Page-Size',
+  'X-Pagination-Total',
+  'Retry-After',
+];
+
+export function literalLike(value: string) {
+  return value.replace(/[\\%_]/g, '\\$&');
+}
+
 // Prisma usa LIKE/ILIKE; a busca da tela interpreta estes caracteres literalmente.
 export function literalContains(value: string) {
-  return value.trim().replace(/[\\%_]/g, '\\$&');
+  return literalLike(value.trim());
 }

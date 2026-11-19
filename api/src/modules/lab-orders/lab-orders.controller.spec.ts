@@ -17,8 +17,8 @@ describe('Laboratory aggregate routes and DTOs', () => {
   let app: INestApplication<App>;
   const id = '81000000-0000-4000-8000-000000000011';
   const user: AuthUser = { sub: 'professional-a', role: 'NUTRITIONIST' };
-  const orders = { list: jest.fn(), create: jest.fn(), remove: jest.fn() };
-  const exams = { findAll: jest.fn(), remove: jest.fn() };
+  const orders = { findPage: jest.fn(), create: jest.fn(), remove: jest.fn() };
+  const exams = { findPage: jest.fn(), remove: jest.fn() };
   const dto = {
     clientId: id,
     markers: ['Synthetic marker'],
@@ -56,6 +56,14 @@ describe('Laboratory aggregate routes and DTOs', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     user.role = 'NUTRITIONIST';
+    orders.findPage.mockResolvedValue({
+      items: [],
+      pagination: { page: 1, pageSize: 25, total: 0 },
+    });
+    exams.findPage.mockResolvedValue({
+      items: [],
+      pagination: { page: 1, pageSize: 25, total: 0 },
+    });
   });
   it('forwards authenticated identity for order create/list/delete', async () => {
     await request(app.getHttpServer())
@@ -68,13 +76,19 @@ describe('Laboratory aggregate routes and DTOs', () => {
       user,
       expect.objectContaining(dto),
     );
-    expect(orders.list).toHaveBeenCalledWith(user);
+    expect(orders.findPage).toHaveBeenCalledWith(
+      user,
+      expect.objectContaining({ page: 1, pageSize: 25 }),
+    );
     expect(orders.remove).toHaveBeenCalledWith(user, id);
   });
   it('forwards authenticated identity for aggregate exams and deletion', async () => {
     await request(app.getHttpServer()).get('/lab-exams').expect(200);
     await request(app.getHttpServer()).delete(`/lab-exams/${id}`).expect(200);
-    expect(exams.findAll).toHaveBeenCalledWith(user);
+    expect(exams.findPage).toHaveBeenCalledWith(
+      user,
+      expect.objectContaining({ page: 1, pageSize: 25 }),
+    );
     expect(exams.remove).toHaveBeenCalledWith(user, id);
   });
   it.each([
