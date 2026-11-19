@@ -167,9 +167,6 @@ export default function NovaDietaPage() {
   const [newFood, setNewFood] = useState({ name: "", kcal: 0, pro: 0, carb: 0, fat: 0, fiber: 0, sodium: 0, calcium: 0, iron: 0 })
 
   useEffect(() => {
-    if (canUseDietEditor && searchTerm.length === 0) void fetchFoods(selectedSource)
-  }, [canUseDietEditor, selectedSource])
-  useEffect(() => {
     if (!canUseDietEditor) {
       setLegacyDraftState(undefined)
       return
@@ -237,25 +234,37 @@ export default function NovaDietaPage() {
   }
 
   useEffect(() => {
-    if (!canUseDietEditor) return
-    const delayDebounceFn = setTimeout(async () => {
-      if (searchTerm.length >= 2) {
-        setIsSearching(true)
-        try {
-          const res = await api.get(`/foods/search?q=${searchTerm}&source=${selectedSource}`)
-          setAvailableFoods(res.data)
-        } catch (error) {} finally { setIsSearching(false) }
-      } else if (searchTerm.length === 0) { fetchFoods(selectedSource) }
-    }, 500)
-    return () => clearTimeout(delayDebounceFn)
-  }, [canUseDietEditor, searchTerm, selectedSource])
+    setIsSearching(false)
+    if (!canUseDietEditor || searchTerm.length === 1) return
 
-  const fetchFoods = async (source = "TODAS") => {
-    try {
-      const res = await api.get(`/foods?source=${source}`)
-      setAvailableFoods(res.data)
-    } catch (error) { }
-  }
+    const controller = new AbortController()
+    const isSearch = searchTerm.length >= 2
+    const endpoint = isSearch
+      ? `/foods/search?q=${searchTerm}&source=${selectedSource}`
+      : `/foods?source=${selectedSource}`
+
+    // Um único agendamento evita duplicação no replay de efeitos do Strict Mode.
+    const timer = setTimeout(() => {
+      const loadCatalogue = async () => {
+        if (isSearch) setIsSearching(true)
+        try {
+          const response = await api.get<FoodNutrition[]>(endpoint, { signal: controller.signal })
+          // Uma fonte ou busca anterior não pode substituir o resultado atual.
+          if (!controller.signal.aborted) setAvailableFoods(response.data)
+        } catch {
+          // Conserva o catálogo exibido quando há falha ou cancelamento.
+        } finally {
+          if (!controller.signal.aborted) setIsSearching(false)
+        }
+      }
+      void loadCatalogue()
+    }, isSearch ? 500 : 0)
+
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [canUseDietEditor, searchTerm, selectedSource, clientId, loggedInUser?.sub])
 
 
   const calcMacro = (value: number, baseAmount: number = 100, targetAmount: number) => Number(((value / baseAmount) * targetAmount).toFixed(1))
