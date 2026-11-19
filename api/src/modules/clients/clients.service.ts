@@ -1,3 +1,9 @@
+import { ListClientsQueryDto } from './dto/list-clients-query.dto';
+import {
+  pageWindow,
+  paginationMeta,
+  literalContains,
+} from '../../common/pagination/pagination';
 import {
   ConflictException,
   Injectable,
@@ -79,8 +85,39 @@ export class ClientsService {
   findAll(user: AuthUser, status: ClientStatus): Promise<Client[]> {
     return this.prisma.client.findMany({
       where: { professionalId: user.sub, status },
-      orderBy: [{ name: 'asc' }, { createdAt: 'desc' }],
+      orderBy: [{ name: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
+      take: 25,
+      skip: 0,
     });
+  }
+
+  async findPage(user: AuthUser, query: ListClientsQueryDto) {
+    const { skip, take } = pageWindow(query);
+    const search = query.q?.trim();
+    const where: Prisma.ClientWhereInput = {
+      professionalId: user.sub,
+      status: query.status ?? 'ACTIVE',
+      ...(search
+        ? {
+            OR: ['name', 'email', 'phone', 'goal'].map((field) => ({
+              [field]: {
+                contains: literalContains(search),
+                mode: 'insensitive',
+              },
+            })),
+          }
+        : {}),
+    };
+    const [items, total] = await Promise.all([
+      this.prisma.client.findMany({
+        where,
+        orderBy: [{ name: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
+        skip,
+        take,
+      }),
+      this.prisma.client.count({ where }),
+    ]);
+    return { items, pagination: paginationMeta(total, query) };
   }
 
   findOne(user: AuthUser, clientId: string): Promise<Client> {

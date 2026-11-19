@@ -8,6 +8,9 @@
 
 ## Current Task
 
+- **2026-11-18 — Performance 05 em diagnóstico/planejamento (Codex)**: paginação de clientes/exames, levantamento dos consumidores globais e seletores. Páginas25/máximo100, ordenação com ID, filtros e indicadores globais preservados; validação em PostgreSQL sintético com isolamento real e browser. Mesma branch; sem migrations ou alterações de RLS/permissões/produção.
+
+
 - **2026-11-18 — Performance 03 concluído e validado (Codex)**: `d208c02` unifica os efeitos do catálogo da nova dieta, mantém debounce500ms/mínimo2caracteres e cancela requisições obsoletas. Chromium com APIs sintéticas em produção local e desenvolvimento: abertura/troca de fonte2→1, roteiro8→5requests (−37,5%); reabertura inalterada0, busca/limpeza1. Teste Strict Mode pronto na montagem3→1; resposta antiga protegida. TDD baseline4falhas/1aprovado→5/5; suíte final778/100arquivos, build/tipos/lint e32páginas aprovados. Browser confirmou editar/excluir/cadastrar alimento e salvar com cliente/foodId corretos, sem GET extra. Sem API/banco/auth/dependências/produção alterados; mesma branch, commits/push autorizados. [Evidência, limites e rollback](../runbooks/performance-03-food-catalogue.md).
 
 

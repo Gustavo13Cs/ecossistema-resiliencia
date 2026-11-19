@@ -15,7 +15,7 @@ describe('ClientsController', () => {
   };
   const clientsService = {
     create: jest.fn(),
-    findAll: jest.fn(),
+    findPage: jest.fn(),
     findOne: jest.fn(),
     update: jest.fn(),
     setStatus: jest.fn(),
@@ -61,7 +61,10 @@ describe('ClientsController', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     clientsService.create.mockResolvedValue({ id: 'client-1', name: 'Ana' });
-    clientsService.findAll.mockResolvedValue([]);
+    clientsService.findPage.mockResolvedValue({
+      items: [],
+      pagination: { page: 1, pageSize: 25, total: 0 },
+    });
     clientsService.findOne.mockResolvedValue({ id: 'client-1', name: 'Ana' });
     clientsService.update.mockResolvedValue({ id: 'client-1', name: 'Ana' });
     clientsService.setStatus.mockResolvedValue({
@@ -102,9 +105,9 @@ describe('ClientsController', () => {
   it('uses ACTIVE as the default list status', async () => {
     await request(app.getHttpServer()).get('/clients').expect(200);
 
-    expect(clientsService.findAll).toHaveBeenCalledWith(
+    expect(clientsService.findPage).toHaveBeenCalledWith(
       authenticatedProfessional,
-      'ACTIVE',
+      expect.objectContaining({ page: 1, pageSize: 25 }),
     );
   });
 
@@ -114,9 +117,9 @@ describe('ClientsController', () => {
       .query({ status: 'ARCHIVED' })
       .expect(200);
 
-    expect(clientsService.findAll).toHaveBeenCalledWith(
+    expect(clientsService.findPage).toHaveBeenCalledWith(
       authenticatedProfessional,
-      'ARCHIVED',
+      expect.objectContaining({ status: 'ARCHIVED', page: 1, pageSize: 25 }),
     );
   });
 
@@ -126,7 +129,7 @@ describe('ClientsController', () => {
       .query({ status: 'DELETED' })
       .expect(400);
 
-    expect(clientsService.findAll).not.toHaveBeenCalled();
+    expect(clientsService.findPage).not.toHaveBeenCalled();
   });
 
   it('rejects an invalid client status', async () => {

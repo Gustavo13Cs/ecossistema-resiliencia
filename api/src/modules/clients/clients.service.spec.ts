@@ -89,7 +89,9 @@ describe('ClientsService', () => {
 
     expect(prisma.client.findMany).toHaveBeenCalledWith({
       where: { professionalId: 'pro-2', status: 'ACTIVE' },
-      orderBy: [{ name: 'asc' }, { createdAt: 'desc' }],
+      orderBy: [{ name: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
+      take: 25,
+      skip: 0,
     });
   });
 

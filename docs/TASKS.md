@@ -9,6 +9,9 @@
 
 ## Personal P3 — concluído localmente em 24/10/2026
 
+- 🔄 **Codex — Performance 05 (18/11/2026)**: paginação ponta a ponta de clientes e exames; planejamento, baseline e implementação em andamento.
+
+
 - ✅ **Codex — Performance 03 (18/11/2026)**: catálogo da nova dieta unificado em `d208c02`; abertura/fonte2→1 e roteiro8→5requests (−37,5%) em produção local e desenvolvimento. Debounce500ms, filtros, CRUD e prescrição preservados; Strict Mode3→1 no teste de montagem e resposta obsoleta descartada. Web778/100, build/tipos/lint/32páginas e browser aprovados. Mesma branch, sem banco/API/auth ou deploy de produção. [Relatório e reprodução](runbooks/performance-03-food-catalogue.md).
 
 
