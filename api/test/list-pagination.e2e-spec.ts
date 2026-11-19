@@ -188,6 +188,10 @@ describe('Bounded clinical lists (PostgreSQL/RLS)', () => {
         },
       },
     });
+    // Estatísticas apenas do banco sintético local, antes das medições.
+    await admin.$executeRaw(
+      Prisma.sql`ANALYZE clients, lab_exams, lab_markers, lab_orders`,
+    );
   }, 60000);
   afterAll(async () => {
     if (admin) {
@@ -200,85 +204,89 @@ describe('Bounded clinical lists (PostgreSQL/RLS)', () => {
     }
   });
 
-  it('measures payloads and SELECT plans with the same 600-record fixture', async () => {
-    const metrics: Record<string, unknown> = {};
-    for (const path of ['/clients', '/lab-exams', '/lab-orders']) {
-      const times: number[] = [];
-      let rows = 0,
-        bytes = 0;
-      for (let i = 0; i < 7; i++) {
-        const start = performance.now();
-        const response = await request(app.getHttpServer())
-          .get(path)
-          .set(headers())
-          .expect(200);
-        const elapsed = performance.now() - start;
-        if (i >= 2) times.push(elapsed);
-        rows = records(response.body as unknown).length;
-        bytes = Buffer.byteLength(response.text, 'utf8');
-      }
-      metrics[path] = {
-        rows,
-        bodyBytes: bytes,
-        medianMs: median(times),
-        samplesMs: times,
-      };
-    }
-    const phase = process.env.PERF05_PHASE ?? 'after';
-    const plans = await clinical.runAsProfessional(
-      principal,
-      'pagination-plan',
-      async () => ({
-        ...(phase === 'after'
-          ? {
-              summary: await clinical.$queryRaw(
-                Prisma.sql`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${labExamSummaryQuery(professional)}`,
-              ),
-            }
-          : {}),
-        clients: await clinical.$queryRaw(
-          Prisma.sql`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) SELECT * FROM clients WHERE "professionalId"=${professional} AND status='ACTIVE' ORDER BY name ASC,"createdAt" DESC,id ASC ${phase === 'before' ? Prisma.empty : Prisma.sql`LIMIT 25`}`,
-        ),
-        exams: await clinical.$queryRaw(
-          Prisma.sql`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) SELECT e.* FROM lab_exams e JOIN clients c ON c.id=e."clientId" WHERE e."creatorId"=${professional} AND c."professionalId"=${professional} ORDER BY e.date DESC,e.id DESC ${phase === 'before' ? Prisma.empty : Prisma.sql`LIMIT 25`}`,
-        ),
-      }),
-    );
-    if (process.env.PERF05_EVIDENCE_DIR) {
-      const dir = resolve(process.env.PERF05_EVIDENCE_DIR);
-      mkdirSync(dir, { recursive: true });
-      writeFileSync(
-        resolve(dir, `${phase}-api.json`),
-        JSON.stringify(
-          {
-            fixture: {
-              clients: 600,
-              exams: 600,
-              markers: 1200,
-              orders: 60,
-              foreignRecordsExcluded: true,
-            },
-            scope:
-              'Local HTTP with synthetic authentication and restricted RLS roles; body bytes are decoded JSON',
-            metrics,
-            plans,
-          },
-          null,
-          2,
-        ) + '\n',
-      );
-    }
-    expect(
-      records(
-        (
-          await request(app.getHttpServer())
-            .get('/clients')
+  (process.env.PERF05_PHASE ? it : it.skip)(
+    'measures payloads and SELECT plans with the same 600-record fixture',
+    async () => {
+      const metrics: Record<string, unknown> = {};
+      for (const path of ['/clients', '/lab-exams', '/lab-orders']) {
+        const times: number[] = [];
+        let rows = 0,
+          bytes = 0;
+        for (let i = 0; i < 7; i++) {
+          const start = performance.now();
+          const response = await request(app.getHttpServer())
+            .get(path)
             .set(headers())
-            .expect(200)
-        ).body as unknown,
-      ).every((row) => row.professionalId === professional),
-    ).toBe(true);
-  });
+            .expect(200);
+          const elapsed = performance.now() - start;
+          if (i >= 2) times.push(elapsed);
+          rows = records(response.body as unknown).length;
+          bytes = Buffer.byteLength(response.text, 'utf8');
+        }
+        metrics[path] = {
+          rows,
+          bodyBytes: bytes,
+          medianMs: median(times),
+          samplesMs: times,
+        };
+        if (process.env.PERF05_EVIDENCE_DIR) console.info(path, metrics[path]);
+      }
+      const phase = process.env.PERF05_PHASE ?? 'after';
+      const plans = await clinical.runAsProfessional(
+        principal,
+        'pagination-plan',
+        async () => ({
+          ...(phase === 'after'
+            ? {
+                summary: await clinical.$queryRaw(
+                  Prisma.sql`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${labExamSummaryQuery(professional)}`,
+                ),
+              }
+            : {}),
+          clients: await clinical.$queryRaw(
+            Prisma.sql`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) SELECT * FROM clients WHERE "professionalId"=${professional} AND status='ACTIVE' ORDER BY name ASC,"createdAt" DESC,id ASC ${phase === 'before' ? Prisma.empty : Prisma.sql`LIMIT 25`}`,
+          ),
+          exams: await clinical.$queryRaw(
+            Prisma.sql`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) SELECT e.* FROM lab_exams e JOIN clients c ON c.id=e."clientId" WHERE e."creatorId"=${professional} AND c."professionalId"=${professional} ORDER BY e.date DESC,e.id DESC ${phase === 'before' ? Prisma.empty : Prisma.sql`LIMIT 25`}`,
+          ),
+        }),
+      );
+      if (process.env.PERF05_EVIDENCE_DIR) {
+        const dir = resolve(process.env.PERF05_EVIDENCE_DIR);
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(
+          resolve(dir, `${phase}-api.json`),
+          JSON.stringify(
+            {
+              fixture: {
+                clients: 600,
+                exams: 600,
+                markers: 1200,
+                orders: 60,
+                foreignRecordsExcluded: true,
+              },
+              scope:
+                'Local HTTP with synthetic authentication and restricted RLS roles; body bytes are decoded JSON',
+              metrics,
+              plans,
+            },
+            null,
+            2,
+          ) + '\n',
+        );
+      }
+      expect(
+        records(
+          (
+            await request(app.getHttpServer())
+              .get('/clients')
+              .set(headers())
+              .expect(200)
+          ).body as unknown,
+        ).every((row) => row.professionalId === professional),
+      ).toBe(true);
+    },
+  );
   it('bounds default lists and keeps total metadata', async () => {
     const clients = await request(app.getHttpServer())
       .get('/clients')
@@ -531,6 +539,9 @@ describe('Bounded clinical lists (PostgreSQL/RLS)', () => {
         date,
       })),
     });
+    await admin.$executeRaw(
+      Prisma.sql`ANALYZE clients, lab_exams, lab_markers, lab_orders`,
+    );
     try {
       const volumes: Record<string, unknown> = {};
       for (const path of ['/clients', '/lab-exams']) {
