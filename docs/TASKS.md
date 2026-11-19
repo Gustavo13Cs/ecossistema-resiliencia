@@ -9,7 +9,7 @@
 
 ## Personal P3 — concluído localmente em 24/10/2026
 
-- 🔄 **Codex — Performance 05 (18/11/2026)**: paginação ponta a ponta de clientes e exames; planejamento, baseline e implementação em andamento.
+- ✅ **Codex — Performance 05 (19/11/2026)**: paginação de clientes, laudos e pedidos concluída; padrão de 25 e máximo de 100, filtros/ordem globais e históricos completos em lotes. JSON de clientes/exames cerca de 96% menor por página; mediana local de clientes −53,83%, exames +1,60% e pedidos +4,07 ms (tradeoffs descritos). Travessia de 1.105 registros íntegra; API 820, PostgreSQL 265 + benchmark/browser, web 787 + 2, builds/lint/tipos e desktop/mobile aprovados. Sem migration/RLS/produção. [Relatório e rollback](runbooks/performance-05-pagination.md).
 
 
 - ✅ **Codex — Performance 03 (18/11/2026)**: catálogo da nova dieta unificado em `d208c02`; abertura/fonte2→1 e roteiro8→5requests (−37,5%) em produção local e desenvolvimento. Debounce500ms, filtros, CRUD e prescrição preservados; Strict Mode3→1 no teste de montagem e resposta obsoleta descartada. Web778/100, build/tipos/lint/32páginas e browser aprovados. Mesma branch, sem banco/API/auth ou deploy de produção. [Relatório e reprodução](runbooks/performance-03-food-catalogue.md).
