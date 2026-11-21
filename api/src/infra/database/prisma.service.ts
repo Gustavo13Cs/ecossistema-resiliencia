@@ -2,6 +2,8 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { AuthUser } from '../../common/types/auth-user';
+import { elapsedMs } from '../../common/observability/observability.config';
+import { recordStageDuration } from '../../common/observability/request-telemetry.context';
 import { assertDatabaseRole, databaseClient } from './database-clients';
 
 function transactionBound(
@@ -110,10 +112,12 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     const identity = Object.freeze({ ...principal });
     return this.root.$transaction(
       async (tx) => {
+        const rlsStartNs = process.hrtime.bigint();
         await tx.$queryRaw`SELECT set_config('safemove.professional_id', ${identity.sub}, true),
         set_config('safemove.role', ${identity.role}, true),
         set_config('safemove.session_id', ${identity.sessionId}, true),
         set_config('safemove.request_id', ${requestId}, true)`;
+        recordStageDuration('rlsContextMs', elapsedMs(rlsStartNs));
         const context: Context = {
           tx,
           principal: identity,
