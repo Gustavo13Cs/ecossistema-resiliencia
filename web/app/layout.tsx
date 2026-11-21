@@ -7,6 +7,7 @@ import { DirectionContract } from '@/components/design/DirectionContract'
 import { LayoutWrapper } from '@/components/LayoutWrapper'
 import { Toaster } from 'sonner'
 import { QueryProvider } from '@/components/providers/QueryProvider'
+import { WebVitalsReporter } from '@/components/observability/WebVitalsReporter'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -43,6 +44,7 @@ export default async function RootLayout({
           </AuthProvider>
         </QueryProvider>
         <Toaster position="top-right" richColors />
+        <WebVitalsReporter />
       </body>
     </html>
   )

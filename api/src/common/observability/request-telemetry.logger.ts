@@ -15,6 +15,12 @@ import {
   setSlowQueryListener,
   type SlowQueryEvent,
 } from './request-telemetry.context';
+import type {
+  WebVitalDeviceCategory,
+  WebVitalMetricName,
+  WebVitalNavigationType,
+  WebVitalRating,
+} from './web-vitals-routes';
 
 export const OBSERVABILITY_LOG_WRITER = 'OBSERVABILITY_LOG_WRITER';
 
@@ -71,6 +77,15 @@ export interface MetricsSummaryPayload {
     dbP95Ms: number;
     dbSharePercent: number;
   }>;
+}
+
+export interface WebVitalLogPayload {
+  metric: WebVitalMetricName;
+  route: string;
+  device: WebVitalDeviceCategory;
+  rating: WebVitalRating;
+  value: number;
+  navigationType: WebVitalNavigationType;
 }
 
 function defaultWriter(line: string, level: 'info' | 'warn' | 'error'): void {
@@ -152,6 +167,25 @@ export class RequestTelemetryLogger implements OnModuleInit, OnModuleDestroy {
         topSlowRoutes: summary.topSlowRoutes,
       },
       'info',
+    );
+  }
+
+  logWebVital(
+    payload: WebVitalLogPayload,
+    config: ObservabilityConfig = readObservabilityConfig(),
+  ): void {
+    if (config.logRequests === 'none') return;
+    if (config.logRequests === 'slow' && payload.rating !== 'poor') {
+      return;
+    }
+
+    this.emit(
+      {
+        event: 'web_vital_recorded',
+        timestamp: new Date().toISOString(),
+        ...payload,
+      },
+      payload.rating === 'poor' ? 'warn' : 'info',
     );
   }
 
