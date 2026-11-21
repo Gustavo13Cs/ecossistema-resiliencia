@@ -9,6 +9,8 @@
 
 ## Personal P3 — concluído localmente em 24/10/2026
 
+- ✅ **Antigravity — Performance 16 (21/11/2026)**: paralelização de requisições e invalidações independentes em `63c1b8b` (`agent/codex/performance-diagnosis`), mantendo `api/` inalterada pela fronteira transacional única de RLS (`PrismaService.runAsProfessional`). Paralelizadas invalidações de exames em `useCentralLabExams.ts` (`refreshExams`), criação de prontuário em `clientes/novo/page.tsx`, carregamento inicial de `nova-reabilitacao/page.tsx` (com `AbortController`) e `invalidateQueries(appointmentsRoot)` em `useFollowUps.ts` e `usePersonalFollowUps.ts` (reduzindo `GET /appointments` por `refetch()` de 6 para 3). Regressões focadas 43/43 (6 arquivos), typecheck, lint (0 warnings), build Next.js e pós-build (32/32 páginas, 297 diretórios standalone) aprovados; suíte completa web 795/796 (103/104 arquivos — única falha pré-existente no checkout Windows CRLF em `test/licensed-media-fixture.test.ts`). [Relatório e rollback](runbooks/performance-16-parallel-requests.md).
+
 - ✅ **Codex — Performance 05 (19/11/2026)**: paginação de clientes, laudos e pedidos concluída; padrão de 25 e máximo de 100, filtros/ordem globais e históricos completos em lotes. JSON de clientes/exames cerca de 96% menor por página; mediana local de clientes −53,83%, exames +1,60% e pedidos +4,07 ms (tradeoffs descritos). Travessia de 1.105 registros íntegra; API 820, PostgreSQL 265 + benchmark/browser, web 787 + 2, builds/lint/tipos e desktop/mobile aprovados. Sem migration/RLS/produção. [Relatório e rollback](runbooks/performance-05-pagination.md).
 
 
