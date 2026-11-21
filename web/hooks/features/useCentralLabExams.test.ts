@@ -1,9 +1,10 @@
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query"
 import AxiosMockAdapter from "axios-mock-adapter"
 import { createElement, type ReactNode } from "react"
 import { afterEach, beforeEach, describe, it, expect, vi } from "vitest"
 import { api } from "@/lib/api"
+import { queryKeys } from "@/lib/query-keys"
 import type { AuthUser } from "@/types/auth"
 import type { Client } from "@/types/client"
 import { useCentralLabExams } from "./useCentralLabExams"
@@ -27,6 +28,15 @@ const exam = { id: "server-exam", clientId: ownClient.id, client: ownClient, dat
 const order = { id: "server-order", clientId: ownClient.id, client: ownClient, title: "Synthetic title", issuedAt: "2026-10-01T12:00:00.000Z", markers: ["Glicemia de Jejum"], clinicalIndication: "Synthetic indication", preparationInstructions: "Synthetic instructions" }
 const examInput = { clientId: ownClient.id, date: "2026-10-01", notes: "Synthetic note", markers: [{ name: "Glicemia de Jejum", value: 105, unit: "mg/dL" }] }
 const orderInput = { clientId: ownClient.id, templateTitle: "Synthetic title", markers: ["Glicemia de Jejum"], clinicalIndication: "Synthetic indication", preparationInstructions: "Synthetic instructions" }
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
+}
 function setup() {
   const cache = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } })
   const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: cache }, children)
@@ -123,6 +133,126 @@ describe("server-only central labs", () => {
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.rawExams).toEqual([])
     expect(result.current.orders).toEqual([])
+  })
+  it("invalidates central and client-scoped exam queries in parallel on registerExam without affecting another session", async () => {
+    http.onGet("/lab-exams").reply(200, [exam])
+    http.onGet("/lab-orders").reply(200, [order])
+    http.onGet(`/lab-exams/client/${ownClient.id}`).reply(200, [exam])
+    const cache = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } })
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: cache }, children)
+    const { result } = renderHook(
+      () => ({
+        central: useCentralLabExams(),
+        clientHistory: useQuery({
+          queryKey: queryKeys.labExams("professional-a", ownClient.id),
+          queryFn: async () => (await api.get(`/lab-exams/client/${ownClient.id}`)).data,
+        }),
+      }),
+      { wrapper },
+    )
+    await waitFor(() => expect(result.current.central.loading).toBe(false))
+    await waitFor(() => expect(result.current.clientHistory.isPending).toBe(false))
+
+    const unrelatedCentralKey = queryKeys.centralLabExams("professional-b")
+    const unrelatedClientKey = queryKeys.labExams("professional-b", ownClient.id)
+    cache.setQueryData(unrelatedCentralKey, [{ id: "unrelated-exam" }])
+    cache.setQueryData(unrelatedClientKey, [{ id: "unrelated-client-exam" }])
+
+    const centralRefetch = deferred<unknown[]>()
+    const clientRefetch = deferred<unknown[]>()
+    let centralRefetchStarted = false
+    let clientRefetchStarted = false
+    http.onPost("/lab-exams").reply(201, exam)
+    http.onGet("/lab-exams").reply(async () => {
+      centralRefetchStarted = true
+      return [200, await centralRefetch.promise]
+    })
+    http.onGet(`/lab-exams/client/${ownClient.id}`).reply(async () => {
+      clientRefetchStarted = true
+      return [200, await clientRefetch.promise]
+    })
+
+    let mutationPromise!: Promise<unknown>
+    act(() => {
+      mutationPromise = result.current.central.registerExam(examInput)
+    })
+
+    await waitFor(() => {
+      expect(centralRefetchStarted).toBe(true)
+      expect(clientRefetchStarted).toBe(true)
+    })
+    expect(notices.success).not.toHaveBeenCalled()
+
+    clientRefetch.resolve([exam])
+    centralRefetch.resolve([exam])
+    await act(async () => {
+      await mutationPromise
+    })
+
+    expect(notices.success).toHaveBeenCalledOnce()
+    expect(cache.getQueryState(unrelatedCentralKey)?.isInvalidated).toBe(false)
+    expect(cache.getQueryState(unrelatedClientKey)?.isInvalidated).toBe(false)
+    cache.clear()
+  })
+  it("invalidates central and client-scoped exam queries in parallel on deleteExam without affecting another session", async () => {
+    http.onGet("/lab-exams").reply(200, [exam])
+    http.onGet("/lab-orders").reply(200, [order])
+    http.onGet(`/lab-exams/client/${ownClient.id}`).reply(200, [exam])
+    const cache = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } })
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: cache }, children)
+    const { result } = renderHook(
+      () => ({
+        central: useCentralLabExams(),
+        clientHistory: useQuery({
+          queryKey: queryKeys.labExams("professional-a", ownClient.id),
+          queryFn: async () => (await api.get(`/lab-exams/client/${ownClient.id}`)).data,
+        }),
+      }),
+      { wrapper },
+    )
+    await waitFor(() => expect(result.current.central.loading).toBe(false))
+    await waitFor(() => expect(result.current.clientHistory.isPending).toBe(false))
+
+    const unrelatedCentralKey = queryKeys.centralLabExams("professional-b")
+    const unrelatedClientKey = queryKeys.labExams("professional-b", ownClient.id)
+    cache.setQueryData(unrelatedCentralKey, [{ id: "unrelated-exam" }])
+    cache.setQueryData(unrelatedClientKey, [{ id: "unrelated-client-exam" }])
+
+    const centralRefetch = deferred<unknown[]>()
+    const clientRefetch = deferred<unknown[]>()
+    let centralRefetchStarted = false
+    let clientRefetchStarted = false
+    http.onDelete(`/lab-exams/${exam.id}`).reply(200, { deleted: true })
+    http.onGet("/lab-exams").reply(async () => {
+      centralRefetchStarted = true
+      return [200, await centralRefetch.promise]
+    })
+    http.onGet(`/lab-exams/client/${ownClient.id}`).reply(async () => {
+      clientRefetchStarted = true
+      return [200, await clientRefetch.promise]
+    })
+
+    let mutationPromise!: Promise<unknown>
+    act(() => {
+      mutationPromise = result.current.central.deleteExam(exam.id)
+    })
+
+    await waitFor(() => {
+      expect(centralRefetchStarted).toBe(true)
+      expect(clientRefetchStarted).toBe(true)
+    })
+    expect(notices.success).not.toHaveBeenCalled()
+
+    clientRefetch.resolve([])
+    centralRefetch.resolve([])
+    await act(async () => {
+      await mutationPromise
+    })
+
+    expect(notices.success).toHaveBeenCalledOnce()
+    expect(cache.getQueryState(unrelatedCentralKey)?.isInvalidated).toBe(false)
+    expect(cache.getQueryState(unrelatedClientKey)?.isInvalidated).toBe(false)
+    cache.clear()
   })
 })
 

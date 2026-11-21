@@ -107,8 +107,10 @@ export const useCentralLabExams = () => {
     if (!sessionUserId) throw new Error("Sessão necessária")
   }
   async function refreshExams() {
-    await cache.invalidateQueries({ queryKey: examsKey })
-    await cache.invalidateQueries({ queryKey: ["lab-exams", sessionUserId] })
+    await Promise.all([
+      cache.invalidateQueries({ queryKey: examsKey }),
+      cache.invalidateQueries({ queryKey: ["lab-exams", sessionUserId] }),
+    ])
   }
   const registerMutation = useMutation({
     mutationFn: async (input: CreateExamInput) => {

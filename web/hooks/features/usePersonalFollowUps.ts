@@ -381,11 +381,10 @@ export function usePersonalFollowUps() {
       workoutsQuery.refetch(),
       draftsQuery.refetch(),
       assessmentsQuery.refetch(),
-      appointmentsQuery.refetch(),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.appointmentsRoot(sessionUserId),
+      }),
     ])
-    await queryClient.invalidateQueries({
-      queryKey: queryKeys.appointmentsRoot(sessionUserId),
-    })
   }
 
   return {
