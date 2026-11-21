@@ -4,7 +4,15 @@ import AxiosMockAdapter from "axios-mock-adapter"
 import type { ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { api } from "@/lib/api"
-import { useWorkoutTemplates } from "./useWorkoutTemplates"
+import { workoutTemplateDetailKey } from "@/lib/workout-template-optimistic"
+import type {
+  WorkoutTemplateDetail,
+  WorkoutTemplatePage,
+} from "@/types/workout-template"
+import {
+  useWorkoutTemplateHubMutations,
+  useWorkoutTemplates,
+} from "./useWorkoutTemplates"
 const auth = vi.hoisted(() => ({ user: { sub: "a", role: "PERSONAL" } }))
 vi.mock("@/contexts/auth-context", () => ({ useAuth: () => auth }))
 const template = { id: "t1", title: "Base", isGlobal: false, content: { splits: [] } }
@@ -119,5 +127,221 @@ describe("useWorkoutTemplates", () => {
     await waitFor(() => expect(result.current.accessDenied).toBe(true))
     expect(result.current.listQuery.data).toBeUndefined()
     expect(cache.getQueryData(["workout-templates", "b", "list", {}, "first"])).toBeNull()
+  })
+})
+
+describe("useWorkoutTemplateHubMutations optimistic archive/restore", () => {
+  let http: AxiosMockAdapter
+  const caches: QueryClient[] = []
+
+  const privateSummary: WorkoutTemplateDetail = {
+    id: "tpl-priv-1",
+    title: "Treino Condomínio",
+    description: "Haltere e polia",
+    goal: "CONDITIONING",
+    level: "BEGINNER",
+    targetAudience: "Iniciantes",
+    environment: "CONDO_GYM",
+    estimatedWeeks: 6,
+    schemaVersion: 3,
+    archivedAt: null,
+    createdAt: "2026-11-01T12:00:00.000Z",
+    updatedAt: "2026-11-01T12:00:00.000Z",
+    isGlobal: false,
+    content: {
+      title: "Treino Condomínio",
+      goal: "Condicionamento",
+      durationWeeks: 6,
+      notes: "",
+      splits: [],
+    },
+  }
+
+  beforeEach(() => {
+    auth.user = { sub: "a", role: "PERSONAL" }
+    http = new AxiosMockAdapter(api)
+  })
+
+  afterEach(() => {
+    cleanup()
+    caches.forEach(cache => cache.clear())
+    caches.length = 0
+    http.restore()
+  })
+
+  function setupHub() {
+    const cache = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+    caches.push(cache)
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={cache}>{children}</QueryClientProvider>
+    )
+    return { cache, ...renderHook(() => useWorkoutTemplateHubMutations(), { wrapper }) }
+  }
+
+  it("applies optimistic archive immediately, reconciles server timestamp on 200, and invalidates lists/details", async () => {
+    let finish!: (value: [number, unknown]) => void
+    http
+      .onPost("/workouts/templates/tpl-priv-1/archive")
+      .reply(() => new Promise(resolve => { finish = resolve }))
+
+    const { result, cache } = setupHub()
+    const activeKey = ["workout-templates", "a", "list", { origin: "all", status: "active" }, "first"] as const
+    const archivedKey = ["workout-templates", "a", "list", { origin: "private", status: "archived" }, "first"] as const
+    const detailKey = workoutTemplateDetailKey("a", "tpl-priv-1")
+
+    cache.setQueryData<WorkoutTemplatePage>(activeKey, {
+      items: [privateSummary],
+      nextCursor: null,
+    })
+    cache.setQueryData<WorkoutTemplatePage>(archivedKey, {
+      items: [],
+      nextCursor: null,
+    })
+    cache.setQueryData<WorkoutTemplateDetail>(detailKey, privateSummary)
+
+    let pending!: Promise<unknown>
+    act(() => {
+      pending = result.current.archiveTemplateMutation.mutateAsync("tpl-priv-1")
+    })
+
+    await waitFor(() => {
+      expect(cache.getQueryData<WorkoutTemplatePage>(activeKey)?.items).toHaveLength(0)
+    })
+    expect(cache.getQueryData<WorkoutTemplatePage>(archivedKey)?.items[0]?.id).toBe(
+      "tpl-priv-1",
+    )
+    expect(cache.getQueryData<WorkoutTemplateDetail>(detailKey)?.archivedAt).toBeTruthy()
+
+    const confirmedAt = "2026-11-21T18:00:00.000Z"
+    await act(async () => {
+      finish([
+        200,
+        {
+          ...privateSummary,
+          archivedAt: confirmedAt,
+          updatedAt: confirmedAt,
+        },
+      ])
+      await pending
+    })
+
+    expect(cache.getQueryData<WorkoutTemplateDetail>(detailKey)?.archivedAt).toBe(
+      confirmedAt,
+    )
+    expect(cache.getQueryState(activeKey)?.isInvalidated).toBe(true)
+    expect(cache.getQueryState(archivedKey)?.isInvalidated).toBe(true)
+    expect(cache.getQueryState(detailKey)?.isInvalidated).toBe(true)
+  })
+
+  it("rolls back archive and restore snapshots reliably when API fails with 500", async () => {
+    http.onPost("/workouts/templates/tpl-priv-1/archive").reply(500)
+    http.onPost("/workouts/templates/tpl-priv-1/restore").reply(500)
+
+    const { result, cache } = setupHub()
+    const activeKey = ["workout-templates", "a", "list", { origin: "private", status: "active" }, "first"] as const
+    const archivedKey = ["workout-templates", "a", "list", { origin: "private", status: "archived" }, "first"] as const
+    const detailKey = workoutTemplateDetailKey("a", "tpl-priv-1")
+
+    cache.setQueryData<WorkoutTemplatePage>(activeKey, {
+      items: [privateSummary],
+      nextCursor: null,
+    })
+    cache.setQueryData<WorkoutTemplatePage>(archivedKey, {
+      items: [],
+      nextCursor: null,
+    })
+    cache.setQueryData<WorkoutTemplateDetail>(detailKey, privateSummary)
+
+    await act(async () => {
+      await expect(
+        result.current.archiveTemplateMutation.mutateAsync("tpl-priv-1"),
+      ).rejects.toThrow()
+    })
+
+    expect(cache.getQueryData<WorkoutTemplatePage>(activeKey)?.items).toHaveLength(1)
+    expect(cache.getQueryData<WorkoutTemplatePage>(archivedKey)?.items).toHaveLength(0)
+    expect(cache.getQueryData<WorkoutTemplateDetail>(detailKey)?.archivedAt).toBeNull()
+    expect(cache.getQueryState(activeKey)?.isInvalidated).toBe(false)
+
+    // Switch initial snapshot to archived and verify restore rollback on 500
+    const archivedSummary = {
+      ...privateSummary,
+      archivedAt: "2026-11-20T12:00:00.000Z",
+    }
+    cache.setQueryData<WorkoutTemplatePage>(activeKey, { items: [], nextCursor: null })
+    cache.setQueryData<WorkoutTemplatePage>(archivedKey, { items: [archivedSummary], nextCursor: null })
+    cache.setQueryData<WorkoutTemplateDetail>(detailKey, archivedSummary)
+
+    await act(async () => {
+      await expect(
+        result.current.restoreTemplateMutation.mutateAsync("tpl-priv-1"),
+      ).rejects.toThrow()
+    })
+
+    expect(cache.getQueryData<WorkoutTemplatePage>(activeKey)?.items).toHaveLength(0)
+    expect(cache.getQueryData<WorkoutTemplatePage>(archivedKey)?.items).toHaveLength(1)
+    expect(cache.getQueryData<WorkoutTemplateDetail>(detailKey)?.archivedAt).toBe(
+      "2026-11-20T12:00:00.000Z",
+    )
+  })
+
+  it("does not resurrect private templates on 401/403 denial or account switch mid-flight", async () => {
+    let finishArchive!: (value: [number, unknown]) => void
+    http
+      .onPost("/workouts/templates/tpl-priv-1/archive")
+      .replyOnce(403)
+      .onPost("/workouts/templates/tpl-priv-1/archive")
+      .replyOnce(() => new Promise(resolve => { finishArchive = resolve }))
+
+    const { result, cache, rerender } = setupHub()
+    const activeKeyA = ["workout-templates", "a", "list", { origin: "all", status: "active" }, "first"] as const
+    cache.setQueryData<WorkoutTemplatePage>(activeKeyA, {
+      items: [privateSummary],
+      nextCursor: null,
+    })
+
+    // 403 must deny access and keep list data null instead of rolling back
+    await act(async () => {
+      await expect(
+        result.current.archiveTemplateMutation.mutateAsync("tpl-priv-1"),
+      ).rejects.toThrow()
+    })
+    await waitFor(() => expect(result.current.accessDenied).toBe(true))
+    expect(cache.getQueryData(activeKeyA)).toBeNull()
+
+    // Account switch mid-flight must isolate account B and never write back into A or B
+    auth.user = { sub: "b", role: "PERSONAL" }
+    cache.setQueryData<WorkoutTemplatePage>(
+      ["workout-templates", "b", "list", { origin: "all", status: "active" }, "first"],
+      { items: [privateSummary], nextCursor: null },
+    )
+    const subBHub = setupHub()
+    const activeKeyB = ["workout-templates", "b", "list", { origin: "all", status: "active" }, "first"] as const
+    subBHub.cache.setQueryData<WorkoutTemplatePage>(activeKeyB, {
+      items: [privateSummary],
+      nextCursor: null,
+    })
+
+    let pendingSwitch!: Promise<unknown>
+    act(() => {
+      pendingSwitch = subBHub.result.current.archiveTemplateMutation
+        .mutateAsync("tpl-priv-1")
+        .catch(error => error)
+    })
+    await waitFor(() =>
+      expect(subBHub.cache.getQueryData<WorkoutTemplatePage>(activeKeyB)?.items).toHaveLength(0),
+    )
+
+    auth.user = { sub: "c", role: "PERSONAL" }
+    subBHub.rerender()
+    subBHub.cache.clear()
+    await act(async () => {
+      finishArchive([500, {}])
+      expect(await pendingSwitch).toBeInstanceOf(Error)
+    })
+    expect(subBHub.cache.getQueryData(activeKeyB)).toBeUndefined()
+    rerender()
   })
 })

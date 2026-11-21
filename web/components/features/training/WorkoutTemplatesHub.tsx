@@ -103,6 +103,11 @@ function TemplatesHubSession() {
     duplicatedTemplate?: WorkoutTemplateDetail
   } | null>(null)
   const [loadingEditId, setLoadingEditId] = useState<string | null>(null)
+  const [pendingStatusAction, setPendingStatusAction] = useState<{
+    templateId: string
+    title: string
+    action: "archive" | "restore"
+  } | null>(null)
   const [denied, setDenied] = useState(false)
 
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([])
@@ -153,6 +158,7 @@ function TemplatesHubSession() {
 
   const actionBusy =
     Boolean(loadingEditId) ||
+    Boolean(pendingStatusAction) ||
     hubMutations.duplicateTemplateMutation.isPending ||
     hubMutations.archiveTemplateMutation.isPending ||
     hubMutations.restoreTemplateMutation.isPending
@@ -160,7 +166,9 @@ function TemplatesHubSession() {
   const switchTab = (nextTab: HubTab) => {
     setActiveTab(nextTab)
     setCursor(undefined)
-    setStatusBanner(null)
+    if (!pendingStatusAction) {
+      setStatusBanner(null)
+    }
   }
 
   const handleTabKeyDown = (
@@ -233,9 +241,21 @@ function TemplatesHubSession() {
   }
 
   const handleArchiveToggle = async (item: WorkoutTemplateSummary) => {
-    setStatusBanner(null)
+    const action = item.archivedAt ? "restore" : "archive"
+    setPendingStatusAction({
+      templateId: item.id,
+      title: item.title,
+      action,
+    })
+    setStatusBanner({
+      kind: "info",
+      text:
+        action === "restore"
+          ? `Salvando restauração de "${item.title}"...`
+          : `Salvando arquivamento de "${item.title}"...`,
+    })
     try {
-      if (item.archivedAt) {
+      if (action === "restore") {
         await hubMutations.restoreTemplateMutation.mutateAsync(item.id)
         setStatusBanner({
           kind: "info",
@@ -258,8 +278,15 @@ function TemplatesHubSession() {
       }
       setStatusBanner({
         kind: "error",
-        text: "Não foi possível atualizar o status do modelo.",
+        text:
+          action === "restore"
+            ? `Não foi possível restaurar "${item.title}". A alteração foi revertida.`
+            : `Não foi possível arquivar "${item.title}". A alteração foi revertida.`,
       })
+    } finally {
+      setPendingStatusAction(current =>
+        current?.templateId === item.id ? null : current,
+      )
     }
   }
 
@@ -489,10 +516,18 @@ function TemplatesHubSession() {
         ) : (
           <>
             <ul className="grid gap-4 md:grid-cols-2">
-              {items.map(item => (
+              {items.map(item => {
+                const isOptimisticPending =
+                  pendingStatusAction?.templateId === item.id
+                return (
                 <li
                   key={item.id}
-                  className="flex min-w-0 flex-col justify-between gap-4 rounded-[var(--sm-radius-md)] border border-[var(--sm-border)] bg-[var(--sm-surface)] p-5"
+                  data-optimistic-pending={
+                    isOptimisticPending ? "true" : undefined
+                  }
+                  className={`flex min-w-0 flex-col justify-between gap-4 rounded-[var(--sm-radius-md)] border border-[var(--sm-border)] bg-[var(--sm-surface)] p-5 transition-opacity ${
+                    isOptimisticPending ? "opacity-75" : ""
+                  }`}
                 >
                   <div className="space-y-2.5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -500,8 +535,12 @@ function TemplatesHubSession() {
                         {item.isGlobal
                           ? "SafeMove · Global"
                           : item.archivedAt
-                            ? "Meu modelo · Arquivado"
-                            : "Meu modelo · Editável"}
+                            ? isOptimisticPending
+                              ? "Meu modelo · Arquivado (salvando...)"
+                              : "Meu modelo · Arquivado"
+                            : isOptimisticPending
+                              ? "Meu modelo · Editável (salvando...)"
+                              : "Meu modelo · Editável"}
                       </span>
                       {item.estimatedWeeks != null ? (
                         <span className="text-xs font-semibold text-[var(--sm-muted)] tabular-nums">
@@ -629,7 +668,8 @@ function TemplatesHubSession() {
                     ) : null}
                   </div>
                 </li>
-              ))}
+                )
+              })}
             </ul>
 
             <div className="flex flex-wrap items-center gap-2 pt-2">
