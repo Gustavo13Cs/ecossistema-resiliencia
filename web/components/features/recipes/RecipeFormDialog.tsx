@@ -22,18 +22,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
-import { useRecipeFoodSearch } from "@/hooks/features/useRecipes"
+import { useRecipe, useRecipeFoodSearch } from "@/hooks/features/useRecipes"
 import {
   calculateRecipePreview,
   getRecipeFoodUnitPresentation,
 } from "@/lib/recipe-nutrition"
-import type {
-  RecipeCategory,
-  RecipeFood,
-  RecipeFormValues,
-  RecipeNutrition,
-  RecipeSummary,
+import {
+  hasRecipeVersionIngredients,
+  type RecipeCategory,
+  type RecipeFood,
+  type RecipeFormValues,
+  type RecipeNutrition,
+  type RecipeSummary,
 } from "@/types/recipe"
 import { RECIPE_CATEGORY_LABELS } from "./RecipeFilters"
 
@@ -42,7 +44,7 @@ interface RecipeFormDialogProps {
   recipe?: RecipeSummary | null
   isSubmitting?: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (values: RecipeFormValues) => Promise<void>
+  onSubmit: (values: RecipeFormValues, expectedVersion?: number) => Promise<void>
 }
 
 interface IngredientDraft {
@@ -74,7 +76,9 @@ const EMPTY_FORM: FormDraft = {
 }
 
 function initialDraft(recipe?: RecipeSummary | null) {
-  if (!recipe) return { form: EMPTY_FORM, ingredients: [] as IngredientDraft[] }
+  if (!recipe || !hasRecipeVersionIngredients(recipe.currentVersion)) {
+    return { form: EMPTY_FORM, ingredients: [] as IngredientDraft[] }
+  }
   const version = recipe.currentVersion
   return {
     form: {
@@ -138,7 +142,20 @@ export function RecipeFormDialog({
   onOpenChange,
   onSubmit,
 }: RecipeFormDialogProps) {
-  const initial = initialDraft(recipe)
+  const needsDetailFetch = Boolean(
+    open && recipe && !hasRecipeVersionIngredients(recipe.currentVersion),
+  )
+  const detailQuery = useRecipe(
+    needsDetailFetch && recipe ? recipe.id : null,
+    needsDetailFetch,
+  )
+  const resolvedRecipe = needsDetailFetch
+    ? (detailQuery.data ?? null)
+    : (recipe ?? null)
+  const isWaitingForDetail = needsDetailFetch && detailQuery.isPending
+  const detailError = needsDetailFetch && detailQuery.isError
+
+  const initial = initialDraft(resolvedRecipe)
   const [form, setForm] = useState<FormDraft>(initial.form)
   const [ingredients, setIngredients] = useState<IngredientDraft[]>(initial.ingredients)
   const [foodSearch, setFoodSearch] = useState("")
@@ -148,12 +165,13 @@ export function RecipeFormDialog({
 
   useEffect(() => {
     if (!open) return
-    const next = initialDraft(recipe)
+    if (needsDetailFetch && !detailQuery.data) return
+    const next = initialDraft(detailQuery.data ?? recipe)
     setForm(next.form)
     setIngredients(next.ingredients)
     setFoodSearch("")
     setFormError(null)
-  }, [open, recipe])
+  }, [detailQuery.data, needsDetailFetch, open, recipe])
 
   const selectedFoodIds = useMemo(
     () => new Set(ingredients.map((ingredient) => ingredient.food.id)),
@@ -237,7 +255,7 @@ export function RecipeFormDialog({
     }
 
     try {
-      await onSubmit(values)
+      await onSubmit(values, resolvedRecipe?.currentVersion.version)
       onOpenChange(false)
     } catch (error) {
       setFormError(safeErrorMessage(error))
@@ -253,11 +271,39 @@ export function RecipeFormDialog({
           </DialogTitle>
           <DialogDescription>
             {recipe
-              ? `A edição cria a versão ${recipe.currentVersion.version + 1} sem alterar prescrições anteriores.`
+              ? `A edição cria a versão ${(resolvedRecipe ?? recipe).currentVersion.version + 1} sem alterar prescrições anteriores.`
               : "Monte a preparação com alimentos do seu banco. A API recalcula os nutrientes ao salvar."}
           </DialogDescription>
         </DialogHeader>
 
+        {isWaitingForDetail ? (
+          <div
+            role="status"
+            aria-label="Carregando detalhes da receita"
+            className="space-y-4 px-5 py-6 sm:px-6"
+          >
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        ) : detailError ? (
+          <div className="px-5 py-6 sm:px-6">
+            <p
+              role="alert"
+              className="rounded-[var(--sm-radius-sm)] bg-[var(--sm-danger-subtle)] p-4 text-sm text-[var(--sm-danger)]"
+            >
+              Não foi possível carregar os detalhes da receita.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void detailQuery.refetch()}
+              className="mt-4 min-h-11"
+            >
+              Tentar novamente
+            </Button>
+          </div>
+        ) : (
         <div className="space-y-7 px-5 py-5 sm:px-6">
           <section aria-labelledby="recipe-basic-data" className="space-y-4">
             <h3 id="recipe-basic-data" className="text-sm font-bold text-[var(--sm-ink)]">Informações da receita</h3>
@@ -367,10 +413,16 @@ export function RecipeFormDialog({
 
           {formError ? <p role="alert" className="rounded-[var(--sm-radius-sm)] bg-[var(--sm-danger-subtle)] p-3 text-sm text-[var(--sm-danger)]">{formError}</p> : null}
         </div>
+        )}
 
         <DialogFooter className="sticky bottom-0 border-t border-[var(--sm-border)] bg-[var(--sm-surface)] px-5 py-4 sm:px-6">
           <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button type="button" disabled={isSubmitting} onClick={() => void submit()} className="bg-[var(--sm-brand)] text-[var(--sm-on-brand)] hover:bg-[var(--sm-brand-hover)]">
+          <Button
+            type="button"
+            disabled={isSubmitting || isWaitingForDetail || detailError || (Boolean(recipe) && !resolvedRecipe)}
+            onClick={() => void submit()}
+            className="bg-[var(--sm-brand)] text-[var(--sm-on-brand)] hover:bg-[var(--sm-brand-hover)]"
+          >
             {isSubmitting ? "Salvando..." : <><Plus aria-hidden="true" className="size-4" strokeWidth={1.8} />Salvar receita</>}
           </Button>
         </DialogFooter>

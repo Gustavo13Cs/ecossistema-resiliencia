@@ -1,16 +1,22 @@
 export type ClientStatus = "ACTIVE" | "ARCHIVED"
 
-export interface Client {
+export interface ClientSummary {
   id: string
   professionalId: string
   name: string
   email: string | null
   phone: string | null
+  goal: string | null
+  initialWeight: number | null
+  status: ClientStatus
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Client extends ClientSummary {
   birthDate: string | null
   gender: string | null
-  goal: string | null
   height: number | null
-  initialWeight: number | null
   allergies: string | null
   pathologies: string | null
   typicalSleep: string | null
@@ -24,9 +30,6 @@ export interface Client {
   workActivityLevel: string | null
   professionalNotes: string | null
   privacyNotes: string | null
-  status: ClientStatus
-  createdAt: string
-  updatedAt: string
 }
 
 export type ClientFormValues = Omit<

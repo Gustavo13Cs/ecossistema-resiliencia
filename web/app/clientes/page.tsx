@@ -16,7 +16,7 @@ import { useClientsPage } from "@/hooks/features/useClients"
 import { api } from "@/lib/api"
 import { getWorkspaceDefinition } from "@/lib/professional-workspace"
 import { queryKeys } from "@/lib/query-keys"
-import type { Client, ClientStatus } from "@/types/client"
+import type { ClientStatus, ClientSummary } from "@/types/client"
 
 
 export default function ClientesPage() {
@@ -33,7 +33,7 @@ export default function ClientesPage() {
 
   const changeStatus = useMutation({
     mutationFn: async ({ clientId, nextStatus }: { clientId: string; nextStatus: ClientStatus }) => {
-      const response = await api.patch<Client>(`/clients/${clientId}/status`, { status: nextStatus })
+      const response = await api.patch<ClientSummary>(`/clients/${clientId}/status`, { status: nextStatus })
       return response.data
     },
   })
@@ -52,7 +52,7 @@ export default function ClientesPage() {
   const singular = workspace.clientSingular.toLocaleLowerCase("pt-BR")
   const plural = workspace.clientPlural.toLocaleLowerCase("pt-BR")
 
-  const handleStatusChange = async (client: Client) => {
+  const handleStatusChange = async (client: ClientSummary) => {
     if (mutationLock.current) return
     mutationLock.current = true
     setPendingClientId(client.id)

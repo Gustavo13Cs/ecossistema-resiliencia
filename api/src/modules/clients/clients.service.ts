@@ -32,6 +32,23 @@ const normalizeOptionalEmail = (email?: string): string | null => {
 const normalizeOptionalString = (value?: string | null): string | null =>
   value?.trim() || null;
 
+export const CLIENT_LIST_SELECT = {
+  id: true,
+  professionalId: true,
+  name: true,
+  email: true,
+  phone: true,
+  goal: true,
+  initialWeight: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.ClientSelect;
+
+export type ClientListItem = Prisma.ClientGetPayload<{
+  select: typeof CLIENT_LIST_SELECT;
+}>;
+
 @Injectable()
 export class ClientsService {
   constructor(
@@ -82,9 +99,10 @@ export class ClientsService {
     }
   }
 
-  findAll(user: AuthUser, status: ClientStatus): Promise<Client[]> {
+  findAll(user: AuthUser, status: ClientStatus): Promise<ClientListItem[]> {
     return this.prisma.client.findMany({
       where: { professionalId: user.sub, status },
+      select: CLIENT_LIST_SELECT,
       orderBy: [{ name: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
       take: 25,
       skip: 0,
@@ -111,6 +129,7 @@ export class ClientsService {
     const [items, total] = await Promise.all([
       this.prisma.client.findMany({
         where,
+        select: CLIENT_LIST_SELECT,
         orderBy: [{ name: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
         skip,
         take,

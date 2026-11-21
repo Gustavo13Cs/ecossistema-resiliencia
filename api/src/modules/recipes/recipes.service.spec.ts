@@ -9,7 +9,11 @@ import { validate } from 'class-validator';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { ListRecipesQueryDto } from './dto/list-recipes-query.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
-import { RecipesService } from './recipes.service';
+import {
+  RECIPE_DETAIL_SELECT,
+  RECIPE_LIST_SELECT,
+  RecipesService,
+} from './recipes.service';
 
 const PROFESSIONAL_ID = '11111111-1111-4111-8111-111111111111';
 const OTHER_PROFESSIONAL_ID = '22222222-2222-4222-8222-222222222222';
@@ -20,6 +24,7 @@ const SECOND_FOOD_ID = '55555555-5555-4555-8555-555555555555';
 type FoodFixture = {
   id: string;
   name: string;
+  baseUnit: string;
   baseAmount: number;
   kcal: number;
   protein: number;
@@ -29,6 +34,9 @@ type FoodFixture = {
   sodium: number;
   calcium: number;
   iron: number;
+  source: string;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 type IngredientFixture = {
@@ -108,6 +116,7 @@ type RecipeUpdateManyArguments = {
 };
 type RecipeFindFirstArguments = {
   where: { id: string; professionalId: string };
+  select?: Record<string, unknown>;
   include?: { versions?: { orderBy?: { version?: 'asc' | 'desc' } } };
 };
 type RecipeVersionFilter = {
@@ -123,11 +132,26 @@ type RecipeFindManyArguments = {
     status: RecipeStatus;
     currentVersion: { is: RecipeVersionFilter };
   };
+  select?: Record<string, unknown>;
 };
+
+function pickScalarFields(
+  source: Record<string, unknown>,
+  select: Record<string, unknown>,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, spec] of Object.entries(select)) {
+    if (spec === true && key in source) {
+      result[key] = source[key];
+    }
+  }
+  return result;
+}
 
 const firstFood: FoodFixture = {
   id: FOOD_ID,
   name: 'Aveia',
+  baseUnit: '100g',
   baseAmount: 100,
   kcal: 400,
   protein: 20,
@@ -137,11 +161,15 @@ const firstFood: FoodFixture = {
   sodium: 4,
   calcium: 50,
   iron: 5,
+  source: 'TACO',
+  createdAt: new Date('2026-09-01T00:00:00.000Z'),
+  updatedAt: new Date('2026-09-01T00:00:00.000Z'),
 };
 
 const secondFood: FoodFixture = {
   id: SECOND_FOOD_ID,
   name: 'Banana',
+  baseUnit: '100g',
   baseAmount: 100,
   kcal: 100,
   protein: 2,
@@ -151,6 +179,9 @@ const secondFood: FoodFixture = {
   sodium: 2,
   calcium: 10,
   iron: 1,
+  source: 'TACO',
+  createdAt: new Date('2026-09-01T00:00:00.000Z'),
+  updatedAt: new Date('2026-09-01T00:00:00.000Z'),
 };
 
 const validRecipeInput: CreateRecipeDto = {
@@ -187,6 +218,7 @@ class RecipePrismaFake {
   recipeVersionCreateError: Error | undefined;
   lastRecipeFindManyArgs: RecipeFindManyArguments | undefined;
   lastRecipeUpdateManyArgs: RecipeUpdateManyArguments | undefined;
+  findFirstCalls: RecipeFindFirstArguments[] = [];
   private sequence = 0;
 
   constructor(state?: Partial<FakeState>) {
@@ -355,25 +387,20 @@ class RecipePrismaFake {
       },
     );
     this.recipe.findFirst = fakeQuery((args: RecipeFindFirstArguments) => {
+      this.findFirstCalls.push(args);
       const { where } = args;
       const recipe = this.state.recipes.find(
         (candidate) =>
           candidate.id === where.id &&
           candidate.professionalId === where.professionalId,
       );
-      return recipe
-        ? this.hydrateRecipe(
-            recipe,
-            Boolean(args.include?.versions),
-            args.include?.versions?.orderBy?.version,
-          )
-        : null;
+      return recipe ? this.projectRecipe(recipe, args) : null;
     });
     this.recipe.findMany = fakeQuery((args: RecipeFindManyArguments) => {
       this.lastRecipeFindManyArgs = args;
       return this.state.recipes
         .filter((recipe) => this.matchesRecipeWhere(recipe, args.where))
-        .map((recipe) => this.hydrateRecipe(recipe));
+        .map((recipe) => this.projectRecipe(recipe, args));
     });
     return this;
   }
@@ -439,6 +466,109 @@ class RecipePrismaFake {
   private nextId(kind: string): string {
     this.sequence += 1;
     return `${kind}-${this.sequence}`;
+  }
+
+  private projectVersion(
+    version: VersionFixture,
+    select?: Record<string, unknown>,
+  ) {
+    if (!select) {
+      return this.hydrateVersion(version);
+    }
+    const projected = pickScalarFields(
+      version as unknown as Record<string, unknown>,
+      select,
+    );
+    const ingredientsSpec = select.ingredients as
+      | { select?: Record<string, unknown> }
+      | undefined;
+    if (ingredientsSpec?.select) {
+      const ingSelect = ingredientsSpec.select;
+      const foodSpec = ingSelect.food as
+        | { select?: Record<string, unknown> }
+        | undefined;
+      projected.ingredients = this.state.ingredients
+        .filter((ingredient) => ingredient.recipeVersionId === version.id)
+        .map((ingredient) => {
+          const item = pickScalarFields(
+            ingredient as unknown as Record<string, unknown>,
+            ingSelect,
+          );
+          const matchedFood = this.state.foods.find(
+            (food) => food.id === ingredient.foodId,
+          );
+          if (foodSpec?.select) {
+            item.food = matchedFood
+              ? pickScalarFields(
+                  matchedFood as unknown as Record<string, unknown>,
+                  foodSpec.select,
+                )
+              : undefined;
+          } else if (ingSelect.food === true) {
+            item.food = matchedFood;
+          }
+          return item;
+        });
+    }
+    return projected;
+  }
+
+  private projectRecipe(
+    recipe: RecipeFixture,
+    args: {
+      select?: Record<string, unknown>;
+      include?: { versions?: { orderBy?: { version?: 'asc' | 'desc' } } };
+    },
+  ): HydratedRecipe {
+    const select = args.select;
+    if (!select) {
+      return this.hydrateRecipe(
+        recipe,
+        Boolean(args.include?.versions),
+        args.include?.versions?.orderBy?.version,
+      );
+    }
+
+    const projected = pickScalarFields(
+      recipe as unknown as Record<string, unknown>,
+      select,
+    );
+    const currentSpec = select.currentVersion as
+      | { select?: Record<string, unknown> }
+      | undefined;
+    if (currentSpec?.select) {
+      const currentVersion = this.state.versions.find(
+        (version) => version.id === recipe.currentVersionId,
+      );
+      projected.currentVersion = currentVersion
+        ? this.projectVersion(currentVersion, currentSpec.select)
+        : null;
+    }
+
+    const versionsSpec = select.versions as
+      | {
+          select?: Record<string, unknown>;
+          orderBy?: { version?: 'asc' | 'desc' };
+        }
+      | undefined;
+    if (versionsSpec?.select) {
+      const versions = this.state.versions.filter(
+        (version) => version.recipeId === recipe.id,
+      );
+      const versionOrder = versionsSpec.orderBy?.version;
+      if (versionOrder) {
+        versions.sort((left, right) =>
+          versionOrder === 'asc'
+            ? left.version - right.version
+            : right.version - left.version,
+        );
+      }
+      projected.versions = versions.map((version) =>
+        this.projectVersion(version, versionsSpec.select),
+      );
+    }
+
+    return projected as unknown as HydratedRecipe;
   }
 
   private hydrateVersion(version: VersionFixture) {
@@ -652,10 +782,19 @@ describe('RecipesService', () => {
 
     const detail = await service.findOne(RECIPE_ID, PROFESSIONAL_ID);
 
+    expect(prisma.findFirstCalls.at(-1)?.select).toEqual(RECIPE_DETAIL_SELECT);
     expect(detail.currentVersion).toMatchObject({
       version: 2,
       name: 'Versão atual',
+      description: validRecipeInput.description,
+      instructions: validRecipeInput.instructions,
     });
+    expect(detail.currentVersion!.ingredients[0].food).not.toHaveProperty(
+      'source',
+    );
+    expect(detail.currentVersion!.ingredients[0].food).not.toHaveProperty(
+      'createdAt',
+    );
     expect(detail.versions).toMatchObject([
       {
         version: 1,
@@ -668,6 +807,9 @@ describe('RecipesService', () => {
         ingredients: [{ food: { id: FOOD_ID, name: 'Aveia' } }],
       },
     ]);
+    expect(detail.versions[0]).not.toHaveProperty('description');
+    expect(detail.versions[0]).not.toHaveProperty('instructions');
+    expect(detail.versions[0].ingredients[0].food).not.toHaveProperty('kcal');
   });
 
   it('combines filters against currentVersion only', async () => {
@@ -719,6 +861,7 @@ describe('RecipesService', () => {
     expect(result).toHaveLength(1);
     expect(result[0].currentVersion!.name).toBe('Sopa atual');
     expect(prisma.lastRecipeFindManyArgs).toMatchObject({
+      select: RECIPE_LIST_SELECT,
       where: {
         professionalId: PROFESSIONAL_ID,
         status: RecipeStatus.ACTIVE,
@@ -735,6 +878,28 @@ describe('RecipesService', () => {
     });
     expect(prisma.lastRecipeFindManyArgs).not.toHaveProperty('where.versions');
     expect(result[0]).not.toHaveProperty('versions');
+    expect(result[0].currentVersion).not.toHaveProperty('ingredients');
+    expect(result[0].currentVersion).not.toHaveProperty('description');
+    expect(result[0].currentVersion).not.toHaveProperty('instructions');
+    expect(result[0].currentVersion).not.toHaveProperty('publishedAt');
+  });
+
+  it('uses minimal pre-check select projections on update and status transitions', async () => {
+    prisma.seedRecipe({ id: RECIPE_ID, version: 1 });
+
+    await service.update(
+      RECIPE_ID,
+      { ...validRecipeInput, expectedVersion: 1 },
+      PROFESSIONAL_ID,
+    );
+    await service.archive(RECIPE_ID, PROFESSIONAL_ID);
+
+    expect(prisma.findFirstCalls[0]?.select).toEqual({
+      id: true,
+      currentVersionId: true,
+      currentVersion: { select: { version: true } },
+    });
+    expect(prisma.findFirstCalls[2]?.select).toEqual({ id: true });
   });
 
   it('updates by appending version 2 and switching the current snapshot', async () => {

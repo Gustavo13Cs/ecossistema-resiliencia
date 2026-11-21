@@ -16,6 +16,18 @@ import {
 } from './dto/create-diet-plan.dto';
 import { SYSTEM_DIET_TEMPLATES } from './system-templates.data';
 
+export const DIET_PLAN_LIST_SELECT = {
+  id: true,
+  clientId: true,
+  title: true,
+  goal: true,
+  isActive: true,
+  isTemplate: true,
+  createdAt: true,
+  client: { select: { id: true, name: true } },
+  user: { select: { name: true } },
+} satisfies Prisma.DietPlanSelect;
+
 const fullPlanInclude = {
   meals: {
     include: {
@@ -235,10 +247,7 @@ export class DietPlansService {
   findAll(creatorId: string) {
     return this.prisma.dietPlan.findMany({
       where: { creatorId },
-      include: {
-        client: { select: { id: true, name: true } },
-        user: { select: { name: true } },
-      },
+      select: DIET_PLAN_LIST_SELECT,
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -767,12 +776,7 @@ export class DietPlansService {
           id: { in: recipeVersionIds },
           recipe: { professionalId: creatorId },
         },
-        include: {
-          recipe: {
-            select: { id: true, currentVersionId: true, status: true },
-          },
-          ingredients: { include: { food: true } },
-        },
+        select: { id: true },
       });
 
       if (ownedRecipeVersions.length !== recipeVersionIds.length) {

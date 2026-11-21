@@ -7,7 +7,7 @@ import {
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { CreateDietPlanDto } from './dto/create-diet-plan.dto';
-import { DietPlansService } from './diet-plans.service';
+import { DIET_PLAN_LIST_SELECT, DietPlansService } from './diet-plans.service';
 
 const PROFESSIONAL_ID = 'professional-1';
 const CLIENT_ID = 'client-1';
@@ -162,6 +162,31 @@ describe('DietPlansService professional ownership', () => {
     expect(createCall.include).toBeDefined();
   });
 
+  it('lists diet plans with minimal columns and preserves response validator fields', async () => {
+    prisma.dietPlan.findMany.mockResolvedValue([]);
+
+    await service.findAll(PROFESSIONAL_ID);
+
+    expect(prisma.dietPlan.findMany).toHaveBeenCalledWith({
+      where: { creatorId: PROFESSIONAL_ID },
+      select: DIET_PLAN_LIST_SELECT,
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(DIET_PLAN_LIST_SELECT).toEqual({
+      id: true,
+      clientId: true,
+      title: true,
+      goal: true,
+      isActive: true,
+      isTemplate: true,
+      createdAt: true,
+      client: { select: { id: true, name: true } },
+      user: { select: { name: true } },
+    });
+    expect(DIET_PLAN_LIST_SELECT).not.toHaveProperty('notes');
+    expect(DIET_PLAN_LIST_SELECT).not.toHaveProperty('meals');
+  });
+
   it('rejects a Client from another professional before mutating plans', async () => {
     prisma.client.findFirst.mockResolvedValue(null);
 
@@ -221,12 +246,7 @@ describe('DietPlansService professional ownership', () => {
         id: { in: [VERSION_1_ID] },
         recipe: { professionalId: PROFESSIONAL_ID },
       },
-      include: {
-        recipe: {
-          select: { id: true, currentVersionId: true, status: true },
-        },
-        ingredients: { include: { food: true } },
-      },
+      select: { id: true },
     });
     expect(prisma.dietPlan.updateMany).not.toHaveBeenCalled();
     expect(prisma.dietPlan.create).not.toHaveBeenCalled();
