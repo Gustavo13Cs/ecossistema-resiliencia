@@ -1,0 +1,739 @@
+{
+  "phase": "before",
+  "method": {
+    "origin": "http://127.0.0.1:3102",
+    "viewports": [
+      "1440x900 DPR1",
+      "1440x900 DPR2",
+      "390x844 DPR3"
+    ],
+    "api": "synthetic browser interception; no production access",
+    "cache": "browser disabled; server cache recorded",
+    "metric": "response body bytes of image requests; all visible images decoded",
+    "timings": "local; not Lighthouse or RUM"
+  },
+  "results": [
+    {
+      "route": "/",
+      "viewport": "desktop-1x",
+      "width": 1440,
+      "dpr": 1,
+      "images": [
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 32,
+          "cssHeight": 32,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        },
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 20,
+          "cssHeight": 20,
+          "inViewport": false,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/logo.png",
+          "status": 200,
+          "bodyBytes": 248272,
+          "sha256": "999db2245a61ca13b774071cce2c583dc121ff4f3fef50048c6023e74839b441",
+          "contentType": "image/png",
+          "cache": null,
+          "vary": null,
+          "width": 512,
+          "height": 512,
+          "format": "PNG",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 248272,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 952,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/logo.png",
+            "encodedBodySize": 248272,
+            "decodedBodySize": 248272,
+            "durationMs": 94.79999999888241
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/auth/login",
+      "viewport": "desktop-1x",
+      "width": 1440,
+      "dpr": 1,
+      "images": [
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 36,
+          "cssHeight": 36,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        },
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 0,
+          "cssHeight": 0,
+          "inViewport": false,
+          "visible": false,
+          "complete": false
+        }
+      ],
+      "responses": [
+        {
+          "path": "/logo.png",
+          "status": 200,
+          "bodyBytes": 248272,
+          "sha256": "999db2245a61ca13b774071cce2c583dc121ff4f3fef50048c6023e74839b441",
+          "contentType": "image/png",
+          "cache": null,
+          "vary": null,
+          "width": 512,
+          "height": 512,
+          "format": "PNG",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 248272,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 748,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/logo.png",
+            "encodedBodySize": 248272,
+            "decodedBodySize": 248272,
+            "durationMs": 39.29999999888241
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/auth/register",
+      "viewport": "desktop-1x",
+      "width": 1440,
+      "dpr": 1,
+      "images": [
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 24,
+          "cssHeight": 24,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/logo.png",
+          "status": 200,
+          "bodyBytes": 248272,
+          "sha256": "999db2245a61ca13b774071cce2c583dc121ff4f3fef50048c6023e74839b441",
+          "contentType": "image/png",
+          "cache": null,
+          "vary": null,
+          "width": 512,
+          "height": 512,
+          "format": "PNG",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 248272,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 1036,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/logo.png",
+            "encodedBodySize": 248272,
+            "decodedBodySize": 248272,
+            "durationMs": 52.80000000074506
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/clientes",
+      "viewport": "desktop-1x",
+      "width": 1440,
+      "dpr": 1,
+      "images": [
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 36,
+          "cssHeight": 36,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/logo.png",
+          "status": 200,
+          "bodyBytes": 248272,
+          "sha256": "999db2245a61ca13b774071cce2c583dc121ff4f3fef50048c6023e74839b441",
+          "contentType": "image/png",
+          "cache": null,
+          "vary": null,
+          "width": 512,
+          "height": 512,
+          "format": "PNG",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 248272,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 996,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/logo.png",
+            "encodedBodySize": 248272,
+            "decodedBodySize": 248272,
+            "durationMs": 109.69999999925494
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/",
+      "viewport": "desktop-2x",
+      "width": 1440,
+      "dpr": 2,
+      "images": [
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 32,
+          "cssHeight": 32,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        },
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 20,
+          "cssHeight": 20,
+          "inViewport": false,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/logo.png",
+          "status": 200,
+          "bodyBytes": 248272,
+          "sha256": "999db2245a61ca13b774071cce2c583dc121ff4f3fef50048c6023e74839b441",
+          "contentType": "image/png",
+          "cache": null,
+          "vary": null,
+          "width": 512,
+          "height": 512,
+          "format": "PNG",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 248272,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 848,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/logo.png",
+            "encodedBodySize": 248272,
+            "decodedBodySize": 248272,
+            "durationMs": 39.5
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/auth/login",
+      "viewport": "desktop-2x",
+      "width": 1440,
+      "dpr": 2,
+      "images": [
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 36,
+          "cssHeight": 36,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        },
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 0,
+          "cssHeight": 0,
+          "inViewport": false,
+          "visible": false,
+          "complete": false
+        }
+      ],
+      "responses": [
+        {
+          "path": "/logo.png",
+          "status": 200,
+          "bodyBytes": 248272,
+          "sha256": "999db2245a61ca13b774071cce2c583dc121ff4f3fef50048c6023e74839b441",
+          "contentType": "image/png",
+          "cache": null,
+          "vary": null,
+          "width": 512,
+          "height": 512,
+          "format": "PNG",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 248272,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 1096,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/logo.png",
+            "encodedBodySize": 248272,
+            "decodedBodySize": 248272,
+            "durationMs": 75.5
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/auth/register",
+      "viewport": "desktop-2x",
+      "width": 1440,
+      "dpr": 2,
+      "images": [
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 24,
+          "cssHeight": 24,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/logo.png",
+          "status": 200,
+          "bodyBytes": 248272,
+          "sha256": "999db2245a61ca13b774071cce2c583dc121ff4f3fef50048c6023e74839b441",
+          "contentType": "image/png",
+          "cache": null,
+          "vary": null,
+          "width": 512,
+          "height": 512,
+          "format": "PNG",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 248272,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 860,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/logo.png",
+            "encodedBodySize": 248272,
+            "decodedBodySize": 248272,
+            "durationMs": 28.59999999962747
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/clientes",
+      "viewport": "desktop-2x",
+      "width": 1440,
+      "dpr": 2,
+      "images": [
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 36,
+          "cssHeight": 36,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/logo.png",
+          "status": 200,
+          "bodyBytes": 248272,
+          "sha256": "999db2245a61ca13b774071cce2c583dc121ff4f3fef50048c6023e74839b441",
+          "contentType": "image/png",
+          "cache": null,
+          "vary": null,
+          "width": 512,
+          "height": 512,
+          "format": "PNG",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 248272,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 992,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/logo.png",
+            "encodedBodySize": 248272,
+            "decodedBodySize": 248272,
+            "durationMs": 87.5
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/",
+      "viewport": "mobile-3x",
+      "width": 390,
+      "dpr": 3,
+      "images": [
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 32,
+          "cssHeight": 32,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        },
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 20,
+          "cssHeight": 20,
+          "inViewport": false,
+          "visible": true,
+          "complete": false
+        }
+      ],
+      "responses": [
+        {
+          "path": "/logo.png",
+          "status": 200,
+          "bodyBytes": 248272,
+          "sha256": "999db2245a61ca13b774071cce2c583dc121ff4f3fef50048c6023e74839b441",
+          "contentType": "image/png",
+          "cache": null,
+          "vary": null,
+          "width": 512,
+          "height": 512,
+          "format": "PNG",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 248272,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 788,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/logo.png",
+            "encodedBodySize": 248272,
+            "decodedBodySize": 248272,
+            "durationMs": 19.800000000745058
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/auth/login",
+      "viewport": "mobile-3x",
+      "width": 390,
+      "dpr": 3,
+      "images": [
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 0,
+          "cssHeight": 0,
+          "inViewport": false,
+          "visible": false,
+          "complete": true
+        },
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 24,
+          "cssHeight": 24,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/logo.png",
+          "status": 200,
+          "bodyBytes": 248272,
+          "sha256": "999db2245a61ca13b774071cce2c583dc121ff4f3fef50048c6023e74839b441",
+          "contentType": "image/png",
+          "cache": null,
+          "vary": null,
+          "width": 512,
+          "height": 512,
+          "format": "PNG",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 248272,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 796,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/logo.png",
+            "encodedBodySize": 248272,
+            "decodedBodySize": 248272,
+            "durationMs": 27.59999999962747
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/auth/register",
+      "viewport": "mobile-3x",
+      "width": 390,
+      "dpr": 3,
+      "images": [
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 24,
+          "cssHeight": 24,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/logo.png",
+          "status": 200,
+          "bodyBytes": 248272,
+          "sha256": "999db2245a61ca13b774071cce2c583dc121ff4f3fef50048c6023e74839b441",
+          "contentType": "image/png",
+          "cache": null,
+          "vary": null,
+          "width": 512,
+          "height": 512,
+          "format": "PNG",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 248272,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 848,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/logo.png",
+            "encodedBodySize": 248272,
+            "decodedBodySize": 248272,
+            "durationMs": 9.399999998509884
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/clientes",
+      "viewport": "mobile-3x",
+      "width": 390,
+      "dpr": 3,
+      "images": [
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 0,
+          "cssHeight": 0,
+          "inViewport": false,
+          "visible": false,
+          "complete": true
+        },
+        {
+          "src": "/logo.png",
+          "currentSrc": "/logo.png",
+          "sizes": "",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "cssWidth": 36,
+          "cssHeight": 36,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/logo.png",
+          "status": 200,
+          "bodyBytes": 248272,
+          "sha256": "999db2245a61ca13b774071cce2c583dc121ff4f3fef50048c6023e74839b441",
+          "contentType": "image/png",
+          "cache": null,
+          "vary": null,
+          "width": 512,
+          "height": 512,
+          "format": "PNG",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 248272,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 800,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/logo.png",
+            "encodedBodySize": 248272,
+            "decodedBodySize": 248272,
+            "durationMs": 118.39999999850988
+          }
+        ]
+      },
+      "errors": []
+    }
+  ]
+}

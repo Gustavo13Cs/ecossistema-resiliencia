@@ -1,5 +1,17 @@
-import { describe, it, expect } from "vitest"
+import { act, cleanup, renderHook, waitFor } from "@testing-library/react"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import AxiosMockAdapter from "axios-mock-adapter"
+import { createElement, type ReactNode } from "react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { api } from "@/lib/api"
+import { queryKeys } from "@/lib/query-keys"
+import { useFollowUps } from "./useFollowUps"
 import type { FollowUpStatus, ChurnRiskLevel, RegularityLevel } from "@/types/follow-up"
+
+const session = vi.hoisted(() => ({
+  user: { sub: "prof-1", role: "NUTRITIONIST", name: "Profissional 1" },
+}))
+vi.mock("@/contexts/auth-context", () => ({ useAuth: () => session }))
 
 describe("Gestão de Retornos - Regras de Negócio e Classificação de Ciclos", () => {
   it("classifica retorno como UPCOMING_7_DAYS quando faltam até 7 dias para a consulta", () => {
@@ -122,6 +134,78 @@ describe("Gestão de Retornos - Regras de Negócio e Classificação de Ciclos",
 
     const status = daysUntilNextAppointment <= 7 ? "UPCOMING_7_DAYS" : "UPCOMING_30_DAYS"
     expect(status).toBe("UPCOMING_7_DAYS")
+  })
+})
+
+describe("useFollowUps refetch parallelization", () => {
+  let http: AxiosMockAdapter
+  const clientFixture = {
+    id: "c1",
+    professionalId: "prof-1",
+    name: "Paciente 1",
+    status: "ACTIVE",
+    createdAt: "2026-10-01T10:00:00.000Z",
+    updatedAt: "2026-11-01T10:00:00.000Z",
+  }
+
+  beforeEach(() => {
+    http = new AxiosMockAdapter(api)
+    http.onGet("/clients").reply(200, [clientFixture], { "X-Pagination-Total": "1" })
+    http.onGet("/appointments").reply(200, [])
+  })
+
+  afterEach(() => {
+    cleanup()
+    http.restore()
+  })
+
+  it("invalidates appointmentsRoot in parallel with client refetch without duplicate window GETs", async () => {
+    const cache = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const prof1AgendaKey = queryKeys.appointments("prof-1", "2026-11-01", "2026-11-30")
+    const prof2AgendaKey = queryKeys.appointments("prof-2", "2026-11-01", "2026-11-30")
+    cache.setQueryData(prof1AgendaKey, [])
+    cache.setQueryData(prof2AgendaKey, [])
+
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: cache }, children)
+    const { result } = renderHook(() => useFollowUps(), { wrapper })
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(http.history.get.filter((req) => req.url === "/appointments")).toHaveLength(3)
+
+    let resolveClients!: (res: [number, unknown, Record<string, string>]) => void
+    let clientsRefetchStarted = false
+    let refetchAppointmentCalls = 0
+    http.onGet("/clients").reply(() => {
+      clientsRefetchStarted = true
+      return new Promise((resolve) => {
+        resolveClients = resolve
+      })
+    })
+    http.onGet("/appointments").reply(() => {
+      refetchAppointmentCalls += 1
+      return [200, []]
+    })
+
+    let refetchPromise!: Promise<void>
+    act(() => {
+      refetchPromise = result.current.refetch()
+    })
+
+    await waitFor(() => {
+      expect(clientsRefetchStarted).toBe(true)
+      expect(refetchAppointmentCalls).toBe(3)
+    })
+
+    resolveClients([200, [clientFixture], { "X-Pagination-Total": "1" }])
+    await act(async () => {
+      await refetchPromise
+    })
+
+    expect(refetchAppointmentCalls).toBe(3)
+    expect(cache.getQueryState(prof1AgendaKey)?.isInvalidated).toBe(true)
+    expect(cache.getQueryState(prof2AgendaKey)?.isInvalidated).toBe(false)
+    cache.clear()
   })
 })
 

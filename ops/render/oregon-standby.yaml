@@ -1,0 +1,22 @@
+# Aplicar somente como parte da troca regional: existingResources=adopt.
+# Preserva as variáveis existentes, altera a branch de operação e desativa o cron.
+services:
+  - type: web
+    name: ecossistema-resiliencia
+    repo: https://github.com/Gustavo13Cs/ecossistema-resiliencia
+    branch: agent/codex/performance-diagnosis
+    runtime: node
+    rootDir: api
+    region: oregon
+    plan: free
+    autoDeployTrigger: 'off'
+    buildCommand: npm ci --include=dev && npx prisma generate && npm run build
+    # A medição inicial foi arquivada; a reserva inicia sem consultas da sonda.
+    startCommand: node dist/src/main.js
+    envVars:
+      - key: NODE_VERSION
+        value: 24.19.0
+      - key: API_REGION
+        value: oregon
+      - key: DISABLE_SCHEDULED_ALERTS
+        value: 'true'

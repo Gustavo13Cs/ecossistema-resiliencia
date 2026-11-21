@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { Client } from "@/types/client"
+import type { ClientSummary } from "@/types/client"
 import type {
   AgendaView,
   AppointmentFilters,
@@ -54,7 +54,7 @@ export function AgendaToolbar({
   view: AgendaView
   selectedDate: string
   periodLabel: string
-  clients: Client[]
+  clients: ClientSummary[]
   filters: AppointmentFilters
   clientPlural: string
   onViewChange: (view: AgendaView) => void

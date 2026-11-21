@@ -9,14 +9,15 @@ import { toast } from "sonner"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { ClientFilters } from "@/components/features/clients/ClientFilters"
 import { ClientList } from "@/components/features/clients/ClientList"
+import { ClientListSkeleton } from "@/components/features/clients/ClientListSkeleton"
 import { useAuth } from "@/contexts/auth-context"
-import { useClients } from "@/hooks/features/useClients"
+import { PaginationControls } from "@/components/feedback/PaginationControls"
+import { useClientsPage } from "@/hooks/features/useClients"
 import { api } from "@/lib/api"
 import { getWorkspaceDefinition } from "@/lib/professional-workspace"
 import { queryKeys } from "@/lib/query-keys"
-import type { Client, ClientStatus } from "@/types/client"
+import type { ClientStatus, ClientSummary } from "@/types/client"
 
-const normalizeSearch = (value: string) => value.trim().toLocaleLowerCase("pt-BR")
 
 export default function ClientesPage() {
   const router = useRouter()
@@ -27,11 +28,12 @@ export default function ClientesPage() {
   const mutationLock = useRef(false)
   const [search, setSearch] = useState("")
   const [pendingClientId, setPendingClientId] = useState<string | null>(null)
-  const { data: clients = [], error, isPending } = useClients(status)
+  const { data, error, isPending, isFetching, setPage } = useClientsPage(status, search)
+  const clients = data?.items ?? []
 
   const changeStatus = useMutation({
     mutationFn: async ({ clientId, nextStatus }: { clientId: string; nextStatus: ClientStatus }) => {
-      const response = await api.patch<Client>(`/clients/${clientId}/status`, { status: nextStatus })
+      const response = await api.patch<ClientSummary>(`/clients/${clientId}/status`, { status: nextStatus })
       return response.data
     },
   })
@@ -50,7 +52,7 @@ export default function ClientesPage() {
   const singular = workspace.clientSingular.toLocaleLowerCase("pt-BR")
   const plural = workspace.clientPlural.toLocaleLowerCase("pt-BR")
 
-  const handleStatusChange = async (client: Client) => {
+  const handleStatusChange = async (client: ClientSummary) => {
     if (mutationLock.current) return
     mutationLock.current = true
     setPendingClientId(client.id)
@@ -80,12 +82,6 @@ export default function ClientesPage() {
       setPendingClientId(null)
     }
   }
-
-  const normalizedSearch = normalizeSearch(search)
-  const filteredClients = normalizedSearch
-    ? clients.filter((client) => [client.name, client.email, client.phone, client.goal]
-        .some((value) => normalizeSearch(value ?? "").includes(normalizedSearch)))
-    : clients
 
   const statusWord = status === "ACTIVE" ? "ativos" : "arquivados"
   const emptyTitle = `Nenhum ${singular} ${status === "ACTIVE" ? "ativo" : "arquivado"}`
@@ -127,9 +123,7 @@ export default function ClientesPage() {
         />
 
         {isPending ? (
-          <div className="p-4 sm:p-5">
-            <AsyncState kind="loading" title={`Carregando ${plural}`} description="Buscando os registros da sua base privada." />
-          </div>
+          <ClientListSkeleton title={`Carregando ${plural}`} description="Buscando os registros da sua base privada." />
         ) : null}
 
         {error ? (
@@ -138,7 +132,7 @@ export default function ClientesPage() {
           </div>
         ) : null}
 
-        {!isPending && !error && clients.length === 0 ? (
+        {!isPending && !error && clients.length === 0 && !search.trim() ? (
           <div className="p-4 sm:p-5">
             <AsyncState
               kind="empty"
@@ -153,21 +147,22 @@ export default function ClientesPage() {
           </div>
         ) : null}
 
-        {!isPending && !error && clients.length > 0 && filteredClients.length === 0 ? (
+        {!isPending && !error && clients.length === 0 && Boolean(search.trim()) ? (
           <div className="p-4 sm:p-5">
             <AsyncState kind="empty" title={`Nenhum ${singular} encontrado`} description="Revise o termo da busca para ver outros registros desta lista." />
           </div>
         ) : null}
 
-        {!isPending && !error && filteredClients.length > 0 ? (
+        {!isPending && !error && clients.length > 0 ? (
           <ClientList
-            clients={filteredClients}
+            clients={clients}
             status={status}
             workspace={workspace}
             pendingClientId={pendingClientId}
             onChangeStatus={handleStatusChange}
           />
         ) : null}
+        {data && !error ? <PaginationControls pagination={data.pagination} busy={isFetching} onPageChange={setPage} label="clientes" /> : null}
       </section>
     </div>
   )

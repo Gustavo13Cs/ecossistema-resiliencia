@@ -43,12 +43,16 @@ export default function NovaReabilitacaoPage() {
   ])
 
   useEffect(() => {
+    const controller = new AbortController()
     const loadData = async () => {
       try {
-        const clientRes = await api.get<Client>(`/clients/${params.id}`)
+        const [clientRes, planRes] = await Promise.all([
+          api.get<Client>(`/clients/${params.id}`, { signal: controller.signal }),
+          api.get<RehabPlan | null>(`/rehab-plans/client/${params.id}/active`, { signal: controller.signal }),
+        ])
+        if (controller.signal.aborted) return
         setPatientName(clientRes.data.name)
 
-        const planRes = await api.get<RehabPlan | null>(`/rehab-plans/client/${params.id}/active`)
         if (planRes.data) {
           const active = planRes.data
           setPlanInfo({
@@ -74,10 +78,14 @@ export default function NovaReabilitacaoPage() {
           }
         }
       } catch {
+        if (controller.signal.aborted) return
         toast.error("Não foi possível carregar o prontuário e o protocolo.")
       }
     }
-    loadData()
+    void loadData()
+    return () => {
+      controller.abort()
+    }
   }, [params.id])
 
   const addSession = () => {

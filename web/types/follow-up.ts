@@ -1,5 +1,5 @@
 import type { Appointment } from "@/types/appointment"
-import type { Client } from "@/types/client"
+import type { ClientSummary } from "@/types/client"
 
 export type FollowUpStatus =
   | "UPCOMING_7_DAYS"
@@ -15,7 +15,7 @@ export type ChurnRiskLevel = "LOW" | "MEDIUM" | "HIGH"
 export type RegularityLevel = "EXCELLENT" | "REGULAR" | "IRREGULAR" | "NEW_CLIENT"
 
 export interface ClientFollowUpSummary {
-  client: Client
+  client: ClientSummary
   lastAppointment: Appointment | null
   nextAppointment: Appointment | null
   daysSinceLastAppointment: number | null

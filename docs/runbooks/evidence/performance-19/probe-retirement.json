@@ -1,0 +1,24 @@
+{
+  "sourceCommit": "2c8f81109130cf4a4d25494ad96a198ad4fd5349",
+  "credentialsRemovedFromActiveConfig": true,
+  "probesDisabled": true,
+  "deployments": [
+    {
+      "region": "oregon",
+      "serviceId": "srv-dbudpb6c6qcc73deve80",
+      "deployId": "dep-dbudul7f3r2c73apm9og",
+      "state": "live",
+      "finishedAt": "2026-11-17T23:13:25.270845Z",
+      "disabledLogAt": "2026-11-17T23:13:22.119810978Z"
+    },
+    {
+      "region": "virginia",
+      "serviceId": "srv-dbudpb6c6qcc73deve70",
+      "deployId": "dep-dbudumom7kps73c4d6g0",
+      "state": "live",
+      "finishedAt": "2026-11-17T23:13:33.044171Z",
+      "disabledLogAt": "2026-11-17T23:13:28.717341625Z"
+    }
+  ],
+  "note": "Services remain registered but contain no active production connection and open no database connections. Free idle sleep applies; deletion/suspension unavailable in this connector."
+}

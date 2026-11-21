@@ -139,9 +139,25 @@ describe("Ciclo de vida de clientes (mocked)", () => {
         csrfToken: "csrf-e2e",
       },
     })
-    cy.intercept("GET", "**/clients?status=ACTIVE", {
-      body: [{ id: "client-1", name: "Ana", status: "ACTIVE", email: null, phone: null, updatedAt: "2026-08-24T12:00:00.000Z" }],
-    }).as("activeClients")
+    cy.intercept(
+      { method: "GET", pathname: "**/clients", query: { status: "ACTIVE" } },
+      {
+        body: [{ id: "client-1", name: "Ana", status: "ACTIVE", email: null, phone: null, updatedAt: "2026-08-24T12:00:00.000Z" }],
+      },
+    ).as("activeClients")
+    cy.intercept("GET", "**/assessments/client/client-1", { body: [] })
+    cy.intercept("GET", "**/workouts/client/client-1/overview", {
+      body: {
+        client: { id: "client-1", status: "ACTIVE" },
+        activeWorkout: null,
+        recentAssessments: [],
+      },
+    })
+    cy.intercept("GET", "**/workouts/anamneses/client/client-1", { body: [] })
+    cy.intercept(
+      { method: "GET", pathname: "**/workouts/drafts" },
+      { body: { items: [], nextCursor: null } },
+    )
     cy.intercept(
       {
         method: "GET",
@@ -233,7 +249,10 @@ describe("Ciclo de vida de clientes (mocked)", () => {
         csrfToken: "csrf-e2e",
       },
     })
-    cy.intercept("GET", "**/clients?status=ACTIVE", { body: [] }).as("activeClients")
+    cy.intercept(
+      { method: "GET", pathname: "**/clients", query: { status: "ACTIVE" } },
+      { body: [] },
+    ).as("activeClients")
     cy.intercept("GET", "**/clients/client-2", {
       body: {
         id: "client-2",
@@ -244,7 +263,9 @@ describe("Ciclo de vida de clientes (mocked)", () => {
         updatedAt: "2026-08-24T12:00:00.000Z",
       },
     }).as("archivedClientDetail")
-    cy.intercept("GET", "**/clients?status=ARCHIVED", (request) => {
+    cy.intercept(
+      { method: "GET", pathname: "**/clients", query: { status: "ARCHIVED" } },
+      (request) => {
       archivedFetches += 1
       request.reply({
         delay: archivedFetches === 1 ? 0 : 1_000,

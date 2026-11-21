@@ -118,7 +118,7 @@ describe("professional client directory", () => {
     ["PHYSIO", "Pacientes", "Novo paciente"],
   ] as const)("uses %s terminology across the directory", async (role, plural, createLabel) => {
     session.role = role
-    http.onGet("/clients", { params: { status: "ACTIVE" } }).reply(200, [])
+    http.onGet("/clients", { params: expect.objectContaining({ status: "ACTIVE", page: 1, pageSize: 25 }) }).reply(200, [])
 
     renderPage()
 
@@ -129,7 +129,7 @@ describe("professional client directory", () => {
 
   it("offers accessible search and status filters over authorized results", async () => {
     const user = userEvent.setup()
-    http.onGet("/clients", { params: { status: "ACTIVE" } }).reply(200, [
+    http.onGet("/clients", { params: expect.objectContaining({ status: "ACTIVE", page: 1, pageSize: 25 }) }).reply(200, [
       activeClient,
       makeClient("bruno", "Bruno Lima", "ACTIVE"),
     ])
@@ -264,7 +264,7 @@ describe("professional client directory", () => {
 
   it("keeps mutation controls locked until cache invalidation settles", async () => {
     const user = userEvent.setup()
-    http.onGet("/clients", { params: { status: "ACTIVE" } }).reply(200, [activeClient])
+    http.onGet("/clients", { params: expect.objectContaining({ status: "ACTIVE", page: 1, pageSize: 25 }) }).reply(200, [activeClient])
     http.onPatch("/clients/ana/status").reply(200, { ...activeClient, status: "ARCHIVED" })
     const { queryClient } = renderPage()
     let releaseInvalidation!: () => void
@@ -282,19 +282,19 @@ describe("professional client directory", () => {
   })
 
   it("shows honest loading, empty, and error states", async () => {
-    http.onGet("/clients", { params: { status: "ACTIVE" } }).reply(() => new Promise(() => {}))
+    http.onGet("/clients", { params: expect.objectContaining({ status: "ACTIVE", page: 1, pageSize: 25 }) }).reply(() => new Promise(() => {}))
     const loading = renderPage()
     expect(screen.getByRole("status", { name: "Carregando pacientes" })).toBeInTheDocument()
     loading.unmount()
 
     http.reset()
-    http.onGet("/clients", { params: { status: "ACTIVE" } }).reply(200, [])
+    http.onGet("/clients", { params: expect.objectContaining({ status: "ACTIVE", page: 1, pageSize: 25 }) }).reply(200, [])
     const empty = renderPage()
     expect(await screen.findByRole("status", { name: "Nenhum paciente ativo" })).toBeInTheDocument()
     empty.unmount()
 
     http.reset()
-    http.onGet("/clients", { params: { status: "ACTIVE" } }).reply(500)
+    http.onGet("/clients", { params: expect.objectContaining({ status: "ACTIVE", page: 1, pageSize: 25 }) }).reply(500)
     renderPage()
     expect(await screen.findByRole("alert", { name: "Não foi possível carregar os pacientes" })).toBeInTheDocument()
   })

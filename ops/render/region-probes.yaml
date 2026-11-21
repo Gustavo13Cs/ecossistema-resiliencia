@@ -1,0 +1,45 @@
+# Coleta concluída: sondas sem credenciais e sem novas consultas.
+# Os resultados e a revisão original estão no runbook de performance 19.
+services:
+  - type: web
+    name: safemove-region-probe-oregon
+    runtime: node
+    rootDir: api
+    region: oregon
+    plan: free
+    autoDeployTrigger: 'off'
+    buildCommand: npm ci --include=dev --ignore-scripts && npx tsc scripts/region-latency.ts --outDir region-probe-dist --module commonjs --esModuleInterop --target ES2022 --skipLibCheck --strict
+    startCommand: node region-probe-dist/region-latency.js
+    healthCheckPath: /
+    envVars:
+      - key: PROBE_REGION
+        value: oregon
+      - key: PROBE_SERVE
+        value: 'true'
+      - key: NODE_VERSION
+        value: 24.19.0
+      - key: REGIONAL_DATABASE_URL
+        value: disabled
+      - key: PROBE_DISABLED
+        value: 'true'
+  - type: web
+    name: safemove-region-probe-virginia
+    runtime: node
+    rootDir: api
+    region: virginia
+    plan: free
+    autoDeployTrigger: 'off'
+    buildCommand: npm ci --include=dev --ignore-scripts && npx tsc scripts/region-latency.ts --outDir region-probe-dist --module commonjs --esModuleInterop --target ES2022 --skipLibCheck --strict
+    startCommand: node region-probe-dist/region-latency.js
+    healthCheckPath: /
+    envVars:
+      - key: PROBE_REGION
+        value: virginia
+      - key: PROBE_SERVE
+        value: 'true'
+      - key: NODE_VERSION
+        value: 24.19.0
+      - key: REGIONAL_DATABASE_URL
+        value: disabled
+      - key: PROBE_DISABLED
+        value: 'true'

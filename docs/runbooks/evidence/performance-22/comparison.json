@@ -1,0 +1,159 @@
+{
+  "baselineCommit": "ab9b735b42559a2fb6449527d4e2441535654615",
+  "runsPerScenario": 3,
+  "rows": [
+    {
+      "scenario": "client-nutrition",
+      "before": {
+        "rawBytes": 1251013,
+        "gzipBytes": 366386,
+        "encodedBytes": 367781,
+        "jsRequests": 18,
+        "lcpMs": 3664,
+        "rechartsInitiallyLoaded": true
+      },
+      "after": {
+        "rawBytes": 1228820,
+        "gzipBytes": 362271,
+        "encodedBytes": 363590,
+        "jsRequests": 19,
+        "lcpMs": 3860,
+        "rechartsInitiallyLoaded": true
+      },
+      "gzipReductionPercent": 1.123132434099556,
+      "encodedReductionPercent": 1.1395368439370168
+    },
+    {
+      "scenario": "client-personal",
+      "before": {
+        "rawBytes": 1251013,
+        "gzipBytes": 366386,
+        "encodedBytes": 367781,
+        "jsRequests": 18,
+        "lcpMs": 3708,
+        "rechartsInitiallyLoaded": true
+      },
+      "after": {
+        "rawBytes": 820274,
+        "gzipBytes": 254092,
+        "encodedBytes": 254932,
+        "jsRequests": 16,
+        "lcpMs": 3412,
+        "rechartsInitiallyLoaded": false
+      },
+      "gzipReductionPercent": 30.64909685413744,
+      "encodedReductionPercent": 30.683749296456316
+    },
+    {
+      "scenario": "client-exams",
+      "before": {
+        "rawBytes": 1152712,
+        "gzipBytes": 338432,
+        "encodedBytes": 339737,
+        "jsRequests": 16,
+        "lcpMs": 3252,
+        "rechartsInitiallyLoaded": true
+      },
+      "after": {
+        "rawBytes": 1158155,
+        "gzipBytes": 340959,
+        "encodedBytes": 342250,
+        "jsRequests": 18,
+        "lcpMs": 3012,
+        "rechartsInitiallyLoaded": true
+      },
+      "gzipReductionPercent": -0.7466788010590015,
+      "encodedReductionPercent": -0.7396898188893173
+    },
+    {
+      "scenario": "client-exams-empty",
+      "before": {
+        "rawBytes": 1152712,
+        "gzipBytes": 338432,
+        "encodedBytes": 339737,
+        "jsRequests": 16,
+        "lcpMs": 3172,
+        "rechartsInitiallyLoaded": true
+      },
+      "after": {
+        "rawBytes": 750030,
+        "gzipBytes": 232883,
+        "encodedBytes": 233695,
+        "jsRequests": 15,
+        "lcpMs": 3376,
+        "rechartsInitiallyLoaded": false
+      },
+      "gzipReductionPercent": 31.187653649773072,
+      "encodedReductionPercent": 31.212967677939112
+    },
+    {
+      "scenario": "exams",
+      "before": {
+        "rawBytes": 1225842,
+        "gzipBytes": 353489,
+        "encodedBytes": 354942,
+        "jsRequests": 17,
+        "lcpMs": 3416,
+        "rechartsInitiallyLoaded": true
+      },
+      "after": {
+        "rawBytes": 788863,
+        "gzipBytes": 242294,
+        "encodedBytes": 243450,
+        "jsRequests": 16,
+        "lcpMs": 3668,
+        "rechartsInitiallyLoaded": false
+      },
+      "gzipReductionPercent": 31.456424386614575,
+      "encodedReductionPercent": 31.41132917490745
+    },
+    {
+      "scenario": "evolution-nutrition",
+      "before": {
+        "rawBytes": 1234925,
+        "gzipBytes": 357649,
+        "encodedBytes": 359063,
+        "jsRequests": 18,
+        "lcpMs": 1472,
+        "rechartsInitiallyLoaded": true
+      },
+      "after": {
+        "rawBytes": 796897,
+        "gzipBytes": 243630,
+        "encodedBytes": 244608,
+        "jsRequests": 15,
+        "lcpMs": 1768,
+        "rechartsInitiallyLoaded": false
+      },
+      "gzipReductionPercent": 31.88013946634829,
+      "encodedReductionPercent": 31.87602175662767
+    },
+    {
+      "scenario": "evolution-personal",
+      "before": {
+        "rawBytes": 1234925,
+        "gzipBytes": 357649,
+        "encodedBytes": 359063,
+        "jsRequests": 18,
+        "lcpMs": 3776,
+        "rechartsInitiallyLoaded": true
+      },
+      "after": {
+        "rawBytes": 1232744,
+        "gzipBytes": 357964,
+        "encodedBytes": 359462,
+        "jsRequests": 18,
+        "lcpMs": 3004,
+        "rechartsInitiallyLoaded": true
+      },
+      "gzipReductionPercent": -0.08807517985510933,
+      "encodedReductionPercent": -0.11112256066484155
+    }
+  ],
+  "limitations": [
+    "Browser local com APIs sintéticas; sem sessão de produção",
+    "LCP exploratório com três amostras e CPU compartilhada com verificações; não é Lighthouse nem RUM",
+    "gzipBytes calculado por arquivo; encodedBytes observado em Resource Timing",
+    "Gráficos visíveis permanecem imediatos após dados, sem espera por scroll ou clique"
+  ]
+}

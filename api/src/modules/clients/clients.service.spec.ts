@@ -6,7 +6,7 @@ import { validate } from 'class-validator';
 import { ClientAccessService } from '../../common/client-access/client-access.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
-import { ClientsService } from './clients.service';
+import { CLIENT_LIST_SELECT, ClientsService } from './clients.service';
 
 describe('ClientsService', () => {
   const tx = {
@@ -18,7 +18,7 @@ describe('ClientsService', () => {
     clientAuditEvent: { create: jest.fn() },
   };
   const prisma = {
-    client: { findMany: jest.fn() },
+    client: { findMany: jest.fn(), count: jest.fn() },
     $transaction: jest.fn(),
   };
   const access = { getOwnedClient: jest.fn() };
@@ -82,15 +82,81 @@ describe('ClientsService', () => {
     });
   });
 
-  it('lists only the authenticated professional active clients', async () => {
+  it('lists only the authenticated professional active clients with minimal columns', async () => {
     prisma.client.findMany.mockResolvedValue([]);
 
     await service.findAll({ sub: 'pro-2', role: 'PERSONAL' }, 'ACTIVE');
 
     expect(prisma.client.findMany).toHaveBeenCalledWith({
       where: { professionalId: 'pro-2', status: 'ACTIVE' },
-      orderBy: [{ name: 'asc' }, { createdAt: 'desc' }],
+      select: CLIENT_LIST_SELECT,
+      orderBy: [{ name: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
+      take: 25,
+      skip: 0,
     });
+  });
+
+  it('paginates clients with CLIENT_LIST_SELECT and omits clinical text columns', async () => {
+    const projectedRow = {
+      id: 'client-1',
+      professionalId: 'pro-1',
+      name: 'Ana',
+      email: 'ana@example.test',
+      phone: '11999999999',
+      goal: 'Saúde',
+      initialWeight: 68,
+      status: 'ACTIVE',
+      createdAt: new Date('2026-09-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-09-02T00:00:00.000Z'),
+    };
+    prisma.client.findMany.mockResolvedValue([projectedRow]);
+    prisma.client.count.mockResolvedValue(1);
+
+    const page = await service.findPage(
+      { sub: 'pro-1', role: 'NUTRITIONIST' },
+      { page: 1, pageSize: 25, status: 'ACTIVE', q: 'Ana' },
+    );
+
+    expect(page.items).toEqual([projectedRow]);
+    expect(prisma.client.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: CLIENT_LIST_SELECT,
+        skip: 0,
+        take: 25,
+      }),
+    );
+    expect(Object.keys(CLIENT_LIST_SELECT).sort()).toEqual([
+      'createdAt',
+      'email',
+      'goal',
+      'id',
+      'initialWeight',
+      'name',
+      'phone',
+      'professionalId',
+      'status',
+      'updatedAt',
+    ]);
+    for (const omitted of [
+      'professionalNotes',
+      'privacyNotes',
+      'allergies',
+      'pathologies',
+      'birthDate',
+      'gender',
+      'height',
+      'typicalSleep',
+      'stressLevel',
+      'foodRelationship',
+      'psychologyHistory',
+      'exerciseType',
+      'exerciseFrequency',
+      'exerciseDuration',
+      'hasPersonal',
+      'workActivityLevel',
+    ]) {
+      expect(CLIENT_LIST_SELECT).not.toHaveProperty(omitted);
+    }
   });
 
   it('delegates findOne to the ownership service', async () => {

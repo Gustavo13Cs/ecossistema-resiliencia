@@ -1,10 +1,22 @@
-import { describe, expect, it } from "vitest"
+import { act, cleanup, renderHook, waitFor } from "@testing-library/react"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import AxiosMockAdapter from "axios-mock-adapter"
+import { createElement, type ReactNode } from "react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { api } from "@/lib/api"
+import { queryKeys } from "@/lib/query-keys"
 import {
   calculatePersonalFollowUpItem,
   summarizePersonalFollowUpsKpi,
+  usePersonalFollowUps,
 } from "./usePersonalFollowUps"
 import type { Client } from "@/types/client"
 import type { Periodization } from "@/types/workout-p3"
+
+const session = vi.hoisted(() => ({
+  user: { sub: "prof-1", role: "PERSONAL", name: "Personal 1" },
+}))
+vi.mock("@/contexts/auth-context", () => ({ useAuth: () => session }))
 
 const mockClient = (id: string, name: string): Client => ({
   id,
@@ -134,5 +146,97 @@ describe("usePersonalFollowUps domain logic", () => {
     const kpi = summarizePersonalFollowUpsKpi([item])
     expect(kpi.deloadOrEndingSoonCount).toBe(1)
     expect(kpi.assessmentPendingCount).toBe(1)
+  })
+})
+
+describe("usePersonalFollowUps refetch parallelization", () => {
+  let http: AxiosMockAdapter
+
+  beforeEach(() => {
+    http = new AxiosMockAdapter(api)
+    http.onGet("/clients").reply(200, [mockClient("c1", "Fernanda Lima")], {
+      "X-Pagination-Total": "1",
+    })
+    http.onGet("/workouts").reply(200, [])
+    http.onGet("/workouts/drafts").reply(200, { items: [] })
+    http.onGet("/assessments").reply(200, [])
+    http.onGet("/appointments").reply(200, [])
+  })
+
+  afterEach(() => {
+    cleanup()
+    http.restore()
+  })
+
+  it("invalidates appointmentsRoot in parallel with all follow-up refetches without duplicate window GETs", async () => {
+    const cache = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const prof1AgendaKey = queryKeys.appointments("prof-1", "2026-11-01", "2026-11-30")
+    const prof2AgendaKey = queryKeys.appointments("prof-2", "2026-11-01", "2026-11-30")
+    cache.setQueryData(prof1AgendaKey, [])
+    cache.setQueryData(prof2AgendaKey, [])
+
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: cache }, children)
+    const { result } = renderHook(() => usePersonalFollowUps(), { wrapper })
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(http.history.get.filter((req) => req.url === "/appointments")).toHaveLength(3)
+
+    let resolveClients!: (res: [number, unknown, Record<string, string>]) => void
+    let clientsRefetchStarted = false
+    let refetchWorkoutCalls = 0
+    let refetchDraftCalls = 0
+    let refetchAssessmentCalls = 0
+    let refetchAppointmentCalls = 0
+
+    http.onGet("/clients").reply(() => {
+      clientsRefetchStarted = true
+      return new Promise((resolve) => {
+        resolveClients = resolve
+      })
+    })
+    http.onGet("/workouts").reply(() => {
+      refetchWorkoutCalls += 1
+      return [200, []]
+    })
+    http.onGet("/workouts/drafts").reply(() => {
+      refetchDraftCalls += 1
+      return [200, { items: [] }]
+    })
+    http.onGet("/assessments").reply(() => {
+      refetchAssessmentCalls += 1
+      return [200, []]
+    })
+    http.onGet("/appointments").reply(() => {
+      refetchAppointmentCalls += 1
+      return [200, []]
+    })
+
+    let refetchPromise!: Promise<void>
+    act(() => {
+      refetchPromise = result.current.refetch()
+    })
+
+    await waitFor(() => {
+      expect(clientsRefetchStarted).toBe(true)
+      expect(refetchWorkoutCalls).toBe(1)
+      expect(refetchDraftCalls).toBe(1)
+      expect(refetchAssessmentCalls).toBe(1)
+      expect(refetchAppointmentCalls).toBe(3)
+    })
+
+    resolveClients([
+      200,
+      [mockClient("c1", "Fernanda Lima")],
+      { "X-Pagination-Total": "1" },
+    ])
+    await act(async () => {
+      await refetchPromise
+    })
+
+    expect(refetchAppointmentCalls).toBe(3)
+    expect(cache.getQueryState(prof1AgendaKey)?.isInvalidated).toBe(true)
+    expect(cache.getQueryState(prof2AgendaKey)?.isInvalidated).toBe(false)
+    cache.clear()
   })
 })

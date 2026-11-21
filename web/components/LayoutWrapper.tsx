@@ -4,14 +4,13 @@ import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { ProfessionalRouteBoundary } from "@/components/auth/ProfessionalRouteBoundary"
 import { AppShell } from "@/components/layout/AppShell"
-
-const PUBLIC_ROUTES = new Set(["/", "/auth/login", "/auth/register"])
+import { isPublicRoute } from "@/lib/public-routes"
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
   const pathname = usePathname()
 
-  if (PUBLIC_ROUTES.has(pathname)) {
+  if (isPublicRoute(pathname)) {
     return <>{children}</>
   }
 

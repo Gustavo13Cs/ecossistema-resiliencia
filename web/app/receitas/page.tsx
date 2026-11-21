@@ -82,9 +82,13 @@ export default function ReceitasPage() {
     setFormOpen(true)
   }
 
-  const submitRecipe = async (values: RecipeFormValues) => {
+  const submitRecipe = async (values: RecipeFormValues, expectedVersion?: number) => {
     if (editingRecipe) {
-      await updateRecipe.mutateAsync({ recipeId: editingRecipe.id, values, expectedVersion: editingRecipe.currentVersion.version })
+      await updateRecipe.mutateAsync({
+        recipeId: editingRecipe.id,
+        values,
+        expectedVersion: expectedVersion ?? editingRecipe.currentVersion.version,
+      })
     } else {
       await createRecipe.mutateAsync(values)
     }

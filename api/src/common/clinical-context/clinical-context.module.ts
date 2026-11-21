@@ -6,9 +6,10 @@ import {
 } from '@nestjs/core';
 import { ClinicalResponseValidator } from './clinical-response.validator';
 import { ClinicalContextInterceptor } from './clinical-context.interceptor';
+import { ObservabilityModule } from '../observability/observability.module';
 
 @Module({
-  imports: [DiscoveryModule],
+  imports: [DiscoveryModule, ObservabilityModule],
   providers: [
     ClinicalResponseValidator,
     MetadataScanner,

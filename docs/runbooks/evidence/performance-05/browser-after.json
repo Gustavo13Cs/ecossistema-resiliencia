@@ -1,0 +1,984 @@
+{
+  "scope": "Production Next + local Nest/PostgreSQL/RLS; auth/me and JWT guard synthetic; no production traffic",
+  "checks": [
+    {
+      "width": 1440,
+      "clients": "next/search/archive/restore/reset/fit passed"
+    },
+    {
+      "width": 1440,
+      "exams": "next/global KPIs/custom search/status + category/orders next/all 600 graph points passed"
+    },
+    {
+      "width": 390,
+      "clients": "next/search/archive/restore/reset/fit passed"
+    },
+    {
+      "width": 390,
+      "exams": "next/global KPIs/custom search/status + category/orders next/all 600 graph points passed"
+    }
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "width": 1440,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 1440,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "2"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 1440,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "q": [
+          "100%"
+        ],
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 1
+    },
+    {
+      "width": 1440,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 1440,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ARCHIVED"
+        ],
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 1
+    },
+    {
+      "width": 1440,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ARCHIVED"
+        ],
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 0
+    },
+    {
+      "width": 1440,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 1440,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "100"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 1440,
+      "path": "/api/lab-orders",
+      "query": {
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 1440,
+      "path": "/api/lab-exams",
+      "query": {
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ],
+        "status": [
+          "ALL"
+        ],
+        "category": [
+          "ALL"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 1440,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "2"
+        ],
+        "pageSize": [
+          "100"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 1440,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "3"
+        ],
+        "pageSize": [
+          "100"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 1440,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "4"
+        ],
+        "pageSize": [
+          "100"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 1440,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "5"
+        ],
+        "pageSize": [
+          "100"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 1440,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "6"
+        ],
+        "pageSize": [
+          "100"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 1440,
+      "path": "/api/lab-exams",
+      "query": {
+        "page": [
+          "2"
+        ],
+        "pageSize": [
+          "25"
+        ],
+        "status": [
+          "ALL"
+        ],
+        "category": [
+          "ALL"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 1440,
+      "path": "/api/lab-exams",
+      "query": {
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ],
+        "q": [
+          "glicemia"
+        ],
+        "status": [
+          "ALL"
+        ],
+        "category": [
+          "ALL"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 1440,
+      "path": "/api/lab-exams",
+      "query": {
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ],
+        "q": [
+          "Marcador próprio"
+        ],
+        "status": [
+          "ALL"
+        ],
+        "category": [
+          "ALL"
+        ]
+      },
+      "status": 200,
+      "rows": 1
+    },
+    {
+      "width": 1440,
+      "path": "/api/lab-exams",
+      "query": {
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ],
+        "status": [
+          "ALERT"
+        ],
+        "category": [
+          "ALL"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 1440,
+      "path": "/api/lab-exams",
+      "query": {
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ],
+        "status": [
+          "ALERT"
+        ],
+        "category": [
+          "VITAMINS_MINERALS"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 1440,
+      "path": "/api/lab-orders",
+      "query": {
+        "page": [
+          "2"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 1440,
+      "path": "/api/lab-exams/longitudinal",
+      "query": {
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "100"
+        ],
+        "markerName": [
+          "Glicemia de Jejum"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 1440,
+      "path": "/api/lab-exams/longitudinal",
+      "query": {
+        "page": [
+          "4"
+        ],
+        "pageSize": [
+          "100"
+        ],
+        "markerName": [
+          "Glicemia de Jejum"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 1440,
+      "path": "/api/lab-exams/longitudinal",
+      "query": {
+        "page": [
+          "2"
+        ],
+        "pageSize": [
+          "100"
+        ],
+        "markerName": [
+          "Glicemia de Jejum"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 1440,
+      "path": "/api/lab-exams/longitudinal",
+      "query": {
+        "page": [
+          "5"
+        ],
+        "pageSize": [
+          "100"
+        ],
+        "markerName": [
+          "Glicemia de Jejum"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 1440,
+      "path": "/api/lab-exams/longitudinal",
+      "query": {
+        "page": [
+          "3"
+        ],
+        "pageSize": [
+          "100"
+        ],
+        "markerName": [
+          "Glicemia de Jejum"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 1440,
+      "path": "/api/lab-exams/longitudinal",
+      "query": {
+        "page": [
+          "6"
+        ],
+        "pageSize": [
+          "100"
+        ],
+        "markerName": [
+          "Glicemia de Jejum"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 390,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 390,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "2"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 390,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "q": [
+          "100%"
+        ],
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 1
+    },
+    {
+      "width": 390,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 390,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ARCHIVED"
+        ],
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 1
+    },
+    {
+      "width": 390,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ARCHIVED"
+        ],
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 0
+    },
+    {
+      "width": 390,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 390,
+      "path": "/api/lab-orders",
+      "query": {
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 390,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "100"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 390,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "3"
+        ],
+        "pageSize": [
+          "100"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 390,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "5"
+        ],
+        "pageSize": [
+          "100"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 390,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "2"
+        ],
+        "pageSize": [
+          "100"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 390,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "4"
+        ],
+        "pageSize": [
+          "100"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 390,
+      "path": "/api/lab-exams",
+      "query": {
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ],
+        "status": [
+          "ALL"
+        ],
+        "category": [
+          "ALL"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 390,
+      "path": "/api/clients",
+      "query": {
+        "status": [
+          "ACTIVE"
+        ],
+        "page": [
+          "6"
+        ],
+        "pageSize": [
+          "100"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 390,
+      "path": "/api/lab-exams",
+      "query": {
+        "page": [
+          "2"
+        ],
+        "pageSize": [
+          "25"
+        ],
+        "status": [
+          "ALL"
+        ],
+        "category": [
+          "ALL"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 390,
+      "path": "/api/lab-exams",
+      "query": {
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ],
+        "q": [
+          "glicemia"
+        ],
+        "status": [
+          "ALL"
+        ],
+        "category": [
+          "ALL"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 390,
+      "path": "/api/lab-exams",
+      "query": {
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ],
+        "q": [
+          "Marcador próprio"
+        ],
+        "status": [
+          "ALL"
+        ],
+        "category": [
+          "ALL"
+        ]
+      },
+      "status": 200,
+      "rows": 1
+    },
+    {
+      "width": 390,
+      "path": "/api/lab-exams",
+      "query": {
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ],
+        "status": [
+          "ALERT"
+        ],
+        "category": [
+          "ALL"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 390,
+      "path": "/api/lab-exams",
+      "query": {
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "25"
+        ],
+        "status": [
+          "ALERT"
+        ],
+        "category": [
+          "VITAMINS_MINERALS"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 390,
+      "path": "/api/lab-orders",
+      "query": {
+        "page": [
+          "2"
+        ],
+        "pageSize": [
+          "25"
+        ]
+      },
+      "status": 200,
+      "rows": 25
+    },
+    {
+      "width": 390,
+      "path": "/api/lab-exams/longitudinal",
+      "query": {
+        "page": [
+          "1"
+        ],
+        "pageSize": [
+          "100"
+        ],
+        "markerName": [
+          "Glicemia de Jejum"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 390,
+      "path": "/api/lab-exams/longitudinal",
+      "query": {
+        "page": [
+          "5"
+        ],
+        "pageSize": [
+          "100"
+        ],
+        "markerName": [
+          "Glicemia de Jejum"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 390,
+      "path": "/api/lab-exams/longitudinal",
+      "query": {
+        "page": [
+          "2"
+        ],
+        "pageSize": [
+          "100"
+        ],
+        "markerName": [
+          "Glicemia de Jejum"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 390,
+      "path": "/api/lab-exams/longitudinal",
+      "query": {
+        "page": [
+          "4"
+        ],
+        "pageSize": [
+          "100"
+        ],
+        "markerName": [
+          "Glicemia de Jejum"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 390,
+      "path": "/api/lab-exams/longitudinal",
+      "query": {
+        "page": [
+          "3"
+        ],
+        "pageSize": [
+          "100"
+        ],
+        "markerName": [
+          "Glicemia de Jejum"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    },
+    {
+      "width": 390,
+      "path": "/api/lab-exams/longitudinal",
+      "query": {
+        "page": [
+          "6"
+        ],
+        "pageSize": [
+          "100"
+        ],
+        "markerName": [
+          "Glicemia de Jejum"
+        ]
+      },
+      "status": 200,
+      "rows": 100
+    }
+  ]
+}

@@ -10,7 +10,7 @@ import { api } from "@/lib/api"
 import { queryKeys } from "@/lib/query-keys"
 import { getPlanWeek, validatePeriodization } from "@/lib/workout-periodization"
 import type { Appointment } from "@/types/appointment"
-import type { Client } from "@/types/client"
+import type { ClientSummary } from "@/types/client"
 import type { Periodization, PeriodPhase } from "@/types/workout-p3"
 import type { DraftSummary } from "@/types/workout-draft"
 
@@ -40,7 +40,7 @@ export interface PersonalWorkoutRow {
 }
 
 export interface PersonalFollowUpItem {
-  client: Client
+  client: ClientSummary
   activeWorkout: PersonalWorkoutRow | null
   openDraft: DraftSummary | null
   workoutCycleStatus: WorkoutCycleStatus
@@ -77,7 +77,7 @@ function civilDaysBetween(earlierIsoOrCivil: string, laterMs: number): number {
 }
 
 export function calculatePersonalFollowUpItem(params: {
-  client: Client
+  client: ClientSummary
   workouts: readonly PersonalWorkoutRow[]
   openDrafts: readonly DraftSummary[]
   assessments: readonly PersonalAssessmentRaw[]
@@ -381,11 +381,10 @@ export function usePersonalFollowUps() {
       workoutsQuery.refetch(),
       draftsQuery.refetch(),
       assessmentsQuery.refetch(),
-      appointmentsQuery.refetch(),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.appointmentsRoot(sessionUserId),
+      }),
     ])
-    await queryClient.invalidateQueries({
-      queryKey: queryKeys.appointmentsRoot(sessionUserId),
-    })
   }
 
   return {

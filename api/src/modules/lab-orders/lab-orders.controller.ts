@@ -1,3 +1,6 @@
+import type { Response } from 'express';
+import { PageQueryDto } from '../../common/pagination/page-query.dto';
+import { setPaginationHeaders } from '../../common/pagination/pagination';
 import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Body,
@@ -9,6 +12,8 @@ import {
   ParseUUIDPipe,
   Post,
   Request,
+  Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -26,8 +31,14 @@ export class LabOrdersController {
   @ClinicalResponse({ shape: 'resource' })
   @Get()
   @Header('Cache-Control', 'no-store')
-  list(@Request() request: AuthenticatedRequest) {
-    return this.service.list(request.user);
+  async list(
+    @Request() request: AuthenticatedRequest,
+    @Query() query: PageQueryDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.service.findPage(request.user, query);
+    setPaginationHeaders(response, result.pagination);
+    return result.items;
   }
   @ClinicalResponse({ shape: 'resource' })
   @Post()

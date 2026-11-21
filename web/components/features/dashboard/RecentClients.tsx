@@ -1,10 +1,10 @@
 import Link from "next/link"
 import { ArrowRight, Users } from "lucide-react"
 import type { WorkspaceDefinition } from "@/lib/professional-workspace"
-import type { Client } from "@/types/client"
+import type { ClientSummary } from "@/types/client"
 
 interface RecentClientsProps {
-  clients: readonly Client[]
+  clients: readonly ClientSummary[]
   workspace: WorkspaceDefinition
 }
 

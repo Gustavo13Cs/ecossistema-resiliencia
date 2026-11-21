@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useCallback, useRef, useState } from "react"
 import { isAxiosError } from "axios"
 import { useParams, useRouter } from "next/navigation"
@@ -13,8 +14,6 @@ import { ProfessionalScopePanel } from "@/components/features/clients/Profession
 import type { ClientFormPayload } from "@/components/features/clients/client-field-policy"
 import { NutritionistQuickActions } from "@/components/features/clients/NutritionistQuickActions"
 import { BodyCompositionChart } from "@/components/features/clients/BodyCompositionChart"
-import { AssessmentModal } from "@/components/AssessmentModal"
-import { PhysioAssessmentModal } from "@/components/PhysioAssessmentModal"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
 import { useClientRecord, type ClientRecordStatus } from "@/hooks/features/useClientRecord"
@@ -23,6 +22,16 @@ import { getWorkspaceDefinition } from "@/lib/professional-workspace"
 import { queryKeys } from "@/lib/query-keys"
 import type { ProfessionalRole } from "@/types/auth"
 import type { Client } from "@/types/client"
+
+const AssessmentModal = dynamic(
+  () => import("@/components/AssessmentModal").then((module) => module.AssessmentModal),
+  { loading: () => <AsyncState kind="loading" title="Carregando formulário" description="Preparando os campos para edição..." /> },
+)
+
+const PhysioAssessmentModal = dynamic(
+  () => import("@/components/PhysioAssessmentModal").then((module) => module.PhysioAssessmentModal),
+  { loading: () => <AsyncState kind="loading" title="Carregando formulário" description="Preparando os campos para edição..." /> },
+)
 
 const ERROR_STATES: Record<Exclude<ClientRecordStatus, "loading" | "ready">, { title: string; description: string }> = {
   "not-found": {

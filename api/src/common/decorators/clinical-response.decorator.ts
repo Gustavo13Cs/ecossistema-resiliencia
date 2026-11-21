@@ -6,6 +6,7 @@ export type ClinicalResponsePolicy =
       exception:
         | 'auth'
         | 'health'
+        | 'observability'
         | 'profile'
         | 'catalog'
         | 'private-recipe'

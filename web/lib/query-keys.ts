@@ -55,4 +55,6 @@ export const queryKeys = {
     ["recipe", sessionUserId, recipeId] as const,
   recipeFoodSearch: (sessionUserId: string, query: string) =>
     ["recipe-food-search", sessionUserId, query] as const,
+  webVitals: (sessionUserId: string, route: string | null, device: string | null) =>
+    ["observability-web-vitals", sessionUserId, route ?? "all", device ?? "all"] as const,
 }

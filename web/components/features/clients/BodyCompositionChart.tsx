@@ -1,12 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
+import dynamic from "next/dynamic"
 import { TrendingUp, LayoutGrid, BarChart2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useClientAssessments } from "@/hooks/features/useClientAssessments"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+
+// A consulta permanece imediata; a biblioteca gráfica carrega quando há dados para exibir.
+const BodyCompositionPlot = dynamic(
+  () => import("@/components/features/clients/BodyCompositionPlot").then((module) => module.BodyCompositionPlot),
+  {
+    ssr: false,
+    loading: () => <div className="h-[300px] w-full animate-pulse rounded-lg bg-slate-100" role="status" aria-label="Carregando gráfico" />,
+  },
+)
 
 interface BodyCompositionChartProps {
   clientId: string
@@ -86,59 +95,7 @@ export function BodyCompositionChart({ clientId, onNewAssessment }: BodyComposit
             <p>Nenhuma avaliação registrada ainda.</p>
           </div>
         ) : viewMode === "chart" ? (
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis 
-                  dataKey="formattedDate" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: "#94a3b8", fontSize: 12 }} 
-                  dy={10} 
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: "#94a3b8", fontSize: 12 }} 
-                />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
-                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                <Line 
-                  type="monotone" 
-                  name="Peso (kg)"
-                  dataKey="weight" 
-                  stroke="#1e293b" 
-                  strokeWidth={2}
-                  dot={{ r: 4, strokeWidth: 2, fill: "#fff" }} 
-                  activeDot={{ r: 6 }} 
-                  connectNulls
-                />
-                <Line 
-                  type="monotone" 
-                  name="Gordura (%)"
-                  dataKey="bodyFat" 
-                  stroke="#ef4444" 
-                  strokeWidth={2}
-                  dot={{ r: 4, strokeWidth: 2, fill: "#fff" }} 
-                  activeDot={{ r: 6 }} 
-                  connectNulls
-                />
-                <Line 
-                  type="monotone" 
-                  name="Músculo (kg)"
-                  dataKey="muscleMass" 
-                  stroke="#10b981" 
-                  strokeWidth={2}
-                  dot={{ r: 4, strokeWidth: 2, fill: "#fff" }} 
-                  activeDot={{ r: 6 }} 
-                  connectNulls
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <BodyCompositionPlot data={chartData} />
         ) : (
           <div className="overflow-x-auto">
             <Table>

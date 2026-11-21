@@ -1,16 +1,30 @@
+import { PAGINATION_EXPOSED_HEADERS } from './common/pagination/pagination';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { SchedulerRegistry } from '@nestjs/schedule';
 import cookieParser from 'cookie-parser';
+import type { NextFunction, Request, Response } from 'express';
 import { createCsrfProtection } from './common/security/csrf-protection';
 import { createAuthCookiePolicies } from './modules/auth/auth-cookie-options';
 
 async function bootstrap() {
   createAuthCookiePolicies();
+  const apiRegion = process.env.API_REGION;
+  if (apiRegion && !['oregon', 'virginia'].includes(apiRegion)) {
+    throw new Error('API_REGION deve ser oregon ou virginia.');
+  }
   const app = await NestFactory.create(AppModule);
 
   // middleware ANTES do listen
   app.use(cookieParser());
+  if (apiRegion) {
+    // Identifica a instância durante a troca regional, sem expor dados de conexão.
+    app.use((_request: Request, response: Response, next: NextFunction) => {
+      response.setHeader('X-API-Region', apiRegion);
+      next();
+    });
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -45,11 +59,23 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
     credentials: true,
+    exposedHeaders: PAGINATION_EXPOSED_HEADERS,
   });
 
   app.use(createCsrfProtection(allowedOrigins));
 
   await app.listen(3000);
+  if (apiRegion) {
+    // Confere os jobs realmente ativos, sem executar a rotina ou ler dados clínicos.
+    const jobs = [...app.get(SchedulerRegistry).getCronJobs().values()];
+    console.log(
+      JSON.stringify({
+        event: 'regional_api_ready',
+        region: apiRegion,
+        activeScheduledJobs: jobs.filter((job) => job.isActive).length,
+      }),
+    );
+  }
   console.log('🚀 API do Ecossistema rodando na porta 3000');
 }
 

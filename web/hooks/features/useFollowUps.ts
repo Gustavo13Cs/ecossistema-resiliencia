@@ -200,7 +200,6 @@ export function useFollowUps() {
     data: appointments = [],
     isLoading: isLoadingAppointments,
     error: appointmentsError,
-    refetch: refetchAppointments,
   } = useQuery({
     queryKey: [...queryKeys.appointmentsRoot(sessionUserId), "follow-ups-windows"],
     queryFn: async () => {
@@ -331,10 +330,12 @@ export function useFollowUps() {
   }, [followUpSummaries])
 
   const refetchAll = async () => {
-    await Promise.all([refetchClients(), refetchAppointments()])
-    await queryClient.invalidateQueries({
-      queryKey: queryKeys.appointmentsRoot(sessionUserId),
-    })
+    await Promise.all([
+      refetchClients(),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.appointmentsRoot(sessionUserId),
+      }),
+    ])
   }
 
   return {

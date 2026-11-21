@@ -93,7 +93,7 @@ it("dispatches_role_changes_and_absent_accounts_without_hook_order_regression", 
     expect(http.history.get).toHaveLength(calls);
 });
 it("opens_active_student_picker_and_routes_selected_client", async () => {
-    http.onGet("/clients", { params: { status: "ACTIVE" } }).reply(200, [makeTestClient("c1", "Bruno", "ACTIVE")]);
+    http.onGet("/clients", { params: { status: "ACTIVE", page: 1, pageSize: 100 } }).reply(200, [makeTestClient("c1", "Bruno", "ACTIVE")]);
     const user = userEvent.setup();
     mount();
     await screen.findByText("7");

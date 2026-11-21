@@ -1,0 +1,68 @@
+{
+  "dateLocal": "2026-11-18",
+  "timezone": "America/Fortaleza",
+  "branch": "agent/codex/performance-diagnosis",
+  "baselineCommit": "6e83015c00057f6180f8c8d4dacb81bffb755fa0",
+  "codeCommit": "d208c02",
+  "regression": {
+    "baselineFailed": 4,
+    "baselinePassed": 1,
+    "afterPassed": 5,
+    "afterFailed": 0,
+    "behaviours": [
+      "one initial catalogue request",
+      "Strict Mode mounting replay",
+      "source changes and same-source clicks",
+      "debounce, one character and clearing",
+      "delayed obsolete response"
+    ]
+  },
+  "web": {
+    "tests": 778,
+    "files": 100,
+    "build": "passed",
+    "typescript": "passed",
+    "lint": "passed",
+    "postbuildPages": 32,
+    "standaloneDirectories": 311
+  },
+  "browser": {
+    "baselineProductionCatalogueRequests": 8,
+    "afterProductionCatalogueRequests": 5,
+    "baselineDevelopmentCatalogueRequests": 8,
+    "afterDevelopmentCatalogueRequests": 5,
+    "reductionPercent": 37.5,
+    "initialOrEmptySourceChangeReductionPercent": 50,
+    "sameFilterReopenRequests": 0,
+    "unhandledJavascriptErrors": 0,
+    "syntheticSavesWithCorrectClientAndFood": 4,
+    "manualFoodCrudVerified": true,
+    "manualCrudCatalogueGets": 1,
+    "productionAccess": false
+  },
+  "unchanged": [
+    "backend",
+    "database",
+    "RLS",
+    "authentication",
+    "HTTP interceptors",
+    "dependencies",
+    "infrastructure"
+  ],
+  "productionDeploymentPerformed": false,
+  "limitations": [
+    "Local Chromium and intercepted synthetic API responses",
+    "Only catalogue HTTP counts measured, not SQL or production latency",
+    "Abort may not stop database work already started on the server"
+  ],
+  "commands": [
+    "NEXT_PUBLIC_API_URL=http://localhost:3000 npm --prefix web run build",
+    "npm --prefix web test",
+    "npm --prefix web run lint",
+    "npm --prefix web run typecheck",
+    "python docs/runbooks/evidence/performance-03/measure-food-requests.py --origin http://127.0.0.1:3104 --expect-single --output docs/runbooks/evidence/performance-03/after-production.json",
+    "python docs/runbooks/evidence/performance-03/measure-food-requests.py --origin http://127.0.0.1:3105 --expect-single --output docs/runbooks/evidence/performance-03/after-development.json",
+    "python docs/runbooks/evidence/performance-03/verify-food-editing.py --origin http://127.0.0.1:3104 --output docs/runbooks/evidence/performance-03/food-editing.json",
+    "git diff --check"
+  ]
+}

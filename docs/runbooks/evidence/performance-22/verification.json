@@ -1,0 +1,56 @@
+{
+  "baselineCommit": "ab9b735b42559a2fb6449527d4e2441535654615",
+  "codeCommit": "5f1aad2",
+  "branch": "agent/codex/performance-diagnosis",
+  "dateLocal": "2026-11-17",
+  "timezone": "America/Fortaleza",
+  "web": {
+    "tests": 773,
+    "files": 99,
+    "build": "passed",
+    "typecheck": "passed",
+    "lint": "passed",
+    "postbuildPages": 32,
+    "standaloneDirectories": 311
+  },
+  "browser": {
+    "beforeCaptures": 21,
+    "afterCaptures": 21,
+    "explicitDeferredChecks": 7,
+    "unhandledJavascriptErrors": 0,
+    "interactionViewports": [
+      "desktop 1440x900",
+      "mobile 390x844"
+    ],
+    "delayedChartPlaceholders": [
+      300,
+      400
+    ],
+    "syntheticApiOnly": true,
+    "productionWrites": 0
+  },
+  "unchanged": [
+    "backend",
+    "database",
+    "RLS",
+    "authentication",
+    "package dependencies",
+    "regional infrastructure"
+  ],
+  "productionDeploymentPerformed": false,
+  "limitations": [
+    "LCP local sem ganho consistente, três amostras e CPU compartilhada",
+    "Não é Lighthouse ou RUM",
+    "Histórico de exames com gráfico +2,5 KiB gzip",
+    "Evolução Personal +315 bytes gzip; gráfico inicial automático preservado"
+  ],
+  "commands": [
+    "NEXT_PUBLIC_API_URL=http://localhost:3000 npm run build",
+    "npm run typecheck",
+    "npm run lint",
+    "npm test",
+    "python docs/runbooks/evidence/performance-22/measure-progressive-loading.py --runs 1 --expect-deferred --output docs/runbooks/evidence/performance-22/deferred-verification.json",
+    "python docs/runbooks/evidence/performance-22/verify-progressive-actions.py",
+    "git diff --check"
+  ]
+}

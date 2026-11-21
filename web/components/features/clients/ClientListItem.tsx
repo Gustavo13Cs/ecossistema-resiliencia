@@ -13,16 +13,16 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import type { WorkspaceDefinition } from "@/lib/professional-workspace"
-import type { Client, ClientStatus } from "@/types/client"
+import type { ClientStatus, ClientSummary } from "@/types/client"
 
 interface ClientListItemProps {
-  client: Client
+  client: ClientSummary
   status: ClientStatus
   workspace: WorkspaceDefinition
   layout: "desktop" | "mobile"
   pending: boolean
   locked: boolean
-  onChangeStatus: (client: Client) => Promise<void> | void
+  onChangeStatus: (client: ClientSummary) => Promise<void> | void
 }
 
 const formatUpdatedAt = (value: string) => {

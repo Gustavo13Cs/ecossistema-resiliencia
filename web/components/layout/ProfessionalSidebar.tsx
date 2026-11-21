@@ -80,6 +80,7 @@ export function ProfessionalSidebar({
             alt=""
             width={36}
             height={36}
+            sizes="36px"
             className="size-9 shrink-0 object-contain drop-shadow-sm transition-transform hover:scale-105"
             priority
           />

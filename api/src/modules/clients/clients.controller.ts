@@ -1,3 +1,5 @@
+import type { Response } from 'express';
+import { setPaginationHeaders } from '../../common/pagination/pagination';
 import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Body,
@@ -8,6 +10,8 @@ import {
   Post,
   Query,
   Request,
+  Res,
+  Header,
   UseGuards,
 } from '@nestjs/common';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -41,11 +45,15 @@ export class ClientsController {
 
   @ClinicalResponse({ shape: 'client' })
   @Get()
-  findAll(
+  @Header('Cache-Control', 'no-store')
+  async findAll(
     @Request() request: AuthenticatedRequest,
     @Query() query: ListClientsQueryDto,
+    @Res({ passthrough: true }) response: Response,
   ) {
-    return this.clientsService.findAll(request.user, query.status ?? 'ACTIVE');
+    const result = await this.clientsService.findPage(request.user, query);
+    setPaginationHeaders(response, result.pagination);
+    return result.items;
   }
 
   @ClinicalResponse({ shape: 'overview' })

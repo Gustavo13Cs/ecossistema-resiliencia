@@ -29,6 +29,7 @@ describe('Contratos clínicos por prontuário Client', () => {
     clinicalSession('PERSONAL')
     cy.intercept('GET', `**/workouts/client/${clinicalClientId}/active`, { body: null }).as('active')
     cy.intercept('GET', '**/workouts/drafts?*', { body: { items: [], nextCursor: null } })
+    cy.intercept('GET', `**/workouts/anamneses/client/${clinicalClientId}`, { body: [] })
     const draftId = '91000000-0000-4000-8000-000000000001'
     const workoutId = '91000000-0000-4000-8000-000000000002'
     cy.intercept('POST', '**/workouts/drafts', request => {
@@ -98,7 +99,7 @@ describe('Contratos clínicos por prontuário Client', () => {
   })
   it('registra exame no Client selecionado', () => {
     clinicalSession('NUTRITIONIST')
-    cy.intercept('GET', `**/lab-exams/client/${clinicalClientId}`, { body: [] }).as('history')
+    cy.intercept({ method: 'GET', pathname: `**/lab-exams/client/${clinicalClientId}` }, { body: [] }).as('history')
     clinicalWrite('lab-exams')
     cy.visit(`/clientes/${clinicalClientId}/exames`)
     cy.wait(['@auth', '@history'])

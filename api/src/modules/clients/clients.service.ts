@@ -1,3 +1,9 @@
+import { ListClientsQueryDto } from './dto/list-clients-query.dto';
+import {
+  pageWindow,
+  paginationMeta,
+  literalContains,
+} from '../../common/pagination/pagination';
 import {
   ConflictException,
   Injectable,
@@ -25,6 +31,23 @@ const normalizeOptionalEmail = (email?: string): string | null => {
 
 const normalizeOptionalString = (value?: string | null): string | null =>
   value?.trim() || null;
+
+export const CLIENT_LIST_SELECT = {
+  id: true,
+  professionalId: true,
+  name: true,
+  email: true,
+  phone: true,
+  goal: true,
+  initialWeight: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.ClientSelect;
+
+export type ClientListItem = Prisma.ClientGetPayload<{
+  select: typeof CLIENT_LIST_SELECT;
+}>;
 
 @Injectable()
 export class ClientsService {
@@ -76,11 +99,44 @@ export class ClientsService {
     }
   }
 
-  findAll(user: AuthUser, status: ClientStatus): Promise<Client[]> {
+  findAll(user: AuthUser, status: ClientStatus): Promise<ClientListItem[]> {
     return this.prisma.client.findMany({
       where: { professionalId: user.sub, status },
-      orderBy: [{ name: 'asc' }, { createdAt: 'desc' }],
+      select: CLIENT_LIST_SELECT,
+      orderBy: [{ name: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
+      take: 25,
+      skip: 0,
     });
+  }
+
+  async findPage(user: AuthUser, query: ListClientsQueryDto) {
+    const { skip, take } = pageWindow(query);
+    const search = query.q?.trim();
+    const where: Prisma.ClientWhereInput = {
+      professionalId: user.sub,
+      status: query.status ?? 'ACTIVE',
+      ...(search
+        ? {
+            OR: ['name', 'email', 'phone', 'goal'].map((field) => ({
+              [field]: {
+                contains: literalContains(search),
+                mode: 'insensitive',
+              },
+            })),
+          }
+        : {}),
+    };
+    const [items, total] = await Promise.all([
+      this.prisma.client.findMany({
+        where,
+        select: CLIENT_LIST_SELECT,
+        orderBy: [{ name: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
+        skip,
+        take,
+      }),
+      this.prisma.client.count({ where }),
+    ]);
+    return { items, pagination: paginationMeta(total, query) };
   }
 
   findOne(user: AuthUser, clientId: string): Promise<Client> {
