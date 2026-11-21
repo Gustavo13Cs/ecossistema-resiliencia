@@ -1,6 +1,7 @@
 import AxiosMockAdapter from "axios-mock-adapter"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
+  advanceAuthSessionEpoch,
   api,
   setCsrfToken,
   setUnauthorizedHandler,
@@ -200,6 +201,67 @@ describe("API session interceptors", () => {
       return [200, {}]
     })
     await expect(api.get("/clients")).rejects.toBeDefined()
+    await api.post("/later")
+  })
+
+  it("ignores stale 401 recovery after a newer session epoch or CSRF token is installed", async () => {
+    const handler = vi.fn()
+    setUnauthorizedHandler(handler)
+    let resolveStale!: (response: [number, Record<string, never>]) => void
+    mock.onGet("/auth/me").reply(
+      () =>
+        new Promise((resolve) => {
+          resolveStale = resolve
+        }),
+    )
+    mock.onPost("/later").reply((config) => {
+      expect(config.headers?.["X-CSRF-Token"]).toBe("new-session-csrf")
+      return [200, {}]
+    })
+
+    const staleRequest = api.get("/auth/me").catch((error: unknown) => error)
+    await vi.waitFor(() => {
+      expect(resolveStale).toBeTypeOf("function")
+    })
+
+    advanceAuthSessionEpoch()
+    setCsrfToken("new-session-csrf")
+    resolveStale([401, {}])
+    await staleRequest
+
+    expect(mock.history.post).toHaveLength(0)
+    expect(handler).not.toHaveBeenCalled()
+    await api.post("/later")
+  })
+
+  it("does not clear a newer session CSRF or call unauthorizedHandler when an obsolete /auth/refresh returns 401", async () => {
+    const handler = vi.fn()
+    setUnauthorizedHandler(handler)
+    let resolveStaleRefresh!: (response: [number, Record<string, never>]) => void
+
+    mock.onGet("/clients").reply(401)
+    mock.onGet("/auth/csrf").reply(200, { csrfToken: "bootstrap-csrf" })
+    mock.onPost("/auth/refresh").reply(
+      () =>
+        new Promise((resolve) => {
+          resolveStaleRefresh = resolve
+        }),
+    )
+    mock.onPost("/later").reply((config) => {
+      expect(config.headers?.["X-CSRF-Token"]).toBe("new-session-csrf")
+      return [200, {}]
+    })
+
+    const staleProtected = api.get("/clients").catch((error: unknown) => error)
+    await vi.waitFor(() => {
+      expect(resolveStaleRefresh).toBeTypeOf("function")
+    })
+
+    setCsrfToken("new-session-csrf")
+    resolveStaleRefresh([401, {}])
+    await staleProtected
+
+    expect(handler).not.toHaveBeenCalled()
     await api.post("/later")
   })
 })

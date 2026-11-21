@@ -40,5 +40,11 @@ describe("RootLayout direction contract order", () => {
     expect(document.body.firstElementChild).toBe(contract)
     expect(document.documentElement.getAttribute("nonce")).toBe("fixture-request-nonce")
     expect(contract?.nextElementSibling?.getAttribute("data-root-layout-ui")).toBe("")
+    expect(
+      contract?.nextElementSibling?.nextElementSibling?.tagName,
+    ).toBe("ASIDE")
+    expect(
+      contract?.nextElementSibling?.nextElementSibling?.getAttribute("data-root-layout-ui"),
+    ).toBe("")
   })
 })

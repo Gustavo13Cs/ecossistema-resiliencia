@@ -40,9 +40,9 @@ export default async function RootLayout({
         <QueryProvider>
           <AuthProvider>
             <LayoutWrapper>{children}</LayoutWrapper>
-            <Toaster position="top-right" richColors />
           </AuthProvider>
         </QueryProvider>
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   )
