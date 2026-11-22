@@ -207,18 +207,28 @@ export function formatWebVitalValue(
   return `${Math.round(value).toLocaleString("pt-BR")} ms`
 }
 
+let webVitalsEndpointUnavailable = false
+
+export function isWebVitalsEndpointUnavailable(): boolean {
+  return webVitalsEndpointUnavailable
+}
+
+export function resetWebVitalsEndpointAvailability(): void {
+  webVitalsEndpointUnavailable = false
+}
+
 export async function sendWebVitalsBatch(
   metrics: readonly WebVitalReportItem[],
   fetchImpl: typeof fetch | undefined = typeof fetch === "function"
     ? fetch
     : undefined,
 ): Promise<void> {
-  if (metrics.length === 0 || !fetchImpl) {
+  if (metrics.length === 0 || !fetchImpl || webVitalsEndpointUnavailable) {
     return
   }
 
   try {
-    await fetchImpl(WEB_VITAL_ENDPOINT, {
+    const response = await fetchImpl(WEB_VITAL_ENDPOINT, {
       method: "POST",
       keepalive: true,
       credentials: "omit",
@@ -227,6 +237,9 @@ export async function sendWebVitalsBatch(
       },
       body: JSON.stringify({ metrics }),
     })
+    if (response && (response.status === 404 || response.status === 405)) {
+      webVitalsEndpointUnavailable = true
+    }
   } catch {
     // Coleta RUM silenciosa: falhas de rede nunca devem interromper a jornada clínica.
   }

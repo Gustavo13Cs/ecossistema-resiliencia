@@ -86,6 +86,18 @@ async function getBoundedArray<T>(
     }
   }
 }
+const legacyArrayPaths = new Set<string>()
+
+export function resetLegacyPaginationCache(): void {
+  legacyArrayPaths.clear()
+}
+
+function readPaginationTotalHeader(headers: object) {
+  return Object.entries(headers).find(
+    ([key]) => key.toLowerCase() === "x-pagination-total"
+  )?.[1]
+}
+
 export async function getArrayPage<T>(
   path: string,
   params: PageRequest & Record<string, string | number | undefined>,
@@ -93,31 +105,42 @@ export async function getArrayPage<T>(
   signal?: AbortSignal
 ): Promise<PageResult<T>> {
   let response
-  try {
+  if (legacyArrayPaths.has(path)) {
+    const legacyResponse = await getBoundedArray<T>(path, legacyParams, signal)
+    if (!Array.isArray(legacyResponse.data))
+      throw new Error("Resposta de listagem inválida")
+    const legacyTotalHeader = readPaginationTotalHeader(legacyResponse.headers)
+    if (legacyTotalHeader === undefined || legacyTotalHeader === null)
+      return legacyPage(legacyResponse.data, params)
+    // A API foi atualizada durante a sessão e já suporta paginação no servidor.
+    legacyArrayPaths.delete(path)
     response = await getBoundedArray<T>(path, params, signal)
-  } catch (error) {
-    // Compatibilidade durante publicação: a API anterior rejeita propriedades novas.
-    const messages: unknown = axios.isAxiosError(error)
-      ? error.response?.data?.message
-      : null
-    const unsupported =
-      axios.isAxiosError(error) &&
-      error.response?.status === 400 &&
-      Array.isArray(messages) &&
-      messages.length > 0 &&
-      messages.every(
-        (message) =>
-          typeof message === "string" &&
-          /^property (page|pageSize|q) should not exist$/.test(message)
-      )
-    if (!unsupported) throw error
-    response = await getBoundedArray<T>(path, legacyParams, signal)
+  } else {
+    try {
+      response = await getBoundedArray<T>(path, params, signal)
+    } catch (error) {
+      // Compatibilidade durante publicação: a API anterior rejeita propriedades novas.
+      const messages: unknown = axios.isAxiosError(error)
+        ? error.response?.data?.message
+        : null
+      const unsupported =
+        axios.isAxiosError(error) &&
+        error.response?.status === 400 &&
+        Array.isArray(messages) &&
+        messages.length > 0 &&
+        messages.every(
+          (message) =>
+            typeof message === "string" &&
+            /^property (page|pageSize|q) should not exist$/.test(message)
+        )
+      if (!unsupported) throw error
+      legacyArrayPaths.add(path)
+      response = await getBoundedArray<T>(path, legacyParams, signal)
+    }
   }
   if (!Array.isArray(response.data))
     throw new Error("Resposta de listagem inválida")
-  const rawTotal = Object.entries(response.headers).find(
-    ([key]) => key.toLowerCase() === "x-pagination-total"
-  )?.[1]
+  const rawTotal = readPaginationTotalHeader(response.headers)
   if (rawTotal === undefined || rawTotal === null)
     return legacyPage(response.data, params)
   const total = Number(rawTotal)

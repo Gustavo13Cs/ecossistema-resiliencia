@@ -1,14 +1,24 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
+import axios, { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
 
 const UNSAFE_METHODS = new Set(["post", "put", "patch", "delete"])
 const AUTH_401_PATHS = new Set(["/auth/me", "/auth/login", "/auth/logout"])
 const NO_AUTH_REFRESH_PATHS = new Set(["/auth/login", "/auth/register", "/auth/refresh", "/auth/logout", "/auth/csrf"])
 
+type RefreshedSessionPayload = {
+  user: {
+    sub: string
+    role: string
+    email?: string
+    name?: string
+  }
+  csrfToken: string
+}
+
 let csrfToken: string | null = null
 let unauthorizedHandler: (() => void) | null = null
 let authSessionEpoch = 0
 let csrfRefreshState: { epoch: number; promise: Promise<string> } | null = null
-let authRefreshState: { epoch: number; promise: Promise<void> } | null = null
+let authRefreshState: { epoch: number; promise: Promise<RefreshedSessionPayload | null> } | null = null
 
 type RetriableRequestConfig = InternalAxiosRequestConfig & {
   _csrfRetry?: boolean
@@ -19,6 +29,43 @@ type RetriableRequestConfig = InternalAxiosRequestConfig & {
 function updateCsrfTokenIfCurrent(token: string | null, expectedEpoch: number) {
   if (authSessionEpoch === expectedEpoch) {
     csrfToken = token
+  }
+}
+
+function extractRefreshedSession(
+  data: unknown,
+  fallbackCsrfToken?: string,
+): RefreshedSessionPayload | null {
+  if (!data || typeof data !== "object") return null
+
+  const record = data as Record<string, unknown>
+  const resolvedCsrfToken =
+    typeof record.csrfToken === "string" && record.csrfToken
+      ? record.csrfToken
+      : typeof fallbackCsrfToken === "string" && fallbackCsrfToken
+        ? fallbackCsrfToken
+        : ""
+  if (!resolvedCsrfToken) return null
+
+  if (!record.user || typeof record.user !== "object") return null
+  const userRecord = record.user as Record<string, unknown>
+  if (
+    typeof userRecord.sub !== "string" ||
+    !userRecord.sub ||
+    typeof userRecord.role !== "string" ||
+    !userRecord.role
+  ) {
+    return null
+  }
+
+  return {
+    user: {
+      sub: userRecord.sub,
+      role: userRecord.role,
+      ...(typeof userRecord.email === "string" ? { email: userRecord.email } : {}),
+      ...(typeof userRecord.name === "string" ? { name: userRecord.name } : {}),
+    },
+    csrfToken: resolvedCsrfToken,
   }
 }
 
@@ -99,9 +146,11 @@ async function refreshCsrfToken(expectedEpoch: number): Promise<string> {
   return csrfRefreshState.promise
 }
 
-async function refreshAuthSession(expectedEpoch: number): Promise<void> {
+async function refreshAuthSession(
+  expectedEpoch: number,
+): Promise<RefreshedSessionPayload | null> {
   if (!authRefreshState || authRefreshState.epoch !== expectedEpoch) {
-    const rotate = async () => {
+    const rotate = async (): Promise<RefreshedSessionPayload | null> => {
       await refreshCsrfToken(expectedEpoch)
       if (authSessionEpoch !== expectedEpoch) {
         throw new AxiosError(
@@ -109,13 +158,16 @@ async function refreshAuthSession(expectedEpoch: number): Promise<void> {
           AxiosError.ERR_CANCELED,
         )
       }
-      const { data } = await api.post<{ csrfToken: string }>("/auth/refresh")
+      const { data } = await api.post<{ csrfToken: string; user?: unknown }>(
+        "/auth/refresh",
+      )
       if (typeof data.csrfToken !== "string" || !data.csrfToken) {
         throw new Error("Sessão sem token CSRF válido")
       }
       updateCsrfTokenIfCurrent(data.csrfToken, expectedEpoch)
+      return extractRefreshedSession(data)
     }
-    const recover = async () => {
+    const recover = async (): Promise<RefreshedSessionPayload | null> => {
       if (authSessionEpoch !== expectedEpoch) {
         throw new AxiosError(
           "Sessão substituída durante a renovação",
@@ -124,6 +176,28 @@ async function refreshAuthSession(expectedEpoch: number): Promise<void> {
       }
       if (typeof navigator === "undefined" || !navigator.locks) return rotate()
 
+      let acquiredImmediately = false
+      let immediateResult: RefreshedSessionPayload | null = null
+      await navigator.locks.request(
+        "safemove-auth-refresh",
+        { ifAvailable: true },
+        async (lock) => {
+          if (!lock) return
+          acquiredImmediately = true
+          if (authSessionEpoch !== expectedEpoch) {
+            throw new AxiosError(
+              "Sessão substituída durante a renovação",
+              AxiosError.ERR_CANCELED,
+            )
+          }
+          immediateResult = await rotate()
+        },
+      )
+      if (acquiredImmediately) {
+        return immediateResult
+      }
+
+      let waitedResult: RefreshedSessionPayload | null = null
       await navigator.locks.request("safemove-auth-refresh", async () => {
         if (authSessionEpoch !== expectedEpoch) {
           throw new AxiosError(
@@ -132,15 +206,24 @@ async function refreshAuthSession(expectedEpoch: number): Promise<void> {
           )
         }
         // Outra aba pode ter renovado os cookies enquanto aguardávamos o lock.
-        const session = await api.get<{ csrfToken?: string }>("/auth/me", {
-          validateStatus: () => true,
-        })
+        const session = await api.get<{ csrfToken?: string; user?: unknown }>(
+          "/auth/me",
+          {
+            validateStatus: () => true,
+          },
+        )
         if (session.status === 200) {
-          if (typeof session.data.csrfToken === "string" && session.data.csrfToken) {
+          let resolvedCsrf: string
+          if (
+            typeof session.data?.csrfToken === "string" &&
+            session.data.csrfToken
+          ) {
             updateCsrfTokenIfCurrent(session.data.csrfToken, expectedEpoch)
+            resolvedCsrf = session.data.csrfToken
           } else {
-            await refreshCsrfToken(expectedEpoch)
+            resolvedCsrf = await refreshCsrfToken(expectedEpoch)
           }
+          waitedResult = extractRefreshedSession(session.data, resolvedCsrf)
           return
         }
         if (session.status !== 401) {
@@ -152,10 +235,11 @@ async function refreshAuthSession(expectedEpoch: number): Promise<void> {
             session,
           )
         }
-        await rotate()
+        waitedResult = await rotate()
       })
+      return waitedResult
     }
-    let state!: { epoch: number; promise: Promise<void> }
+    let state!: { epoch: number; promise: Promise<RefreshedSessionPayload | null> }
     const promise = recover()
       .catch((error: unknown) => {
         if (isUnauthorized(error)) {
@@ -221,8 +305,9 @@ api.interceptors.response.use(
       }
       if (!config._authRetry) {
         config._authRetry = true
+        let refreshedSession: RefreshedSessionPayload | null
         try {
-          await refreshAuthSession(requestEpoch)
+          refreshedSession = await refreshAuthSession(requestEpoch)
         } catch (refreshError) {
           if (
             requestEpoch === authSessionEpoch &&
@@ -235,6 +320,27 @@ api.interceptors.response.use(
         }
         if (requestEpoch !== authSessionEpoch) {
           throw error
+        }
+        if (config.signal?.aborted) {
+          throw new AxiosError(
+            "canceled",
+            AxiosError.ERR_CANCELED,
+            config,
+          )
+        }
+        if (
+          requestPath(config.url) === "/auth/me" &&
+          (config.method?.toLowerCase() ?? "get") === "get" &&
+          refreshedSession
+        ) {
+          const response: AxiosResponse<RefreshedSessionPayload> = {
+            data: refreshedSession,
+            status: 200,
+            statusText: "OK",
+            headers: {},
+            config,
+          }
+          return response
         }
         return api.request(config)
       }

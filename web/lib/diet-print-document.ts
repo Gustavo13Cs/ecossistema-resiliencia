@@ -18,9 +18,8 @@ export interface ShoppingListPrintInput extends DietPrintInput {
 const numberFormat = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 6 })
 const formatNumber = (value: number) => numberFormat.format(value)
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', sans-serif; background: #fff; color: #1e293b; font-size: 13px; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #fff; color: #1e293b; font-size: 13px; }
   @page { size: A4; margin: 16mm 14mm 14mm 14mm; }
   .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #0d9488; padding-bottom: 14px; margin-bottom: 18px; }
   .brand { font-size: 11px; font-weight: 700; color: #0d9488; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
