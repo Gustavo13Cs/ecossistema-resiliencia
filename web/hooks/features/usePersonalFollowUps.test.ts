@@ -1,17 +1,21 @@
-import { act, cleanup, renderHook, waitFor } from "@testing-library/react"
+import { act, cleanup, render, renderHook, screen, waitFor } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import AxiosMockAdapter from "axios-mock-adapter"
 import { createElement, type ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { WorkoutDraftList } from "@/components/features/training/WorkoutDraftList"
 import { api } from "@/lib/api"
+import { createQueryClient } from "@/lib/query-client"
 import { queryKeys } from "@/lib/query-keys"
 import {
   calculatePersonalFollowUpItem,
   summarizePersonalFollowUpsKpi,
   usePersonalFollowUps,
 } from "./usePersonalFollowUps"
+import { useWorkoutDrafts } from "./useWorkoutDrafts"
 import type { Client } from "@/types/client"
 import type { Periodization } from "@/types/workout-p3"
+import type { DraftSummary } from "@/types/workout-draft"
 
 const session = vi.hoisted(() => ({
   user: { sub: "prof-1", role: "PERSONAL", name: "Personal 1" },
@@ -238,5 +242,116 @@ describe("usePersonalFollowUps refetch parallelization", () => {
     expect(cache.getQueryState(prof1AgendaKey)?.isInvalidated).toBe(true)
     expect(cache.getQueryState(prof2AgendaKey)?.isInvalidated).toBe(false)
     cache.clear()
+  })
+})
+
+describe("shared workout-drafts cache contract between /retornos and /treinos", () => {
+  let http: AxiosMockAdapter
+
+  const sampleDraft: DraftSummary = {
+    id: "d1",
+    clientId: "c1",
+    status: "OPEN",
+    version: 1,
+    title: "Bloco B",
+    createdAt: "2026-11-20T10:00:00.000Z",
+    updatedAt: "2026-11-20T10:00:00.000Z",
+    client: { id: "c1", name: "Fernanda Lima", status: "ACTIVE" },
+  }
+
+  beforeEach(() => {
+    http = new AxiosMockAdapter(api)
+    http.onGet("/clients").reply(200, [mockClient("c1", "Fernanda Lima")], {
+      "X-Pagination-Total": "1",
+    })
+    http.onGet("/workouts").reply(200, [])
+    http.onGet("/workouts/drafts").reply(200, { items: [sampleDraft], nextCursor: null })
+    http.onGet("/assessments").reply(200, [])
+    http.onGet("/appointments").reply(200, [])
+  })
+
+  afterEach(() => {
+    cleanup()
+    http.restore()
+  })
+
+  function TreinosDraftProbe() {
+    const { listQuery } = useWorkoutDrafts()
+    if (!listQuery.data) return createElement("div", null, "loading")
+    return createElement(WorkoutDraftList, {
+      page: listQuery.data,
+      onContinue: vi.fn(),
+      onDiscard: vi.fn(),
+      onNextPage: vi.fn(),
+    })
+  }
+
+  it("navigating from /retornos to /treinos renders WorkoutDraftList without crashing or refetching", async () => {
+    const cache = createQueryClient()
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: cache }, children)
+
+    try {
+      const followUps = renderHook(() => usePersonalFollowUps(), { wrapper })
+      await waitFor(() => expect(followUps.result.current.loading).toBe(false))
+      expect(followUps.result.current.items[0]?.openDraft?.id).toBe("d1")
+      followUps.unmount()
+
+      render(createElement(TreinosDraftProbe), { wrapper })
+      expect(await screen.findByText("Bloco B")).toBeInTheDocument()
+      expect(cache.getQueryData(queryKeys.workoutDrafts("prof-1"))).toEqual({
+        items: [sampleDraft],
+        nextCursor: null,
+      })
+      expect(
+        http.history.get.filter((req) => req.url === "/workouts/drafts"),
+      ).toHaveLength(1)
+    } finally {
+      cache.clear()
+    }
+  })
+
+  it("navigating from /treinos to /retornos reads DraftPage cleanly without crashing or refetching", async () => {
+    const cache = createQueryClient()
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: cache }, children)
+
+    try {
+      const drafts = renderHook(() => useWorkoutDrafts(), { wrapper })
+      await waitFor(() => expect(drafts.result.current.listQuery.isSuccess).toBe(true))
+      expect(drafts.result.current.listQuery.data).toEqual({
+        items: [sampleDraft],
+        nextCursor: null,
+      })
+      drafts.unmount()
+
+      const followUps = renderHook(() => usePersonalFollowUps(), { wrapper })
+      await waitFor(() => expect(followUps.result.current.loading).toBe(false))
+      expect(followUps.result.current.items[0]?.openDraft?.id).toBe("d1")
+      expect(
+        http.history.get.filter((req) => req.url === "/workouts/drafts"),
+      ).toHaveLength(1)
+    } finally {
+      cache.clear()
+    }
+  })
+
+  it("handles null cached workout and draft entries safely after access denial", async () => {
+    const cache = createQueryClient()
+    cache.setQueryData(queryKeys.clients("prof-1", "ACTIVE"), [
+      mockClient("c1", "Fernanda Lima"),
+    ])
+    cache.setQueryData(queryKeys.workoutDrafts("prof-1"), null)
+    cache.setQueryData(queryKeys.workouts("prof-1"), null)
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: cache }, children)
+
+    try {
+      const followUps = renderHook(() => usePersonalFollowUps(), { wrapper })
+      expect(followUps.result.current.items[0]?.openDraft).toBeNull()
+      await waitFor(() => expect(followUps.result.current.loading).toBe(false))
+    } finally {
+      cache.clear()
+    }
   })
 })

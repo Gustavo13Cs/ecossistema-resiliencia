@@ -12,7 +12,7 @@ import { getPlanWeek, validatePeriodization } from "@/lib/workout-periodization"
 import type { Appointment } from "@/types/appointment"
 import type { ClientSummary } from "@/types/client"
 import type { Periodization, PeriodPhase } from "@/types/workout-p3"
-import type { DraftSummary } from "@/types/workout-draft"
+import type { DraftPage, DraftSummary } from "@/types/workout-draft"
 
 export type WorkoutCycleStatus =
   | "NO_ACTIVE_WORKOUT"
@@ -284,11 +284,21 @@ export function usePersonalFollowUps() {
 
   const draftsQuery = useQuery({
     queryKey: queryKeys.workoutDrafts(sessionUserId),
-    queryFn: async () => {
-      const response = await api.get<{ items: DraftSummary[] }>(
-        "/workouts/drafts",
-      )
-      return response.data?.items ?? []
+    queryFn: async ({ signal }): Promise<DraftPage> => {
+      const response = await api.get<DraftPage>("/workouts/drafts", {
+        params: { limit: 20 },
+        signal,
+      })
+      const items = Array.isArray(response.data?.items)
+        ? response.data.items
+        : []
+      if (items.some((item) => item.client?.id !== item.clientId)) {
+        throw new Error("Rascunho incompatível com o prontuário solicitado")
+      }
+      return {
+        items,
+        nextCursor: response.data?.nextCursor ?? null,
+      }
     },
     enabled: isPersonal,
   })
@@ -346,13 +356,17 @@ export function usePersonalFollowUps() {
   })
 
   const items = useMemo(() => {
-    const clients = clientsQuery.data ?? []
-    const workouts = workoutsQuery.data ?? []
-    const openDrafts = draftsQuery.data ?? []
+    const clients = Array.isArray(clientsQuery.data) ? clientsQuery.data : []
+    const workouts = Array.isArray(workoutsQuery.data) ? workoutsQuery.data : []
+    const openDrafts = Array.isArray(draftsQuery.data?.items)
+      ? draftsQuery.data.items
+      : []
     const assessments = Array.isArray(assessmentsQuery.data)
       ? assessmentsQuery.data
       : []
-    const appointments = appointmentsQuery.data ?? []
+    const appointments = Array.isArray(appointmentsQuery.data)
+      ? appointmentsQuery.data
+      : []
     const nowMs = Date.now()
 
     return clients.map((client) =>
@@ -390,7 +404,7 @@ export function usePersonalFollowUps() {
   return {
     items,
     kpi,
-    activeClients: clientsQuery.data ?? [],
+    activeClients: Array.isArray(clientsQuery.data) ? clientsQuery.data : [],
     loading:
       clientsQuery.isPending ||
       workoutsQuery.isPending ||
