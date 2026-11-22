@@ -1,9 +1,12 @@
 import { describe, expect, it, afterEach, vi } from "vitest"
 import AxiosMockAdapter from "axios-mock-adapter"
 import { api } from "./api"
-import { collectPages, getArrayPage } from "./pagination"
+import { collectPages, getArrayPage, resetLegacyPaginationCache } from "./pagination"
 const http = new AxiosMockAdapter(api)
-afterEach(() => http.reset())
+afterEach(() => {
+  http.reset()
+  resetLegacyPaginationCache()
+})
 describe("bounded list transport", () => {
   it("collects all bounded batches including rows after 1000", async () => {
     http.onGet("/rows").reply((config) => {
@@ -69,6 +72,74 @@ describe("bounded list transport", () => {
       getArrayPage("/clients", { page: 1, pageSize: 25 })
     ).rejects.toThrow()
     expect(http.history.get).toHaveLength(1)
+  })
+
+  it("remembers legacy unpaginated paths to avoid repeated 400 errors and self-heals once server pagination appears", async () => {
+    let upgraded = false
+    http.onGet("/clients").reply((config) => {
+      if (!upgraded) {
+        if (config.params?.page !== undefined) {
+          return [
+            400,
+            {
+              message: [
+                "property page should not exist",
+                "property pageSize should not exist",
+              ],
+            },
+          ]
+        }
+        return [200, [1, 2, 3, 4]]
+      }
+      if (config.params?.page === undefined) {
+        return [200, [1, 2], { "X-Pagination-Total": "4" }]
+      }
+      return [
+        200,
+        config.params.page === 2 ? [3, 4] : [1, 2],
+        { "X-Pagination-Total": "4" },
+      ]
+    })
+
+    const first = await getArrayPage<number>(
+      "/clients",
+      { status: "ACTIVE", page: 1, pageSize: 2 },
+      { status: "ACTIVE" }
+    )
+    expect(first.items).toEqual([1, 2])
+    expect(first.pagination.total).toBe(4)
+
+    const second = await getArrayPage<number>(
+      "/clients",
+      { status: "ACTIVE", page: 2, pageSize: 2 },
+      { status: "ACTIVE" }
+    )
+    expect(second.items).toEqual([3, 4])
+    expect(second.pagination.total).toBe(4)
+    expect(http.history.get).toHaveLength(3)
+
+    upgraded = true
+    const third = await getArrayPage<number>(
+      "/clients",
+      { status: "ACTIVE", page: 2, pageSize: 2 },
+      { status: "ACTIVE" }
+    )
+    expect(third.items).toEqual([3, 4])
+    expect(third.legacyItems).toBeUndefined()
+    expect(third.pagination.total).toBe(4)
+
+    const fourth = await getArrayPage<number>(
+      "/clients",
+      { status: "ACTIVE", page: 1, pageSize: 2 },
+      { status: "ACTIVE" }
+    )
+    expect(fourth.items).toEqual([1, 2])
+    expect(http.history.get).toHaveLength(6)
+    expect(http.history.get[5]?.params).toEqual({
+      status: "ACTIVE",
+      page: 1,
+      pageSize: 2,
+    })
   })
 })
 

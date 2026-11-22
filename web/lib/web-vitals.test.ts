@@ -1,15 +1,24 @@
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
   detectDeviceCategory,
   formatWebVitalValue,
   isSupportedWebVitalName,
+  isWebVitalsEndpointUnavailable,
   normalizeNavigationType,
   normalizeWebVitalRoute,
+  resetWebVitalsEndpointAvailability,
   sendWebVitalsBatch,
   WEB_VITAL_ENDPOINT,
 } from "./web-vitals"
 
 describe("web-vitals helpers", () => {
+  beforeEach(() => {
+    resetWebVitalsEndpointAvailability()
+  })
+
+  afterEach(() => {
+    resetWebVitalsEndpointAvailability()
+  })
   it("normalizes static, dynamic client, and unknown routes without clinical identifiers", () => {
     expect(normalizeWebVitalRoute("/")).toBe("/")
     expect(normalizeWebVitalRoute("/auth/register?ref=home#form")).toBe(
@@ -97,5 +106,28 @@ describe("web-vitals helpers", () => {
         fetchMock,
       ),
     ).resolves.toBeUndefined()
+  })
+
+  it("disables subsequent RUM requests after 404/405 but keeps retrying across transient 5xx or network errors", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 500 }))
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce(new Response(null, { status: 404 }))
+      .mockResolvedValueOnce(new Response(null, { status: 202 }))
+
+    const item = { name: "LCP" as const, value: 1200, route: "/", device: "desktop" as const }
+
+    await sendWebVitalsBatch([item], fetchMock)
+    expect(isWebVitalsEndpointUnavailable()).toBe(false)
+
+    await sendWebVitalsBatch([item], fetchMock)
+    expect(isWebVitalsEndpointUnavailable()).toBe(false)
+
+    await sendWebVitalsBatch([item], fetchMock)
+    expect(isWebVitalsEndpointUnavailable()).toBe(true)
+
+    await sendWebVitalsBatch([item], fetchMock)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 })

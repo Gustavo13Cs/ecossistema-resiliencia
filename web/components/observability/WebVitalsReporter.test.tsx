@@ -1,7 +1,10 @@
 import { act, cleanup, render } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { WebVitalsReporter } from "./WebVitalsReporter"
-import { WEB_VITAL_ENDPOINT } from "@/lib/web-vitals"
+import {
+  resetWebVitalsEndpointAvailability,
+  WEB_VITAL_ENDPOINT,
+} from "@/lib/web-vitals"
 
 let mockPathname = "/"
 const useReportWebVitalsSpy = vi.fn()
@@ -21,6 +24,7 @@ describe("WebVitalsReporter", () => {
 
   beforeEach(() => {
     vi.useFakeTimers()
+    resetWebVitalsEndpointAvailability()
     useReportWebVitalsSpy.mockReset()
     mockPathname = "/"
     Object.defineProperty(window, "innerWidth", {
@@ -32,6 +36,7 @@ describe("WebVitalsReporter", () => {
 
   afterEach(() => {
     cleanup()
+    resetWebVitalsEndpointAvailability()
     vi.useRealTimers()
     vi.unstubAllGlobals()
     Object.defineProperty(window, "innerWidth", {
@@ -201,6 +206,59 @@ describe("WebVitalsReporter", () => {
       }
     })
 
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("stops queueing and sending further batches once the endpoint returns 404", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response(null, { status: 404 }))
+    vi.stubGlobal("fetch", fetchMock)
+
+    const { unmount } = render(<WebVitalsReporter enabled />)
+    const callback = useReportWebVitalsSpy.mock.calls[0]?.[0] as (
+      metric: unknown,
+    ) => void
+
+    act(() => {
+      callback({
+        id: "lcp-404",
+        name: "LCP",
+        value: 950,
+        rating: "good",
+        delta: 950,
+        navigationType: "navigate",
+        entries: [],
+      })
+    })
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2100)
+    })
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    act(() => {
+      callback({
+        id: "cls-after-404",
+        name: "CLS",
+        value: 0.02,
+        rating: "good",
+        delta: 0.02,
+        navigationType: "navigate",
+        entries: [],
+      })
+    })
+
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      value: "hidden",
+    })
+    await act(async () => {
+      document.dispatchEvent(new Event("visibilitychange"))
+    })
+
+    unmount()
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })

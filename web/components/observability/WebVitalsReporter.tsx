@@ -11,6 +11,7 @@ import type {
 import {
   detectDeviceCategory,
   isSupportedWebVitalName,
+  isWebVitalsEndpointUnavailable,
   normalizeNavigationType,
   normalizeWebVitalRoute,
   roundWebVitalValue,
@@ -64,7 +65,11 @@ export function WebVitalsReporter({
 
   const flush = useCallback(() => {
     clearFlushTimer()
-    if (!enabledRef.current || queueRef.current.size === 0) {
+    if (
+      !enabledRef.current ||
+      isWebVitalsEndpointUnavailable() ||
+      queueRef.current.size === 0
+    ) {
       queueRef.current.clear()
       return
     }
@@ -85,7 +90,11 @@ export function WebVitalsReporter({
 
   const handleWebVital = useCallback(
     (metric: ReportWebVitalsMetric) => {
-      if (!enabledRef.current || typeof window === "undefined") {
+      if (
+        !enabledRef.current ||
+        isWebVitalsEndpointUnavailable() ||
+        typeof window === "undefined"
+      ) {
         return
       }
       if (!isSupportedWebVitalName(metric.name)) {

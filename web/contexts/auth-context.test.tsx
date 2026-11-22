@@ -133,6 +133,21 @@ describe("AuthProvider session lifecycle", () => {
     expect(navigation.replace).not.toHaveBeenCalled()
   })
 
+  it("hydrates directly from /auth/refresh user payload without a second /auth/me request", async () => {
+    mock.onGet("/auth/me").replyOnce(401)
+    mock.onGet("/auth/csrf").reply(200, { csrfToken: "bootstrap-csrf" })
+    mock.onPost("/auth/refresh").reply(200, { user: professional, csrfToken: "recovered-csrf" })
+    mock.onPost("/clients").reply((config) => {
+      expect(config.headers?.["X-CSRF-Token"]).toBe("recovered-csrf")
+      return [201, { id: "c1" }]
+    })
+    renderAuthProvider(queryClient, <SessionProbe />)
+    expect(await screen.findByText("pro-1")).toBeInTheDocument()
+    expect(mock.history.get.map(({ url }) => url)).toEqual(["/auth/me", "/auth/csrf"])
+    expect(mock.history.post.filter(({ url }) => url === "/auth/refresh")).toHaveLength(1)
+    await api.post("/clients", { name: "Cliente" })
+  })
+
   it("clears cached and in-memory session state after a definitively rejected refresh", async () => {
     queryClient.setQueryData(["clients"], [{ id: "c1" }])
     mock.onGet("/auth/me").reply(200, {
