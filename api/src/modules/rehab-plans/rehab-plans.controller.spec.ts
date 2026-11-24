@@ -7,6 +7,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { AuthUser } from '../../common/types/auth-user';
 import { RehabPlansController } from './rehab-plans.controller';
 import { RehabPlansService } from './rehab-plans.service';
+import { PhysioReadService } from './physio-read.service';
 
 describe('RehabPlansController Client contract', () => {
   const user: AuthUser = { sub: 'professional-1', role: 'PHYSIO' };
@@ -15,6 +16,10 @@ describe('RehabPlansController Client contract', () => {
     create: jest.fn(),
     findActive: jest.fn(),
     findActiveByUser: jest.fn(),
+  };
+  const physioReadService = {
+    getWorkspace: jest.fn(),
+    getClientOverview: jest.fn(),
   };
   const body = {
     clientId,
@@ -35,6 +40,7 @@ describe('RehabPlansController Client contract', () => {
       providers: [
         RolesGuard,
         { provide: RehabPlansService, useValue: service },
+        { provide: PhysioReadService, useValue: physioReadService },
       ],
     })
       .overrideGuard(JwtAuthGuard)

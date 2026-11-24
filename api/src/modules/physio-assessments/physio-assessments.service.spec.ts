@@ -1,4 +1,8 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { ClientAccessService } from '../../common/client-access/client-access.service';
 import { AuthUser } from '../../common/types/auth-user';
@@ -19,6 +23,13 @@ interface AssessmentContract {
 
 describe('PhysioAssessmentsService Client ownership', () => {
   const user: AuthUser = { sub: 'professional-1', role: 'PHYSIO' };
+  const tx = {
+    $queryRaw: jest.fn().mockResolvedValue([{ id: dto.clientId }]),
+    client: { findFirst: jest.fn() },
+    physioAssessment: {
+      create: jest.fn<Promise<unknown>, [unknown]>(),
+    },
+  };
   const prisma = {
     client: { findFirst: jest.fn() },
     physioAssessment: {
@@ -32,6 +43,9 @@ describe('PhysioAssessmentsService Client ownership', () => {
       findMany: jest.fn(),
       delete: jest.fn(),
     },
+    $transaction: jest.fn(
+      (callback: (connection: typeof tx) => Promise<unknown>) => callback(tx),
+    ),
   };
   let service: AssessmentContract;
   beforeAll(async () => {
@@ -50,6 +64,7 @@ describe('PhysioAssessmentsService Client ownership', () => {
       id: dto.clientId,
       professionalId: user.sub,
     });
+    tx.client.findFirst.mockResolvedValue({ status: 'ACTIVE' });
     prisma.physioAssessment.findFirst.mockResolvedValue({
       id: 'assessment-1',
       clientId: dto.clientId,
@@ -65,7 +80,7 @@ describe('PhysioAssessmentsService Client ownership', () => {
     expect(prisma.client.findFirst).toHaveBeenCalledWith({
       where: { id: dto.clientId, professionalId: user.sub },
     });
-    const creation: unknown = prisma.physioAssessment.create.mock.calls[0]?.[0];
+    const creation: unknown = tx.physioAssessment.create.mock.calls[0]?.[0];
     expect(creation).toMatchObject({
       data: {
         ...dto,
@@ -73,6 +88,13 @@ describe('PhysioAssessmentsService Client ownership', () => {
         userId: null,
       },
     });
+  });
+  it('rejects archived Client when creating an assessment', async () => {
+    tx.client.findFirst.mockResolvedValueOnce({ status: 'ARCHIVED' });
+    await expect(service.create(user, dto)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(tx.physioAssessment.create).not.toHaveBeenCalled();
   });
   it('rejects foreign Client create and history before clinical queries', async () => {
     prisma.client.findFirst.mockResolvedValue(null);
@@ -82,7 +104,7 @@ describe('PhysioAssessmentsService Client ownership', () => {
     await expect(
       service.findByClient(user, dto.clientId),
     ).rejects.toBeInstanceOf(NotFoundException);
-    expect(prisma.physioAssessment.create).not.toHaveBeenCalled();
+    expect(tx.physioAssessment.create).not.toHaveBeenCalled();
     expect(prisma.physioAssessment.findMany).not.toHaveBeenCalled();
   });
   it('filters history by Client and creator', async () => {

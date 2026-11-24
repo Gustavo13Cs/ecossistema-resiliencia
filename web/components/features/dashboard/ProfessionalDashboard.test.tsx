@@ -36,6 +36,14 @@ vi.mock("@/hooks/features/useProfessionalDashboard", () => ({
   useProfessionalDashboard: () => dashboardState,
 }))
 
+vi.mock("../physio/PhysioDashboard", () => ({
+  PhysioDashboard: () => (
+    <section aria-label="Área de fisioterapia">
+      <h1>Área de fisioterapia</h1>
+    </section>
+  ),
+}))
+
 const makeClient = (id: string, name: string, status: ClientStatus): Client => ({
   id,
   professionalId: "professional-one",
@@ -94,32 +102,34 @@ describe("ProfessionalDashboard", () => {
     authState.user = null
   })
 
-  it.each([
-    ["NUTRITIONIST", "cliente", "clientes"],
-    ["PHYSIO", "paciente", "pacientes"],
-  ] as const)(
-    "shows only real client actions with $role terminology",
-    (role, singular, plural) => {
-      renderDashboardAs(role)
+  it("shows only real client actions with NUTRITIONIST terminology", () => {
+    renderDashboardAs("NUTRITIONIST")
 
-      const actions = screen.getByRole("navigation", { name: "Ações rápidas" })
-      expect(
-        within(actions).getByRole("link", { name: new RegExp(`novo ${singular}`, "i") }),
-      ).toHaveAttribute("href", "/clientes/novo")
-      expect(
-        within(actions).getByRole("link", { name: new RegExp(`ver ${plural}`, "i") }),
-      ).toHaveAttribute("href", "/clientes")
-      expect(
-        within(actions).getByRole("link", { name: new RegExp(`${plural} arquivados`, "i") }),
-      ).toHaveAttribute("href", "/clientes?status=ARCHIVED")
-      expect(
-        within(actions).queryByText(/dieta|alimento|reabilita|treino|agenda|avaliação/i),
-      ).not.toBeInTheDocument()
-      expect(
-        screen.getByRole("region", { name: new RegExp(`${plural} recentes`, "i") }),
-      ).toBeInTheDocument()
-    },
-  )
+    const actions = screen.getByRole("navigation", { name: "Ações rápidas" })
+    expect(
+      within(actions).getByRole("link", { name: /novo cliente/i }),
+    ).toHaveAttribute("href", "/clientes/novo")
+    expect(
+      within(actions).getByRole("link", { name: /ver clientes/i }),
+    ).toHaveAttribute("href", "/clientes")
+    expect(
+      within(actions).getByRole("link", { name: /clientes arquivados/i }),
+    ).toHaveAttribute("href", "/clientes?status=ARCHIVED")
+    expect(
+      within(actions).queryByText(/dieta|alimento|reabilita|treino|agenda|avaliação/i),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("region", { name: /clientes recentes/i }),
+    ).toBeInTheDocument()
+  })
+
+  it("delegates PHYSIO role to PhysioDashboard", () => {
+    renderDashboardAs("PHYSIO")
+
+    expect(
+      screen.getByRole("heading", { name: "Área de fisioterapia" }),
+    ).toBeInTheDocument()
+  })
 
   it("renders only client-backed summary values and recent records", () => {
     renderDashboardAs("NUTRITIONIST")
@@ -152,7 +162,7 @@ describe("ProfessionalDashboard", () => {
       dashboardState.archivedClients = []
       dashboardState.recentClients = []
 
-      renderDashboardAs("PHYSIO")
+      renderDashboardAs("NUTRITIONIST")
 
       expect(screen.getByRole(role, { name: title })).toBeInTheDocument()
     },

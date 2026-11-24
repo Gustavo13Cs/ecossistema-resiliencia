@@ -7,12 +7,14 @@ import {
   Body,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Delete,
   Request,
   UseGuards,
 } from '@nestjs/common';
 import { RehabPlansService } from './rehab-plans.service';
+import { PhysioReadService } from './physio-read.service';
 import { CreateRehabPlanDto } from './dto/create-rehab-plan.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -24,7 +26,25 @@ import { AuthenticatedRequest } from '../../common/types/auth-user';
 @Roles(...DOMAIN_ROLES.rehabilitation)
 @Controller('rehab-plans')
 export class RehabPlansController {
-  constructor(private readonly rehabPlansService: RehabPlansService) {}
+  constructor(
+    private readonly rehabPlansService: RehabPlansService,
+    private readonly physioReadService: PhysioReadService,
+  ) {}
+
+  @ClinicalResponse({ shape: 'resource-page' })
+  @Get('workspace')
+  getWorkspace(@Request() request: AuthenticatedRequest) {
+    return this.physioReadService.getWorkspace(request.user);
+  }
+
+  @ClinicalResponse({ shape: 'overview' })
+  @Get('client/:clientId/overview')
+  getClientOverview(
+    @Request() request: AuthenticatedRequest,
+    @Param('clientId', ParseUUIDPipe) clientId: string,
+  ) {
+    return this.physioReadService.getClientOverview(request.user, clientId);
+  }
 
   @ClinicalResponse({ shape: 'resource' })
   @Post()

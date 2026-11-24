@@ -8,13 +8,13 @@ import { toast } from "sonner"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { ClientOverviewSection } from "@/components/features/clients/ClientOverviewSection"
 import { ClientRecordHeader } from "@/components/features/clients/ClientRecordHeader"
+import { PhysioClientRecord } from "@/components/features/physio/PhysioClientRecord"
 import { PersonalClientRecord } from "@/components/features/training/PersonalClientRecord"
 import { ProfessionalScopePanel } from "@/components/features/clients/ProfessionalScopePanel"
 import type { ClientFormPayload } from "@/components/features/clients/client-field-policy"
 import { NutritionistQuickActions } from "@/components/features/clients/NutritionistQuickActions"
 import { BodyCompositionChart } from "@/components/features/clients/BodyCompositionChart"
 import { AssessmentModal } from "@/components/AssessmentModal"
-import { PhysioAssessmentModal } from "@/components/PhysioAssessmentModal"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
 import { useClientRecord, type ClientRecordStatus } from "@/hooks/features/useClientRecord"
@@ -58,7 +58,6 @@ export default function ClienteHubPage() {
   const [reloadingLatest, setReloadingLatest] = useState(false)
   const [formRevision, setFormRevision] = useState(0)
   const [showAssessmentModal, setShowAssessmentModal] = useState(false)
-  const [showPhysioAssessmentModal, setShowPhysioAssessmentModal] = useState(false)
   const [deniedContext, setDeniedContext] = useState<string | null>(null)
   const contextKey = `${user?.sub}:${clientId}`
   const handleAccessDenied = useCallback(() => setDeniedContext(contextKey), [contextKey])
@@ -90,6 +89,10 @@ export default function ClienteHubPage() {
       queryClient.invalidateQueries({ queryKey: queryKeys.workouts(user.sub) }),
       queryClient.invalidateQueries({ queryKey: [...queryKeys.workoutsRoot(user.sub), "client", clientId] }),
       queryClient.invalidateQueries({ queryKey: queryKeys.assessments(user.sub, clientId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.physioWorkspace(user.sub) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.physioOverview(user.sub, clientId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.physioAssessments(user.sub, clientId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.physioEvolutions(user.sub, clientId) }),
     ])
   }
 
@@ -157,7 +160,7 @@ export default function ClienteHubPage() {
   }
 
   const actionDenied = [updateClient.error, archiveClient.error].some(error => isAxiosError(error) && [401, 403].includes(error.response?.status ?? 0))
-  if (user.role === "PERSONAL" && (deniedContext === contextKey || actionDenied)) {
+  if ((user.role === "PERSONAL" || user.role === "PHYSIO") && (deniedContext === contextKey || actionDenied)) {
     return <AsyncState kind="error" title="Restabeleça seu acesso" description="Sua sessão não permite acessar estes registros. Entre novamente ou restabeleça seu acesso para continuar." />
   }
 
@@ -185,9 +188,6 @@ export default function ClienteHubPage() {
       
       {user.role === "NUTRITIONIST" && (
         <NutritionistQuickActions clientId={clientId} />
-      )}
-      {user.role === "PHYSIO" && (
-        <Button onClick={() => setShowPhysioAssessmentModal(true)}>Nova avaliação fisioterapêutica</Button>
       )}
 
       {user.role === "NUTRITIONIST" ? (
@@ -220,7 +220,8 @@ export default function ClienteHubPage() {
           />
         </div>
       ) : (
-        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-6">
+          <PhysioClientRecord client={client} pending={pending} onAccessDenied={handleAccessDenied} />
           <ClientOverviewSection
             client={client}
             role={user.role}
@@ -231,7 +232,6 @@ export default function ClienteHubPage() {
             onUpdate={handleUpdate}
             onReloadLatest={handleReloadLatest}
           />
-          <ProfessionalScopePanel role={user.role} />
         </div>
       )}
 
@@ -245,17 +245,6 @@ export default function ClienteHubPage() {
             if (user.sub) {
               void queryClient.invalidateQueries({ queryKey: queryKeys.assessments(user.sub, clientId) })
             }
-          }}
-        />
-      )}
-      {showPhysioAssessmentModal && (
-        <PhysioAssessmentModal
-          isOpen
-          clientId={clientId}
-          onClose={() => setShowPhysioAssessmentModal(false)}
-          onSuccess={() => {
-            setShowPhysioAssessmentModal(false)
-            void queryClient.invalidateQueries({ queryKey: queryKeys.patientOverview(user.sub, clientId) })
           }}
         />
       )}

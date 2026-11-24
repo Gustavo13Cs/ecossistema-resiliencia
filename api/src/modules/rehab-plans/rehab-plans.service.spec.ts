@@ -1,4 +1,8 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { ClientAccessService } from '../../common/client-access/client-access.service';
 import { AuthUser } from '../../common/types/auth-user';
@@ -32,6 +36,9 @@ describe('RehabPlansService Client ownership', () => {
   const client = { id: dto.clientId, professionalId: user.sub };
   const tx = {
     $queryRaw: jest.fn().mockResolvedValue([{ id: dto.clientId }]),
+    client: {
+      findFirst: jest.fn(),
+    },
     rehabPlan: {
       updateMany: jest.fn(),
       create: jest.fn<Promise<unknown>, [unknown]>(),
@@ -66,6 +73,7 @@ describe('RehabPlansService Client ownership', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     prisma.client.findFirst.mockResolvedValue(client);
+    tx.client.findFirst.mockResolvedValue({ status: 'ACTIVE' });
     prisma.rehabPlan.findFirst.mockResolvedValue({
       id: 'plan-1',
       clientId: client.id,
@@ -140,6 +148,14 @@ describe('RehabPlansService Client ownership', () => {
     expect(prisma.$transaction).not.toHaveBeenCalled();
     expect(prisma.rehabPlan.findFirst).not.toHaveBeenCalled();
     expect(prisma.rehabPlan.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects creating a protocol for an archived Client', async () => {
+    tx.client.findFirst.mockResolvedValueOnce({ status: 'ARCHIVED' });
+    await expect(service.create(user, dto)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(tx.rehabPlan.create).not.toHaveBeenCalled();
   });
 
   it('scopes the active plan to the Client and its creator', async () => {

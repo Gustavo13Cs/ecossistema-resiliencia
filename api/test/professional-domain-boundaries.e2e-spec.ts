@@ -27,6 +27,9 @@ import { PhysioAssessmentsController } from '../src/modules/physio-assessments/p
 import { PhysioAssessmentsService } from '../src/modules/physio-assessments/physio-assessments.service';
 import { RehabPlansController } from '../src/modules/rehab-plans/rehab-plans.controller';
 import { RehabPlansService } from '../src/modules/rehab-plans/rehab-plans.service';
+import { PhysioReadService } from '../src/modules/rehab-plans/physio-read.service';
+import { PhysioSessionEvolutionsController } from '../src/modules/rehab-plans/physio-session-evolutions.controller';
+import { PhysioSessionEvolutionsService } from '../src/modules/rehab-plans/physio-session-evolutions.service';
 import { RecipesController } from '../src/modules/recipes/recipes.controller';
 import { RecipesService } from '../src/modules/recipes/recipes.service';
 import { SupplementsController } from '../src/modules/supplements/supplements.controller';
@@ -88,6 +91,31 @@ describe('Professional domain boundaries (e2e)', () => {
   const rehabPlansService = {
     saveAsTemplate: jest.fn().mockResolvedValue({ id: 'rehab-template' }),
   };
+  const physioReadService = {
+    getWorkspace: jest.fn().mockResolvedValue({
+      counts: {
+        activePatients: 0,
+        archivedPatients: 0,
+        completedWithoutEvolution: 0,
+        withoutActivePlan: 0,
+        overdueReassessments: 0,
+        painWorsening: 0,
+      },
+      items: [],
+      evolvedAppointmentIds: [],
+    }),
+    getClientOverview: jest.fn().mockResolvedValue({
+      client: { id: PROFESSIONAL_ID, status: 'ACTIVE' },
+      activePlan: null,
+      recentAssessments: [],
+      recentEvolutions: [],
+      unlinkedAppointments: [],
+      painSeries: [],
+    }),
+  };
+  const physioSessionEvolutionsService = {
+    listByClient: jest.fn().mockResolvedValue([]),
+  };
   const assessmentsService = {
     findByClient: jest.fn().mockResolvedValue([]),
   };
@@ -118,6 +146,7 @@ describe('Professional domain boundaries (e2e)', () => {
         DietPlansController,
         WorkoutsController,
         RehabPlansController,
+        PhysioSessionEvolutionsController,
         ConsultationNotesController,
         RecipesController,
       ],
@@ -134,6 +163,11 @@ describe('Professional domain boundaries (e2e)', () => {
         { provide: TrainingReadService, useValue: trainingReadService },
         { provide: ExerciseLibraryService, useValue: exerciseLibraryService },
         { provide: RehabPlansService, useValue: rehabPlansService },
+        { provide: PhysioReadService, useValue: physioReadService },
+        {
+          provide: PhysioSessionEvolutionsService,
+          useValue: physioSessionEvolutionsService,
+        },
         { provide: ConsultationNotesService, useValue: {} },
         { provide: RecipesService, useValue: recipesService },
       ],
@@ -224,6 +258,16 @@ describe('Professional domain boundaries (e2e)', () => {
           .patch('/rehab-plans/rehab-1/save-as-template')
           .set(asRole(role)),
       serviceMethod: rehabPlansService.saveAsTemplate,
+    },
+    {
+      domain: 'rehabilitation-evolutions',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .get(`/rehab-plans/evolutions/client/${PROFESSIONAL_ID}`)
+          .set(asRole(role)),
+      serviceMethod: physioSessionEvolutionsService.listByClient,
     },
     {
       domain: 'sharedAssessment',

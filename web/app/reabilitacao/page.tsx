@@ -21,17 +21,17 @@ export default function ReabilitacaoPage() {
         </div>
         <div>
           <h1 className="text-3xl font-black text-slate-800">Reabilitação</h1>
-          <p className="text-slate-500">Protocolos de reabilitação dos seus clientes.</p>
+          <p className="text-slate-500">Protocolos de reabilitação dos seus pacientes.</p>
         </div>
       </div>
 
       <div className="space-y-3">
-        <label htmlFor="rehab-client" className="block font-medium">Cliente</label>
+        <label htmlFor="rehab-client" className="block font-medium">Paciente</label>
         <select id="rehab-client" value={clientId} onChange={event => setClientId(event.target.value)} disabled={clients.isPending || clients.isError} className="w-full min-h-11 rounded-lg border border-slate-300 bg-white px-3">
-          <option value="">Selecione um cliente</option>
+          <option value="">Selecione um paciente</option>
           {clients.data?.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}
         </select>
-        {clients.isError && <p role="alert">Não foi possível carregar os clientes.</p>}
+        {clients.isError && <p role="alert">Não foi possível carregar os pacientes.</p>}
         {clientId && <Link className="inline-flex min-h-11 items-center text-purple-700 underline" href={`/clientes/${clientId}/nova-reabilitacao`}>Prescrever protocolo</Link>}
       </div>
 
@@ -57,7 +57,7 @@ export default function ReabilitacaoPage() {
         /* ESTADO VAZIO (Sem Protocolo) */
         <div className="bg-white p-10 rounded-2xl border border-slate-100 text-center shadow-sm">
            <Activity className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-           <p className="text-slate-500 font-medium">{clientId ? "Este cliente não possui protocolo de reabilitação ativo." : "Selecione um cliente para consultar o protocolo."}</p>
+           <p className="text-slate-500 font-medium">{clientId ? "Este paciente não possui protocolo de reabilitação ativo." : "Selecione um paciente para consultar o protocolo."}</p>
         </div>
       ) : rehabPlan && (
         
@@ -69,7 +69,7 @@ export default function ReabilitacaoPage() {
             {rehabPlan.notes && (
               <div className="mt-4 p-4 bg-white/10 rounded-xl border border-white/20 text-sm">
                 <h4 className="font-bold flex items-center gap-2 mb-1">
-                  <Info className="w-4 h-4" /> Orientações Médicas
+                  <Info className="w-4 h-4" /> Orientações para casa
                 </h4>
                 <p>{rehabPlan.notes}</p>
               </div>

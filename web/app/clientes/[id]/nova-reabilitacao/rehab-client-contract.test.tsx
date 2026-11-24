@@ -35,7 +35,7 @@ describe("rehab Client contracts", () => {
   function renderPage(page: ReactNode) { return render(page, { wrapper }) }
   async function selectClient() {
     await screen.findByRole("option", { name: "Cliente de reabilitação" })
-    fireEvent.change(screen.getByLabelText("Cliente"), { target: { value: "client-1" } })
+    fireEvent.change(screen.getByLabelText("Paciente"), { target: { value: "client-1" } })
   }
   beforeEach(() => {
     vi.clearAllMocks()
@@ -78,7 +78,7 @@ describe("rehab Client contracts", () => {
     renderPage(<ReabilitacaoPage />)
     await screen.findByRole("option", { name: "Cliente de reabilitação" })
     expect(http.history.get.some(request => request.url?.includes("/active"))).toBe(false)
-    fireEvent.change(screen.getByLabelText("Cliente"), { target: { value: "client-1" } })
+    fireEvent.change(screen.getByLabelText("Paciente"), { target: { value: "client-1" } })
     await waitFor(() => expect(http.history.get.some(request => request.url === "/rehab-plans/client/client-1/active")).toBe(true))
     expect(http.history.get.some(request => request.url?.includes("professional-1"))).toBe(false)
     expect(screen.getByRole("link", { name: /prescrever protocolo/i })).toHaveAttribute("href", "/clientes/client-1/nova-reabilitacao")
@@ -97,7 +97,7 @@ describe("rehab Client contracts", () => {
     const firstVisit = renderPage(<ReabilitacaoPage />)
     await selectClient()
     if (initialPlan) await screen.findByText(initialPlan.title)
-    else await screen.findByText("Este cliente não possui protocolo de reabilitação ativo.")
+    else await screen.findByText("Este paciente não possui protocolo de reabilitação ativo.")
     await waitFor(() => expect(cache.getQueryData(planKey)).toEqual(initialPlan))
     firstVisit.unmount()
 
@@ -123,7 +123,7 @@ describe("rehab Client contracts", () => {
     await screen.findByText(updatedPlan.title)
     expect(screen.getByText("Terapia atualizada")).toBeVisible()
     expect(screen.getByText("Orientações atualizadas")).toBeVisible()
-    expect(screen.queryByText("Este cliente não possui protocolo de reabilitação ativo.")).not.toBeInTheDocument()
+    expect(screen.queryByText("Este paciente não possui protocolo de reabilitação ativo.")).not.toBeInTheDocument()
     expect(screen.queryByText("Terapia anterior")).not.toBeInTheDocument()
     expect(screen.queryByText("Orientações anteriores")).not.toBeInTheDocument()
     expect(http.history.get.filter(request => request.url === activeUrl)).toHaveLength(3)

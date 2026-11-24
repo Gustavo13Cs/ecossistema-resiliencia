@@ -53,9 +53,10 @@ model User {
 
   workouts                 Workout[]          @relation("UserWorkouts")
   createdWorkouts          Workout[]          @relation("CreatedWorkouts")
-  physioAssessments        PhysioAssessment[] @relation("UserPhysioAssessments")
-  createdPhysioAssessments PhysioAssessment[] @relation("CreatedPhysioAssessments")
-  rehabs                   RehabPlan[]        @relation("UserRehabs")
+  physioAssessments        PhysioAssessment[]       @relation("UserPhysioAssessments")
+  createdPhysioAssessments PhysioAssessment[]       @relation("CreatedPhysioAssessments")
+  physioSessionEvolutions  PhysioSessionEvolution[] @relation("ProfessionalPhysioSessionEvolutions")
+  rehabs                   RehabPlan[]              @relation("UserRehabs")
   createdRehabs            RehabPlan[]        @relation("CreatedRehabs")
 
   diets DietPlan[] @relation("UserDiets")
@@ -245,8 +246,9 @@ model Client {
   workouts          Workout[]            @relation("ClientWorkouts")
   workoutDrafts     WorkoutDraft[]       @relation("ClientWorkoutDrafts")
   trainingAnamneses TrainingAnamnesis[]  @relation("ClientTrainingAnamneses")
-  physioAssessments PhysioAssessment[]   @relation("ClientPhysioAssessments")
-  rehabPlans        RehabPlan[]          @relation("ClientRehabPlans")
+  physioAssessments       PhysioAssessment[]       @relation("ClientPhysioAssessments")
+  physioSessionEvolutions PhysioSessionEvolution[] @relation("ClientPhysioSessionEvolutions")
+  rehabPlans              RehabPlan[]              @relation("ClientRehabPlans")
   trackings         DailyTracking[]      @relation("ClientTrackings")
   anamneses         Anamnesis[]          @relation("ClientAnamneses")
   consultationNotes ConsultationNote[]   @relation("ClientConsultationNotes")
@@ -293,7 +295,8 @@ model Appointment {
   cancellationReason String?
   cancelledAt        DateTime?
   events             AppointmentEvent[]
-  createdAt          DateTime            @default(now())
+  physioEvolution    PhysioSessionEvolution? @relation("AppointmentPhysioEvolution")
+  createdAt          DateTime                @default(now())
   updatedAt          DateTime            @updatedAt
 
   @@index([professionalId, startsAt])
@@ -836,7 +839,8 @@ model RehabPlan {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  sessions RehabSession[] @relation("PlanToSessions")
+  sessions   RehabSession[]           @relation("PlanToSessions")
+  evolutions PhysioSessionEvolution[] @relation("RehabPlanEvolutions")
 
   @@index([creatorId, clientId, isActive])
   @@index([clientId])
@@ -871,6 +875,32 @@ model RehabExercise {
 
   @@index([sessionId])
   @@map("rehab_exercises")
+}
+
+// Tabela 15B: Evolução Clínica por Sessão de Fisioterapia
+model PhysioSessionEvolution {
+  id                String       @id @default(uuid())
+  clientId          String
+  client            Client       @relation("ClientPhysioSessionEvolutions", fields: [clientId], references: [id], onDelete: Restrict)
+  professionalId    String
+  professional      User         @relation("ProfessionalPhysioSessionEvolutions", fields: [professionalId], references: [id], onDelete: Restrict)
+  appointmentId     String?      @unique
+  appointment       Appointment? @relation("AppointmentPhysioEvolution", fields: [appointmentId], references: [id], onDelete: SetNull)
+  rehabPlanId       String?
+  rehabPlan         RehabPlan?   @relation("RehabPlanEvolutions", fields: [rehabPlanId], references: [id], onDelete: SetNull)
+  sessionDate       DateTime     @default(now())
+  painBefore        Int?
+  painAfter         Int?
+  proceduresApplied String[]     @default([])
+  patientResponse   String       @db.Text
+  nextSteps         String?      @db.Text
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([professionalId, clientId, sessionDate(sort: Desc)])
+  @@index([clientId, sessionDate(sort: Desc)])
+  @@index([rehabPlanId])
+  @@map("physio_session_evolutions")
 }
 
 // ==========================================

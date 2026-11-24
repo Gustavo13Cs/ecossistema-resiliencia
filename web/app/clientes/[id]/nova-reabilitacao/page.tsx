@@ -153,7 +153,12 @@ export default function NovaReabilitacaoPage() {
       }
 
       await api.post('/rehab-plans', payload)
-      await cache.invalidateQueries({ queryKey: queryKeys.rehabPlan(user?.sub ?? "anonymous", params.id), exact: true })
+      const sub = user?.sub ?? "anonymous"
+      await Promise.all([
+        cache.invalidateQueries({ queryKey: queryKeys.rehabPlan(sub, params.id), exact: true }),
+        cache.invalidateQueries({ queryKey: queryKeys.physioWorkspace(sub) }),
+        cache.invalidateQueries({ queryKey: queryKeys.physioOverview(sub, params.id) }),
+      ])
       toast.success("Plano de Reabilitação salvo com sucesso! 🩺")
       router.push(`/clientes/${params.id}`)
     } catch {

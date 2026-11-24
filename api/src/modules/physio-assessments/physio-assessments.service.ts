@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ClientAccessService } from '../../common/client-access/client-access.service';
+import { lockActiveOwnedClient } from '../../common/client-access/lock-active-owned-client';
 import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { CreatePhysioAssessmentDto } from './dto/create-physio-assessment.dto';
@@ -18,20 +19,23 @@ export class PhysioAssessmentsService {
   async create(user: AuthUser, data: CreatePhysioAssessmentDto) {
     this.assertPhysiotherapist(user);
     const client = await this.clientAccess.getOwnedClient(user, data.clientId);
-    return this.prisma.physioAssessment.create({
-      data: {
-        clientId: client.id,
-        creatorId: user.sub,
-        userId: null,
-        chiefComplaint: data.chiefComplaint,
-        historyOfIllness: data.historyOfIllness,
-        painLevel: data.painLevel,
-        posturalAnalysis: data.posturalAnalysis,
-        palpation: data.palpation,
-        jointMobility: data.jointMobility,
-        orthopedicTests: data.orthopedicTests,
-        treatmentPlan: data.treatmentPlan,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      await lockActiveOwnedClient(tx, client.id, user.sub);
+      return tx.physioAssessment.create({
+        data: {
+          clientId: client.id,
+          creatorId: user.sub,
+          userId: null,
+          chiefComplaint: data.chiefComplaint,
+          historyOfIllness: data.historyOfIllness,
+          painLevel: data.painLevel,
+          posturalAnalysis: data.posturalAnalysis,
+          palpation: data.palpation,
+          jointMobility: data.jointMobility,
+          orthopedicTests: data.orthopedicTests,
+          treatmentPlan: data.treatmentPlan,
+        },
+      });
     });
   }
 

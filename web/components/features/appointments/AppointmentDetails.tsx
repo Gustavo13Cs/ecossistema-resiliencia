@@ -23,10 +23,13 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Textarea } from "@/components/ui/textarea"
+import { useAuth } from "@/contexts/auth-context"
+import { useAppointmentPhysioEvolution } from "@/hooks/features/usePhysioEvolutions"
 import { AppointmentStatusBadge } from "./AppointmentStatusBadge"
 import { allowedAppointmentActions } from "@/lib/appointment-display"
 import type { Appointment } from "@/types/appointment"
 import type { AppointmentTransition } from "@/hooks/features/useAppointments"
+import type { PhysioSessionEvolution } from "@/types/physio"
 
 const KIND_LABELS: Record<Appointment["kind"], string> = {
   FIRST_VISIT: "Primeiro atendimento",
@@ -64,6 +67,7 @@ export function AppointmentDetails({
   onOpenChange,
   onEdit,
   onAction,
+  onOpenPhysioEvolution,
 }: {
   appointment: Appointment | null
   open: boolean
@@ -77,9 +81,25 @@ export function AppointmentDetails({
     transition: AppointmentTransition,
     reason?: string,
   ) => Promise<void>
+  onOpenPhysioEvolution?: (
+    appointment: Appointment,
+    existingEvolution: PhysioSessionEvolution | null,
+  ) => void
 }) {
+  const { user } = useAuth()
   const [showCancellation, setShowCancellation] = useState(false)
   const [reason, setReason] = useState("")
+
+  const canRecordEvolution = Boolean(
+    appointment &&
+      user?.role === "PHYSIO" &&
+      appointment.status !== "CANCELLED" &&
+      appointment.status !== "NO_SHOW" &&
+      onOpenPhysioEvolution,
+  )
+  const evolutionQuery = useAppointmentPhysioEvolution(appointment?.id, {
+    enabled: open && canRecordEvolution,
+  })
 
   useEffect(() => {
     if (!open) {
@@ -201,6 +221,22 @@ export function AppointmentDetails({
                 ) : null}
               </div>
             )}
+
+            {canRecordEvolution && onOpenPhysioEvolution ? (
+              <Button
+                type="button"
+                variant="secondary"
+                className="mt-3 min-h-11 w-full font-bold"
+                disabled={isMutating || evolutionQuery.isPending}
+                onClick={() =>
+                  onOpenPhysioEvolution(appointment, evolutionQuery.data ?? null)
+                }
+              >
+                {evolutionQuery.data
+                  ? "Editar evolução da sessão"
+                  : "Registrar evolução da sessão"}
+              </Button>
+            ) : null}
 
             {showCancellation ? (
               <div className="mt-4 rounded-[var(--sm-radius-md)] bg-[var(--sm-danger-subtle)] p-4">
