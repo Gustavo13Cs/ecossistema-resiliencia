@@ -25,6 +25,48 @@ const assessmentFixture = {
   palpation: "Sensibilidade em tendão patelar",
   jointMobility: "Flexão de joelho 115 graus",
   orthopedicTests: "Teste de Clarke (+)",
+  bodyPainMap: [
+    {
+      region: "Joelho direito",
+      view: "ANTERIOR",
+      intensity: 7,
+      symptomType: "SHARP",
+    },
+  ],
+  goniometry: [
+    {
+      joint: "Joelho",
+      movement: "Flexão",
+      side: "RIGHT",
+      activeDeg: 115,
+      passiveDeg: 122,
+      referenceDeg: 140,
+    },
+    {
+      joint: "Joelho",
+      movement: "Flexão",
+      side: "LEFT",
+      activeDeg: 138,
+      passiveDeg: 140,
+      referenceDeg: 140,
+    },
+  ],
+  muscleStrength: [
+    {
+      muscleGroup: "Quadríceps",
+      side: "RIGHT",
+      grade: 4,
+      painOnResistance: true,
+    },
+  ],
+  orthopedicTestItems: [
+    {
+      region: "Joelho",
+      testName: "Lachman",
+      side: "RIGHT",
+      result: "NEGATIVE",
+    },
+  ],
   treatmentPlan: "Analgesia e controle de carga",
   clientId: "c1",
   createdAt: "2026-11-01T10:00:00Z",
@@ -115,6 +157,7 @@ describe("PhysioClientRecord", () => {
     http.onGet("/rehab-plans/client/c1/overview").reply(200, overviewFixture)
     http.onGet("/physio-assessments/client/c1").reply(200, [assessmentFixture])
     http.onGet("/rehab-plans/evolutions/client/c1").reply(200, [evolutionFixture])
+    http.onGet("/rehab-plans/scales/client/c1").reply(200, [])
   })
 
   afterEach(cleanup)
@@ -146,6 +189,15 @@ describe("PhysioClientRecord", () => {
       name: "Avaliações fisioterapêuticas registradas",
     })
     expect(within(history).getByText("Teste de Clarke (+)")).toBeInTheDocument()
+    expect(
+      within(history).getByText("Lachman (Direito): Negativo (-)"),
+    ).toBeInTheDocument()
+    const romSection = screen.getByRole("region", {
+      name: "Evolução e simetria de ADM (Goniometria)",
+    })
+    expect(
+      within(romSection).getByText(/Assimetria bilateral: Joelho \(Flexão\)/i),
+    ).toBeVisible()
   })
 
   it("creates, edits, and deletes session evolutions", async () => {
@@ -211,6 +263,9 @@ describe("PhysioClientRecord", () => {
     ).toBeDisabled()
     expect(
       screen.getByRole("button", { name: "Nova avaliação fisioterapêutica" }),
+    ).toBeDisabled()
+    expect(
+      screen.getByRole("button", { name: "Aplicar escala funcional" }),
     ).toBeDisabled()
     expect(
       screen.getByRole("button", { name: "Prescrever protocolo" }),

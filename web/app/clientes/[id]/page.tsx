@@ -93,6 +93,7 @@ export default function ClienteHubPage() {
       queryClient.invalidateQueries({ queryKey: queryKeys.physioOverview(user.sub, clientId) }),
       queryClient.invalidateQueries({ queryKey: queryKeys.physioAssessments(user.sub, clientId) }),
       queryClient.invalidateQueries({ queryKey: queryKeys.physioEvolutions(user.sub, clientId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.physioScales(user.sub, clientId) }),
     ])
   }
 

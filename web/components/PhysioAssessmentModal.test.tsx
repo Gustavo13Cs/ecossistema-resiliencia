@@ -1,5 +1,6 @@
 import AxiosMockAdapter from "axios-mock-adapter"
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { api } from "@/lib/api"
 import { PhysioAssessmentModal } from "./PhysioAssessmentModal"
@@ -37,5 +38,60 @@ describe("PhysioAssessmentModal Client payload", () => {
     expect(callbacks.onSuccess).not.toHaveBeenCalled()
     expect(notices.success).not.toHaveBeenCalled()
     expect(screen.getByPlaceholderText(/dor no joelho/i)).toHaveValue("Dor ao caminhar")
+  })
+  it("supports structured body pain map, goniometry with asymmetry alert, MRC strength, and orthopedic tests", async () => {
+    const user = userEvent.setup()
+    http.onPost("/physio-assessments").reply(201, { id: "assessment-2" })
+    const callbacks = setup()
+
+    // Mark knee pain region on SVG map
+    await user.click(
+      screen.getByRole("button", { name: "Joelho direito (Vista Anterior)" }),
+    )
+    expect(screen.getByText("1 região marcada")).toBeVisible()
+
+    // Switch to ADM & Força tab
+    await user.click(screen.getByRole("tab", { name: "ADM & Força" }))
+    await user.type(screen.getByLabelText("ADM Ativa (°)"), "95")
+    await user.click(screen.getByRole("button", { name: /Adicionar ADM/i }))
+    await user.selectOptions(screen.getByLabelText("Lado", { selector: "#rom-side" }), "LEFT")
+    await user.type(screen.getByLabelText("ADM Ativa (°)"), "135")
+    await user.click(screen.getByRole("button", { name: /Adicionar ADM/i }))
+    expect(
+      screen.getByText(/Assimetria em Joelho \(Flexão\): Direito 95° vs Esquerdo 135°/i),
+    ).toBeVisible()
+
+    await user.click(screen.getByRole("button", { name: /Adicionar força/i }))
+    expect(screen.getByText("Grau 4/5")).toBeVisible()
+
+    // Switch to Testes & Exame tab
+    await user.click(screen.getByRole("tab", { name: "Testes & Exame" }))
+    await user.click(screen.getByRole("button", { name: "+ Positivo" }))
+
+    await user.click(screen.getByRole("button", { name: /salvar avaliação/i }))
+    await waitFor(() => expect(callbacks.onSuccess).toHaveBeenCalledOnce())
+
+    const payload = JSON.parse(http.history.post[0].data as string) as Record<
+      string,
+      unknown
+    >
+    expect(payload.bodyPainMap).toEqual([
+      {
+        region: "Joelho direito",
+        view: "ANTERIOR",
+        intensity: 5,
+        symptomType: "ACHING",
+      },
+    ])
+    expect(payload.goniometry).toHaveLength(2)
+    expect(payload.muscleStrength).toHaveLength(1)
+    expect(payload.orthopedicTestItems).toEqual([
+      {
+        region: "Joelho",
+        testName: "Lachman",
+        side: "RIGHT",
+        result: "POSITIVE",
+      },
+    ])
   })
 })

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useQueryClient } from "@tanstack/react-query"
 import { isAxiosError } from "axios"
@@ -18,9 +18,20 @@ import {
   usePhysioEvolutions,
 } from "@/hooks/features/usePhysioEvolutions"
 import { usePhysioOverview } from "@/hooks/features/usePhysioOverview"
+import {
+  BODY_PAIN_SYMPTOM_LABELS,
+  SIDE_LABELS,
+  TEST_RESULT_LABELS,
+  TEST_SIDE_LABELS,
+} from "@/lib/physio-exam-catalog"
 import { queryKeys } from "@/lib/query-keys"
 import type { Client } from "@/types/client"
-import type { PhysioSessionEvolution } from "@/types/physio"
+import type {
+  GoniometryEntry,
+  PhysioSessionEvolution,
+} from "@/types/physio"
+import { PhysioFunctionalScaleDialog } from "./PhysioFunctionalScaleDialog"
+import { PhysioFunctionalScalesSection } from "./PhysioFunctionalScalesSection"
 import { PhysioPainChart } from "./PhysioPainChart"
 import { PhysioSessionEvolutionDialog } from "./PhysioSessionEvolutionDialog"
 
@@ -77,10 +88,81 @@ function PhysioRecordBody({
 
   const [assessmentModalOpen, setAssessmentModalOpen] = useState(false)
   const [evolutionDialogOpen, setEvolutionDialogOpen] = useState(false)
+  const [scaleDialogOpen, setScaleDialogOpen] = useState(false)
   const [editingEvolution, setEditingEvolution] =
     useState<PhysioSessionEvolution | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [dialogDenied, setDialogDenied] = useState(false)
+  const handleDialogDenied = useCallback(() => setDialogDenied(true), [])
+
+  const romSummary = useMemo(() => {
+    const bySeries = new Map<
+      string,
+      {
+        joint: string
+        movement: string
+        side: GoniometryEntry["side"]
+        latest: number
+        earliest: number
+        count: number
+        referenceDeg: number | null
+      }
+    >()
+
+    for (const assessment of assessments.assessments) {
+      for (const entry of assessment.goniometry ?? []) {
+        const deg = entry.activeDeg ?? entry.passiveDeg
+        if (deg == null) continue
+        const key = `${entry.joint}::${entry.movement}::${entry.side}`
+        const current = bySeries.get(key)
+        if (!current) {
+          bySeries.set(key, {
+            joint: entry.joint,
+            movement: entry.movement,
+            side: entry.side,
+            latest: deg,
+            earliest: deg,
+            count: 1,
+            referenceDeg: entry.referenceDeg ?? null,
+          })
+        } else {
+          current.earliest = deg
+          current.count += 1
+        }
+      }
+    }
+
+    const rows = Array.from(bySeries.values())
+    const pairMap = new Map<
+      string,
+      { joint: string; movement: string; right?: number; left?: number }
+    >()
+    for (const row of rows) {
+      if (row.side === "AXIAL") continue
+      const pKey = `${row.joint}::${row.movement}`
+      const pair = pairMap.get(pKey) ?? {
+        joint: row.joint,
+        movement: row.movement,
+      }
+      if (row.side === "RIGHT") pair.right = row.latest
+      if (row.side === "LEFT") pair.left = row.latest
+      pairMap.set(pKey, pair)
+    }
+
+    const asymmetries: string[] = []
+    for (const pair of pairMap.values()) {
+      if (pair.right != null && pair.left != null) {
+        const diff = Math.abs(pair.right - pair.left)
+        if (diff >= 10) {
+          asymmetries.push(
+            `${pair.joint} (${pair.movement}): Direito ${pair.right}° vs Esquerdo ${pair.left}° (${diff}° de diferença)`,
+          )
+        }
+      }
+    }
+
+    return { rows, asymmetries }
+  }, [assessments.assessments])
 
   const denied =
     dialogDenied ||
@@ -158,6 +240,15 @@ function PhysioRecordBody({
             onClick={() => setAssessmentModalOpen(true)}
           >
             Nova avaliação fisioterapêutica
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={blocked}
+            className="min-h-11"
+            onClick={() => setScaleDialogOpen(true)}
+          >
+            Aplicar escala funcional
           </Button>
           {blocked ? (
             <Button type="button" disabled className="min-h-11" variant="outline">
@@ -486,6 +577,66 @@ function PhysioRecordBody({
         )}
       </section>
 
+      <PhysioFunctionalScalesSection
+        clientId={client.id}
+        blocked={blocked}
+        onOpenDialog={() => setScaleDialogOpen(true)}
+        onAccessDenied={handleDialogDenied}
+      />
+
+      {romSummary.rows.length > 0 ? (
+        <section
+          aria-labelledby="physio-rom-summary-heading"
+          className="min-w-0 space-y-3 border-t border-[var(--sm-border)] pt-5"
+        >
+          <h3 id="physio-rom-summary-heading" className="text-lg font-bold">
+            Evolução e simetria de ADM (Goniometria)
+          </h3>
+          {romSummary.asymmetries.length > 0 ? (
+            <div
+              role="status"
+              className="space-y-1 rounded-[var(--sm-radius-sm)] border border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-950"
+            >
+              {romSummary.asymmetries.map((msg) => (
+                <p key={msg}>Assimetria bilateral: {msg}</p>
+              ))}
+            </div>
+          ) : null}
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {romSummary.rows.map((row) => {
+              const delta = row.latest - row.earliest
+              return (
+                <li
+                  key={`${row.joint}:${row.movement}:${row.side}`}
+                  className="rounded-[var(--sm-radius-md)] border border-[var(--sm-border)] bg-[var(--sm-surface)] p-3.5 text-sm"
+                >
+                  <p className="font-bold text-[var(--sm-ink)]">
+                    {row.joint} — {row.movement}
+                  </p>
+                  <p className="text-xs font-semibold text-[var(--sm-brand)]">
+                    {SIDE_LABELS[row.side]}
+                  </p>
+                  <p className="mt-1.5 text-base font-extrabold tabular-nums text-[var(--sm-ink)]">
+                    {row.latest}°
+                    {row.referenceDeg != null ? (
+                      <span className="ml-1.5 text-xs font-normal text-[var(--sm-muted)]">
+                        (ref. {row.referenceDeg}°)
+                      </span>
+                    ) : null}
+                  </p>
+                  {row.count >= 2 ? (
+                    <p className="text-xs font-semibold text-[var(--sm-muted)]">
+                      Evolução: {delta >= 0 ? `+${delta}°` : `${delta}°`} desde{" "}
+                      {row.earliest}°
+                    </p>
+                  ) : null}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      ) : null}
+
       <section
         aria-labelledby="physio-assessment-history"
         className="min-w-0 border-t border-[var(--sm-border)] pt-5"
@@ -575,6 +726,93 @@ function PhysioRecordBody({
                       {assessment.treatmentPlan || "Não registrado"}
                     </dd>
                   </div>
+                  {assessment.bodyPainMap && assessment.bodyPainMap.length > 0 ? (
+                    <div className="sm:col-span-2">
+                      <dt className="text-[var(--sm-muted)]">
+                        Mapa corporal de dor
+                      </dt>
+                      <dd className="mt-1 flex flex-wrap gap-1.5">
+                        {assessment.bodyPainMap.map((entry, idx) => (
+                          <span
+                            key={`${entry.view}:${entry.region}:${idx}`}
+                            className="rounded-full border border-[var(--sm-border)] bg-[var(--sm-canvas)] px-2.5 py-0.5 text-xs font-semibold"
+                          >
+                            {entry.region}: EVA {entry.intensity}/10 (
+                            {BODY_PAIN_SYMPTOM_LABELS[entry.symptomType]})
+                          </span>
+                        ))}
+                      </dd>
+                    </div>
+                  ) : null}
+                  {assessment.goniometry && assessment.goniometry.length > 0 ? (
+                    <div className="sm:col-span-2">
+                      <dt className="text-[var(--sm-muted)]">
+                        Goniometria estruturada
+                      </dt>
+                      <dd className="mt-1 flex flex-wrap gap-2">
+                        {assessment.goniometry.map((g, idx) => (
+                          <span
+                            key={`${g.joint}:${g.movement}:${g.side}:${idx}`}
+                            className="rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-canvas)] px-2.5 py-1 text-xs font-medium"
+                          >
+                            {g.joint} ({g.movement} · {SIDE_LABELS[g.side]}):{" "}
+                            {g.activeDeg != null ? `Ativa ${g.activeDeg}°` : ""}
+                            {g.activeDeg != null && g.passiveDeg != null
+                              ? " / "
+                              : ""}
+                            {g.passiveDeg != null
+                              ? `Passiva ${g.passiveDeg}°`
+                              : ""}
+                          </span>
+                        ))}
+                      </dd>
+                    </div>
+                  ) : null}
+                  {assessment.muscleStrength &&
+                  assessment.muscleStrength.length > 0 ? (
+                    <div className="sm:col-span-2">
+                      <dt className="text-[var(--sm-muted)]">
+                        Força muscular (MRC)
+                      </dt>
+                      <dd className="mt-1 flex flex-wrap gap-2">
+                        {assessment.muscleStrength.map((m, idx) => (
+                          <span
+                            key={`${m.muscleGroup}:${m.side}:${idx}`}
+                            className="rounded-[var(--sm-radius-sm)] border border-[var(--sm-border)] bg-[var(--sm-canvas)] px-2.5 py-1 text-xs font-medium"
+                          >
+                            {m.muscleGroup} ({SIDE_LABELS[m.side]}): Grau{" "}
+                            {m.grade}/5
+                            {m.painOnResistance ? " · Dor à resistência" : ""}
+                          </span>
+                        ))}
+                      </dd>
+                    </div>
+                  ) : null}
+                  {assessment.orthopedicTestItems &&
+                  assessment.orthopedicTestItems.length > 0 ? (
+                    <div className="sm:col-span-2">
+                      <dt className="text-[var(--sm-muted)]">
+                        Testes especiais registrados
+                      </dt>
+                      <dd className="mt-1 flex flex-wrap gap-2">
+                        {assessment.orthopedicTestItems.map((t, idx) => (
+                          <span
+                            key={`${t.region}:${t.testName}:${t.side}:${idx}`}
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                              t.result === "POSITIVE"
+                                ? "bg-rose-100 text-rose-800"
+                                : t.result === "NEGATIVE"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-slate-200 text-slate-800"
+                            }`}
+                          >
+                            {t.testName} ({TEST_SIDE_LABELS[t.side]}):{" "}
+                            {TEST_RESULT_LABELS[t.result]}
+                          </span>
+                        ))}
+                      </dd>
+                    </div>
+                  ) : null}
                 </dl>
               </details>
             ))}
@@ -620,7 +858,15 @@ function PhysioRecordBody({
         activePlan={activePlan}
         unlinkedAppointments={overview.data?.unlinkedAppointments ?? []}
         evolution={editingEvolution}
-        onAccessDenied={() => setDialogDenied(true)}
+        onAccessDenied={handleDialogDenied}
+      />
+
+      <PhysioFunctionalScaleDialog
+        open={scaleDialogOpen && !blocked}
+        onOpenChange={setScaleDialogOpen}
+        clientId={client.id}
+        clientName={client.name}
+        onAccessDenied={handleDialogDenied}
       />
     </section>
   )

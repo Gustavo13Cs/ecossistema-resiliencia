@@ -66,6 +66,9 @@ export async function clearIsolationFixtures(prisma: PrismaService) {
   await prisma.physioSessionEvolution.deleteMany({
     where: { professionalId: { in: professionalIds } },
   });
+  await prisma.physioFunctionalScale.deleteMany({
+    where: { professionalId: { in: professionalIds } },
+  });
   await prisma.workout.deleteMany({ where });
   await prisma.rehabPlan.deleteMany({ where });
   await prisma.physioAssessment.deleteMany({ where });

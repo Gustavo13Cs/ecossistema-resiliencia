@@ -36,6 +36,56 @@ export interface PhysioWorkspace {
   evolvedAppointmentIds: string[]
 }
 
+export type BodyPainView = "ANTERIOR" | "POSTERIOR"
+
+export type BodyPainSymptomType =
+  | "SHARP"
+  | "BURNING"
+  | "RADIATING"
+  | "ACHING"
+  | "STIFFNESS"
+  | "TINGLING"
+
+export type AnatomicalSide = "LEFT" | "RIGHT" | "AXIAL"
+
+export type OrthopedicTestSide = "LEFT" | "RIGHT" | "BILATERAL" | "AXIAL"
+
+export type OrthopedicTestResult = "POSITIVE" | "NEGATIVE" | "INCONCLUSIVE"
+
+export interface BodyPainMapEntry {
+  region: string
+  view: BodyPainView
+  intensity: number
+  symptomType: BodyPainSymptomType
+  notes?: string | null
+}
+
+export interface GoniometryEntry {
+  joint: string
+  movement: string
+  side: AnatomicalSide
+  activeDeg?: number | null
+  passiveDeg?: number | null
+  referenceDeg?: number | null
+  notes?: string | null
+}
+
+export interface MuscleStrengthEntry {
+  muscleGroup: string
+  side: AnatomicalSide
+  grade: number
+  painOnResistance?: boolean
+  notes?: string | null
+}
+
+export interface OrthopedicTestItem {
+  region: string
+  testName: string
+  side: OrthopedicTestSide
+  result: OrthopedicTestResult
+  notes?: string | null
+}
+
 export interface PhysioAssessmentRecord {
   id: string
   date: string
@@ -46,10 +96,47 @@ export interface PhysioAssessmentRecord {
   palpation: string | null
   jointMobility: string | null
   orthopedicTests: string | null
+  bodyPainMap: BodyPainMapEntry[] | null
+  goniometry: GoniometryEntry[] | null
+  muscleStrength: MuscleStrengthEntry[] | null
+  orthopedicTestItems: OrthopedicTestItem[] | null
   treatmentPlan: string | null
   clientId: string
   createdAt: string
   updatedAt: string
+}
+
+export type PhysioScaleType =
+  | "PSFS"
+  | "OSWESTRY"
+  | "NDI"
+  | "LEFS"
+  | "SPADI"
+  | "TUG"
+
+export type TugAssistiveDevice = "NONE" | "CANE" | "WALKER" | "CRUTCHES"
+
+export interface PhysioFunctionalScaleRecord {
+  id: string
+  clientId: string
+  scaleType: PhysioScaleType
+  evaluatedAt: string
+  answers: Record<string, unknown>
+  rawScore: number
+  normalizedScore: number
+  scoreUnit: string
+  classification: string
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreatePhysioFunctionalScaleInput {
+  clientId: string
+  scaleType: PhysioScaleType
+  evaluatedAt?: string | null
+  answers: Record<string, unknown>
+  notes?: string | null
 }
 
 export interface PhysioEvolutionAppointmentSummary {
@@ -103,6 +190,7 @@ export interface PhysioClientOverview {
   activePlan: PhysioActivePlan | null
   recentAssessments: PhysioAssessmentRecord[]
   recentEvolutions: PhysioSessionEvolution[]
+  recentScales?: PhysioFunctionalScaleRecord[]
   unlinkedAppointments: PhysioEvolutionAppointmentSummary[]
   painSeries: PhysioPainPoint[]
 }

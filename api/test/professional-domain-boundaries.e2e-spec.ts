@@ -30,6 +30,8 @@ import { RehabPlansService } from '../src/modules/rehab-plans/rehab-plans.servic
 import { PhysioReadService } from '../src/modules/rehab-plans/physio-read.service';
 import { PhysioSessionEvolutionsController } from '../src/modules/rehab-plans/physio-session-evolutions.controller';
 import { PhysioSessionEvolutionsService } from '../src/modules/rehab-plans/physio-session-evolutions.service';
+import { PhysioFunctionalScalesController } from '../src/modules/rehab-plans/physio-functional-scales.controller';
+import { PhysioFunctionalScalesService } from '../src/modules/rehab-plans/physio-functional-scales.service';
 import { RecipesController } from '../src/modules/recipes/recipes.controller';
 import { RecipesService } from '../src/modules/recipes/recipes.service';
 import { SupplementsController } from '../src/modules/supplements/supplements.controller';
@@ -116,6 +118,9 @@ describe('Professional domain boundaries (e2e)', () => {
   const physioSessionEvolutionsService = {
     listByClient: jest.fn().mockResolvedValue([]),
   };
+  const physioFunctionalScalesService = {
+    listByClient: jest.fn().mockResolvedValue([]),
+  };
   const assessmentsService = {
     findByClient: jest.fn().mockResolvedValue([]),
   };
@@ -147,6 +152,7 @@ describe('Professional domain boundaries (e2e)', () => {
         WorkoutsController,
         RehabPlansController,
         PhysioSessionEvolutionsController,
+        PhysioFunctionalScalesController,
         ConsultationNotesController,
         RecipesController,
       ],
@@ -167,6 +173,10 @@ describe('Professional domain boundaries (e2e)', () => {
         {
           provide: PhysioSessionEvolutionsService,
           useValue: physioSessionEvolutionsService,
+        },
+        {
+          provide: PhysioFunctionalScalesService,
+          useValue: physioFunctionalScalesService,
         },
         { provide: ConsultationNotesService, useValue: {} },
         { provide: RecipesService, useValue: recipesService },
@@ -268,6 +278,16 @@ describe('Professional domain boundaries (e2e)', () => {
           .get(`/rehab-plans/evolutions/client/${PROFESSIONAL_ID}`)
           .set(asRole(role)),
       serviceMethod: physioSessionEvolutionsService.listByClient,
+    },
+    {
+      domain: 'rehabilitation-scales',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .get(`/rehab-plans/scales/client/${PROFESSIONAL_ID}`)
+          .set(asRole(role)),
+      serviceMethod: physioFunctionalScalesService.listByClient,
     },
     {
       domain: 'sharedAssessment',

@@ -21,6 +21,9 @@ describe('PhysioReadService', () => {
     physioSessionEvolution: {
       findMany: jest.fn(),
     },
+    physioFunctionalScale: {
+      findMany: jest.fn(),
+    },
     rehabPlan: {
       findFirst: jest.fn(),
     },
@@ -197,6 +200,7 @@ describe('PhysioReadService', () => {
           painAfter: 4,
         },
       ]);
+    prisma.physioFunctionalScale.findMany.mockResolvedValue([]);
     prisma.appointment.findMany.mockResolvedValue([]);
 
     const overview = await service.getClientOverview(user, 'c-1');

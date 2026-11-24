@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   NotFoundException,
@@ -94,6 +95,15 @@ describe('PhysioAssessmentsService Client ownership', () => {
     await expect(service.create(user, dto)).rejects.toBeInstanceOf(
       ConflictException,
     );
+    expect(tx.physioAssessment.create).not.toHaveBeenCalled();
+  });
+  it('rejects goniometry entries missing both active and passive degrees', async () => {
+    await expect(
+      service.create(user, {
+        ...dto,
+        goniometry: [{ joint: 'Joelho', movement: 'Flexão', side: 'RIGHT' }],
+      } as typeof dto),
+    ).rejects.toBeInstanceOf(BadRequestException);
     expect(tx.physioAssessment.create).not.toHaveBeenCalled();
   });
   it('rejects foreign Client create and history before clinical queries', async () => {

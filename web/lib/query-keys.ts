@@ -28,6 +28,7 @@ export const queryKeys = {
   physioOverview: (sessionUserId: string, clientId: string) => ["physio-overview", sessionUserId, clientId] as const,
   physioAssessments: (sessionUserId: string, clientId: string) => ["physio-assessments", sessionUserId, clientId] as const,
   physioEvolutions: (sessionUserId: string, clientId: string) => ["physio-evolutions", sessionUserId, clientId] as const,
+  physioScales: (sessionUserId: string, clientId: string) => ["physio-scales", sessionUserId, clientId] as const,
   physioAppointmentEvolution: (sessionUserId: string, appointmentId: string) =>
     ["physio-appointment-evolution", sessionUserId, appointmentId] as const,
   users: (sessionUserId: string) => ["users", sessionUserId] as const,

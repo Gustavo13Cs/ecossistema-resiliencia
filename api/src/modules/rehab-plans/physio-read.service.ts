@@ -4,6 +4,7 @@ import { ClientAccessService } from '../../common/client-access/client-access.se
 import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { PHYSIO_EVOLUTION_SELECT } from './physio-session-evolutions.service';
+import { PHYSIO_SCALE_SELECT } from './physio-functional-scales.service';
 import {
   PhysioClientOverview,
   PhysioPainPoint,
@@ -54,6 +55,10 @@ const recentAssessmentSelect = {
   palpation: true,
   jointMobility: true,
   orthopedicTests: true,
+  bodyPainMap: true,
+  goniometry: true,
+  muscleStrength: true,
+  orthopedicTestItems: true,
   treatmentPlan: true,
   clientId: true,
   createdAt: true,
@@ -317,6 +322,7 @@ export class PhysioReadService {
       activePlan,
       recentAssessments,
       recentEvolutions,
+      recentScales,
       unlinkedAppointments,
       painAssessments,
       painEvolutions,
@@ -341,6 +347,16 @@ export class PhysioReadService {
           { id: 'desc' },
         ],
         take: 5,
+      }),
+      this.prisma.physioFunctionalScale.findMany({
+        where: { clientId: client.id, professionalId: user.sub },
+        select: PHYSIO_SCALE_SELECT,
+        orderBy: [
+          { evaluatedAt: 'desc' },
+          { createdAt: 'desc' },
+          { id: 'desc' },
+        ],
+        take: 10,
       }),
       this.prisma.appointment.findMany({
         where: {
@@ -424,6 +440,10 @@ export class PhysioReadService {
         clientId: client.id,
       })),
       recentEvolutions: recentEvolutions.map((item) => ({
+        ...item,
+        clientId: client.id,
+      })),
+      recentScales: recentScales.map((item) => ({
         ...item,
         clientId: client.id,
       })),

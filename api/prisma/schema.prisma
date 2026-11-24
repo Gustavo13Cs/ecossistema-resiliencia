@@ -56,6 +56,7 @@ model User {
   physioAssessments        PhysioAssessment[]       @relation("UserPhysioAssessments")
   createdPhysioAssessments PhysioAssessment[]       @relation("CreatedPhysioAssessments")
   physioSessionEvolutions  PhysioSessionEvolution[] @relation("ProfessionalPhysioSessionEvolutions")
+  physioFunctionalScales   PhysioFunctionalScale[]  @relation("ProfessionalPhysioFunctionalScales")
   rehabs                   RehabPlan[]              @relation("UserRehabs")
   createdRehabs            RehabPlan[]        @relation("CreatedRehabs")
 
@@ -248,6 +249,7 @@ model Client {
   trainingAnamneses TrainingAnamnesis[]  @relation("ClientTrainingAnamneses")
   physioAssessments       PhysioAssessment[]       @relation("ClientPhysioAssessments")
   physioSessionEvolutions PhysioSessionEvolution[] @relation("ClientPhysioSessionEvolutions")
+  physioFunctionalScales  PhysioFunctionalScale[]  @relation("ClientPhysioFunctionalScales")
   rehabPlans              RehabPlan[]              @relation("ClientRehabPlans")
   trackings         DailyTracking[]      @relation("ClientTrackings")
   anamneses         Anamnesis[]          @relation("ClientAnamneses")
@@ -798,6 +800,11 @@ model PhysioAssessment {
   jointMobility    String? @db.Text // Amplitude de Movimento (ADM)
   orthopedicTests  String? @db.Text // Testes Especiais (Ex: Lachman, Gaveta)
 
+  bodyPainMap         Json?
+  goniometry          Json?
+  muscleStrength      Json?
+  orthopedicTestItems Json?
+
   treatmentPlan String? @db.Text // Conduta / Plano de Tratamento
 
   userId String?
@@ -901,6 +908,38 @@ model PhysioSessionEvolution {
   @@index([clientId, sessionDate(sort: Desc)])
   @@index([rehabPlanId])
   @@map("physio_session_evolutions")
+}
+
+enum PhysioScaleType {
+  PSFS
+  OSWESTRY
+  NDI
+  LEFS
+  SPADI
+  TUG
+}
+
+// Tabela 15C: Escalas Funcionais Padronizadas de Fisioterapia
+model PhysioFunctionalScale {
+  id              String          @id @default(uuid())
+  clientId        String
+  client          Client          @relation("ClientPhysioFunctionalScales", fields: [clientId], references: [id], onDelete: Restrict)
+  professionalId  String
+  professional    User            @relation("ProfessionalPhysioFunctionalScales", fields: [professionalId], references: [id], onDelete: Restrict)
+  scaleType       PhysioScaleType
+  evaluatedAt     DateTime        @default(now())
+  answers         Json
+  rawScore        Float
+  normalizedScore Float
+  scoreUnit       String
+  classification  String
+  notes           String?         @db.Text
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([professionalId, clientId, evaluatedAt(sort: Desc)])
+  @@index([clientId, evaluatedAt(sort: Desc)])
+  @@map("physio_functional_scales")
 }
 
 // ==========================================

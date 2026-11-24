@@ -97,6 +97,7 @@ beforeEach(() => {
   })
   http.onGet("/physio-assessments/client/client-one").reply(200, [])
   http.onGet("/rehab-plans/evolutions/client/client-one").reply(200, [])
+  http.onGet("/rehab-plans/scales/client/client-one").reply(200, [])
 })
 
 afterEach(cleanup)

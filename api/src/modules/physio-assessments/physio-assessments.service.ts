@@ -1,8 +1,10 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { ClientAccessService } from '../../common/client-access/client-access.service';
 import { lockActiveOwnedClient } from '../../common/client-access/lock-active-owned-client';
 import { AuthUser } from '../../common/types/auth-user';
@@ -18,6 +20,16 @@ export class PhysioAssessmentsService {
 
   async create(user: AuthUser, data: CreatePhysioAssessmentDto) {
     this.assertPhysiotherapist(user);
+    if (data.goniometry) {
+      for (const entry of data.goniometry) {
+        if (entry.activeDeg == null && entry.passiveDeg == null) {
+          throw new BadRequestException(
+            `Informe graus ativos ou passivos para goniometria de ${entry.joint} (${entry.movement}).`,
+          );
+        }
+      }
+    }
+
     const client = await this.clientAccess.getOwnedClient(user, data.clientId);
     return this.prisma.$transaction(async (tx) => {
       await lockActiveOwnedClient(tx, client.id, user.sub);
@@ -34,6 +46,20 @@ export class PhysioAssessmentsService {
           jointMobility: data.jointMobility,
           orthopedicTests: data.orthopedicTests,
           treatmentPlan: data.treatmentPlan,
+          ...(data.bodyPainMap !== undefined && {
+            bodyPainMap: data.bodyPainMap as unknown as Prisma.InputJsonValue,
+          }),
+          ...(data.goniometry !== undefined && {
+            goniometry: data.goniometry as unknown as Prisma.InputJsonValue,
+          }),
+          ...(data.muscleStrength !== undefined && {
+            muscleStrength:
+              data.muscleStrength as unknown as Prisma.InputJsonValue,
+          }),
+          ...(data.orthopedicTestItems !== undefined && {
+            orthopedicTestItems:
+              data.orthopedicTestItems as unknown as Prisma.InputJsonValue,
+          }),
         },
       });
     });

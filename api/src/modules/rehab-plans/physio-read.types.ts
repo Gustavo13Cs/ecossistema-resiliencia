@@ -4,6 +4,7 @@ import {
   AppointmentStatus,
   Client,
   PhysioAssessment,
+  PhysioFunctionalScale,
   PhysioSessionEvolution,
   RehabExercise,
   RehabPlan,
@@ -94,11 +95,17 @@ export interface PhysioPainPoint {
   painAfter: number | null;
 }
 
+export type PhysioFunctionalScaleSummary = Omit<
+  PhysioFunctionalScale,
+  'professionalId'
+>;
+
 export interface PhysioClientOverview {
   client: Pick<Client, 'id' | 'status'>;
   activePlan: PhysioActivePlan | null;
   recentAssessments: PhysioRecentAssessment[];
   recentEvolutions: PhysioSessionEvolutionSummary[];
+  recentScales: PhysioFunctionalScaleSummary[];
   unlinkedAppointments: PhysioUnlinkedAppointment[];
   painSeries: PhysioPainPoint[];
 }
