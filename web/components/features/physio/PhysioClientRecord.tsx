@@ -30,6 +30,7 @@ import type {
   GoniometryEntry,
   PhysioSessionEvolution,
 } from "@/types/physio"
+import { RehabPrintDialog } from "./RehabPrintDialog"
 import { PhysioFunctionalScaleDialog } from "./PhysioFunctionalScaleDialog"
 import { PhysioFunctionalScalesSection } from "./PhysioFunctionalScalesSection"
 import { PhysioPainChart } from "./PhysioPainChart"
@@ -89,6 +90,7 @@ function PhysioRecordBody({
   const [assessmentModalOpen, setAssessmentModalOpen] = useState(false)
   const [evolutionDialogOpen, setEvolutionDialogOpen] = useState(false)
   const [scaleDialogOpen, setScaleDialogOpen] = useState(false)
+  const [printDialogOpen, setPrintDialogOpen] = useState(false)
   const [editingEvolution, setEditingEvolution] =
     useState<PhysioSessionEvolution | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -327,16 +329,50 @@ function PhysioRecordBody({
                       <dd>
                         {activePlan.sessions.length > 0
                           ? activePlan.sessions
-                              .map(
-                                (session) =>
-                                  `${session.name} (${session.exercises.length} condutas)`,
-                              )
+                              .map((session, idx) => {
+                                const currentMarker =
+                                  (activePlan.currentPhaseIndex ?? 0) === idx
+                                    ? " [Atual]"
+                                    : ""
+                                return `${session.name}${currentMarker} (${session.exercises.length} condutas)`
+                              })
                               .join(" · ")
                           : "Sem fases cadastradas"}
                       </dd>
                     </div>
+                    {(() => {
+                      const homeCount = activePlan.sessions.reduce(
+                        (total, session) =>
+                          total +
+                          session.exercises.filter(
+                            ex => ex.isHomeExercise && ex.category !== "ELECTROTHERAPY",
+                          ).length,
+                        0,
+                      )
+                      return homeCount > 0 ? (
+                        <div>
+                          <dt className="text-[var(--sm-muted)]">
+                            Programa domiciliar
+                          </dt>
+                          <dd>
+                            {homeCount}{" "}
+                            {homeCount === 1
+                              ? "exercício para casa"
+                              : "exercícios para casa"}
+                          </dd>
+                        </div>
+                      ) : null
+                    })()}
                   </dl>
                   <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-h-11"
+                      onClick={() => setPrintDialogOpen(true)}
+                    >
+                      PDF Exercícios para Casa
+                    </Button>
                     <Link className={actionClass} href="/reabilitacao">
                       Consultar protocolos
                     </Link>
@@ -868,6 +904,16 @@ function PhysioRecordBody({
         clientName={client.name}
         onAccessDenied={handleDialogDenied}
       />
+
+      {activePlan ? (
+        <RehabPrintDialog
+          open={printDialogOpen}
+          plan={activePlan}
+          patientName={client.name}
+          defaultMode="home-program"
+          onClose={() => setPrintDialogOpen(false)}
+        />
+      ) : null}
     </section>
   )
 }

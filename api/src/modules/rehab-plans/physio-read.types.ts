@@ -10,6 +10,7 @@ import {
   RehabPlan,
   RehabSession,
 } from '@prisma/client';
+import type { DemonstrationPresentation } from '../workouts/exercise-demonstration.types';
 
 export type PhysioWorkspaceSection =
   | 'COMPLETED_WITHOUT_EVOLUTION'
@@ -45,10 +46,17 @@ export interface PhysioWorkspace {
   evolvedAppointmentIds: string[];
 }
 
+export type PhysioActivePlanExercise = Omit<
+  RehabExercise,
+  'demonstrationSnapshot'
+> & {
+  demonstrationSnapshot: DemonstrationPresentation | null;
+};
+
 export type PhysioActivePlan = Omit<RehabPlan, 'userId' | 'creatorId'> & {
   clientId: string;
   sessions: (RehabSession & {
-    exercises: RehabExercise[];
+    exercises: PhysioActivePlanExercise[];
   })[];
 };
 

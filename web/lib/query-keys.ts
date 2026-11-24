@@ -24,6 +24,16 @@ export const queryKeys = {
   supplements: (sessionUserId: string, clientId: string) => ["supplements", sessionUserId, clientId] as const,
   labExams: (sessionUserId: string, clientId: string) => ["lab-exams", sessionUserId, clientId] as const,
   rehabPlan: (sessionUserId: string, clientId: string) => ["rehab-plan", sessionUserId, clientId] as const,
+  physioProtocolCatalog: (sessionUserId: string) =>
+    ["physio-protocol-catalog", sessionUserId] as const,
+  physioExerciseCatalog: (
+    sessionUserId: string,
+    q: string,
+    muscleGroup: string,
+    onlyWithIllustration: boolean,
+  ) => ["physio-exercise-catalog", sessionUserId, q, muscleGroup, onlyWithIllustration] as const,
+  physioTemplates: (sessionUserId: string) =>
+    ["physio-templates", sessionUserId] as const,
   physioWorkspace: (sessionUserId: string) => ["physio-workspace", sessionUserId] as const,
   physioOverview: (sessionUserId: string, clientId: string) => ["physio-overview", sessionUserId, clientId] as const,
   physioAssessments: (sessionUserId: string, clientId: string) => ["physio-assessments", sessionUserId, clientId] as const,

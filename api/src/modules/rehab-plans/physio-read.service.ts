@@ -5,7 +5,9 @@ import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { PHYSIO_EVOLUTION_SELECT } from './physio-session-evolutions.service';
 import { PHYSIO_SCALE_SELECT } from './physio-functional-scales.service';
+import { presentRehabPlan } from './rehab-protocol-catalog';
 import {
+  PhysioActivePlan,
   PhysioClientOverview,
   PhysioPainPoint,
   PhysioWorkspace,
@@ -19,6 +21,7 @@ const activePlanSelect = {
   title: true,
   goal: true,
   durationWeeks: true,
+  currentPhaseIndex: true,
   notes: true,
   clientId: true,
   isActive: true,
@@ -26,18 +29,31 @@ const activePlanSelect = {
   createdAt: true,
   updatedAt: true,
   sessions: {
+    orderBy: [{ position: 'asc' }, { id: 'asc' }],
     select: {
       id: true,
       name: true,
       focus: true,
+      position: true,
+      progressionCriteria: true,
+      estimatedWeeks: true,
       rehabPlanId: true,
       exercises: {
+        orderBy: [{ position: 'asc' }, { id: 'asc' }],
         select: {
           id: true,
           name: true,
           sets: true,
           reps: true,
           notes: true,
+          position: true,
+          category: true,
+          modalityParams: true,
+          isHomeExercise: true,
+          homeFrequency: true,
+          patientInstructions: true,
+          catalogExerciseId: true,
+          demonstrationSnapshot: true,
           sessionId: true,
         },
       },
@@ -434,7 +450,12 @@ export class PhysioReadService {
 
     return {
       client: { id: client.id, status: client.status },
-      activePlan: activePlan ? { ...activePlan, clientId: client.id } : null,
+      activePlan: activePlan
+        ? (presentRehabPlan({
+            ...activePlan,
+            clientId: client.id,
+          }) as unknown as PhysioActivePlan)
+        : null,
       recentAssessments: recentAssessments.map((item) => ({
         ...item,
         clientId: client.id,

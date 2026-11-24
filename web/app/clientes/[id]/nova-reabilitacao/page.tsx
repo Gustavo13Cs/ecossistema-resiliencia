@@ -1,20 +1,54 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
+import { isAxiosError } from "axios"
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  BookmarkPlus,
+  BookOpen,
+  CheckCircle2,
+  Flag,
+  Info,
+  LayoutList,
+  Plus,
+  Printer,
+  Save,
+  Target,
+  Trash2,
+} from "lucide-react"
+import Link from "next/link"
+import { useParams, useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { RehabExerciseCatalogDialog } from "@/components/features/physio/RehabExerciseCatalogDialog"
+import { RehabExerciseEditorCard } from "@/components/features/physio/RehabExerciseEditorCard"
+import { RehabPrintDialog } from "@/components/features/physio/RehabPrintDialog"
+import { RehabProtocolPickerDialog } from "@/components/features/physio/RehabProtocolPickerDialog"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Plus, Trash2, CheckCircle2, Target, Printer, Stethoscope, Timer, Repeat, Share2, Info, LayoutList } from "lucide-react"
-import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
-import { api } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
+import type {
+  CuratedRehabProtocol,
+  PhysioExerciseCatalogItem,
+  RehabPlan,
+} from "@/hooks/features/useFisio"
+import { api } from "@/lib/api"
 import { queryKeys } from "@/lib/query-keys"
-import { toast } from "sonner"
+import {
+  createEmptyExercise,
+  draftToPrintablePlan,
+  mapPlanToDraftSessions,
+  nextDraftId,
+  serializeRehabBody,
+  type DraftRehabExercise,
+  type DraftRehabSession,
+} from "@/lib/rehab-presets"
 import type { Client } from "@/types/client"
-import type { RehabPlan } from "@/hooks/features/useFisio"
 
 export default function NovaReabilitacaoPage() {
   const params = useParams<{ id: string }>()
@@ -22,24 +56,49 @@ export default function NovaReabilitacaoPage() {
   const cache = useQueryClient()
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [savingTemplate, setSavingTemplate] = useState(false)
   const [patientName, setPatientName] = useState("Carregando...")
+  const [activePlanId, setActivePlanId] = useState<string | null>(null)
+  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0)
 
-  const [planInfo, setPlanInfo] = useState({ 
-    title: "Protocolo de Reabilitação", 
-    goal: "Controle de dor e ganho de ADM", 
+  const [protocolPickerOpen, setProtocolPickerOpen] = useState(false)
+  const [printDialogOpen, setPrintDialogOpen] = useState(false)
+  const [catalogTarget, setCatalogTarget] = useState<{
+    sessionId: string
+    exerciseId: string
+  } | null>(null)
+
+  const [planInfo, setPlanInfo] = useState({
+    title: "Protocolo de Reabilitação",
+    goal: "Controle de dor e ganho de ADM",
     durationWeeks: 4,
-    notes: "" 
+    notes: "",
   })
 
-  const [sessions, setSessions] = useState([
-    { 
-      id: `s${Date.now()}`, 
-      name: "Fase 1 - Analgesia", 
-      focus: "Eletroterapia e Terapia Manual", 
+  const [sessions, setSessions] = useState<DraftRehabSession[]>(() => [
+    {
+      id: "initial-session-1",
+      name: "Fase 1 - Analgesia",
+      focus: "Eletroterapia e Terapia Manual",
+      progressionCriteria: "",
+      estimatedWeeks: "",
       exercises: [
-        { id: `e${Date.now()}`, name: "TENS (Corrente Convencional)", sets: "20 min", reps: "Contínuo", notes: "100Hz / 50µs no local da dor" }
-      ] 
-    }
+        {
+          id: "initial-exercise-1",
+          name: "TENS (Corrente Convencional)",
+          sets: "20 min",
+          reps: "Contínuo",
+          notes: "100Hz / 50µs no local da dor",
+          category: "KINESIOTHERAPY",
+          modalityParams: null,
+          isHomeExercise: false,
+          homeFrequency: "",
+          patientInstructions: "",
+          catalogExerciseId: null,
+          demonstrationSnapshot: null,
+        },
+      ],
+    },
   ])
 
   useEffect(() => {
@@ -48,238 +107,587 @@ export default function NovaReabilitacaoPage() {
         const clientRes = await api.get<Client>(`/clients/${params.id}`)
         setPatientName(clientRes.data.name)
 
-        const planRes = await api.get<RehabPlan | null>(`/rehab-plans/client/${params.id}/active`)
+        const planRes = await api.get<RehabPlan | null>(
+          `/rehab-plans/client/${params.id}/active`,
+        )
         if (planRes.data) {
           const active = planRes.data
+          setActivePlanId(active.id)
+          setCurrentPhaseIndex(active.currentPhaseIndex ?? 0)
           setPlanInfo({
             title: active.title,
             goal: active.goal || "",
             durationWeeks: active.durationWeeks || 4,
-            notes: active.notes || ""
+            notes: active.notes || "",
           })
 
           if (active.sessions && active.sessions.length > 0) {
-            setSessions(active.sessions.map((s) => ({
-              id: s.id || `s${Date.now() + Math.random()}`,
-              name: s.name,
-              focus: s.focus || "",
-              exercises: s.exercises.map((e) => ({
-                id: e.id || `e${Date.now() + Math.random()}`,
-                name: e.name,
-                sets: e.sets || "",
-                reps: e.reps || "",
-                notes: e.notes || ""
-              }))
-            })))
+            setSessions(mapPlanToDraftSessions(active.sessions))
           }
         }
       } catch {
         toast.error("Não foi possível carregar o prontuário e o protocolo.")
       }
     }
-    loadData()
+    void loadData()
   }, [params.id])
 
+  const printablePlan = useMemo(
+    () =>
+      draftToPrintablePlan({
+        id: activePlanId ?? "draft",
+        ...planInfo,
+        currentPhaseIndex,
+        sessions,
+      }),
+    [activePlanId, planInfo, currentPhaseIndex, sessions],
+  )
+
+  const invalidatePhysioQueries = async () => {
+    const sub = user?.sub ?? "anonymous"
+    await Promise.all([
+      cache.invalidateQueries({
+        queryKey: queryKeys.rehabPlan(sub, params.id),
+        exact: true,
+      }),
+      cache.invalidateQueries({ queryKey: queryKeys.physioWorkspace(sub) }),
+      cache.invalidateQueries({
+        queryKey: queryKeys.physioOverview(sub, params.id),
+      }),
+    ])
+  }
+
   const addSession = () => {
-    setSessions([...sessions, { 
-      id: `s${Date.now()}`, 
-      name: `Fase ${sessions.length + 1}`, 
-      focus: "", 
-      exercises: [] 
-    }])
+    setSessions(prev => [
+      ...prev,
+      {
+        id: nextDraftId("s"),
+        name: `Fase ${prev.length + 1}`,
+        focus: "",
+        progressionCriteria: "",
+        estimatedWeeks: "",
+        exercises: [],
+      },
+    ])
   }
 
   const removeSession = (id: string) => {
-    setSessions(sessions.filter(s => s.id !== id))
+    setSessions(prev => {
+      const removedIdx = prev.findIndex(s => s.id === id)
+      const next = prev.filter(s => s.id !== id)
+      setCurrentPhaseIndex(current => {
+        if (next.length === 0) return 0
+        if (current >= next.length) return next.length - 1
+        if (removedIdx >= 0 && removedIdx < current) return Math.max(0, current - 1)
+        return current
+      })
+      return next
+    })
+  }
+
+  const moveSession = (index: number, direction: -1 | 1) => {
+    const target = index + direction
+    if (target < 0 || target >= sessions.length) return
+    setSessions(prev => {
+      const copy = [...prev]
+      const [moved] = copy.splice(index, 1)
+      copy.splice(target, 0, moved)
+      return copy
+    })
+    setCurrentPhaseIndex(current => {
+      if (current === index) return target
+      if (current === target) return index
+      return current
+    })
   }
 
   const addExercise = (sessionId: string) => {
-    setSessions(sessions.map(session => {
-      if (session.id === sessionId) {
-        return {
-          ...session,
-          exercises: [...session.exercises, { id: `e${Date.now()}`, name: "", sets: "", reps: "", notes: "" }]
-        }
-      }
-      return session
-    }))
+    setSessions(prev =>
+      prev.map(session =>
+        session.id === sessionId
+          ? {
+              ...session,
+              exercises: [...session.exercises, createEmptyExercise()],
+            }
+          : session,
+      ),
+    )
+  }
+
+  const updateExercise = (
+    sessionId: string,
+    exerciseId: string,
+    updater: (ex: DraftRehabExercise) => DraftRehabExercise,
+  ) => {
+    setSessions(prev =>
+      prev.map(session =>
+        session.id === sessionId
+          ? {
+              ...session,
+              exercises: session.exercises.map(ex =>
+                ex.id === exerciseId ? updater(ex) : ex,
+              ),
+            }
+          : session,
+      ),
+    )
+  }
+
+  const moveExercise = (
+    sessionId: string,
+    exerciseIndex: number,
+    direction: -1 | 1,
+  ) => {
+    setSessions(prev =>
+      prev.map(session => {
+        if (session.id !== sessionId) return session
+        const target = exerciseIndex + direction
+        if (target < 0 || target >= session.exercises.length) return session
+        const copy = [...session.exercises]
+        const [moved] = copy.splice(exerciseIndex, 1)
+        copy.splice(target, 0, moved)
+        return { ...session, exercises: copy }
+      }),
+    )
   }
 
   const removeExercise = (sessionId: string, exerciseId: string) => {
-    setSessions(sessions.map(session => {
-      if (session.id === sessionId) {
-        return { ...session, exercises: session.exercises.filter(e => e.id !== exerciseId) }
-      }
-      return session
-    }))
+    setSessions(prev =>
+      prev.map(session =>
+        session.id === sessionId
+          ? {
+              ...session,
+              exercises: session.exercises.filter(e => e.id !== exerciseId),
+            }
+          : session,
+      ),
+    )
   }
 
-  const updateExercise = (sessionId: string, exerciseId: string, field: string, value: string) => {
-    setSessions(sessions.map(session => {
-      if (session.id === sessionId) {
-        return {
-          ...session,
-          exercises: session.exercises.map(ex => ex.id === exerciseId ? { ...ex, [field]: value } : ex)
-        }
-      }
-      return session
-    }))
+  const validateBeforeSave = () => {
+    if (!planInfo.title.trim()) {
+      toast.error("Informe o título do protocolo de reabilitação.")
+      return false
+    }
+    if (sessions.length === 0 || sessions.some(s => s.exercises.length === 0)) {
+      toast.error("Todas as fases precisam ter pelo menos uma terapia/exercício!")
+      return false
+    }
+    if (
+      sessions.some(
+        s => !s.name.trim() || s.exercises.some(ex => !ex.name.trim()),
+      )
+    ) {
+      toast.error("Preencha o nome de todas as fases e terapias/exercícios.")
+      return false
+    }
+    return true
   }
 
   const handleSavePlan = async () => {
-    if (sessions.some(s => s.exercises.length === 0)) {
-      toast.error("Todas as fases precisam ter pelo menos uma terapia/exercício!")
-      return
-    }
-
+    if (!validateBeforeSave()) return
     setLoading(true)
     try {
-      const payload = {
-        title: planInfo.title,
-        goal: planInfo.goal,
-        durationWeeks: planInfo.durationWeeks,
-        notes: planInfo.notes,
+      const body = serializeRehabBody({
+        ...planInfo,
+        currentPhaseIndex,
+        sessions,
+      })
+      await api.post("/rehab-plans", {
+        ...body,
         clientId: params.id,
-        sessions: sessions.map(session => ({
-          name: session.name,
-          focus: session.focus,
-          exercises: session.exercises.map(ex => ({
-            name: ex.name,
-            sets: ex.sets,
-            reps: ex.reps,
-            notes: ex.notes
-          }))
-        }))
-      }
-
-      await api.post('/rehab-plans', payload)
-      const sub = user?.sub ?? "anonymous"
-      await Promise.all([
-        cache.invalidateQueries({ queryKey: queryKeys.rehabPlan(sub, params.id), exact: true }),
-        cache.invalidateQueries({ queryKey: queryKeys.physioWorkspace(sub) }),
-        cache.invalidateQueries({ queryKey: queryKeys.physioOverview(sub, params.id) }),
-      ])
-      toast.success("Plano de Reabilitação salvo com sucesso! 🩺")
+      })
+      await invalidatePhysioQueries()
+      toast.success("Plano de Reabilitação salvo com sucesso!")
       router.push(`/clientes/${params.id}`)
-    } catch {
-      toast.error("Erro ao salvar reabilitação. Tente novamente.")
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 409) {
+        toast.error("Prontuário arquivado: novas prescrições estão bloqueadas.")
+      } else {
+        toast.error("Erro ao salvar reabilitação. Tente novamente.")
+      }
     } finally {
       setLoading(false)
     }
   }
 
+  const handleUpdateInPlace = async () => {
+    if (!activePlanId || !validateBeforeSave()) return
+    setLoading(true)
+    try {
+      const body = serializeRehabBody({
+        ...planInfo,
+        currentPhaseIndex,
+        sessions,
+      })
+      await api.patch(`/rehab-plans/${activePlanId}`, body)
+      await invalidatePhysioQueries()
+      toast.success("Alterações salvas no protocolo ativo!")
+      router.push(`/clientes/${params.id}`)
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 409) {
+        toast.error("Prontuário arquivado: alterações estão bloqueadas.")
+      } else {
+        toast.error("Erro ao atualizar protocolo. Tente novamente.")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSaveAsTemplate = async () => {
+    if (!validateBeforeSave()) return
+    setSavingTemplate(true)
+    try {
+      const body = serializeRehabBody({
+        ...planInfo,
+        currentPhaseIndex: 0,
+        sessions,
+      })
+      await api.post("/rehab-plans/templates", body)
+      if (user?.sub) {
+        await cache.invalidateQueries({
+          queryKey: queryKeys.physioTemplates(user.sub),
+        })
+      }
+      toast.success("Modelo salvo na sua biblioteca de protocolos!")
+    } catch {
+      toast.error("Não foi possível salvar o modelo.")
+    } finally {
+      setSavingTemplate(false)
+    }
+  }
+
+  const handleApplyProtocol = (protocol: CuratedRehabProtocol | RehabPlan) => {
+    setPlanInfo({
+      title: protocol.title,
+      goal: protocol.goal || "",
+      durationWeeks: protocol.durationWeeks || 4,
+      notes: protocol.notes || "",
+    })
+    setCurrentPhaseIndex(0)
+    setSessions(mapPlanToDraftSessions(protocol.sessions))
+    toast.success(`Protocolo "${protocol.title}" carregado para edição.`)
+  }
+
+  const handleSelectCatalogExercise = (item: PhysioExerciseCatalogItem) => {
+    if (!catalogTarget) return
+    updateExercise(catalogTarget.sessionId, catalogTarget.exerciseId, prev => ({
+      ...prev,
+      name: item.name,
+      catalogExerciseId: item.id,
+      demonstrationSnapshot: item.demonstration,
+      patientInstructions: prev.patientInstructions.trim()
+        ? prev.patientInstructions
+        : (item.demonstration?.instruction ?? ""),
+    }))
+    setCatalogTarget(null)
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 py-8 print:bg-white print:py-0">
-      <div className="w-full px-6 md:px-12 lg:px-20 mx-auto space-y-6 print:px-0 print:max-w-4xl">
-        
+      <div className="mx-auto w-full space-y-6 px-6 md:px-12 lg:px-20 print:max-w-4xl print:px-0">
         {/* CABEÇALHO */}
-        <div className="flex items-center justify-between mb-4 print:hidden">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4 print:hidden">
           <div className="flex items-center gap-4">
             <Link href={`/clientes/${params.id}`}>
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-200">
-                <ArrowLeft className="w-5 h-5 text-slate-600" />
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Voltar ao prontuário"
+                className="rounded-full hover:bg-slate-200"
+              >
+                <ArrowLeft className="h-5 w-5 text-slate-600" />
               </Button>
             </Link>
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold text-slate-800">Prescrição Fisioterapêutica</h1>
-              </div>
-              <p className="text-slate-500 font-medium">Paciente: <span className="text-purple-600">{patientName}</span></p>
+              <h1 className="text-3xl font-bold text-slate-800">
+                Prescrição Fisioterapêutica
+              </h1>
+              <p className="font-medium text-slate-500">
+                Paciente:{" "}
+                <span className="text-purple-600">{patientName}</span>
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" className="h-12 border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100">
-              <Share2 className="w-5 h-5 mr-2" /> Partilhar WhatsApp
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11 border-purple-200 bg-purple-50 text-purple-800 hover:bg-purple-100"
+              onClick={() => setProtocolPickerOpen(true)}
+            >
+              <BookOpen className="mr-2 h-4 w-4" />
+              Protocolos Prontos
             </Button>
-            <Button variant="outline" className="h-12 border-slate-300 text-slate-700" onClick={() => window.print()}>
-              <Printer className="w-5 h-5 mr-2" /> Exportar PDF
+            <Button
+              type="button"
+              variant="outline"
+              disabled={savingTemplate}
+              className="min-h-11 border-slate-300 text-slate-700"
+              onClick={handleSaveAsTemplate}
+            >
+              <BookmarkPlus className="mr-2 h-4 w-4" />
+              {savingTemplate ? "Salvando modelo..." : "Salvar como Modelo"}
             </Button>
-            <Button onClick={handleSavePlan} disabled={loading} className="h-12 px-8 bg-purple-600 hover:bg-purple-700 text-lg shadow-md text-white">
-              <CheckCircle2 className="w-5 h-5 mr-2" /> {loading ? "A Salvar..." : "Finalizar Protocolo"}
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11 border-slate-300 text-slate-700"
+              onClick={() => setPrintDialogOpen(true)}
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              Exportar PDF
+            </Button>
+            {activePlanId ? (
+              <Button
+                type="button"
+                onClick={handleUpdateInPlace}
+                disabled={loading}
+                variant="outline"
+                className="min-h-11 border-purple-600 font-bold text-purple-700 hover:bg-purple-50"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Salvar Alterações
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              onClick={handleSavePlan}
+              disabled={loading}
+              className="min-h-11 bg-purple-600 px-6 text-base text-white shadow-md hover:bg-purple-700"
+            >
+              <CheckCircle2 className="mr-2 h-5 w-5" />
+              {loading ? "A Salvar..." : "Finalizar Protocolo"}
             </Button>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-12 gap-8 items-start">
-          
+        <div className="grid items-start gap-8 lg:grid-cols-12">
           {/* PAINEL LATERAL DE METAS */}
-          <div className="lg:col-span-3 space-y-6 sticky top-8 print:hidden">
-             <Card className="border-0 shadow-lg bg-white overflow-hidden">
-                <CardHeader className="bg-slate-800 text-white border-b-4 border-purple-500 py-4">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Target className="w-5 h-5 text-purple-400" /> Metas do Tratamento
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-5 space-y-4 bg-slate-50/50">
-                  <div className="space-y-1.5">
-                    <Label className="text-slate-600 font-bold">Diagnóstico / Protocolo</Label>
-                    <Input value={planInfo.title} onChange={(e) => setPlanInfo({...planInfo, title: e.target.value})} className="font-semibold bg-white" placeholder="Ex: Pós-Op LCA" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-slate-600 font-bold">Objetivo Clínico</Label>
-                    <Input value={planInfo.goal} onChange={(e) => setPlanInfo({...planInfo, goal: e.target.value})} className="font-semibold bg-white" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-slate-600 font-bold">Duração (Semanas)</Label>
-                    <Input type="number" value={planInfo.durationWeeks} onChange={(e) => setPlanInfo({...planInfo, durationWeeks: Number(e.target.value)})} className="font-bold text-purple-700 bg-purple-50 text-center text-lg" />
-                  </div>
-                </CardContent>
-             </Card>
+          <div className="sticky top-8 space-y-6 lg:col-span-3 print:hidden">
+            <Card className="overflow-hidden border-0 bg-white shadow-lg">
+              <CardHeader className="border-b-4 border-purple-500 bg-slate-800 py-4 text-white">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Target className="h-5 w-5 text-purple-400" /> Metas do
+                  Tratamento
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 bg-slate-50/50 p-5">
+                <div className="space-y-1.5">
+                  <Label className="font-bold text-slate-600">
+                    Diagnóstico / Protocolo
+                  </Label>
+                  <Input
+                    value={planInfo.title}
+                    onChange={e =>
+                      setPlanInfo({ ...planInfo, title: e.target.value })
+                    }
+                    className="bg-white font-semibold"
+                    placeholder="Ex: Pós-Op LCA"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="font-bold text-slate-600">
+                    Objetivo Clínico
+                  </Label>
+                  <Input
+                    value={planInfo.goal}
+                    onChange={e =>
+                      setPlanInfo({ ...planInfo, goal: e.target.value })
+                    }
+                    className="bg-white font-semibold"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="font-bold text-slate-600">
+                    Duração Total (Semanas)
+                  </Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={104}
+                    value={planInfo.durationWeeks}
+                    onChange={e =>
+                      setPlanInfo({
+                        ...planInfo,
+                        durationWeeks: Number(e.target.value),
+                      })
+                    }
+                    className="bg-purple-50 text-center text-lg font-bold text-purple-700"
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-             <Card className="border border-slate-200 shadow-sm bg-purple-50/50">
-                <CardHeader className="py-4 border-b border-purple-100 bg-purple-50">
-                  <CardTitle className="text-sm flex items-center gap-2 text-purple-800">
-                    <LayoutList className="w-4 h-4" /> Resumo das Fases
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    {sessions.map(session => (
-                      <div key={session.id} className="flex flex-col bg-white p-2 px-3 rounded-lg border shadow-sm">
-                        <span className="font-bold text-slate-700 text-sm">{session.name}</span>
-                        <span className="text-xs font-medium text-slate-500 truncate">{session.focus || "Sem foco"}</span>
-                      </div>
-                    ))}
+            <Card className="border border-slate-200 bg-purple-50/50 shadow-sm">
+              <CardHeader className="border-b border-purple-100 bg-purple-50 py-4">
+                <CardTitle className="flex items-center gap-2 text-sm text-purple-800">
+                  <LayoutList className="h-4 w-4" /> Resumo das Fases
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 p-4">
+                {sessions.map((session, idx) => (
+                  <div
+                    key={session.id}
+                    className="flex flex-col rounded-lg border bg-white px-3 py-2 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-bold text-slate-700">
+                        {session.name}
+                      </span>
+                      {currentPhaseIndex === idx ? (
+                        <Badge variant="secondary" className="text-[10px]">
+                          Atual
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <span className="truncate text-xs font-medium text-slate-500">
+                      {session.focus || "Sem foco"}
+                    </span>
                   </div>
-                </CardContent>
-             </Card>
+                ))}
+              </CardContent>
+            </Card>
           </div>
 
           {/* ÁREA PRINCIPAL: AS FASES */}
-          <div className="lg:col-span-9 space-y-6 print:w-full">
-            
-            <div className="hidden print:block mb-8 border-b-2 border-purple-600 pb-6">
-              <h1 className="text-3xl font-bold text-slate-800 uppercase tracking-tight">Plano de Reabilitação</h1>
-              <h2 className="text-xl text-slate-600 mt-2 font-medium">Paciente: {patientName} • {planInfo.title}</h2>
-            </div>
-
+          <div className="space-y-6 lg:col-span-9 print:w-full">
             {sessions.map((session, index) => (
-              <Card key={session.id} className="border border-slate-200 shadow-md overflow-hidden">
-                
-                <CardHeader className="bg-slate-800 py-3 border-b-4 border-purple-500">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 w-full md:w-2/3">
-                      <Input 
-                        value={session.name} 
-                        onChange={(e) => { const n = [...sessions]; n[index].name = e.target.value; setSessions(n) }} 
-                        className="w-40 font-black text-center text-slate-800 bg-white" 
+              <Card
+                key={session.id}
+                className="overflow-hidden border border-slate-200 shadow-md"
+              >
+                <CardHeader className="border-b-4 border-purple-500 bg-slate-800 py-3">
+                  <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+                    <div className="flex w-full flex-1 flex-wrap items-center gap-2.5">
+                      <Input
+                        value={session.name}
+                        onChange={e =>
+                          setSessions(prev =>
+                            prev.map((s, sIdx) =>
+                              sIdx === index
+                                ? { ...s, name: e.target.value }
+                                : s,
+                            ),
+                          )
+                        }
+                        className="w-44 bg-white text-center font-black text-slate-800"
                       />
-                      <Input 
+                      <Input
                         placeholder="Objetivo da Fase (Ex: Mobilidade e Analgesia)"
-                        value={session.focus} 
-                        onChange={(e) => { const n = [...sessions]; n[index].focus = e.target.value; setSessions(n) }} 
-                        className="font-bold border-none shadow-none text-white placeholder:text-slate-400 bg-slate-700/50 flex-1" 
+                        value={session.focus}
+                        onChange={e =>
+                          setSessions(prev =>
+                            prev.map((s, sIdx) =>
+                              sIdx === index
+                                ? { ...s, focus: e.target.value }
+                                : s,
+                            ),
+                          )
+                        }
+                        className="min-w-[200px] flex-1 border-none bg-slate-700/50 font-bold text-white shadow-none placeholder:text-slate-400"
                       />
                     </div>
-                    
-                    <Button variant="ghost" className="text-rose-400 hover:text-rose-300 hover:bg-slate-700 h-8 p-2" onClick={() => removeSession(session.id)}>
-                      <Trash2 className="w-4 h-4 mr-2" /> Apagar Fase
-                    </Button>
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Button
+                        type="button"
+                        variant={currentPhaseIndex === index ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setCurrentPhaseIndex(index)}
+                        className={
+                          currentPhaseIndex === index
+                            ? "h-8 bg-emerald-600 text-white hover:bg-emerald-700"
+                            : "h-8 text-slate-200 hover:bg-slate-700"
+                        }
+                      >
+                        <Flag className="mr-1.5 h-3.5 w-3.5" />
+                        {currentPhaseIndex === index
+                          ? "Fase atual"
+                          : "Marcar fase atual"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={index === 0}
+                        aria-label={`Mover fase ${index + 1} para cima`}
+                        onClick={() => moveSession(index, -1)}
+                        className="h-8 w-8 text-slate-200 hover:bg-slate-700"
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={index >= sessions.length - 1}
+                        aria-label={`Mover fase ${index + 1} para baixo`}
+                        onClick={() => moveSession(index, 1)}
+                        className="h-8 w-8 text-slate-200 hover:bg-slate-700"
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-8 p-2 text-rose-400 hover:bg-slate-700 hover:text-rose-300"
+                        onClick={() => removeSession(session.id)}
+                      >
+                        <Trash2 className="mr-1.5 h-4 w-4" /> Apagar Fase
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
 
                 <CardContent className="p-0">
-                  <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  <div className="grid gap-3 border-b border-slate-200 bg-slate-50/70 px-6 py-3 sm:grid-cols-4">
+                    <div className="sm:col-span-3">
+                      <Label className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                        Critérios de Progressão da Fase
+                      </Label>
+                      <Input
+                        value={session.progressionCriteria}
+                        onChange={e =>
+                          setSessions(prev =>
+                            prev.map((s, sIdx) =>
+                              sIdx === index
+                                ? { ...s, progressionCriteria: e.target.value }
+                                : s,
+                            ),
+                          )
+                        }
+                        placeholder="Critérios objetivos para avançar de fase (ex: EVA <= 2, ADM >= 110°, apoio sem dor)..."
+                        className="mt-1 h-9 bg-white text-xs"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                        Semanas previstas
+                      </Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={104}
+                        value={session.estimatedWeeks}
+                        onChange={e =>
+                          setSessions(prev =>
+                            prev.map((s, sIdx) =>
+                              sIdx === index
+                                ? { ...s, estimatedWeeks: e.target.value }
+                                : s,
+                            ),
+                          )
+                        }
+                        placeholder="Ex: 3"
+                        className="mt-1 h-9 bg-white text-center text-xs font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="hidden grid-cols-12 gap-4 border-b border-slate-100 bg-slate-50 px-6 py-3 text-xs font-bold uppercase tracking-wider text-slate-500 md:grid">
                     <div className="col-span-5">Terapia / Exercício</div>
                     <div className="col-span-3 text-center">Duração / Séries</div>
                     <div className="col-span-3 text-center">Frequência / Reps</div>
@@ -288,77 +696,90 @@ export default function NovaReabilitacaoPage() {
 
                   <div className="divide-y divide-slate-100">
                     {session.exercises.map((ex, exIdx) => (
-                      <div key={ex.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 p-4 md:px-6 md:py-3 hover:bg-purple-50/30 items-start group transition-colors">
-                        
-                        <div className="col-span-1 md:col-span-5 space-y-2">
-                           <div className="flex items-center gap-2">
-                             <span className="font-black text-slate-300 w-5">{exIdx + 1}.</span>
-                             <Input 
-                               placeholder="Nome da terapia/exercício..." 
-                               value={ex.name} 
-                               onChange={(e) => updateExercise(session.id, ex.id, 'name', e.target.value)} 
-                               className="font-bold text-slate-800 h-9" 
-                             />
-                           </div>
-                           <Input 
-                             placeholder="Parâmetros (Ex: 100Hz / 50µs)" 
-                             value={ex.notes} 
-                             onChange={(e) => updateExercise(session.id, ex.id, 'notes', e.target.value)} 
-                             className="h-7 text-xs bg-slate-50 border-dashed text-slate-500 ml-7" 
-                           />
-                        </div>
-
-                        <div className="col-span-1 md:col-span-3 flex items-center gap-2">
-                          <Timer className="w-4 h-4 text-slate-400 md:hidden" />
-                          <Input value={ex.sets} onChange={(e) => updateExercise(session.id, ex.id, 'sets', e.target.value)} className="h-9 font-bold text-center w-full" placeholder="Ex: 20 min ou 3" />
-                        </div>
-
-                        <div className="col-span-1 md:col-span-3 flex items-center gap-2">
-                          <Repeat className="w-4 h-4 text-slate-400 md:hidden" />
-                          <Input value={ex.reps} onChange={(e) => updateExercise(session.id, ex.id, 'reps', e.target.value)} className="h-9 font-bold text-center w-full" placeholder="Ex: Contínuo ou 15" />
-                        </div>
-                        
-                        <div className="col-span-1 flex justify-end">
-                          <Button variant="ghost" size="icon" className="text-rose-700 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeExercise(session.id, ex.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
+                      <RehabExerciseEditorCard
+                        key={ex.id}
+                        sessionId={session.id}
+                        exercise={ex}
+                        index={exIdx}
+                        total={session.exercises.length}
+                        onChange={updater =>
+                          updateExercise(session.id, ex.id, updater)
+                        }
+                        onMove={dir => moveExercise(session.id, exIdx, dir)}
+                        onRemove={() => removeExercise(session.id, ex.id)}
+                        onOpenCatalog={() =>
+                          setCatalogTarget({
+                            sessionId: session.id,
+                            exerciseId: ex.id,
+                          })
+                        }
+                      />
                     ))}
                   </div>
-                  
-                  <div className="p-3 bg-slate-50 border-t border-slate-100">
-                    <Button variant="ghost" className="w-full text-purple-600 hover:bg-purple-100 font-bold" onClick={() => addExercise(session.id)}>
-                      <Plus className="w-4 h-4 mr-2" /> Adicionar Terapia / Exercício
+
+                  <div className="border-t border-slate-100 bg-slate-50 p-3">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full font-bold text-purple-600 hover:bg-purple-100"
+                      onClick={() => addExercise(session.id)}
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Adicionar Terapia /
+                      Exercício
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             ))}
-            
-            <Button onClick={addSession} className="w-full h-14 border-2 border-dashed border-purple-300 bg-white text-purple-800 hover:border-purple-400 hover:bg-purple-50 transition-all font-bold text-lg">
-              <Plus className="w-5 h-5 mr-2" /> Criar Nova Fase de Reabilitação
+
+            <Button
+              type="button"
+              onClick={addSession}
+              className="h-14 w-full border-2 border-dashed border-purple-300 bg-white text-lg font-bold text-purple-800 transition-all hover:border-purple-400 hover:bg-purple-50"
+            >
+              <Plus className="mr-2 h-5 w-5" /> Criar Nova Fase de Reabilitação
             </Button>
 
-            <Card className="bg-slate-800 text-white mt-12 border-0 shadow-lg">
-              <CardHeader className="pb-3 border-b border-slate-700">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Info className="w-5 h-5 text-purple-400" /> Orientações para Casa
+            <Card className="mt-12 border-0 bg-slate-800 text-white shadow-lg">
+              <CardHeader className="border-b border-slate-700 pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Info className="h-5 w-5 text-purple-400" /> Orientações para
+                  Casa
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
-                <textarea 
-                  value={planInfo.notes} 
-                  onChange={(e) => setPlanInfo({...planInfo, notes: e.target.value})} 
-                  placeholder="Orientações sobre gelo, restrições de movimento, ergonomia..." 
-                  className="w-full min-h-[120px] p-4 bg-slate-900/50 rounded-xl text-sm placeholder:text-slate-500 border border-slate-700 focus:ring-1 focus:ring-purple-500 outline-none resize-y" 
+                <textarea
+                  value={planInfo.notes}
+                  onChange={e =>
+                    setPlanInfo({ ...planInfo, notes: e.target.value })
+                  }
+                  placeholder="Orientações sobre gelo, restrições de movimento, ergonomia..."
+                  className="min-h-[120px] w-full resize-y rounded-xl border border-slate-700 bg-slate-900/50 p-4 text-sm outline-none placeholder:text-slate-500 focus:ring-1 focus:ring-purple-500"
                 />
               </CardContent>
             </Card>
-
           </div>
         </div>
       </div>
+
+      <RehabProtocolPickerDialog
+        open={protocolPickerOpen}
+        onClose={() => setProtocolPickerOpen(false)}
+        onSelectProtocol={handleApplyProtocol}
+      />
+
+      <RehabExerciseCatalogDialog
+        open={catalogTarget !== null}
+        onClose={() => setCatalogTarget(null)}
+        onSelectExercise={handleSelectCatalogExercise}
+      />
+
+      <RehabPrintDialog
+        open={printDialogOpen}
+        plan={printablePlan}
+        patientName={patientName}
+        onClose={() => setPrintDialogOpen(false)}
+      />
     </div>
   )
 }

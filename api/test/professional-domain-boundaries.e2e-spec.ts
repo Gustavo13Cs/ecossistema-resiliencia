@@ -92,6 +92,22 @@ describe('Professional domain boundaries (e2e)', () => {
   };
   const rehabPlansService = {
     saveAsTemplate: jest.fn().mockResolvedValue({ id: 'rehab-template' }),
+    getProtocolCatalog: jest.fn().mockReturnValue([]),
+    getExerciseCatalog: jest.fn().mockReturnValue([]),
+    createTemplate: jest.fn().mockResolvedValue({
+      id: 'rehab-template-2',
+      clientId: null,
+      isTemplate: true,
+    }),
+    update: jest.fn().mockResolvedValue({
+      id: PROFESSIONAL_ID,
+      clientId: PROFESSIONAL_ID,
+    }),
+    updateCurrentPhase: jest.fn().mockResolvedValue({
+      id: PROFESSIONAL_ID,
+      clientId: PROFESSIONAL_ID,
+      currentPhaseIndex: 0,
+    }),
   };
   const physioReadService = {
     getWorkspace: jest.fn().mockResolvedValue({
@@ -270,6 +286,66 @@ describe('Professional domain boundaries (e2e)', () => {
       serviceMethod: rehabPlansService.saveAsTemplate,
     },
     {
+      domain: 'rehabilitation-protocol-catalog',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .get('/rehab-plans/protocol-catalog')
+          .set(asRole(role)),
+      serviceMethod: rehabPlansService.getProtocolCatalog,
+    },
+    {
+      domain: 'rehabilitation-exercise-catalog',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .get('/rehab-plans/exercise-catalog')
+          .set(asRole(role)),
+      serviceMethod: rehabPlansService.getExerciseCatalog,
+    },
+    {
+      domain: 'rehabilitation-template-create',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      expectedStatus: 201,
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .post('/rehab-plans/templates')
+          .send({
+            title: 'Modelo Teste',
+            sessions: [{ name: 'Fase 1', exercises: [{ name: 'Ponte' }] }],
+          })
+          .set(asRole(role)),
+      serviceMethod: rehabPlansService.createTemplate,
+    },
+    {
+      domain: 'rehabilitation-update',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .patch(`/rehab-plans/${PROFESSIONAL_ID}`)
+          .send({
+            title: 'Atualizado',
+            sessions: [{ name: 'Fase 1', exercises: [{ name: 'Ponte' }] }],
+          })
+          .set(asRole(role)),
+      serviceMethod: rehabPlansService.update,
+    },
+    {
+      domain: 'rehabilitation-phase-update',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .patch(`/rehab-plans/${PROFESSIONAL_ID}/phase`)
+          .send({ currentPhaseIndex: 0 })
+          .set(asRole(role)),
+      serviceMethod: rehabPlansService.updateCurrentPhase,
+    },
+    {
       domain: 'rehabilitation-evolutions',
       allowedRoles: ['PHYSIO'] as TestRole[],
       deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
@@ -301,9 +377,22 @@ describe('Professional domain boundaries (e2e)', () => {
     },
   ])(
     '$domain permits only its policy roles before invoking service logic',
-    async ({ allowedRoles, deniedRoles, invoke, serviceMethod }) => {
+    async ({
+      allowedRoles,
+      deniedRoles,
+      expectedStatus = 200,
+      invoke,
+      serviceMethod,
+    }: {
+      domain: string;
+      allowedRoles: TestRole[];
+      deniedRoles: TestRole[];
+      expectedStatus?: number;
+      invoke: (role: TestRole) => request.Test;
+      serviceMethod: jest.Mock;
+    }) => {
       for (const role of allowedRoles) {
-        await invoke(role).expect(200);
+        await invoke(role).expect(expectedStatus);
       }
 
       expect(serviceMethod).toHaveBeenCalledTimes(allowedRoles.length);
