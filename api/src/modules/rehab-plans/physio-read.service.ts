@@ -5,6 +5,11 @@ import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { PHYSIO_EVOLUTION_SELECT } from './physio-session-evolutions.service';
 import { PHYSIO_SCALE_SELECT } from './physio-functional-scales.service';
+import {
+  buildPhysioPackageSummaries,
+  PHYSIO_PACKAGE_SELECT,
+} from './physio-packages.service';
+import { PHYSIO_DISCHARGE_SELECT } from './physio-discharges.service';
 import { presentRehabPlan } from './rehab-protocol-catalog';
 import {
   PhysioActivePlan,
@@ -122,6 +127,7 @@ export class PhysioReadService {
       completedWithoutEvolutionSample,
       activeClientSignals,
       recentEvolvedAppointments,
+      activePackageRows,
     ] = await Promise.all([
       this.prisma.client.count({ where: activeWhere }),
       this.prisma.client.count({
@@ -191,7 +197,86 @@ export class PhysioReadService {
         orderBy: [{ sessionDate: 'desc' }],
         take: 200,
       }),
+      this.prisma.physioSessionPackage.findMany({
+        where: {
+          professionalId: user.sub,
+          status: 'ACTIVE',
+          client: { professionalId: user.sub, status: 'ACTIVE' },
+        },
+        select: {
+          ...PHYSIO_PACKAGE_SELECT,
+          client: { select: { name: true, goal: true, updatedAt: true } },
+        },
+        orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
+        take: 200,
+      }),
     ]);
+
+    const activePackages = activePackageRows;
+    const pkgClientIds = Array.from(
+      new Set(activePackages.map((pkg) => pkg.clientId)),
+    );
+    const pkgEvolutions =
+      pkgClientIds.length > 0
+        ? await this.prisma.physioSessionEvolution.findMany({
+            where: {
+              professionalId: user.sub,
+              clientId: { in: pkgClientIds },
+            },
+            select: {
+              id: true,
+              clientId: true,
+              sessionDate: true,
+              packageId: true,
+            },
+            take: 1000,
+          })
+        : [];
+
+    const expiringPackagesAll: Array<{
+      item: PhysioWorkspaceItem;
+      remaining: number;
+    }> = [];
+    const pkgsByClient = new Map<string, typeof activePackages>();
+    for (const pkg of activePackages) {
+      const list = pkgsByClient.get(pkg.clientId) ?? [];
+      list.push(pkg);
+      pkgsByClient.set(pkg.clientId, list);
+    }
+    for (const [cid, list] of pkgsByClient.entries()) {
+      const evos = pkgEvolutions.filter((e) => e.clientId === cid);
+      const summaries = buildPhysioPackageSummaries({
+        packages: list,
+        evolutions: evos,
+        appointments: [],
+        latestAssessmentDate: null,
+      });
+      for (const summary of summaries) {
+        if (!summary.nearingEnd) continue;
+        const pkgOwner = list[0].client;
+        expiringPackagesAll.push({
+          remaining: summary.remainingSessions,
+          item: {
+            clientId: cid,
+            name: pkgOwner.name,
+            goal: pkgOwner.goal,
+            updatedAt: pkgOwner.updatedAt,
+            section: 'EXPIRING_PACKAGE',
+            packageTitle: summary.title,
+            completedSessions: summary.completedSessions,
+            totalSessions: summary.totalSessions,
+          },
+        });
+      }
+    }
+    expiringPackagesAll.sort(
+      (a, b) =>
+        a.remaining - b.remaining ||
+        a.item.clientId.localeCompare(b.item.clientId),
+    );
+    const expiringPackageSample = expiringPackagesAll
+      .slice(0, 5)
+      .map((entry) => entry.item);
 
     const overdueAll: Array<{ item: PhysioWorkspaceItem; sortTime: number }> =
       [];
@@ -293,6 +378,7 @@ export class PhysioReadService {
       })),
       ...worseningSample,
       ...overdueSample,
+      ...expiringPackageSample,
       ...withoutActivePlanSample.map((patient) => ({
         clientId: patient.id,
         name: patient.name,
@@ -321,6 +407,7 @@ export class PhysioReadService {
         withoutActivePlan: withoutActivePlanCount,
         overdueReassessments: overdueAll.length,
         painWorsening: worseningAll.length,
+        expiringPackages: expiringPackagesAll.length,
       },
       items,
       evolvedAppointmentIds,
@@ -336,6 +423,10 @@ export class PhysioReadService {
 
     const [
       activePlan,
+      activePkgRows,
+      allPkgEvolutions,
+      latestPkgAppointments,
+      latestDischarge,
       recentAssessments,
       recentEvolutions,
       recentScales,
@@ -347,6 +438,35 @@ export class PhysioReadService {
         where: { clientId: client.id, creatorId: user.sub, isActive: true },
         select: activePlanSelect,
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      }),
+      this.prisma.physioSessionPackage.findMany({
+        where: {
+          clientId: client.id,
+          professionalId: user.sub,
+          status: 'ACTIVE',
+        },
+        select: PHYSIO_PACKAGE_SELECT,
+        orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
+        take: 5,
+      }),
+      this.prisma.physioSessionEvolution.findMany({
+        where: { clientId: client.id, professionalId: user.sub },
+        select: { id: true, sessionDate: true, packageId: true },
+        take: 500,
+      }),
+      this.prisma.appointment.findMany({
+        where: {
+          clientId: client.id,
+          professionalId: user.sub,
+          status: { in: ['NO_SHOW', 'CANCELLED'] },
+        },
+        select: { startsAt: true, status: true },
+        take: 500,
+      }),
+      this.prisma.physioDischarge.findFirst({
+        where: { clientId: client.id, professionalId: user.sub },
+        select: PHYSIO_DISCHARGE_SELECT,
+        orderBy: [{ dischargedAt: 'desc' }, { createdAt: 'desc' }],
       }),
       this.prisma.physioAssessment.findMany({
         where: { clientId: client.id, creatorId: user.sub },
@@ -423,8 +543,18 @@ export class PhysioReadService {
       }),
     ]);
 
+    const activePackage =
+      activePkgRows.length > 0
+        ? (buildPhysioPackageSummaries({
+            packages: activePkgRows,
+            evolutions: allPkgEvolutions,
+            appointments: latestPkgAppointments,
+            latestAssessmentDate: recentAssessments[0]?.date ?? null,
+          })[0] ?? null)
+        : null;
+
     const painSeries: PhysioPainPoint[] = [
-      ...painAssessments.map((item) => ({
+      ...(painAssessments ?? []).map((item) => ({
         id: item.id,
         date: item.date,
         source: 'ASSESSMENT' as const,
@@ -432,7 +562,7 @@ export class PhysioReadService {
         painBefore: null,
         painAfter: null,
       })),
-      ...painEvolutions.map((item) => ({
+      ...(painEvolutions ?? []).map((item) => ({
         id: item.id,
         date: item.sessionDate,
         source: 'SESSION' as const,
@@ -455,6 +585,10 @@ export class PhysioReadService {
             ...activePlan,
             clientId: client.id,
           }) as unknown as PhysioActivePlan)
+        : null,
+      activePackage,
+      latestDischarge: latestDischarge
+        ? { ...latestDischarge, clientId: client.id }
         : null,
       recentAssessments: recentAssessments.map((item) => ({
         ...item,

@@ -37,13 +37,20 @@ describe("professional workspace policy", () => {
   )
 
   it.each([
-    ["NUTRITIONIST", ["Planos alimentares", "Alimentos"], ["Treinos", "Reabilitação"]],
-    ["PERSONAL", ["Treinos"], ["Planos alimentares", "Alimentos", "Reabilitação"]],
-    ["PHYSIO", ["Reabilitação"], ["Planos alimentares", "Alimentos", "Treinos"]],
+    ["NUTRITIONIST", ["Planos alimentares", "Alimentos", "Relatórios"], ["Treinos", "Reabilitação"]],
+    ["PERSONAL", ["Treinos"], ["Planos alimentares", "Alimentos", "Reabilitação", "Relatórios"]],
+    ["PHYSIO", ["Reabilitação", "Relatórios"], ["Planos alimentares", "Alimentos", "Treinos"]],
   ] as const)("isolates %s navigation", (role, visible, absent) => {
     const labels = getNavigationForRole(role).map((item) => item.label)
     visible.forEach((label) => expect(labels).toContain(label))
     absent.forEach((label) => expect(labels).not.toContain(label))
+  })
+
+  it("allows /relatorios only for NUTRITIONIST and PHYSIO", () => {
+    expect(canAccessProfessionalPath("NUTRITIONIST", "/relatorios")).toBe(true)
+    expect(canAccessProfessionalPath("PHYSIO", "/relatorios")).toBe(true)
+    expect(canAccessProfessionalPath("PERSONAL", "/relatorios")).toBe(false)
+    expect(canAccessProfessionalPath("ADMIN", "/relatorios")).toBe(false)
   })
 
   it("rejects direct cross-domain paths and every clinical path for ADMIN", () => {

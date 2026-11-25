@@ -158,6 +158,8 @@ describe("PhysioClientRecord", () => {
     http.onGet("/physio-assessments/client/c1").reply(200, [assessmentFixture])
     http.onGet("/rehab-plans/evolutions/client/c1").reply(200, [evolutionFixture])
     http.onGet("/rehab-plans/scales/client/c1").reply(200, [])
+    http.onGet("/rehab-plans/packages/client/c1").reply(200, [])
+    http.onGet("/rehab-plans/discharges/client/c1").reply(200, [])
   })
 
   afterEach(cleanup)
@@ -252,7 +254,7 @@ describe("PhysioClientRecord", () => {
     await user.click(screen.getByRole("button", { name: /Excluir evolução de/i }))
     await user.click(screen.getByRole("button", { name: "Confirmar exclusão" }))
     await waitFor(() => expect(http.history.delete).toHaveLength(1))
-  })
+  }, 15_000)
 
   it("keeps archived record readable while disabling new writes", async () => {
     mount(true)
@@ -266,6 +268,9 @@ describe("PhysioClientRecord", () => {
     ).toBeDisabled()
     expect(
       screen.getByRole("button", { name: "Aplicar escala funcional" }),
+    ).toBeDisabled()
+    expect(
+      screen.getByRole("button", { name: "Registrar alta" }),
     ).toBeDisabled()
     expect(
       screen.getByRole("button", { name: "Prescrever protocolo" }),

@@ -17,7 +17,9 @@ import {
   useDeletePhysioEvolution,
   usePhysioEvolutions,
 } from "@/hooks/features/usePhysioEvolutions"
+import { usePhysioDischarges } from "@/hooks/features/usePhysioDischarges"
 import { usePhysioOverview } from "@/hooks/features/usePhysioOverview"
+import { usePhysioPackages } from "@/hooks/features/usePhysioPackages"
 import {
   BODY_PAIN_SYMPTOM_LABELS,
   SIDE_LABELS,
@@ -29,10 +31,16 @@ import type { Client } from "@/types/client"
 import type {
   GoniometryEntry,
   PhysioSessionEvolution,
+  PhysioSessionPackageRecord,
 } from "@/types/physio"
+import { PhysioDischargeDialog } from "./PhysioDischargeDialog"
+import { PhysioDischargeSection } from "./PhysioDischargeSection"
+import { PhysioDocumentDialog } from "./PhysioDocumentDialog"
 import { RehabPrintDialog } from "./RehabPrintDialog"
 import { PhysioFunctionalScaleDialog } from "./PhysioFunctionalScaleDialog"
 import { PhysioFunctionalScalesSection } from "./PhysioFunctionalScalesSection"
+import { PhysioPackageDialog } from "./PhysioPackageDialog"
+import { PhysioPackagesSection } from "./PhysioPackagesSection"
 import { PhysioPainChart } from "./PhysioPainChart"
 import { PhysioSessionEvolutionDialog } from "./PhysioSessionEvolutionDialog"
 
@@ -85,11 +93,18 @@ function PhysioRecordBody({
   const overview = usePhysioOverview(client.id)
   const assessments = usePhysioAssessments(client.id)
   const evolutions = usePhysioEvolutions(client.id)
+  const packagesQuery = usePhysioPackages(client.id)
+  const dischargesQuery = usePhysioDischarges(client.id)
   const deleteEvolution = useDeletePhysioEvolution(client.id)
 
   const [assessmentModalOpen, setAssessmentModalOpen] = useState(false)
   const [evolutionDialogOpen, setEvolutionDialogOpen] = useState(false)
   const [scaleDialogOpen, setScaleDialogOpen] = useState(false)
+  const [packageDialogOpen, setPackageDialogOpen] = useState(false)
+  const [editingPackage, setEditingPackage] =
+    useState<PhysioSessionPackageRecord | null>(null)
+  const [documentDialogOpen, setDocumentDialogOpen] = useState(false)
+  const [dischargeDialogOpen, setDischargeDialogOpen] = useState(false)
   const [printDialogOpen, setPrintDialogOpen] = useState(false)
   const [editingEvolution, setEditingEvolution] =
     useState<PhysioSessionEvolution | null>(null)
@@ -170,7 +185,9 @@ function PhysioRecordBody({
     dialogDenied ||
     isDenied(overview.error) ||
     isDenied(assessments.error) ||
-    isDenied(evolutions.error)
+    isDenied(evolutions.error) ||
+    isDenied(packagesQuery.error) ||
+    isDenied(dischargesQuery.error)
 
   useEffect(() => {
     if (denied) onAccessDenied?.()
@@ -191,6 +208,7 @@ function PhysioRecordBody({
     client.status === "ARCHIVED" || overview.data?.client.status === "ARCHIVED"
   const blocked = pending || archived
   const activePlan = overview.data?.activePlan ?? null
+  const activePackage = overview.data?.activePackage ?? null
   const latestAssessment = overview.data?.recentAssessments[0] ?? null
 
   const handleDeleteEvolution = async (evolution: PhysioSessionEvolution) => {
@@ -251,6 +269,24 @@ function PhysioRecordBody({
             onClick={() => setScaleDialogOpen(true)}
           >
             Aplicar escala funcional
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending}
+            className="min-h-11"
+            onClick={() => setDocumentDialogOpen(true)}
+          >
+            Emitir documento
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={blocked}
+            className="min-h-11"
+            onClick={() => setDischargeDialogOpen(true)}
+          >
+            Registrar alta
           </Button>
           {blocked ? (
             <Button type="button" disabled className="min-h-11" variant="outline">
@@ -446,6 +482,23 @@ function PhysioRecordBody({
         </>
       ) : null}
 
+      <PhysioPackagesSection
+        clientId={client.id}
+        packages={packagesQuery.packages}
+        isPending={packagesQuery.isPending}
+        isError={Boolean(packagesQuery.error)}
+        blocked={blocked}
+        onCreateNew={() => {
+          setEditingPackage(null)
+          setPackageDialogOpen(true)
+        }}
+        onEdit={(pkg) => {
+          setEditingPackage(pkg)
+          setPackageDialogOpen(true)
+        }}
+        onAccessDenied={handleDialogDenied}
+      />
+
       <section
         aria-labelledby="physio-session-timeline"
         className="min-w-0 border-t border-[var(--sm-border)] pt-5"
@@ -617,6 +670,17 @@ function PhysioRecordBody({
         clientId={client.id}
         blocked={blocked}
         onOpenDialog={() => setScaleDialogOpen(true)}
+        onAccessDenied={handleDialogDenied}
+      />
+
+      <PhysioDischargeSection
+        clientId={client.id}
+        clientName={client.name}
+        discharges={dischargesQuery.discharges}
+        isPending={dischargesQuery.isPending}
+        isError={Boolean(dischargesQuery.error)}
+        blocked={blocked}
+        onRegisterNew={() => setDischargeDialogOpen(true)}
         onAccessDenied={handleDialogDenied}
       />
 
@@ -904,6 +968,47 @@ function PhysioRecordBody({
         clientName={client.name}
         onAccessDenied={handleDialogDenied}
       />
+
+      {packageDialogOpen && !blocked ? (
+        <PhysioPackageDialog
+          open={true}
+          onOpenChange={(open) => {
+            setPackageDialogOpen(open)
+            if (!open) setEditingPackage(null)
+          }}
+          clientId={client.id}
+          clientName={client.name}
+          editingPackage={editingPackage}
+          onAccessDenied={handleDialogDenied}
+        />
+      ) : null}
+
+      {documentDialogOpen && !pending ? (
+        <PhysioDocumentDialog
+          open={true}
+          onOpenChange={setDocumentDialogOpen}
+          clientName={client.name}
+          assessments={assessments.assessments}
+          evolutions={evolutions.evolutions}
+          scales={overview.data?.recentScales ?? []}
+          activePlan={activePlan}
+          appointments={overview.data?.unlinkedAppointments ?? []}
+        />
+      ) : null}
+
+      {dischargeDialogOpen && !blocked ? (
+        <PhysioDischargeDialog
+          open={true}
+          onOpenChange={setDischargeDialogOpen}
+          clientId={client.id}
+          clientName={client.name}
+          assessments={assessments.assessments}
+          evolutionsCount={evolutions.evolutions.length}
+          activePlan={activePlan}
+          activePackage={activePackage}
+          onAccessDenied={handleDialogDenied}
+        />
+      ) : null}
 
       {activePlan ? (
         <RehabPrintDialog

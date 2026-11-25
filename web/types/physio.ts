@@ -6,6 +6,7 @@ export type PhysioWorkspaceSection =
   | "COMPLETED_WITHOUT_EVOLUTION"
   | "PAIN_WORSENING"
   | "OVERDUE_REASSESSMENT"
+  | "EXPIRING_PACKAGE"
   | "WITHOUT_ACTIVE_PLAN"
   | "RECENT"
 
@@ -21,6 +22,9 @@ export interface PhysioWorkspaceItem {
   lastAssessmentDate?: string | null
   previousPain?: number | null
   latestPain?: number | null
+  packageTitle?: string | null
+  completedSessions?: number | null
+  totalSessions?: number | null
 }
 
 export interface PhysioWorkspace {
@@ -31,6 +35,7 @@ export interface PhysioWorkspace {
     withoutActivePlan: number
     overdueReassessments: number
     painWorsening: number
+    expiringPackages?: number
   }
   items: PhysioWorkspaceItem[]
   evolvedAppointmentIds: string[]
@@ -158,6 +163,7 @@ export interface PhysioSessionEvolution {
   clientId: string
   appointmentId: string | null
   rehabPlanId: string | null
+  packageId?: string | null
   sessionDate: string
   painBefore: number | null
   painAfter: number | null
@@ -179,6 +185,158 @@ export interface PhysioPainPoint {
   painAfter: number | null
 }
 
+export type PhysioPackageStatus = "ACTIVE" | "COMPLETED" | "CANCELLED"
+
+export interface PhysioSessionPackageRecord {
+  id: string
+  clientId: string
+  title: string
+  totalSessions: number
+  reassessEverySessions: number | null
+  startedAt: string
+  expiresAt: string | null
+  status: PhysioPackageStatus
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+  completedSessions: number
+  remainingSessions: number
+  progressLabel: string
+  noShowCount: number
+  cancelledCount: number
+  evolutionsSinceAssessment: number
+  reassessmentDue: boolean
+  nearingEnd: boolean
+}
+
+export interface CreatePhysioPackageInput {
+  clientId: string
+  title: string
+  totalSessions: number
+  reassessEverySessions?: number | null
+  startedAt?: string | null
+  expiresAt?: string | null
+  notes?: string | null
+  closePreviousActive?: boolean
+}
+
+export interface UpdatePhysioPackageInput {
+  title?: string
+  totalSessions?: number
+  reassessEverySessions?: number | null
+  expiresAt?: string | null
+  status?: PhysioPackageStatus
+  notes?: string | null
+}
+
+export type PhysioDischargeReason =
+  | "GOALS_MET"
+  | "PARTIAL_IMPROVEMENT"
+  | "MEDICAL_REFERRAL"
+  | "TREATMENT_ABANDONMENT"
+  | "PATIENT_REQUEST"
+
+export interface PhysioDischargeComparison {
+  initialPainLevel: number | null
+  finalPainLevel: number | null
+  painDelta: number | null
+  sessionsCompleted: number
+  romComparisons: Array<{
+    joint: string
+    movement: string
+    side: string
+    initialDeg: number | null
+    finalDeg: number | null
+    gainDeg: number | null
+  }>
+  scaleComparisons: Array<{
+    scaleType: PhysioScaleType
+    scoreUnit: string
+    initialScore: number
+    finalScore: number | null
+    delta: number | null
+    initialClassification: string
+    finalClassification: string | null
+  }>
+}
+
+export interface PhysioDischargeRecord {
+  id: string
+  clientId: string
+  rehabPlanId: string | null
+  initialAssessmentId: string | null
+  finalAssessmentId: string | null
+  dischargedAt: string
+  reason: PhysioDischargeReason
+  sessionsCompleted: number
+  initialPainLevel: number | null
+  finalPainLevel: number | null
+  clinicalSummary: string
+  recommendations: string | null
+  comparisonSnapshot: PhysioDischargeComparison | null
+  createdAt: string
+  updatedAt: string
+  rehabPlan: PhysioEvolutionPlanSummary | null
+}
+
+export interface CreatePhysioDischargeInput {
+  clientId: string
+  reason: PhysioDischargeReason
+  dischargedAt?: string | null
+  rehabPlanId?: string | null
+  initialAssessmentId?: string | null
+  finalAssessmentId?: string | null
+  initialPainLevel?: number | null
+  finalPainLevel?: number | null
+  clinicalSummary: string
+  recommendations?: string | null
+  deactivateActivePlan?: boolean
+}
+
+export type PhysioReportPeriod = "30_DAYS" | "90_DAYS" | "180_DAYS" | "365_DAYS"
+
+export interface PhysioManagementReportItem {
+  clientId: string
+  name: string
+  status: string
+  completedSessions: number
+  noShowCount: number
+  cancelledCount: number
+  activePackageTitle: string | null
+  packageCompletedSessions: number | null
+  packageTotalSessions: number | null
+  latestDischargeReason: PhysioDischargeReason | null
+  dischargedAt: string | null
+}
+
+export interface PhysioManagementReport {
+  period: PhysioReportPeriod
+  fromDate: string
+  toDate: string
+  counts: {
+    activePatients: number
+    archivedPatients: number
+    completedSessions: number
+    completedAppointments: number
+    noShowCount: number
+    cancelledCount: number
+    attendanceRatePct: number
+    noShowRatePct: number
+    dischargesCount: number
+    avgSessionsToDischarge: number | null
+    avgPainReduction: number | null
+    activePackagesCount: number
+    expiringPackagesCount: number
+  }
+  dischargesByReason: Record<PhysioDischargeReason, number>
+  items: PhysioManagementReportItem[]
+}
+
+export type PhysioDocumentType =
+  | "ATTENDANCE"
+  | "CERTIFICATE"
+  | "MEDICAL_REPORT"
+
 export type PhysioActivePlan = RehabPlan & {
   clientId: string
   createdAt?: string
@@ -188,6 +346,8 @@ export type PhysioActivePlan = RehabPlan & {
 export interface PhysioClientOverview {
   client: { id: string; status: ClientStatus }
   activePlan: PhysioActivePlan | null
+  activePackage?: PhysioSessionPackageRecord | null
+  latestDischarge?: PhysioDischargeRecord | null
   recentAssessments: PhysioAssessmentRecord[]
   recentEvolutions: PhysioSessionEvolution[]
   recentScales?: PhysioFunctionalScaleRecord[]
@@ -199,6 +359,7 @@ export interface CreatePhysioSessionEvolutionInput {
   clientId: string
   appointmentId?: string | null
   rehabPlanId?: string | null
+  packageId?: string | null
   sessionDate?: string | null
   painBefore?: number | null
   painAfter?: number | null
@@ -209,6 +370,7 @@ export interface CreatePhysioSessionEvolutionInput {
 
 export interface UpdatePhysioSessionEvolutionInput {
   rehabPlanId?: string | null
+  packageId?: string | null
   sessionDate?: string | null
   painBefore?: number | null
   painAfter?: number | null

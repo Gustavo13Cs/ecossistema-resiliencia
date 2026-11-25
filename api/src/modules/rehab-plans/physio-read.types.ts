@@ -4,6 +4,7 @@ import {
   AppointmentStatus,
   Client,
   PhysioAssessment,
+  PhysioDischargeReason,
   PhysioFunctionalScale,
   PhysioSessionEvolution,
   RehabExercise,
@@ -11,11 +12,13 @@ import {
   RehabSession,
 } from '@prisma/client';
 import type { DemonstrationPresentation } from '../workouts/exercise-demonstration.types';
+import type { PhysioSessionPackageSummary } from './physio-packages.service';
 
 export type PhysioWorkspaceSection =
   | 'COMPLETED_WITHOUT_EVOLUTION'
   | 'PAIN_WORSENING'
   | 'OVERDUE_REASSESSMENT'
+  | 'EXPIRING_PACKAGE'
   | 'WITHOUT_ACTIVE_PLAN'
   | 'RECENT';
 
@@ -31,6 +34,9 @@ export interface PhysioWorkspaceItem {
   lastAssessmentDate?: Date | null;
   previousPain?: number | null;
   latestPain?: number | null;
+  packageTitle?: string | null;
+  completedSessions?: number | null;
+  totalSessions?: number | null;
 }
 
 export interface PhysioWorkspace {
@@ -41,6 +47,7 @@ export interface PhysioWorkspace {
     withoutActivePlan: number;
     overdueReassessments: number;
     painWorsening: number;
+    expiringPackages: number;
   };
   items: PhysioWorkspaceItem[];
   evolvedAppointmentIds: string[];
@@ -108,9 +115,30 @@ export type PhysioFunctionalScaleSummary = Omit<
   'professionalId'
 >;
 
+export interface PhysioDischargeSummary {
+  id: string;
+  clientId: string;
+  rehabPlanId: string | null;
+  initialAssessmentId: string | null;
+  finalAssessmentId: string | null;
+  dischargedAt: Date;
+  reason: PhysioDischargeReason;
+  sessionsCompleted: number;
+  initialPainLevel: number | null;
+  finalPainLevel: number | null;
+  clinicalSummary: string;
+  recommendations: string | null;
+  comparisonSnapshot: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+  rehabPlan: { id: string; title: string } | null;
+}
+
 export interface PhysioClientOverview {
   client: Pick<Client, 'id' | 'status'>;
   activePlan: PhysioActivePlan | null;
+  activePackage: PhysioSessionPackageSummary | null;
+  latestDischarge: PhysioDischargeSummary | null;
   recentAssessments: PhysioRecentAssessment[];
   recentEvolutions: PhysioSessionEvolutionSummary[];
   recentScales: PhysioFunctionalScaleSummary[];

@@ -24,6 +24,12 @@ describe('PhysioReadService', () => {
     physioFunctionalScale: {
       findMany: jest.fn(),
     },
+    physioSessionPackage: {
+      findMany: jest.fn(),
+    },
+    physioDischarge: {
+      findFirst: jest.fn(),
+    },
     rehabPlan: {
       findFirst: jest.fn(),
     },
@@ -114,6 +120,30 @@ describe('PhysioReadService', () => {
       { appointmentId: 'appt-done' },
       { appointmentId: null },
     ]);
+    prisma.physioSessionPackage.findMany.mockResolvedValueOnce([
+      {
+        id: 'pkg-1',
+        clientId: 'c-2',
+        title: 'Pacote Joelho 10',
+        totalSessions: 10,
+        reassessEverySessions: 5,
+        startedAt: daysAgo(10),
+        expiresAt: null,
+        status: 'ACTIVE',
+        notes: null,
+        createdAt: daysAgo(10),
+        updatedAt: daysAgo(10),
+        client: { name: 'Bruno', goal: 'LCA', updatedAt: daysAgo(3) },
+      },
+    ]);
+    prisma.physioSessionEvolution.findMany.mockResolvedValueOnce([
+      {
+        id: 'evo-p1',
+        clientId: 'c-2',
+        sessionDate: daysAgo(1),
+        packageId: 'pkg-1',
+      },
+    ]);
 
     const result = await service.getWorkspace(user);
 
@@ -124,6 +154,7 @@ describe('PhysioReadService', () => {
       withoutActivePlan: 2,
       overdueReassessments: 1,
       painWorsening: 1,
+      expiringPackages: 0,
     });
     expect(result.evolvedAppointmentIds).toEqual(['appt-done']);
     expect(result.items).toEqual(
@@ -183,6 +214,7 @@ describe('PhysioReadService', () => {
         },
       ]);
     prisma.physioSessionEvolution.findMany
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([
         {
           id: 'e-1',
@@ -201,6 +233,8 @@ describe('PhysioReadService', () => {
         },
       ]);
     prisma.physioFunctionalScale.findMany.mockResolvedValue([]);
+    prisma.physioSessionPackage.findMany.mockResolvedValue([]);
+    prisma.physioDischarge.findFirst.mockResolvedValue(null);
     prisma.appointment.findMany.mockResolvedValue([]);
 
     const overview = await service.getClientOverview(user, 'c-1');

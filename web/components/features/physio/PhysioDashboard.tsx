@@ -120,6 +120,9 @@ export function PhysioDashboard() {
           <Link href="/agenda" className={actionClass}>
             Abrir agenda
           </Link>
+          <Link href="/relatorios" className={actionClass}>
+            Relatórios
+          </Link>
         </nav>
       </header>
 
@@ -177,7 +180,7 @@ export function PhysioDashboard() {
             <h2 className="text-lg font-bold text-[var(--sm-ink)]">
               Resumo da base
             </h2>
-            <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
               {(
                 [
                   ["Pacientes ativos", data.counts.activePatients],
@@ -191,6 +194,7 @@ export function PhysioDashboard() {
                     data.counts.overdueReassessments,
                   ],
                   ["Sem protocolo ativo", data.counts.withoutActivePlan],
+                  ["Pacotes perto do fim", data.counts.expiringPackages ?? 0],
                   ["Pacientes arquivados", data.counts.archivedPatients],
                 ] as const
               ).map(([label, count]) => (
@@ -418,6 +422,54 @@ export function PhysioDashboard() {
                           className={actionClass}
                         >
                           Prescrever protocolo
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              <section
+                aria-label="Pacotes perto do fim"
+                className="min-w-0"
+              >
+                <h2 className="text-lg font-bold text-[var(--sm-ink)]">
+                  Pacotes perto do fim
+                </h2>
+                <p className="mt-1 text-sm text-[var(--sm-muted)]">
+                  Pacientes com pacotes de sessões próximos ao encerramento ou
+                  renovação.
+                </p>
+                {bySection("EXPIRING_PACKAGE").length === 0 ? (
+                  <p className="py-5 text-sm text-[var(--sm-muted)]">
+                    Nenhum pacote próximo ao encerramento
+                  </p>
+                ) : (
+                  <ul className="mt-3 divide-y divide-[var(--sm-border)]">
+                    {bySection("EXPIRING_PACKAGE").map((item) => (
+                      <li
+                        key={item.clientId}
+                        className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 py-3"
+                      >
+                        <div className="min-w-0 flex-1 basis-40">
+                          <Link
+                            href={`/clientes/${item.clientId}`}
+                            className="inline-flex min-h-11 items-center break-words font-bold text-[var(--sm-brand)] hover:underline"
+                          >
+                            {item.name}
+                          </Link>
+                          <p className="break-words text-sm text-[var(--sm-muted)]">
+                            {item.packageTitle || "Pacote de sessões"}
+                            {item.totalSessions != null
+                              ? ` · ${item.completedSessions ?? 0}/${item.totalSessions} sessões`
+                              : ""}
+                          </p>
+                        </div>
+                        <Link
+                          href={`/clientes/${item.clientId}`}
+                          className={actionClass}
+                        >
+                          Ver pacote
                         </Link>
                       </li>
                     ))}

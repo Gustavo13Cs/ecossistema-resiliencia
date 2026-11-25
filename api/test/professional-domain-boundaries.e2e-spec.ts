@@ -32,6 +32,10 @@ import { PhysioSessionEvolutionsController } from '../src/modules/rehab-plans/ph
 import { PhysioSessionEvolutionsService } from '../src/modules/rehab-plans/physio-session-evolutions.service';
 import { PhysioFunctionalScalesController } from '../src/modules/rehab-plans/physio-functional-scales.controller';
 import { PhysioFunctionalScalesService } from '../src/modules/rehab-plans/physio-functional-scales.service';
+import { PhysioPackagesController } from '../src/modules/rehab-plans/physio-packages.controller';
+import { PhysioPackagesService } from '../src/modules/rehab-plans/physio-packages.service';
+import { PhysioDischargesController } from '../src/modules/rehab-plans/physio-discharges.controller';
+import { PhysioDischargesService } from '../src/modules/rehab-plans/physio-discharges.service';
 import { RecipesController } from '../src/modules/recipes/recipes.controller';
 import { RecipesService } from '../src/modules/recipes/recipes.service';
 import { SupplementsController } from '../src/modules/supplements/supplements.controller';
@@ -137,6 +141,13 @@ describe('Professional domain boundaries (e2e)', () => {
   const physioFunctionalScalesService = {
     listByClient: jest.fn().mockResolvedValue([]),
   };
+  const physioPackagesService = {
+    listByClient: jest.fn().mockResolvedValue([]),
+  };
+  const physioDischargesService = {
+    listByClient: jest.fn().mockResolvedValue([]),
+    getManagementReport: jest.fn().mockResolvedValue({ items: [] }),
+  };
   const assessmentsService = {
     findByClient: jest.fn().mockResolvedValue([]),
   };
@@ -169,6 +180,8 @@ describe('Professional domain boundaries (e2e)', () => {
         RehabPlansController,
         PhysioSessionEvolutionsController,
         PhysioFunctionalScalesController,
+        PhysioPackagesController,
+        PhysioDischargesController,
         ConsultationNotesController,
         RecipesController,
       ],
@@ -194,6 +207,8 @@ describe('Professional domain boundaries (e2e)', () => {
           provide: PhysioFunctionalScalesService,
           useValue: physioFunctionalScalesService,
         },
+        { provide: PhysioPackagesService, useValue: physioPackagesService },
+        { provide: PhysioDischargesService, useValue: physioDischargesService },
         { provide: ConsultationNotesService, useValue: {} },
         { provide: RecipesService, useValue: recipesService },
       ],
@@ -364,6 +379,36 @@ describe('Professional domain boundaries (e2e)', () => {
           .get(`/rehab-plans/scales/client/${PROFESSIONAL_ID}`)
           .set(asRole(role)),
       serviceMethod: physioFunctionalScalesService.listByClient,
+    },
+    {
+      domain: 'rehabilitation-packages',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .get(`/rehab-plans/packages/client/${PROFESSIONAL_ID}`)
+          .set(asRole(role)),
+      serviceMethod: physioPackagesService.listByClient,
+    },
+    {
+      domain: 'rehabilitation-discharges',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .get(`/rehab-plans/discharges/client/${PROFESSIONAL_ID}`)
+          .set(asRole(role)),
+      serviceMethod: physioDischargesService.listByClient,
+    },
+    {
+      domain: 'rehabilitation-reports',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .get('/rehab-plans/discharges/reports')
+          .set(asRole(role)),
+      serviceMethod: physioDischargesService.getManagementReport,
     },
     {
       domain: 'sharedAssessment',

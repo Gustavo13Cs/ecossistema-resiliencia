@@ -30,6 +30,10 @@ export class CreatePhysioSessionEvolutionDto {
   rehabPlanId?: string | null;
 
   @ValidateIf((_o, value: unknown) => value !== undefined && value !== null)
+  @IsUUID()
+  packageId?: string | null;
+
+  @ValidateIf((_o, value: unknown) => value !== undefined && value !== null)
   @IsISO8601()
   sessionDate?: string | null;
 
@@ -69,6 +73,10 @@ export class UpdatePhysioSessionEvolutionDto {
   @ValidateIf((_o, value: unknown) => value !== undefined && value !== null)
   @IsUUID()
   rehabPlanId?: string | null;
+
+  @ValidateIf((_o, value: unknown) => value !== undefined && value !== null)
+  @IsUUID()
+  packageId?: string | null;
 
   @ValidateIf((_o, value: unknown) => value !== undefined && value !== null)
   @IsISO8601()

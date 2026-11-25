@@ -57,6 +57,8 @@ model User {
   createdPhysioAssessments PhysioAssessment[]       @relation("CreatedPhysioAssessments")
   physioSessionEvolutions  PhysioSessionEvolution[] @relation("ProfessionalPhysioSessionEvolutions")
   physioFunctionalScales   PhysioFunctionalScale[]  @relation("ProfessionalPhysioFunctionalScales")
+  physioSessionPackages    PhysioSessionPackage[]   @relation("ProfessionalPhysioSessionPackages")
+  physioDischarges         PhysioDischarge[]        @relation("ProfessionalPhysioDischarges")
   rehabs                   RehabPlan[]              @relation("UserRehabs")
   createdRehabs            RehabPlan[]        @relation("CreatedRehabs")
 
@@ -250,6 +252,8 @@ model Client {
   physioAssessments       PhysioAssessment[]       @relation("ClientPhysioAssessments")
   physioSessionEvolutions PhysioSessionEvolution[] @relation("ClientPhysioSessionEvolutions")
   physioFunctionalScales  PhysioFunctionalScale[]  @relation("ClientPhysioFunctionalScales")
+  physioSessionPackages   PhysioSessionPackage[]   @relation("ClientPhysioSessionPackages")
+  physioDischarges        PhysioDischarge[]        @relation("ClientPhysioDischarges")
   rehabPlans              RehabPlan[]              @relation("ClientRehabPlans")
   trackings         DailyTracking[]      @relation("ClientTrackings")
   anamneses         Anamnesis[]          @relation("ClientAnamneses")
@@ -816,6 +820,9 @@ model PhysioAssessment {
   creatorId String?
   creator   User?   @relation("CreatedPhysioAssessments", fields: [creatorId], references: [id], onDelete: Restrict)
 
+  initialForDischarges PhysioDischarge[] @relation("InitialDischargeAssessment")
+  finalForDischarges   PhysioDischarge[] @relation("FinalDischargeAssessment")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -857,6 +864,7 @@ model RehabPlan {
 
   sessions   RehabSession[]           @relation("PlanToSessions")
   evolutions PhysioSessionEvolution[] @relation("RehabPlanEvolutions")
+  discharges PhysioDischarge[]        @relation("RehabPlanDischarges")
 
   @@index([creatorId, clientId, isActive])
   @@index([clientId])
@@ -906,27 +914,30 @@ model RehabExercise {
 
 // Tabela 15B: Evolução Clínica por Sessão de Fisioterapia
 model PhysioSessionEvolution {
-  id                String       @id @default(uuid())
+  id                String                @id @default(uuid())
   clientId          String
-  client            Client       @relation("ClientPhysioSessionEvolutions", fields: [clientId], references: [id], onDelete: Restrict)
+  client            Client                @relation("ClientPhysioSessionEvolutions", fields: [clientId], references: [id], onDelete: Restrict)
   professionalId    String
-  professional      User         @relation("ProfessionalPhysioSessionEvolutions", fields: [professionalId], references: [id], onDelete: Restrict)
-  appointmentId     String?      @unique
-  appointment       Appointment? @relation("AppointmentPhysioEvolution", fields: [appointmentId], references: [id], onDelete: SetNull)
+  professional      User                  @relation("ProfessionalPhysioSessionEvolutions", fields: [professionalId], references: [id], onDelete: Restrict)
+  appointmentId     String?               @unique
+  appointment       Appointment?          @relation("AppointmentPhysioEvolution", fields: [appointmentId], references: [id], onDelete: SetNull)
   rehabPlanId       String?
-  rehabPlan         RehabPlan?   @relation("RehabPlanEvolutions", fields: [rehabPlanId], references: [id], onDelete: SetNull)
-  sessionDate       DateTime     @default(now())
+  rehabPlan         RehabPlan?            @relation("RehabPlanEvolutions", fields: [rehabPlanId], references: [id], onDelete: SetNull)
+  packageId         String?
+  sessionPackage    PhysioSessionPackage? @relation("PackagePhysioEvolutions", fields: [packageId], references: [id], onDelete: SetNull)
+  sessionDate       DateTime              @default(now())
   painBefore        Int?
   painAfter         Int?
-  proceduresApplied String[]     @default([])
-  patientResponse   String       @db.Text
-  nextSteps         String?      @db.Text
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  proceduresApplied String[]              @default([])
+  patientResponse   String                @db.Text
+  nextSteps         String?               @db.Text
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
 
   @@index([professionalId, clientId, sessionDate(sort: Desc)])
   @@index([clientId, sessionDate(sort: Desc)])
   @@index([rehabPlanId])
+  @@index([packageId])
   @@map("physio_session_evolutions")
 }
 
@@ -960,6 +971,76 @@ model PhysioFunctionalScale {
   @@index([professionalId, clientId, evaluatedAt(sort: Desc)])
   @@index([clientId, evaluatedAt(sort: Desc)])
   @@map("physio_functional_scales")
+}
+
+enum PhysioPackageStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+// Tabela 15D: Pacotes de Sessões de Fisioterapia
+model PhysioSessionPackage {
+  id                    String              @id @default(uuid())
+  clientId              String
+  client                Client              @relation("ClientPhysioSessionPackages", fields: [clientId], references: [id], onDelete: Restrict)
+  professionalId        String
+  professional          User                @relation("ProfessionalPhysioSessionPackages", fields: [professionalId], references: [id], onDelete: Restrict)
+  title                 String
+  totalSessions         Int
+  reassessEverySessions Int?
+  startedAt             DateTime            @default(now())
+  expiresAt             DateTime?
+  status                PhysioPackageStatus @default(ACTIVE)
+  notes                 String?             @db.Text
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  evolutions PhysioSessionEvolution[] @relation("PackagePhysioEvolutions")
+
+  @@index([professionalId, clientId, status, startedAt(sort: Desc)])
+  @@index([clientId, status])
+  @@map("physio_session_packages")
+}
+
+enum PhysioDischargeReason {
+  GOALS_MET
+  PARTIAL_IMPROVEMENT
+  MEDICAL_REFERRAL
+  TREATMENT_ABANDONMENT
+  PATIENT_REQUEST
+}
+
+// Tabela 15E: Alta Fisioterapêutica e Comparativo Inicial vs. Final
+model PhysioDischarge {
+  id                  String                @id @default(uuid())
+  clientId            String
+  client              Client                @relation("ClientPhysioDischarges", fields: [clientId], references: [id], onDelete: Restrict)
+  professionalId      String
+  professional        User                  @relation("ProfessionalPhysioDischarges", fields: [professionalId], references: [id], onDelete: Restrict)
+  rehabPlanId         String?
+  rehabPlan           RehabPlan?            @relation("RehabPlanDischarges", fields: [rehabPlanId], references: [id], onDelete: SetNull)
+  initialAssessmentId String?
+  initialAssessment   PhysioAssessment?     @relation("InitialDischargeAssessment", fields: [initialAssessmentId], references: [id], onDelete: SetNull)
+  finalAssessmentId   String?
+  finalAssessment     PhysioAssessment?     @relation("FinalDischargeAssessment", fields: [finalAssessmentId], references: [id], onDelete: SetNull)
+  dischargedAt        DateTime              @default(now())
+  reason              PhysioDischargeReason
+  sessionsCompleted   Int                   @default(0)
+  initialPainLevel    Int?
+  finalPainLevel      Int?
+  clinicalSummary     String                @db.Text
+  recommendations     String?               @db.Text
+  comparisonSnapshot  Json?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  @@index([professionalId, dischargedAt(sort: Desc)])
+  @@index([clientId, dischargedAt(sort: Desc)])
+  @@index([rehabPlanId])
+  @@index([initialAssessmentId])
+  @@index([finalAssessmentId])
+  @@map("physio_discharges")
 }
 
 // ==========================================

@@ -20,6 +20,7 @@ export const PHYSIO_EVOLUTION_SELECT = {
   clientId: true,
   appointmentId: true,
   rehabPlanId: true,
+  packageId: true,
   sessionDate: true,
   painBefore: true,
   painAfter: true,
@@ -157,12 +158,42 @@ export class PhysioSessionEvolutionsService {
         ? new Date(dto.sessionDate)
         : (appointmentStartsAt ?? new Date());
 
+      let resolvedPackageId: string | null = null;
+      if (dto.packageId) {
+        const pkg = await tx.physioSessionPackage.findFirst({
+          where: {
+            id: dto.packageId,
+            clientId: client.id,
+            professionalId: user.sub,
+          },
+          select: { id: true },
+        });
+        if (!pkg) {
+          throw new NotFoundException(
+            'Pacote de sessões não encontrado para este paciente',
+          );
+        }
+        resolvedPackageId = pkg.id;
+      } else if (dto.packageId === undefined) {
+        const activePkg = await tx.physioSessionPackage?.findFirst?.({
+          where: {
+            clientId: client.id,
+            professionalId: user.sub,
+            status: 'ACTIVE',
+          },
+          orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
+          select: { id: true },
+        });
+        resolvedPackageId = activePkg?.id ?? null;
+      }
+
       return tx.physioSessionEvolution.create({
         data: {
           clientId: client.id,
           professionalId: user.sub,
           appointmentId: dto.appointmentId ?? null,
           rehabPlanId: dto.rehabPlanId ?? null,
+          packageId: resolvedPackageId,
           sessionDate,
           painBefore: dto.painBefore ?? null,
           painAfter: dto.painAfter ?? null,
@@ -219,6 +250,22 @@ export class PhysioSessionEvolutionsService {
         }
       }
 
+      if (dto.packageId !== undefined && dto.packageId !== null) {
+        const pkg = await tx.physioSessionPackage.findFirst({
+          where: {
+            id: dto.packageId,
+            clientId: existing.clientId,
+            professionalId: user.sub,
+          },
+          select: { id: true },
+        });
+        if (!pkg) {
+          throw new NotFoundException(
+            'Pacote de sessões não encontrado para este paciente',
+          );
+        }
+      }
+
       return tx.physioSessionEvolution.update({
         where: {
           id: existing.id,
@@ -228,6 +275,9 @@ export class PhysioSessionEvolutionsService {
         data: {
           ...(dto.rehabPlanId !== undefined && {
             rehabPlanId: dto.rehabPlanId,
+          }),
+          ...(dto.packageId !== undefined && {
+            packageId: dto.packageId,
           }),
           ...(dto.sessionDate !== undefined &&
             dto.sessionDate !== null && {

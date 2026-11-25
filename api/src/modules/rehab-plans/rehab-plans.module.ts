@@ -6,6 +6,10 @@ import { PhysioSessionEvolutionsService } from './physio-session-evolutions.serv
 import { PhysioSessionEvolutionsController } from './physio-session-evolutions.controller';
 import { PhysioFunctionalScalesService } from './physio-functional-scales.service';
 import { PhysioFunctionalScalesController } from './physio-functional-scales.controller';
+import { PhysioPackagesService } from './physio-packages.service';
+import { PhysioPackagesController } from './physio-packages.controller';
+import { PhysioDischargesService } from './physio-discharges.service';
+import { PhysioDischargesController } from './physio-discharges.controller';
 import { DatabaseModule } from '../../infra/database/database.module';
 import { ClientAccessModule } from '../../common/client-access/client-access.module';
 
@@ -15,12 +19,16 @@ import { ClientAccessModule } from '../../common/client-access/client-access.mod
     RehabPlansController,
     PhysioSessionEvolutionsController,
     PhysioFunctionalScalesController,
+    PhysioPackagesController,
+    PhysioDischargesController,
   ],
   providers: [
     RehabPlansService,
     PhysioReadService,
     PhysioSessionEvolutionsService,
     PhysioFunctionalScalesService,
+    PhysioPackagesService,
+    PhysioDischargesService,
   ],
 })
 export class RehabPlansModule {}

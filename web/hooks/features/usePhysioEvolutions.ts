@@ -79,6 +79,8 @@ function invalidatePhysioQueries(
     cache.invalidateQueries({ queryKey: queryKeys.physioWorkspace(sub) }),
     cache.invalidateQueries({ queryKey: queryKeys.physioOverview(sub, clientId) }),
     cache.invalidateQueries({ queryKey: queryKeys.physioEvolutions(sub, clientId) }),
+    cache.invalidateQueries({ queryKey: queryKeys.physioPackages(sub, clientId) }),
+    cache.invalidateQueries({ queryKey: queryKeys.physioReportsRoot(sub) }),
     cache.invalidateQueries({ queryKey: queryKeys.patientOverview(sub, clientId) }),
   ]
   if (appointmentId) {
