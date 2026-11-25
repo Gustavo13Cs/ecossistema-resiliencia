@@ -18,6 +18,8 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AsyncState } from "@/components/feedback/AsyncState"
+import { PhysioManagementReportsView } from "@/components/features/physio/PhysioManagementReportsView"
+import { useAuth } from "@/contexts/auth-context"
 import { useManagementReports } from "@/hooks/features/useManagementReports"
 import { ManagementKpiCards } from "@/components/features/management/ManagementKpiCards"
 import { RetentionFunnelCard } from "@/components/features/management/RetentionFunnelCard"
@@ -30,6 +32,28 @@ import { ManagementPeriod } from "@/types/management-reports"
 type ManagementTab = "overview" | "retention" | "adherence" | "appointments" | "growth"
 
 export default function RelatoriosPage() {
+  const { user, isLoading } = useAuth()
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        <AsyncState
+          kind="loading"
+          title="Carregando relatórios..."
+          description="Validando permissões e consolidando métricas da clínica."
+        />
+      </div>
+    )
+  }
+
+  if (user?.role === "PHYSIO") {
+    return <PhysioManagementReportsView />
+  }
+
+  return <NutritionistManagementReportsView />
+}
+
+function NutritionistManagementReportsView() {
   const {
     loading,
     period,

@@ -87,6 +87,17 @@ beforeEach(() => {
   record.refetch.mockReset()
   navigation.push.mockReset()
   http.reset()
+  http.onGet("/rehab-plans/client/client-one/overview").reply(200, {
+    client: { id: "client-one", status: "ACTIVE" },
+    activePlan: null,
+    recentAssessments: [],
+    recentEvolutions: [],
+    unlinkedAppointments: [],
+    painSeries: [],
+  })
+  http.onGet("/physio-assessments/client/client-one").reply(200, [])
+  http.onGet("/rehab-plans/evolutions/client/client-one").reply(200, [])
+  http.onGet("/rehab-plans/scales/client/client-one").reply(200, [])
 })
 
 afterEach(cleanup)
@@ -102,31 +113,48 @@ describe("professional Client record", () => {
     expect(JSON.parse(http.history.post[0].data as string)).toMatchObject({ clientId: "client-one", chiefComplaint: "Queixa sintética" })
   })
 
-  it.each([
-    ["NUTRITIONIST", "Área de Nutrição", "Contexto nutricional", "Alergias e restrições", "Planos alimentares em migração"],
-    ["PHYSIO", "Área de Fisioterapia", "Contexto fisioterapêutico", "Tipo de exercício", "Planos de reabilitação em migração"],
-  ] as const)("renders only the %s workspace", (role, area, context, ownField, migrationStatus) => {
-    session.role = role as ProfessionalRole
+  it("renders only the NUTRITIONIST workspace", () => {
+    session.role = "NUTRITIONIST"
     renderPage()
 
     expect(screen.getByRole("heading", { name: "Marina Lopes", level: 1 })).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: area })).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: context })).toBeInTheDocument()
-    expect(screen.getByLabelText(ownField)).toBeInTheDocument()
-    expect(screen.getByRole("status", { name: migrationStatus })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Área de Nutrição" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Contexto nutricional" })).toBeInTheDocument()
+    expect(screen.getByLabelText("Alergias e restrições")).toBeInTheDocument()
+    expect(screen.getByRole("status", { name: "Planos alimentares em migração" })).toBeInTheDocument()
     expect(document.querySelector('a[href*="nova-dieta"], a[href*="novo-treino"], a[href*="nova-reabilitacao"]')).toBeNull()
   })
 
-  it("never combines fields or actions from another profession", () => {
+  it("renders only the PHYSIO workspace without migration placeholder", async () => {
     session.role = "PHYSIO"
     renderPage()
 
+    expect(screen.getByRole("heading", { name: "Marina Lopes", level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Área de Fisioterapia" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Contexto fisioterapêutico" })).toBeInTheDocument()
+    expect(screen.getByLabelText("Tipo de exercício")).toBeInTheDocument()
+    expect(await screen.findByText("Nenhum protocolo de reabilitação ativo registrado")).toBeVisible()
+    expect(screen.queryByText(/em migração/i)).not.toBeInTheDocument()
     expect(screen.queryByLabelText("Alergias e restrições")).not.toBeInTheDocument()
     expect(screen.queryByLabelText("Acompanhamento com personal")).not.toBeInTheDocument()
-    expect(screen.getByRole("status", { name: "Planos de reabilitação em migração" })).toBeInTheDocument()
     expect(screen.queryByText("Planos alimentares")).not.toBeInTheDocument()
     expect(screen.queryByText("Planilhas de treino")).not.toBeInTheDocument()
     expect(screen.queryByText(/histórico de dieta|suplementação|exames laboratoriais/i)).not.toBeInTheDocument()
+  })
+
+  it("mounts the physio branch only after owned Client resolution and clears view on denial", async () => {
+    session.role = "PHYSIO"
+    record.status = "loading"
+    record.client = null
+    const view = renderPage()
+    expect(http.history.get).toHaveLength(0)
+
+    record.status = "ready"
+    record.client = makeClient()
+    http.onGet("/rehab-plans/client/client-one/overview").reply(403)
+    view.rerender(<ClienteHubPage />)
+    await waitFor(() => expect(screen.getByText("Restabeleça seu acesso")).toBeVisible())
+    expect(screen.queryByText("Marina Lopes")).not.toBeInTheDocument()
   })
 
   it("mounts_the_personal_branch_only_after_owned_client_resolution", async () => {

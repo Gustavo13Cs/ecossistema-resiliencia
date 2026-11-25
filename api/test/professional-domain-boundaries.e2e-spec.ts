@@ -27,6 +27,15 @@ import { PhysioAssessmentsController } from '../src/modules/physio-assessments/p
 import { PhysioAssessmentsService } from '../src/modules/physio-assessments/physio-assessments.service';
 import { RehabPlansController } from '../src/modules/rehab-plans/rehab-plans.controller';
 import { RehabPlansService } from '../src/modules/rehab-plans/rehab-plans.service';
+import { PhysioReadService } from '../src/modules/rehab-plans/physio-read.service';
+import { PhysioSessionEvolutionsController } from '../src/modules/rehab-plans/physio-session-evolutions.controller';
+import { PhysioSessionEvolutionsService } from '../src/modules/rehab-plans/physio-session-evolutions.service';
+import { PhysioFunctionalScalesController } from '../src/modules/rehab-plans/physio-functional-scales.controller';
+import { PhysioFunctionalScalesService } from '../src/modules/rehab-plans/physio-functional-scales.service';
+import { PhysioPackagesController } from '../src/modules/rehab-plans/physio-packages.controller';
+import { PhysioPackagesService } from '../src/modules/rehab-plans/physio-packages.service';
+import { PhysioDischargesController } from '../src/modules/rehab-plans/physio-discharges.controller';
+import { PhysioDischargesService } from '../src/modules/rehab-plans/physio-discharges.service';
 import { RecipesController } from '../src/modules/recipes/recipes.controller';
 import { RecipesService } from '../src/modules/recipes/recipes.service';
 import { SupplementsController } from '../src/modules/supplements/supplements.controller';
@@ -87,6 +96,57 @@ describe('Professional domain boundaries (e2e)', () => {
   };
   const rehabPlansService = {
     saveAsTemplate: jest.fn().mockResolvedValue({ id: 'rehab-template' }),
+    getProtocolCatalog: jest.fn().mockReturnValue([]),
+    getExerciseCatalog: jest.fn().mockReturnValue([]),
+    createTemplate: jest.fn().mockResolvedValue({
+      id: 'rehab-template-2',
+      clientId: null,
+      isTemplate: true,
+    }),
+    update: jest.fn().mockResolvedValue({
+      id: PROFESSIONAL_ID,
+      clientId: PROFESSIONAL_ID,
+    }),
+    updateCurrentPhase: jest.fn().mockResolvedValue({
+      id: PROFESSIONAL_ID,
+      clientId: PROFESSIONAL_ID,
+      currentPhaseIndex: 0,
+    }),
+  };
+  const physioReadService = {
+    getWorkspace: jest.fn().mockResolvedValue({
+      counts: {
+        activePatients: 0,
+        archivedPatients: 0,
+        completedWithoutEvolution: 0,
+        withoutActivePlan: 0,
+        overdueReassessments: 0,
+        painWorsening: 0,
+      },
+      items: [],
+      evolvedAppointmentIds: [],
+    }),
+    getClientOverview: jest.fn().mockResolvedValue({
+      client: { id: PROFESSIONAL_ID, status: 'ACTIVE' },
+      activePlan: null,
+      recentAssessments: [],
+      recentEvolutions: [],
+      unlinkedAppointments: [],
+      painSeries: [],
+    }),
+  };
+  const physioSessionEvolutionsService = {
+    listByClient: jest.fn().mockResolvedValue([]),
+  };
+  const physioFunctionalScalesService = {
+    listByClient: jest.fn().mockResolvedValue([]),
+  };
+  const physioPackagesService = {
+    listByClient: jest.fn().mockResolvedValue([]),
+  };
+  const physioDischargesService = {
+    listByClient: jest.fn().mockResolvedValue([]),
+    getManagementReport: jest.fn().mockResolvedValue({ items: [] }),
   };
   const assessmentsService = {
     findByClient: jest.fn().mockResolvedValue([]),
@@ -118,6 +178,10 @@ describe('Professional domain boundaries (e2e)', () => {
         DietPlansController,
         WorkoutsController,
         RehabPlansController,
+        PhysioSessionEvolutionsController,
+        PhysioFunctionalScalesController,
+        PhysioPackagesController,
+        PhysioDischargesController,
         ConsultationNotesController,
         RecipesController,
       ],
@@ -134,6 +198,17 @@ describe('Professional domain boundaries (e2e)', () => {
         { provide: TrainingReadService, useValue: trainingReadService },
         { provide: ExerciseLibraryService, useValue: exerciseLibraryService },
         { provide: RehabPlansService, useValue: rehabPlansService },
+        { provide: PhysioReadService, useValue: physioReadService },
+        {
+          provide: PhysioSessionEvolutionsService,
+          useValue: physioSessionEvolutionsService,
+        },
+        {
+          provide: PhysioFunctionalScalesService,
+          useValue: physioFunctionalScalesService,
+        },
+        { provide: PhysioPackagesService, useValue: physioPackagesService },
+        { provide: PhysioDischargesService, useValue: physioDischargesService },
         { provide: ConsultationNotesService, useValue: {} },
         { provide: RecipesService, useValue: recipesService },
       ],
@@ -226,6 +301,116 @@ describe('Professional domain boundaries (e2e)', () => {
       serviceMethod: rehabPlansService.saveAsTemplate,
     },
     {
+      domain: 'rehabilitation-protocol-catalog',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .get('/rehab-plans/protocol-catalog')
+          .set(asRole(role)),
+      serviceMethod: rehabPlansService.getProtocolCatalog,
+    },
+    {
+      domain: 'rehabilitation-exercise-catalog',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .get('/rehab-plans/exercise-catalog')
+          .set(asRole(role)),
+      serviceMethod: rehabPlansService.getExerciseCatalog,
+    },
+    {
+      domain: 'rehabilitation-template-create',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      expectedStatus: 201,
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .post('/rehab-plans/templates')
+          .send({
+            title: 'Modelo Teste',
+            sessions: [{ name: 'Fase 1', exercises: [{ name: 'Ponte' }] }],
+          })
+          .set(asRole(role)),
+      serviceMethod: rehabPlansService.createTemplate,
+    },
+    {
+      domain: 'rehabilitation-update',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .patch(`/rehab-plans/${PROFESSIONAL_ID}`)
+          .send({
+            title: 'Atualizado',
+            sessions: [{ name: 'Fase 1', exercises: [{ name: 'Ponte' }] }],
+          })
+          .set(asRole(role)),
+      serviceMethod: rehabPlansService.update,
+    },
+    {
+      domain: 'rehabilitation-phase-update',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .patch(`/rehab-plans/${PROFESSIONAL_ID}/phase`)
+          .send({ currentPhaseIndex: 0 })
+          .set(asRole(role)),
+      serviceMethod: rehabPlansService.updateCurrentPhase,
+    },
+    {
+      domain: 'rehabilitation-evolutions',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .get(`/rehab-plans/evolutions/client/${PROFESSIONAL_ID}`)
+          .set(asRole(role)),
+      serviceMethod: physioSessionEvolutionsService.listByClient,
+    },
+    {
+      domain: 'rehabilitation-scales',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .get(`/rehab-plans/scales/client/${PROFESSIONAL_ID}`)
+          .set(asRole(role)),
+      serviceMethod: physioFunctionalScalesService.listByClient,
+    },
+    {
+      domain: 'rehabilitation-packages',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .get(`/rehab-plans/packages/client/${PROFESSIONAL_ID}`)
+          .set(asRole(role)),
+      serviceMethod: physioPackagesService.listByClient,
+    },
+    {
+      domain: 'rehabilitation-discharges',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .get(`/rehab-plans/discharges/client/${PROFESSIONAL_ID}`)
+          .set(asRole(role)),
+      serviceMethod: physioDischargesService.listByClient,
+    },
+    {
+      domain: 'rehabilitation-reports',
+      allowedRoles: ['PHYSIO'] as TestRole[],
+      deniedRoles: ['NUTRITIONIST', 'PERSONAL', 'ADMIN'] as TestRole[],
+      invoke: (role: TestRole) =>
+        request(app.getHttpServer())
+          .get('/rehab-plans/discharges/reports')
+          .set(asRole(role)),
+      serviceMethod: physioDischargesService.getManagementReport,
+    },
+    {
       domain: 'sharedAssessment',
       allowedRoles: ['NUTRITIONIST', 'PERSONAL', 'PHYSIO'] as TestRole[],
       deniedRoles: ['ADMIN', 'PATIENT'] as TestRole[],
@@ -237,9 +422,22 @@ describe('Professional domain boundaries (e2e)', () => {
     },
   ])(
     '$domain permits only its policy roles before invoking service logic',
-    async ({ allowedRoles, deniedRoles, invoke, serviceMethod }) => {
+    async ({
+      allowedRoles,
+      deniedRoles,
+      expectedStatus = 200,
+      invoke,
+      serviceMethod,
+    }: {
+      domain: string;
+      allowedRoles: TestRole[];
+      deniedRoles: TestRole[];
+      expectedStatus?: number;
+      invoke: (role: TestRole) => request.Test;
+      serviceMethod: jest.Mock;
+    }) => {
       for (const role of allowedRoles) {
-        await invoke(role).expect(200);
+        await invoke(role).expect(expectedStatus);
       }
 
       expect(serviceMethod).toHaveBeenCalledTimes(allowedRoles.length);

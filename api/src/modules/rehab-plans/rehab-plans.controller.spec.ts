@@ -7,14 +7,25 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { AuthUser } from '../../common/types/auth-user';
 import { RehabPlansController } from './rehab-plans.controller';
 import { RehabPlansService } from './rehab-plans.service';
+import { PhysioReadService } from './physio-read.service';
 
 describe('RehabPlansController Client contract', () => {
   const user: AuthUser = { sub: 'professional-1', role: 'PHYSIO' };
   const clientId = 'a0000000-0000-4000-8000-000000000001';
+  const planId = 'b0000000-0000-4000-8000-000000000002';
   const service = {
     create: jest.fn(),
+    update: jest.fn(),
+    updateCurrentPhase: jest.fn(),
+    createTemplate: jest.fn(),
+    getProtocolCatalog: jest.fn(),
+    getExerciseCatalog: jest.fn(),
     findActive: jest.fn(),
     findActiveByUser: jest.fn(),
+  };
+  const physioReadService = {
+    getWorkspace: jest.fn(),
+    getClientOverview: jest.fn(),
   };
   const body = {
     clientId,
@@ -35,6 +46,7 @@ describe('RehabPlansController Client contract', () => {
       providers: [
         RolesGuard,
         { provide: RehabPlansService, useValue: service },
+        { provide: PhysioReadService, useValue: physioReadService },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -63,6 +75,19 @@ describe('RehabPlansController Client contract', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     service.create.mockResolvedValue({ id: 'workout-1', clientId });
+    service.update.mockResolvedValue({ id: planId, clientId });
+    service.updateCurrentPhase.mockResolvedValue({
+      id: planId,
+      clientId,
+      currentPhaseIndex: 0,
+    });
+    service.createTemplate.mockResolvedValue({
+      id: 'template-1',
+      clientId: null,
+      isTemplate: true,
+    });
+    service.getProtocolCatalog.mockReturnValue([]);
+    service.getExerciseCatalog.mockReturnValue([]);
     service.findActive.mockResolvedValue(null);
     service.findActiveByUser.mockResolvedValue(null);
   });
@@ -117,5 +142,88 @@ describe('RehabPlansController Client contract', () => {
       .get(`/rehab-plans/user/${clientId}/active`)
       .expect(404);
     expect(service.findActiveByUser).not.toHaveBeenCalled();
+  });
+
+  it('rejects client-injected demonstrationSnapshot in DTO validation', async () => {
+    await request(app.getHttpServer())
+      .post('/rehab-plans')
+      .send({
+        ...body,
+        sessions: [
+          {
+            name: 'Fase 1',
+            exercises: [
+              {
+                name: 'Dead bug',
+                catalogExerciseId: 'cat-core-10',
+                demonstrationSnapshot: {
+                  revision: 'spoofed',
+                  instruction: 'evil',
+                },
+              },
+            ],
+          },
+        ],
+      })
+      .expect(400);
+    expect(service.create).not.toHaveBeenCalled();
+  });
+
+  it('routes PATCH plan, PATCH phase, custom template creation and catalogs', async () => {
+    await request(app.getHttpServer())
+      .patch(`/rehab-plans/${planId}`)
+      .send({
+        title: 'Protocolo Atualizado',
+        currentPhaseIndex: 0,
+        sessions: [
+          {
+            name: 'Fase 1',
+            progressionCriteria: 'Sem dor em repouso',
+            estimatedWeeks: 3,
+            exercises: [
+              {
+                name: 'TENS',
+                category: 'ELECTROTHERAPY',
+                modalityParams: { modality: 'TENS', durationMinutes: 20 },
+              },
+            ],
+          },
+        ],
+      })
+      .expect(200);
+    expect(service.update).toHaveBeenCalledWith(
+      user,
+      planId,
+      expect.objectContaining({ title: 'Protocolo Atualizado' }),
+    );
+
+    await request(app.getHttpServer())
+      .patch(`/rehab-plans/${planId}/phase`)
+      .send({ currentPhaseIndex: 1 })
+      .expect(200);
+    expect(service.updateCurrentPhase).toHaveBeenCalledWith(user, planId, {
+      currentPhaseIndex: 1,
+    });
+
+    await request(app.getHttpServer())
+      .post('/rehab-plans/templates')
+      .send({
+        title: 'Modelo Lombar',
+        sessions: body.sessions,
+      })
+      .expect(201);
+    expect(service.createTemplate).toHaveBeenCalled();
+
+    await request(app.getHttpServer())
+      .get('/rehab-plans/protocol-catalog')
+      .expect(200);
+    expect(service.getProtocolCatalog).toHaveBeenCalledWith(user);
+
+    await request(app.getHttpServer())
+      .get('/rehab-plans/exercise-catalog?onlyWithIllustration=true')
+      .expect(200);
+    expect(service.getExerciseCatalog).toHaveBeenCalledWith(user, {
+      onlyWithIllustration: 'true',
+    });
   });
 });

@@ -76,12 +76,80 @@ describe('PhysioAssessmentsController Client contract', () => {
     { painLevel: 11 },
     { painLevel: 1.5 },
     { chiefComplaint: 'x'.repeat(5001) },
+    {
+      bodyPainMap: [
+        {
+          region: 'Joelho direito',
+          view: 'ANTERIOR',
+          intensity: 12,
+          symptomType: 'SHARP',
+        },
+      ],
+    },
+    {
+      muscleStrength: [{ muscleGroup: 'Quadríceps', side: 'RIGHT', grade: 7 }],
+    },
+    {
+      orthopedicTestItems: [
+        {
+          region: 'Joelho',
+          testName: 'Lachman',
+          side: 'RIGHT',
+          result: 'INVALID',
+        },
+      ],
+    },
   ])('rejects invalid clinical fields', async (invalid) => {
     await request(app.getHttpServer())
       .post('/physio-assessments')
       .send({ ...body, ...invalid })
       .expect(400);
     expect(service.create).not.toHaveBeenCalled();
+  });
+
+  it('accepts structured physical exam fields in DTO', async () => {
+    const structured = {
+      ...body,
+      bodyPainMap: [
+        {
+          region: 'Joelho direito',
+          view: 'ANTERIOR',
+          intensity: 7,
+          symptomType: 'SHARP',
+        },
+      ],
+      goniometry: [
+        {
+          joint: 'Joelho',
+          movement: 'Flexão',
+          side: 'RIGHT',
+          activeDeg: 105,
+          passiveDeg: 115,
+          referenceDeg: 140,
+        },
+      ],
+      muscleStrength: [
+        {
+          muscleGroup: 'Quadríceps',
+          side: 'RIGHT',
+          grade: 4,
+          painOnResistance: true,
+        },
+      ],
+      orthopedicTestItems: [
+        {
+          region: 'Joelho',
+          testName: 'Lachman',
+          side: 'RIGHT',
+          result: 'POSITIVE',
+        },
+      ],
+    };
+    await request(app.getHttpServer())
+      .post('/physio-assessments')
+      .send(structured)
+      .expect(201);
+    expect(service.create).toHaveBeenCalledWith(user, structured);
   });
   it('uses Client history and authenticated deletion', async () => {
     await request(app.getHttpServer())

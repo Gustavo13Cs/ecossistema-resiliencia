@@ -37,7 +37,7 @@ const ROLE_CASES = [
     roleLabel: "Nutricionista",
     areaLabel: "Área de Nutrição",
     clientLabel: "Clientes",
-    ownLinks: ["Planos alimentares", "Alimentos"],
+    ownLinks: ["Planos alimentares", "Alimentos", "Relatórios"],
     foreignLinks: ["Treinos", "Reabilitação"],
   },
   {
@@ -46,14 +46,14 @@ const ROLE_CASES = [
     areaLabel: "Área de Treinamento",
     clientLabel: "Alunos",
     ownLinks: ["Treinos"],
-    foreignLinks: ["Planos alimentares", "Alimentos", "Reabilitação"],
+    foreignLinks: ["Planos alimentares", "Alimentos", "Reabilitação", "Relatórios"],
   },
   {
     role: "PHYSIO",
     roleLabel: "Fisioterapeuta",
     areaLabel: "Área de Fisioterapia",
     clientLabel: "Pacientes",
-    ownLinks: ["Reabilitação"],
+    ownLinks: ["Reabilitação", "Relatórios"],
     foreignLinks: ["Planos alimentares", "Alimentos", "Treinos"],
   },
 ] as const

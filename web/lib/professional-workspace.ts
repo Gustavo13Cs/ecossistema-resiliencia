@@ -78,6 +78,7 @@ const WORKSPACES = {
     "Pacientes",
     [
       { id: "rehab", label: "Reabilitação", href: "/reabilitacao" },
+      { id: "reports", label: "Relatórios", href: "/relatorios", section: "GESTÃO" },
     ],
   ),
 } satisfies Record<ProfessionalRole, WorkspaceDefinition>
@@ -91,7 +92,7 @@ const ROLE_ONLY_PREFIXES: ReadonlyArray<[string, readonly ProfessionalRole[]]> =
   ["/retornos", ["NUTRITIONIST", "PERSONAL"]],
   ["/evolucao", ["NUTRITIONIST", "PERSONAL"]],
   ["/exames", ["NUTRITIONIST"]],
-  ["/relatorios", ["NUTRITIONIST"]],
+  ["/relatorios", ["NUTRITIONIST", "PHYSIO"]],
   ["/treinos", ["PERSONAL"]],
   ["/modelos-treinos", ["PERSONAL"]],
   ["/exercicios", ["PERSONAL"]],

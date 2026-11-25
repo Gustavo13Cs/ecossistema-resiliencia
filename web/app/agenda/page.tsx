@@ -19,6 +19,7 @@ import { AppointmentDialog } from "@/components/features/appointments/Appointmen
 import { DayAgenda } from "@/components/features/appointments/DayAgenda"
 import { MonthAgenda } from "@/components/features/appointments/MonthAgenda"
 import { WeekAgenda } from "@/components/features/appointments/WeekAgenda"
+import { PhysioSessionEvolutionDialog } from "@/components/features/physio/PhysioSessionEvolutionDialog"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
@@ -37,6 +38,7 @@ import type {
   CreateAppointmentCommand,
   UpdateAppointmentCommand,
 } from "@/types/appointment"
+import type { PhysioSessionEvolution } from "@/types/physio"
 
 const dateKey = (date: Date) => format(date, "yyyy-MM-dd")
 const AGENDA_TOAST_OPTIONS = {
@@ -72,6 +74,10 @@ export default function AgendaPage() {
     useState<Appointment | null>(null)
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null)
+  const [evolutionContext, setEvolutionContext] = useState<{
+    appointment: Appointment
+    evolution: PhysioSessionEvolution | null
+  } | null>(null)
 
   useEffect(() => {
     const browserTimeZone =
@@ -320,7 +326,34 @@ export default function AgendaPage() {
         onOpenChange={setDetailsOpen}
         onEdit={openEdit}
         onAction={runAction}
+        onOpenPhysioEvolution={
+          user.role === "PHYSIO"
+            ? (appointment, evolution) => {
+                setDetailsOpen(false)
+                setEvolutionContext({ appointment, evolution })
+              }
+            : undefined
+        }
       />
+
+      {user.role === "PHYSIO" && evolutionContext ? (
+        <PhysioSessionEvolutionDialog
+          open={Boolean(evolutionContext)}
+          onOpenChange={(open) => {
+            if (!open) setEvolutionContext(null)
+          }}
+          clientId={evolutionContext.appointment.clientId}
+          clientName={evolutionContext.appointment.client.name}
+          appointmentId={evolutionContext.appointment.id}
+          appointmentLabel={new Intl.DateTimeFormat("pt-BR", {
+            timeZone,
+            dateStyle: "short",
+            timeStyle: "short",
+          }).format(new Date(evolutionContext.appointment.startsAt))}
+          defaultSessionDate={evolutionContext.appointment.startsAt}
+          evolution={evolutionContext.evolution}
+        />
+      ) : null}
     </div>
   )
 }

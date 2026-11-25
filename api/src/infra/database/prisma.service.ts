@@ -210,6 +210,18 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get physioAssessment() {
     return this.current().tx.physioAssessment;
   }
+  get physioSessionEvolution() {
+    return this.current().tx.physioSessionEvolution;
+  }
+  get physioFunctionalScale() {
+    return this.current().tx.physioFunctionalScale;
+  }
+  get physioSessionPackage() {
+    return this.current().tx.physioSessionPackage;
+  }
+  get physioDischarge() {
+    return this.current().tx.physioDischarge;
+  }
   get rehabPlan() {
     return this.current().tx.rehabPlan;
   }

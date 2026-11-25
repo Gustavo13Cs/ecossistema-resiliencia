@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
-import { lastValueFrom, of, throwError } from 'rxjs';
+import { defer, lastValueFrom, of, throwError } from 'rxjs';
 import { ClinicalContextInterceptor } from './clinical-context.interceptor';
 import { ClinicalResponseValidator } from './clinical-response.validator';
 import { PrismaService } from '../../infra/database/prisma.service';
@@ -156,23 +156,24 @@ describe('ClinicalContextInterceptor instrumentation', () => {
     });
 
     const next: CallHandler = {
-      handle: () => {
-        recordDatabaseSpan({
-          source: 'clinical',
-          operation: 'SELECT',
-          target: 'Client',
-          durationMs: 14.2,
-          ok: true,
-        });
-        return of({
-          clientId: '123e4567-e89b-12d3-a456-426614174000',
-          clientName: 'Paciente Confidencial',
-          notes: 'Informação Clínica Privada',
-        });
-      },
+      handle: () =>
+        defer(async () => {
+          recordDatabaseSpan({
+            source: 'clinical',
+            operation: 'SELECT',
+            target: 'Client',
+            durationMs: 14.2,
+            ok: true,
+          });
+          await new Promise((r) => setTimeout(r, 10));
+          return {
+            clientId: '123e4567-e89b-12d3-a456-426614174000',
+            clientName: 'Paciente Confidencial',
+            notes: 'Informação Clínica Privada',
+          };
+        }),
     };
 
-    await new Promise((r) => setTimeout(r, 5));
     const result = await lastValueFrom(interceptor.intercept(context, next));
     expect(result).toMatchObject({ clientName: 'Paciente Confidencial' });
     expect(validate).toHaveBeenCalledTimes(1);
