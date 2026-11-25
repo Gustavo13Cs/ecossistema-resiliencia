@@ -37,6 +37,7 @@ interface PhysioDocumentDialogProps {
   scales: PhysioFunctionalScaleRecord[]
   activePlan: PhysioActivePlan | null
   appointments: PhysioEvolutionAppointmentSummary[]
+  defaultTab?: PhysioDocumentType
 }
 
 function formatIssueDate(now = new Date()): string {
@@ -65,10 +66,11 @@ export function PhysioDocumentDialog({
   scales,
   activePlan,
   appointments,
+  defaultTab = "ATTENDANCE",
 }: PhysioDocumentDialogProps) {
   const { user } = useAuth()
   const idPrefix = useId()
-  const [docType, setDocType] = useState<PhysioDocumentType>("ATTENDANCE")
+  const [docType, setDocType] = useState<PhysioDocumentType>(defaultTab)
   const [credential, setCredential] = useState("")
   const [clinicName, setClinicName] = useState("")
   const [city, setCity] = useState("")
@@ -129,6 +131,7 @@ export function PhysioDocumentDialog({
 
   useEffect(() => {
     if (!open) return
+    setDocType(defaultTab)
     setPopupBlocked(false)
     setAttDateLabel(formatIssueDate())
     setFinding(
@@ -149,7 +152,7 @@ export function PhysioDocumentDialog({
     setClinicalOpinion(
       "Paciente em acompanhamento fisioterapêutico regular com resposta clínica progressiva. Recomenda-se continuidade do plano terapêutico.",
     )
-  }, [open, latestAssessment, evolutions, activePlan])
+  }, [open, defaultTab, latestAssessment, evolutions, activePlan])
 
   if (!open || !user?.sub || user.role !== "PHYSIO") return null
 
