@@ -10,6 +10,7 @@ import { useEvolution } from "@/hooks/features/useEvolution"
 import { EvolutionSummaryCards } from "@/components/features/evolution/EvolutionSummaryCards"
 import { ClientEvolutionList } from "@/components/features/evolution/ClientEvolutionList"
 import { PersonalEvolutionWorkspace } from "@/components/features/evolution/personal/PersonalEvolutionWorkspace"
+import { PhysioEvolutionWorkspace } from "@/components/features/physio/PhysioEvolutionWorkspace"
 import { AssessmentModal } from "@/components/AssessmentModal"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { Button } from "@/components/ui/button"
@@ -23,6 +24,9 @@ export default function EvolucaoPage() {
   const { user } = useAuth()
   if (user?.role === "PERSONAL") {
     return <PersonalEvolutionWorkspace />
+  }
+  if (user?.role === "PHYSIO") {
+    return <PhysioEvolutionWorkspace />
   }
   return <NutritionEvolutionPage />
 }

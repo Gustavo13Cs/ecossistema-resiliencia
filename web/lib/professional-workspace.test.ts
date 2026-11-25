@@ -37,9 +37,21 @@ describe("professional workspace policy", () => {
   )
 
   it.each([
-    ["NUTRITIONIST", ["Planos alimentares", "Alimentos", "Relatórios"], ["Treinos", "Reabilitação"]],
-    ["PERSONAL", ["Treinos"], ["Planos alimentares", "Alimentos", "Reabilitação", "Relatórios"]],
-    ["PHYSIO", ["Reabilitação", "Relatórios"], ["Planos alimentares", "Alimentos", "Treinos"]],
+    ["NUTRITIONIST", ["Planos alimentares", "Alimentos", "Relatórios"], ["Treinos", "Reabilitação", "Modelos de protocolo", "Pacotes de sessões", "Documentos e altas"]],
+    ["PERSONAL", ["Treinos"], ["Planos alimentares", "Alimentos", "Reabilitação", "Modelos de protocolo", "Pacotes de sessões", "Documentos e altas", "Relatórios"]],
+    [
+      "PHYSIO",
+      [
+        "Reabilitação",
+        "Modelos de protocolo",
+        "Biblioteca de exercícios",
+        "Evolução",
+        "Pacotes de sessões",
+        "Documentos e altas",
+        "Relatórios",
+      ],
+      ["Planos alimentares", "Alimentos", "Treinos"],
+    ],
   ] as const)("isolates %s navigation", (role, visible, absent) => {
     const labels = getNavigationForRole(role).map((item) => item.label)
     visible.forEach((label) => expect(labels).toContain(label))
@@ -51,6 +63,25 @@ describe("professional workspace policy", () => {
     expect(canAccessProfessionalPath("PHYSIO", "/relatorios")).toBe(true)
     expect(canAccessProfessionalPath("PERSONAL", "/relatorios")).toBe(false)
     expect(canAccessProfessionalPath("ADMIN", "/relatorios")).toBe(false)
+  })
+
+  it("isolates dedicated physio sidebar routes to PHYSIO while sharing /evolucao across roles", () => {
+    const physioOnly = [
+      "/modelos-reabilitacao",
+      "/biblioteca-reabilitacao",
+      "/pacotes",
+      "/documentos-fisio",
+    ]
+    for (const path of physioOnly) {
+      expect(canAccessProfessionalPath("PHYSIO", path)).toBe(true)
+      expect(canAccessProfessionalPath("NUTRITIONIST", path)).toBe(false)
+      expect(canAccessProfessionalPath("PERSONAL", path)).toBe(false)
+      expect(canAccessProfessionalPath("ADMIN", path)).toBe(false)
+    }
+    expect(canAccessProfessionalPath("PHYSIO", "/evolucao")).toBe(true)
+    expect(canAccessProfessionalPath("NUTRITIONIST", "/evolucao")).toBe(true)
+    expect(canAccessProfessionalPath("PERSONAL", "/evolucao")).toBe(true)
+    expect(canAccessProfessionalPath("ADMIN", "/evolucao")).toBe(false)
   })
 
   it("rejects direct cross-domain paths and every clinical path for ADMIN", () => {
@@ -83,8 +114,8 @@ it("restricts_exercise_library_and_training_navigation_to_personal", () => {
   expect(getNavigationForRole("PERSONAL").filter(item => item.section === "ACOMPANHAMENTO").map(item => item.label)).toEqual(["Evolução", "Retornos"])
   for (const role of ["NUTRITIONIST", "PHYSIO", "ADMIN"] as const) expect(canAccessProfessionalPath(role, "/modelos-treinos")).toBe(false)
   for (const role of ["NUTRITIONIST", "PHYSIO", "ADMIN"] as const) expect(canAccessProfessionalPath(role, "/exercicios")).toBe(false)
+  expect(canAccessProfessionalPath("ADMIN", "/evolucao")).toBe(false)
   for (const role of ["PHYSIO", "ADMIN"] as const) {
-    expect(canAccessProfessionalPath(role, "/evolucao")).toBe(false)
     expect(canAccessProfessionalPath(role, "/retornos")).toBe(false)
   }
 })

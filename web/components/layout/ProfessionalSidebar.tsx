@@ -11,11 +11,13 @@ import {
   CalendarClock,
   ClipboardCheck,
   Dumbbell,
+  FileText,
   FlaskConical,
   HeartPulse,
   LayoutDashboard,
   Layers,
   NotebookTabs,
+  Package,
   Target,
   TrendingUp,
   Users,
@@ -47,6 +49,10 @@ const NAVIGATION_ICONS: Record<string, LucideIcon> = {
   "workout-templates": Layers,
   exercises: BookOpen,
   rehab: HeartPulse,
+  "rehab-templates": Layers,
+  "rehab-exercises": BookOpen,
+  "physio-packages": Package,
+  "physio-documents": FileText,
 }
 
 interface ProfessionalSidebarProps {

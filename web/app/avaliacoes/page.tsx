@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { AssessmentModal } from "@/components/AssessmentModal"
+import { PhysioAssessmentsWorkspace } from "@/components/features/physio/PhysioAssessmentsWorkspace"
+import { useAuth } from "@/contexts/auth-context"
 import { api } from "@/lib/api"
 import { Activity, Plus, Search, TrendingUp, ArrowRight, X, Scale } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -22,6 +24,14 @@ type AssessmentListItem = {
 }
 
 export default function AvaliacoesHubPage() {
+  const { user } = useAuth()
+  if (user?.role === "PHYSIO") {
+    return <PhysioAssessmentsWorkspace />
+  }
+  return <AnthropometricAssessmentsHubPage />
+}
+
+function AnthropometricAssessmentsHubPage() {
   const router = useRouter()
   const [assessments, setAssessments] = useState<AssessmentListItem[]>([])
   const clientsQuery = useClients("ACTIVE")
