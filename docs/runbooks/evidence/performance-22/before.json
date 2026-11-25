@@ -1,0 +1,5896 @@
+{
+  "method": {
+    "browser": "Chromium local",
+    "viewport": "390x844",
+    "cpuSlowdown": 4,
+    "latencyMs": 150,
+    "downloadMbps": 1.6,
+    "uploadMbps": 0.75,
+    "cache": "disabled; prefetch requests blocked in both builds",
+    "data": "synthetic API interception; no real credentials or database",
+    "gzip": "gzip each requested build JS file individually; bytes without HTTP headers",
+    "runs": 3
+  },
+  "results": [
+    {
+      "scenario": "client-nutrition",
+      "path": "/clientes/c1",
+      "role": "NUTRITIONIST",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/071b870gd58eq.js",
+            "encoded": 10644,
+            "decoded": 30242,
+            "transfer": 10944,
+            "raw": 30242,
+            "gzip": 10571,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2g05m_agoyju0.js",
+            "encoded": 12838,
+            "decoded": 49275,
+            "transfer": 13138,
+            "raw": 49275,
+            "gzip": 12807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          },
+          {
+            "path": "/_next/static/chunks/2kjdwqfhb9gfi.js",
+            "encoded": 14195,
+            "decoded": 47785,
+            "transfer": 14495,
+            "raw": 47785,
+            "gzip": 14168,
+            "recharts": false
+          }
+        ],
+        "jsRequests": 18,
+        "rawBytes": 1251013,
+        "gzipBytes": 366386,
+        "encodedBytes": 367781,
+        "transferBytes": 373181,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 3496
+      },
+      "actions": [
+        {
+          "action": "alternar tabela e gráfico",
+          "measurement": {
+            "files": [
+              {
+                "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+                "encoded": 3614,
+                "decoded": 12887,
+                "transfer": 3914,
+                "raw": 12887,
+                "gzip": 3587,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2i51e627rllld.js",
+                "encoded": 8345,
+                "decoded": 31346,
+                "transfer": 8645,
+                "raw": 31346,
+                "gzip": 8329,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3g4px251sg85e.js",
+                "encoded": 71576,
+                "decoded": 228922,
+                "transfer": 71876,
+                "raw": 228922,
+                "gzip": 71409,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+                "encoded": 42981,
+                "decoded": 156237,
+                "transfer": 43281,
+                "raw": 156237,
+                "gzip": 42807,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+                "encoded": 3851,
+                "decoded": 9721,
+                "transfer": 4151,
+                "raw": 9721,
+                "gzip": 3856,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/14kn984rh8ssl.js",
+                "encoded": 3662,
+                "decoded": 14375,
+                "transfer": 3962,
+                "raw": 14375,
+                "gzip": 3660,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+                "encoded": 9405,
+                "decoded": 28181,
+                "transfer": 9705,
+                "raw": 28181,
+                "gzip": 9388,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+                "encoded": 12653,
+                "decoded": 42556,
+                "transfer": 12953,
+                "raw": 42556,
+                "gzip": 12550,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/446xw4cvqetx4.js",
+                "encoded": 8876,
+                "decoded": 27822,
+                "transfer": 9176,
+                "raw": 27822,
+                "gzip": 8845,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/355spd-5hrcc6.js",
+                "encoded": 11328,
+                "decoded": 29708,
+                "transfer": 11628,
+                "raw": 29708,
+                "gzip": 11282,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+                "encoded": 19797,
+                "decoded": 53246,
+                "transfer": 20097,
+                "raw": 53246,
+                "gzip": 19748,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3p977oz58dbta.js",
+                "encoded": 16297,
+                "decoded": 51916,
+                "transfer": 16597,
+                "raw": 51916,
+                "gzip": 16190,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+                "encoded": 10324,
+                "decoded": 30475,
+                "transfer": 10624,
+                "raw": 30475,
+                "gzip": 10319,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/071b870gd58eq.js",
+                "encoded": 10644,
+                "decoded": 30242,
+                "transfer": 10944,
+                "raw": 30242,
+                "gzip": 10571,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2g05m_agoyju0.js",
+                "encoded": 12838,
+                "decoded": 49275,
+                "transfer": 13138,
+                "raw": 49275,
+                "gzip": 12807,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2o2yab8has0n4.js",
+                "encoded": 9195,
+                "decoded": 35502,
+                "transfer": 9495,
+                "raw": 35502,
+                "gzip": 9183,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0crzb660z_2d7.js",
+                "encoded": 98200,
+                "decoded": 370817,
+                "transfer": 98500,
+                "raw": 370817,
+                "gzip": 97687,
+                "recharts": true
+              },
+              {
+                "path": "/_next/static/chunks/2kjdwqfhb9gfi.js",
+                "encoded": 14195,
+                "decoded": 47785,
+                "transfer": 14495,
+                "raw": 47785,
+                "gzip": 14168,
+                "recharts": false
+              }
+            ],
+            "jsRequests": 18,
+            "rawBytes": 1251013,
+            "gzipBytes": 366386,
+            "encodedBytes": 367781,
+            "transferBytes": 373181,
+            "rechartsChunks": [
+              "/_next/static/chunks/0crzb660z_2d7.js"
+            ],
+            "lcpMs": 3496
+          }
+        }
+      ],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "client-personal",
+      "path": "/clientes/c1",
+      "role": "PERSONAL",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/071b870gd58eq.js",
+            "encoded": 10644,
+            "decoded": 30242,
+            "transfer": 10944,
+            "raw": 30242,
+            "gzip": 10571,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2g05m_agoyju0.js",
+            "encoded": 12838,
+            "decoded": 49275,
+            "transfer": 13138,
+            "raw": 49275,
+            "gzip": 12807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2kjdwqfhb9gfi.js",
+            "encoded": 14195,
+            "decoded": 47785,
+            "transfer": 14495,
+            "raw": 47785,
+            "gzip": 14168,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          }
+        ],
+        "jsRequests": 18,
+        "rawBytes": 1251013,
+        "gzipBytes": 366386,
+        "encodedBytes": 367781,
+        "transferBytes": 373181,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 3452
+      },
+      "actions": [],
+      "errors": [],
+      "unknownApi": [
+        "/workouts/anamneses/client/c1",
+        "/workouts/drafts"
+      ],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "client-exams",
+      "path": "/clientes/c1/exames",
+      "role": "NUTRITIONIST",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ndhr412kx5uz.js",
+            "encoded": 9633,
+            "decoded": 29001,
+            "transfer": 9933,
+            "raw": 29001,
+            "gzip": 9592,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          }
+        ],
+        "jsRequests": 16,
+        "rawBytes": 1152712,
+        "gzipBytes": 338432,
+        "encodedBytes": 339737,
+        "transferBytes": 344537,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 3252
+      },
+      "actions": [],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "client-exams-empty",
+      "path": "/clientes/c1/exames",
+      "role": "NUTRITIONIST",
+      "empty": true,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ndhr412kx5uz.js",
+            "encoded": 9633,
+            "decoded": 29001,
+            "transfer": 9933,
+            "raw": 29001,
+            "gzip": 9592,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          }
+        ],
+        "jsRequests": 16,
+        "rawBytes": 1152712,
+        "gzipBytes": 338432,
+        "encodedBytes": 339737,
+        "transferBytes": 344537,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 3244
+      },
+      "actions": [],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "exams",
+      "path": "/exames",
+      "role": "NUTRITIONIST",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2iulu8vtu1r0-.js",
+            "encoded": 8018,
+            "decoded": 23831,
+            "transfer": 8318,
+            "raw": 23831,
+            "gzip": 7933,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0vbuxvr8ikciw.js",
+            "encoded": 16820,
+            "decoded": 78300,
+            "transfer": 17120,
+            "raw": 78300,
+            "gzip": 16716,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          }
+        ],
+        "jsRequests": 17,
+        "rawBytes": 1225842,
+        "gzipBytes": 353489,
+        "encodedBytes": 354942,
+        "transferBytes": 360042,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 3416
+      },
+      "actions": [
+        {
+          "action": "comparativo",
+          "measurement": {
+            "files": [
+              {
+                "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+                "encoded": 3614,
+                "decoded": 12887,
+                "transfer": 3914,
+                "raw": 12887,
+                "gzip": 3587,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2i51e627rllld.js",
+                "encoded": 8345,
+                "decoded": 31346,
+                "transfer": 8645,
+                "raw": 31346,
+                "gzip": 8329,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+                "encoded": 42981,
+                "decoded": 156237,
+                "transfer": 43281,
+                "raw": 156237,
+                "gzip": 42807,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3g4px251sg85e.js",
+                "encoded": 71576,
+                "decoded": 228922,
+                "transfer": 71876,
+                "raw": 228922,
+                "gzip": 71409,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+                "encoded": 3851,
+                "decoded": 9721,
+                "transfer": 4151,
+                "raw": 9721,
+                "gzip": 3856,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/14kn984rh8ssl.js",
+                "encoded": 3662,
+                "decoded": 14375,
+                "transfer": 3962,
+                "raw": 14375,
+                "gzip": 3660,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+                "encoded": 9405,
+                "decoded": 28181,
+                "transfer": 9705,
+                "raw": 28181,
+                "gzip": 9388,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+                "encoded": 12653,
+                "decoded": 42556,
+                "transfer": 12953,
+                "raw": 42556,
+                "gzip": 12550,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/446xw4cvqetx4.js",
+                "encoded": 8876,
+                "decoded": 27822,
+                "transfer": 9176,
+                "raw": 27822,
+                "gzip": 8845,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/355spd-5hrcc6.js",
+                "encoded": 11328,
+                "decoded": 29708,
+                "transfer": 11628,
+                "raw": 29708,
+                "gzip": 11282,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+                "encoded": 19797,
+                "decoded": 53246,
+                "transfer": 20097,
+                "raw": 53246,
+                "gzip": 19748,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3p977oz58dbta.js",
+                "encoded": 16297,
+                "decoded": 51916,
+                "transfer": 16597,
+                "raw": 51916,
+                "gzip": 16190,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+                "encoded": 10324,
+                "decoded": 30475,
+                "transfer": 10624,
+                "raw": 30475,
+                "gzip": 10319,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2iulu8vtu1r0-.js",
+                "encoded": 8018,
+                "decoded": 23831,
+                "transfer": 8318,
+                "raw": 23831,
+                "gzip": 7933,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2o2yab8has0n4.js",
+                "encoded": 9195,
+                "decoded": 35502,
+                "transfer": 9495,
+                "raw": 35502,
+                "gzip": 9183,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0vbuxvr8ikciw.js",
+                "encoded": 16820,
+                "decoded": 78300,
+                "transfer": 17120,
+                "raw": 78300,
+                "gzip": 16716,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0crzb660z_2d7.js",
+                "encoded": 98200,
+                "decoded": 370817,
+                "transfer": 98500,
+                "raw": 370817,
+                "gzip": 97687,
+                "recharts": true
+              }
+            ],
+            "jsRequests": 17,
+            "rawBytes": 1225842,
+            "gzipBytes": 353489,
+            "encodedBytes": 354942,
+            "transferBytes": 360042,
+            "rechartsChunks": [
+              "/_next/static/chunks/0crzb660z_2d7.js"
+            ],
+            "lcpMs": 3416
+          }
+        }
+      ],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "evolution-nutrition",
+      "path": "/evolucao",
+      "role": "NUTRITIONIST",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/08imcd969935c.js",
+            "encoded": 7513,
+            "decoded": 22315,
+            "transfer": 7813,
+            "raw": 22315,
+            "gzip": 7462,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/021j-laqregw8.js",
+            "encoded": 8849,
+            "decoded": 29594,
+            "transfer": 9149,
+            "raw": 29594,
+            "gzip": 8831,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2-l5msfhv88xi.js",
+            "encoded": 12597,
+            "decoded": 59305,
+            "transfer": 12897,
+            "raw": 59305,
+            "gzip": 12516,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          }
+        ],
+        "jsRequests": 18,
+        "rawBytes": 1234925,
+        "gzipBytes": 357649,
+        "encodedBytes": 359063,
+        "transferBytes": 364463,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 1472
+      },
+      "actions": [
+        {
+          "action": "abrir evolução",
+          "measurement": {
+            "files": [
+              {
+                "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+                "encoded": 3614,
+                "decoded": 12887,
+                "transfer": 3914,
+                "raw": 12887,
+                "gzip": 3587,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2i51e627rllld.js",
+                "encoded": 8345,
+                "decoded": 31346,
+                "transfer": 8645,
+                "raw": 31346,
+                "gzip": 8329,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+                "encoded": 3851,
+                "decoded": 9721,
+                "transfer": 4151,
+                "raw": 9721,
+                "gzip": 3856,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+                "encoded": 42981,
+                "decoded": 156237,
+                "transfer": 43281,
+                "raw": 156237,
+                "gzip": 42807,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3g4px251sg85e.js",
+                "encoded": 71576,
+                "decoded": 228922,
+                "transfer": 71876,
+                "raw": 228922,
+                "gzip": 71409,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/14kn984rh8ssl.js",
+                "encoded": 3662,
+                "decoded": 14375,
+                "transfer": 3962,
+                "raw": 14375,
+                "gzip": 3660,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+                "encoded": 9405,
+                "decoded": 28181,
+                "transfer": 9705,
+                "raw": 28181,
+                "gzip": 9388,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+                "encoded": 12653,
+                "decoded": 42556,
+                "transfer": 12953,
+                "raw": 42556,
+                "gzip": 12550,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/446xw4cvqetx4.js",
+                "encoded": 8876,
+                "decoded": 27822,
+                "transfer": 9176,
+                "raw": 27822,
+                "gzip": 8845,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/355spd-5hrcc6.js",
+                "encoded": 11328,
+                "decoded": 29708,
+                "transfer": 11628,
+                "raw": 29708,
+                "gzip": 11282,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+                "encoded": 19797,
+                "decoded": 53246,
+                "transfer": 20097,
+                "raw": 53246,
+                "gzip": 19748,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/08imcd969935c.js",
+                "encoded": 7513,
+                "decoded": 22315,
+                "transfer": 7813,
+                "raw": 22315,
+                "gzip": 7462,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+                "encoded": 10324,
+                "decoded": 30475,
+                "transfer": 10624,
+                "raw": 30475,
+                "gzip": 10319,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3p977oz58dbta.js",
+                "encoded": 16297,
+                "decoded": 51916,
+                "transfer": 16597,
+                "raw": 51916,
+                "gzip": 16190,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/021j-laqregw8.js",
+                "encoded": 8849,
+                "decoded": 29594,
+                "transfer": 9149,
+                "raw": 29594,
+                "gzip": 8831,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2-l5msfhv88xi.js",
+                "encoded": 12597,
+                "decoded": 59305,
+                "transfer": 12897,
+                "raw": 59305,
+                "gzip": 12516,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0crzb660z_2d7.js",
+                "encoded": 98200,
+                "decoded": 370817,
+                "transfer": 98500,
+                "raw": 370817,
+                "gzip": 97687,
+                "recharts": true
+              },
+              {
+                "path": "/_next/static/chunks/2o2yab8has0n4.js",
+                "encoded": 9195,
+                "decoded": 35502,
+                "transfer": 9495,
+                "raw": 35502,
+                "gzip": 9183,
+                "recharts": false
+              }
+            ],
+            "jsRequests": 18,
+            "rawBytes": 1234925,
+            "gzipBytes": 357649,
+            "encodedBytes": 359063,
+            "transferBytes": 364463,
+            "rechartsChunks": [
+              "/_next/static/chunks/0crzb660z_2d7.js"
+            ],
+            "lcpMs": 1472
+          }
+        }
+      ],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "evolution-personal",
+      "path": "/evolucao",
+      "role": "PERSONAL",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/08imcd969935c.js",
+            "encoded": 7513,
+            "decoded": 22315,
+            "transfer": 7813,
+            "raw": 22315,
+            "gzip": 7462,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/021j-laqregw8.js",
+            "encoded": 8849,
+            "decoded": 29594,
+            "transfer": 9149,
+            "raw": 29594,
+            "gzip": 8831,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2-l5msfhv88xi.js",
+            "encoded": 12597,
+            "decoded": 59305,
+            "transfer": 12897,
+            "raw": 59305,
+            "gzip": 12516,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          }
+        ],
+        "jsRequests": 18,
+        "rawBytes": 1234925,
+        "gzipBytes": 357649,
+        "encodedBytes": 359063,
+        "transferBytes": 364463,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 3776
+      },
+      "actions": [
+        {
+          "action": "abrir evolução",
+          "measurement": {
+            "files": [
+              {
+                "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+                "encoded": 3614,
+                "decoded": 12887,
+                "transfer": 3914,
+                "raw": 12887,
+                "gzip": 3587,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2i51e627rllld.js",
+                "encoded": 8345,
+                "decoded": 31346,
+                "transfer": 8645,
+                "raw": 31346,
+                "gzip": 8329,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3g4px251sg85e.js",
+                "encoded": 71576,
+                "decoded": 228922,
+                "transfer": 71876,
+                "raw": 228922,
+                "gzip": 71409,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+                "encoded": 42981,
+                "decoded": 156237,
+                "transfer": 43281,
+                "raw": 156237,
+                "gzip": 42807,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+                "encoded": 3851,
+                "decoded": 9721,
+                "transfer": 4151,
+                "raw": 9721,
+                "gzip": 3856,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/14kn984rh8ssl.js",
+                "encoded": 3662,
+                "decoded": 14375,
+                "transfer": 3962,
+                "raw": 14375,
+                "gzip": 3660,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+                "encoded": 9405,
+                "decoded": 28181,
+                "transfer": 9705,
+                "raw": 28181,
+                "gzip": 9388,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+                "encoded": 12653,
+                "decoded": 42556,
+                "transfer": 12953,
+                "raw": 42556,
+                "gzip": 12550,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/446xw4cvqetx4.js",
+                "encoded": 8876,
+                "decoded": 27822,
+                "transfer": 9176,
+                "raw": 27822,
+                "gzip": 8845,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/355spd-5hrcc6.js",
+                "encoded": 11328,
+                "decoded": 29708,
+                "transfer": 11628,
+                "raw": 29708,
+                "gzip": 11282,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+                "encoded": 19797,
+                "decoded": 53246,
+                "transfer": 20097,
+                "raw": 53246,
+                "gzip": 19748,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3p977oz58dbta.js",
+                "encoded": 16297,
+                "decoded": 51916,
+                "transfer": 16597,
+                "raw": 51916,
+                "gzip": 16190,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+                "encoded": 10324,
+                "decoded": 30475,
+                "transfer": 10624,
+                "raw": 30475,
+                "gzip": 10319,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/08imcd969935c.js",
+                "encoded": 7513,
+                "decoded": 22315,
+                "transfer": 7813,
+                "raw": 22315,
+                "gzip": 7462,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/021j-laqregw8.js",
+                "encoded": 8849,
+                "decoded": 29594,
+                "transfer": 9149,
+                "raw": 29594,
+                "gzip": 8831,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2-l5msfhv88xi.js",
+                "encoded": 12597,
+                "decoded": 59305,
+                "transfer": 12897,
+                "raw": 59305,
+                "gzip": 12516,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2o2yab8has0n4.js",
+                "encoded": 9195,
+                "decoded": 35502,
+                "transfer": 9495,
+                "raw": 35502,
+                "gzip": 9183,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0crzb660z_2d7.js",
+                "encoded": 98200,
+                "decoded": 370817,
+                "transfer": 98500,
+                "raw": 370817,
+                "gzip": 97687,
+                "recharts": true
+              }
+            ],
+            "jsRequests": 18,
+            "rawBytes": 1234925,
+            "gzipBytes": 357649,
+            "encodedBytes": 359063,
+            "transferBytes": 364463,
+            "rechartsChunks": [
+              "/_next/static/chunks/0crzb660z_2d7.js"
+            ],
+            "lcpMs": 3776
+          }
+        }
+      ],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "client-nutrition",
+      "path": "/clientes/c1",
+      "role": "NUTRITIONIST",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/071b870gd58eq.js",
+            "encoded": 10644,
+            "decoded": 30242,
+            "transfer": 10944,
+            "raw": 30242,
+            "gzip": 10571,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2g05m_agoyju0.js",
+            "encoded": 12838,
+            "decoded": 49275,
+            "transfer": 13138,
+            "raw": 49275,
+            "gzip": 12807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2kjdwqfhb9gfi.js",
+            "encoded": 14195,
+            "decoded": 47785,
+            "transfer": 14495,
+            "raw": 47785,
+            "gzip": 14168,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          }
+        ],
+        "jsRequests": 18,
+        "rawBytes": 1251013,
+        "gzipBytes": 366386,
+        "encodedBytes": 367781,
+        "transferBytes": 373181,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 3664
+      },
+      "actions": [
+        {
+          "action": "alternar tabela e gráfico",
+          "measurement": {
+            "files": [
+              {
+                "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+                "encoded": 3614,
+                "decoded": 12887,
+                "transfer": 3914,
+                "raw": 12887,
+                "gzip": 3587,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2i51e627rllld.js",
+                "encoded": 8345,
+                "decoded": 31346,
+                "transfer": 8645,
+                "raw": 31346,
+                "gzip": 8329,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+                "encoded": 3851,
+                "decoded": 9721,
+                "transfer": 4151,
+                "raw": 9721,
+                "gzip": 3856,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+                "encoded": 42981,
+                "decoded": 156237,
+                "transfer": 43281,
+                "raw": 156237,
+                "gzip": 42807,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3g4px251sg85e.js",
+                "encoded": 71576,
+                "decoded": 228922,
+                "transfer": 71876,
+                "raw": 228922,
+                "gzip": 71409,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/14kn984rh8ssl.js",
+                "encoded": 3662,
+                "decoded": 14375,
+                "transfer": 3962,
+                "raw": 14375,
+                "gzip": 3660,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+                "encoded": 9405,
+                "decoded": 28181,
+                "transfer": 9705,
+                "raw": 28181,
+                "gzip": 9388,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+                "encoded": 12653,
+                "decoded": 42556,
+                "transfer": 12953,
+                "raw": 42556,
+                "gzip": 12550,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/446xw4cvqetx4.js",
+                "encoded": 8876,
+                "decoded": 27822,
+                "transfer": 9176,
+                "raw": 27822,
+                "gzip": 8845,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/355spd-5hrcc6.js",
+                "encoded": 11328,
+                "decoded": 29708,
+                "transfer": 11628,
+                "raw": 29708,
+                "gzip": 11282,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3p977oz58dbta.js",
+                "encoded": 16297,
+                "decoded": 51916,
+                "transfer": 16597,
+                "raw": 51916,
+                "gzip": 16190,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+                "encoded": 19797,
+                "decoded": 53246,
+                "transfer": 20097,
+                "raw": 53246,
+                "gzip": 19748,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+                "encoded": 10324,
+                "decoded": 30475,
+                "transfer": 10624,
+                "raw": 30475,
+                "gzip": 10319,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/071b870gd58eq.js",
+                "encoded": 10644,
+                "decoded": 30242,
+                "transfer": 10944,
+                "raw": 30242,
+                "gzip": 10571,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2g05m_agoyju0.js",
+                "encoded": 12838,
+                "decoded": 49275,
+                "transfer": 13138,
+                "raw": 49275,
+                "gzip": 12807,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2o2yab8has0n4.js",
+                "encoded": 9195,
+                "decoded": 35502,
+                "transfer": 9495,
+                "raw": 35502,
+                "gzip": 9183,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2kjdwqfhb9gfi.js",
+                "encoded": 14195,
+                "decoded": 47785,
+                "transfer": 14495,
+                "raw": 47785,
+                "gzip": 14168,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0crzb660z_2d7.js",
+                "encoded": 98200,
+                "decoded": 370817,
+                "transfer": 98500,
+                "raw": 370817,
+                "gzip": 97687,
+                "recharts": true
+              }
+            ],
+            "jsRequests": 18,
+            "rawBytes": 1251013,
+            "gzipBytes": 366386,
+            "encodedBytes": 367781,
+            "transferBytes": 373181,
+            "rechartsChunks": [
+              "/_next/static/chunks/0crzb660z_2d7.js"
+            ],
+            "lcpMs": 3664
+          }
+        }
+      ],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "client-personal",
+      "path": "/clientes/c1",
+      "role": "PERSONAL",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/071b870gd58eq.js",
+            "encoded": 10644,
+            "decoded": 30242,
+            "transfer": 10944,
+            "raw": 30242,
+            "gzip": 10571,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2g05m_agoyju0.js",
+            "encoded": 12838,
+            "decoded": 49275,
+            "transfer": 13138,
+            "raw": 49275,
+            "gzip": 12807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2kjdwqfhb9gfi.js",
+            "encoded": 14195,
+            "decoded": 47785,
+            "transfer": 14495,
+            "raw": 47785,
+            "gzip": 14168,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          }
+        ],
+        "jsRequests": 18,
+        "rawBytes": 1251013,
+        "gzipBytes": 366386,
+        "encodedBytes": 367781,
+        "transferBytes": 373181,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 5240
+      },
+      "actions": [],
+      "errors": [],
+      "unknownApi": [
+        "/workouts/anamneses/client/c1",
+        "/workouts/drafts"
+      ],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "client-exams",
+      "path": "/clientes/c1/exames",
+      "role": "NUTRITIONIST",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ndhr412kx5uz.js",
+            "encoded": 9633,
+            "decoded": 29001,
+            "transfer": 9933,
+            "raw": 29001,
+            "gzip": 9592,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          }
+        ],
+        "jsRequests": 16,
+        "rawBytes": 1152712,
+        "gzipBytes": 338432,
+        "encodedBytes": 339737,
+        "transferBytes": 344537,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 1820
+      },
+      "actions": [],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "client-exams-empty",
+      "path": "/clientes/c1/exames",
+      "role": "NUTRITIONIST",
+      "empty": true,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ndhr412kx5uz.js",
+            "encoded": 9633,
+            "decoded": 29001,
+            "transfer": 9933,
+            "raw": 29001,
+            "gzip": 9592,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          }
+        ],
+        "jsRequests": 16,
+        "rawBytes": 1152712,
+        "gzipBytes": 338432,
+        "encodedBytes": 339737,
+        "transferBytes": 344537,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 1820
+      },
+      "actions": [],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "exams",
+      "path": "/exames",
+      "role": "NUTRITIONIST",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2iulu8vtu1r0-.js",
+            "encoded": 8018,
+            "decoded": 23831,
+            "transfer": 8318,
+            "raw": 23831,
+            "gzip": 7933,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0vbuxvr8ikciw.js",
+            "encoded": 16820,
+            "decoded": 78300,
+            "transfer": 17120,
+            "raw": 78300,
+            "gzip": 16716,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          }
+        ],
+        "jsRequests": 17,
+        "rawBytes": 1225842,
+        "gzipBytes": 353489,
+        "encodedBytes": 354942,
+        "transferBytes": 360042,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 1896
+      },
+      "actions": [
+        {
+          "action": "comparativo",
+          "measurement": {
+            "files": [
+              {
+                "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+                "encoded": 3614,
+                "decoded": 12887,
+                "transfer": 3914,
+                "raw": 12887,
+                "gzip": 3587,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2i51e627rllld.js",
+                "encoded": 8345,
+                "decoded": 31346,
+                "transfer": 8645,
+                "raw": 31346,
+                "gzip": 8329,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3g4px251sg85e.js",
+                "encoded": 71576,
+                "decoded": 228922,
+                "transfer": 71876,
+                "raw": 228922,
+                "gzip": 71409,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+                "encoded": 42981,
+                "decoded": 156237,
+                "transfer": 43281,
+                "raw": 156237,
+                "gzip": 42807,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+                "encoded": 3851,
+                "decoded": 9721,
+                "transfer": 4151,
+                "raw": 9721,
+                "gzip": 3856,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/14kn984rh8ssl.js",
+                "encoded": 3662,
+                "decoded": 14375,
+                "transfer": 3962,
+                "raw": 14375,
+                "gzip": 3660,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+                "encoded": 9405,
+                "decoded": 28181,
+                "transfer": 9705,
+                "raw": 28181,
+                "gzip": 9388,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+                "encoded": 12653,
+                "decoded": 42556,
+                "transfer": 12953,
+                "raw": 42556,
+                "gzip": 12550,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/446xw4cvqetx4.js",
+                "encoded": 8876,
+                "decoded": 27822,
+                "transfer": 9176,
+                "raw": 27822,
+                "gzip": 8845,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/355spd-5hrcc6.js",
+                "encoded": 11328,
+                "decoded": 29708,
+                "transfer": 11628,
+                "raw": 29708,
+                "gzip": 11282,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+                "encoded": 19797,
+                "decoded": 53246,
+                "transfer": 20097,
+                "raw": 53246,
+                "gzip": 19748,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3p977oz58dbta.js",
+                "encoded": 16297,
+                "decoded": 51916,
+                "transfer": 16597,
+                "raw": 51916,
+                "gzip": 16190,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2iulu8vtu1r0-.js",
+                "encoded": 8018,
+                "decoded": 23831,
+                "transfer": 8318,
+                "raw": 23831,
+                "gzip": 7933,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+                "encoded": 10324,
+                "decoded": 30475,
+                "transfer": 10624,
+                "raw": 30475,
+                "gzip": 10319,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2o2yab8has0n4.js",
+                "encoded": 9195,
+                "decoded": 35502,
+                "transfer": 9495,
+                "raw": 35502,
+                "gzip": 9183,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0vbuxvr8ikciw.js",
+                "encoded": 16820,
+                "decoded": 78300,
+                "transfer": 17120,
+                "raw": 78300,
+                "gzip": 16716,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0crzb660z_2d7.js",
+                "encoded": 98200,
+                "decoded": 370817,
+                "transfer": 98500,
+                "raw": 370817,
+                "gzip": 97687,
+                "recharts": true
+              }
+            ],
+            "jsRequests": 17,
+            "rawBytes": 1225842,
+            "gzipBytes": 353489,
+            "encodedBytes": 354942,
+            "transferBytes": 360042,
+            "rechartsChunks": [
+              "/_next/static/chunks/0crzb660z_2d7.js"
+            ],
+            "lcpMs": 5896
+          }
+        }
+      ],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "evolution-nutrition",
+      "path": "/evolucao",
+      "role": "NUTRITIONIST",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/08imcd969935c.js",
+            "encoded": 7513,
+            "decoded": 22315,
+            "transfer": 7813,
+            "raw": 22315,
+            "gzip": 7462,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/021j-laqregw8.js",
+            "encoded": 8849,
+            "decoded": 29594,
+            "transfer": 9149,
+            "raw": 29594,
+            "gzip": 8831,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2-l5msfhv88xi.js",
+            "encoded": 12597,
+            "decoded": 59305,
+            "transfer": 12897,
+            "raw": 59305,
+            "gzip": 12516,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          }
+        ],
+        "jsRequests": 18,
+        "rawBytes": 1234925,
+        "gzipBytes": 357649,
+        "encodedBytes": 359063,
+        "transferBytes": 364463,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 2268
+      },
+      "actions": [
+        {
+          "action": "abrir evolução",
+          "measurement": {
+            "files": [
+              {
+                "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+                "encoded": 3614,
+                "decoded": 12887,
+                "transfer": 3914,
+                "raw": 12887,
+                "gzip": 3587,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2i51e627rllld.js",
+                "encoded": 8345,
+                "decoded": 31346,
+                "transfer": 8645,
+                "raw": 31346,
+                "gzip": 8329,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3g4px251sg85e.js",
+                "encoded": 71576,
+                "decoded": 228922,
+                "transfer": 71876,
+                "raw": 228922,
+                "gzip": 71409,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+                "encoded": 3851,
+                "decoded": 9721,
+                "transfer": 4151,
+                "raw": 9721,
+                "gzip": 3856,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/14kn984rh8ssl.js",
+                "encoded": 3662,
+                "decoded": 14375,
+                "transfer": 3962,
+                "raw": 14375,
+                "gzip": 3660,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+                "encoded": 42981,
+                "decoded": 156237,
+                "transfer": 43281,
+                "raw": 156237,
+                "gzip": 42807,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+                "encoded": 9405,
+                "decoded": 28181,
+                "transfer": 9705,
+                "raw": 28181,
+                "gzip": 9388,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+                "encoded": 12653,
+                "decoded": 42556,
+                "transfer": 12953,
+                "raw": 42556,
+                "gzip": 12550,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/446xw4cvqetx4.js",
+                "encoded": 8876,
+                "decoded": 27822,
+                "transfer": 9176,
+                "raw": 27822,
+                "gzip": 8845,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/355spd-5hrcc6.js",
+                "encoded": 11328,
+                "decoded": 29708,
+                "transfer": 11628,
+                "raw": 29708,
+                "gzip": 11282,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+                "encoded": 19797,
+                "decoded": 53246,
+                "transfer": 20097,
+                "raw": 53246,
+                "gzip": 19748,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3p977oz58dbta.js",
+                "encoded": 16297,
+                "decoded": 51916,
+                "transfer": 16597,
+                "raw": 51916,
+                "gzip": 16190,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+                "encoded": 10324,
+                "decoded": 30475,
+                "transfer": 10624,
+                "raw": 30475,
+                "gzip": 10319,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/08imcd969935c.js",
+                "encoded": 7513,
+                "decoded": 22315,
+                "transfer": 7813,
+                "raw": 22315,
+                "gzip": 7462,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/021j-laqregw8.js",
+                "encoded": 8849,
+                "decoded": 29594,
+                "transfer": 9149,
+                "raw": 29594,
+                "gzip": 8831,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2-l5msfhv88xi.js",
+                "encoded": 12597,
+                "decoded": 59305,
+                "transfer": 12897,
+                "raw": 59305,
+                "gzip": 12516,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0crzb660z_2d7.js",
+                "encoded": 98200,
+                "decoded": 370817,
+                "transfer": 98500,
+                "raw": 370817,
+                "gzip": 97687,
+                "recharts": true
+              },
+              {
+                "path": "/_next/static/chunks/2o2yab8has0n4.js",
+                "encoded": 9195,
+                "decoded": 35502,
+                "transfer": 9495,
+                "raw": 35502,
+                "gzip": 9183,
+                "recharts": false
+              }
+            ],
+            "jsRequests": 18,
+            "rawBytes": 1234925,
+            "gzipBytes": 357649,
+            "encodedBytes": 359063,
+            "transferBytes": 364463,
+            "rechartsChunks": [
+              "/_next/static/chunks/0crzb660z_2d7.js"
+            ],
+            "lcpMs": 2268
+          }
+        }
+      ],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "evolution-personal",
+      "path": "/evolucao",
+      "role": "PERSONAL",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/08imcd969935c.js",
+            "encoded": 7513,
+            "decoded": 22315,
+            "transfer": 7813,
+            "raw": 22315,
+            "gzip": 7462,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/021j-laqregw8.js",
+            "encoded": 8849,
+            "decoded": 29594,
+            "transfer": 9149,
+            "raw": 29594,
+            "gzip": 8831,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2-l5msfhv88xi.js",
+            "encoded": 12597,
+            "decoded": 59305,
+            "transfer": 12897,
+            "raw": 59305,
+            "gzip": 12516,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          }
+        ],
+        "jsRequests": 18,
+        "rawBytes": 1234925,
+        "gzipBytes": 357649,
+        "encodedBytes": 359063,
+        "transferBytes": 364463,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 4348
+      },
+      "actions": [
+        {
+          "action": "abrir evolução",
+          "measurement": {
+            "files": [
+              {
+                "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+                "encoded": 3614,
+                "decoded": 12887,
+                "transfer": 3914,
+                "raw": 12887,
+                "gzip": 3587,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2i51e627rllld.js",
+                "encoded": 8345,
+                "decoded": 31346,
+                "transfer": 8645,
+                "raw": 31346,
+                "gzip": 8329,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+                "encoded": 3851,
+                "decoded": 9721,
+                "transfer": 4151,
+                "raw": 9721,
+                "gzip": 3856,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/14kn984rh8ssl.js",
+                "encoded": 3662,
+                "decoded": 14375,
+                "transfer": 3962,
+                "raw": 14375,
+                "gzip": 3660,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+                "encoded": 42981,
+                "decoded": 156237,
+                "transfer": 43281,
+                "raw": 156237,
+                "gzip": 42807,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3g4px251sg85e.js",
+                "encoded": 71576,
+                "decoded": 228922,
+                "transfer": 71876,
+                "raw": 228922,
+                "gzip": 71409,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+                "encoded": 9405,
+                "decoded": 28181,
+                "transfer": 9705,
+                "raw": 28181,
+                "gzip": 9388,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+                "encoded": 12653,
+                "decoded": 42556,
+                "transfer": 12953,
+                "raw": 42556,
+                "gzip": 12550,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/446xw4cvqetx4.js",
+                "encoded": 8876,
+                "decoded": 27822,
+                "transfer": 9176,
+                "raw": 27822,
+                "gzip": 8845,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/355spd-5hrcc6.js",
+                "encoded": 11328,
+                "decoded": 29708,
+                "transfer": 11628,
+                "raw": 29708,
+                "gzip": 11282,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+                "encoded": 19797,
+                "decoded": 53246,
+                "transfer": 20097,
+                "raw": 53246,
+                "gzip": 19748,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+                "encoded": 10324,
+                "decoded": 30475,
+                "transfer": 10624,
+                "raw": 30475,
+                "gzip": 10319,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3p977oz58dbta.js",
+                "encoded": 16297,
+                "decoded": 51916,
+                "transfer": 16597,
+                "raw": 51916,
+                "gzip": 16190,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/08imcd969935c.js",
+                "encoded": 7513,
+                "decoded": 22315,
+                "transfer": 7813,
+                "raw": 22315,
+                "gzip": 7462,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/021j-laqregw8.js",
+                "encoded": 8849,
+                "decoded": 29594,
+                "transfer": 9149,
+                "raw": 29594,
+                "gzip": 8831,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2-l5msfhv88xi.js",
+                "encoded": 12597,
+                "decoded": 59305,
+                "transfer": 12897,
+                "raw": 59305,
+                "gzip": 12516,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0crzb660z_2d7.js",
+                "encoded": 98200,
+                "decoded": 370817,
+                "transfer": 98500,
+                "raw": 370817,
+                "gzip": 97687,
+                "recharts": true
+              },
+              {
+                "path": "/_next/static/chunks/2o2yab8has0n4.js",
+                "encoded": 9195,
+                "decoded": 35502,
+                "transfer": 9495,
+                "raw": 35502,
+                "gzip": 9183,
+                "recharts": false
+              }
+            ],
+            "jsRequests": 18,
+            "rawBytes": 1234925,
+            "gzipBytes": 357649,
+            "encodedBytes": 359063,
+            "transferBytes": 364463,
+            "rechartsChunks": [
+              "/_next/static/chunks/0crzb660z_2d7.js"
+            ],
+            "lcpMs": 4348
+          }
+        }
+      ],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "client-nutrition",
+      "path": "/clientes/c1",
+      "role": "NUTRITIONIST",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/071b870gd58eq.js",
+            "encoded": 10644,
+            "decoded": 30242,
+            "transfer": 10944,
+            "raw": 30242,
+            "gzip": 10571,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2g05m_agoyju0.js",
+            "encoded": 12838,
+            "decoded": 49275,
+            "transfer": 13138,
+            "raw": 49275,
+            "gzip": 12807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2kjdwqfhb9gfi.js",
+            "encoded": 14195,
+            "decoded": 47785,
+            "transfer": 14495,
+            "raw": 47785,
+            "gzip": 14168,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          }
+        ],
+        "jsRequests": 18,
+        "rawBytes": 1251013,
+        "gzipBytes": 366386,
+        "encodedBytes": 367781,
+        "transferBytes": 373181,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 3968
+      },
+      "actions": [
+        {
+          "action": "alternar tabela e gráfico",
+          "measurement": {
+            "files": [
+              {
+                "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+                "encoded": 3614,
+                "decoded": 12887,
+                "transfer": 3914,
+                "raw": 12887,
+                "gzip": 3587,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2i51e627rllld.js",
+                "encoded": 8345,
+                "decoded": 31346,
+                "transfer": 8645,
+                "raw": 31346,
+                "gzip": 8329,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+                "encoded": 3851,
+                "decoded": 9721,
+                "transfer": 4151,
+                "raw": 9721,
+                "gzip": 3856,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+                "encoded": 42981,
+                "decoded": 156237,
+                "transfer": 43281,
+                "raw": 156237,
+                "gzip": 42807,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3g4px251sg85e.js",
+                "encoded": 71576,
+                "decoded": 228922,
+                "transfer": 71876,
+                "raw": 228922,
+                "gzip": 71409,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/14kn984rh8ssl.js",
+                "encoded": 3662,
+                "decoded": 14375,
+                "transfer": 3962,
+                "raw": 14375,
+                "gzip": 3660,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+                "encoded": 9405,
+                "decoded": 28181,
+                "transfer": 9705,
+                "raw": 28181,
+                "gzip": 9388,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+                "encoded": 12653,
+                "decoded": 42556,
+                "transfer": 12953,
+                "raw": 42556,
+                "gzip": 12550,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/446xw4cvqetx4.js",
+                "encoded": 8876,
+                "decoded": 27822,
+                "transfer": 9176,
+                "raw": 27822,
+                "gzip": 8845,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/355spd-5hrcc6.js",
+                "encoded": 11328,
+                "decoded": 29708,
+                "transfer": 11628,
+                "raw": 29708,
+                "gzip": 11282,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+                "encoded": 10324,
+                "decoded": 30475,
+                "transfer": 10624,
+                "raw": 30475,
+                "gzip": 10319,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+                "encoded": 19797,
+                "decoded": 53246,
+                "transfer": 20097,
+                "raw": 53246,
+                "gzip": 19748,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3p977oz58dbta.js",
+                "encoded": 16297,
+                "decoded": 51916,
+                "transfer": 16597,
+                "raw": 51916,
+                "gzip": 16190,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/071b870gd58eq.js",
+                "encoded": 10644,
+                "decoded": 30242,
+                "transfer": 10944,
+                "raw": 30242,
+                "gzip": 10571,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2g05m_agoyju0.js",
+                "encoded": 12838,
+                "decoded": 49275,
+                "transfer": 13138,
+                "raw": 49275,
+                "gzip": 12807,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2o2yab8has0n4.js",
+                "encoded": 9195,
+                "decoded": 35502,
+                "transfer": 9495,
+                "raw": 35502,
+                "gzip": 9183,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2kjdwqfhb9gfi.js",
+                "encoded": 14195,
+                "decoded": 47785,
+                "transfer": 14495,
+                "raw": 47785,
+                "gzip": 14168,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0crzb660z_2d7.js",
+                "encoded": 98200,
+                "decoded": 370817,
+                "transfer": 98500,
+                "raw": 370817,
+                "gzip": 97687,
+                "recharts": true
+              }
+            ],
+            "jsRequests": 18,
+            "rawBytes": 1251013,
+            "gzipBytes": 366386,
+            "encodedBytes": 367781,
+            "transferBytes": 373181,
+            "rechartsChunks": [
+              "/_next/static/chunks/0crzb660z_2d7.js"
+            ],
+            "lcpMs": 3968
+          }
+        }
+      ],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "client-personal",
+      "path": "/clientes/c1",
+      "role": "PERSONAL",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/071b870gd58eq.js",
+            "encoded": 10644,
+            "decoded": 30242,
+            "transfer": 10944,
+            "raw": 30242,
+            "gzip": 10571,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2g05m_agoyju0.js",
+            "encoded": 12838,
+            "decoded": 49275,
+            "transfer": 13138,
+            "raw": 49275,
+            "gzip": 12807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          },
+          {
+            "path": "/_next/static/chunks/2kjdwqfhb9gfi.js",
+            "encoded": 14195,
+            "decoded": 47785,
+            "transfer": 14495,
+            "raw": 47785,
+            "gzip": 14168,
+            "recharts": false
+          }
+        ],
+        "jsRequests": 18,
+        "rawBytes": 1251013,
+        "gzipBytes": 366386,
+        "encodedBytes": 367781,
+        "transferBytes": 373181,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 3708
+      },
+      "actions": [],
+      "errors": [],
+      "unknownApi": [
+        "/workouts/anamneses/client/c1",
+        "/workouts/drafts"
+      ],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "client-exams",
+      "path": "/clientes/c1/exames",
+      "role": "NUTRITIONIST",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ndhr412kx5uz.js",
+            "encoded": 9633,
+            "decoded": 29001,
+            "transfer": 9933,
+            "raw": 29001,
+            "gzip": 9592,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          }
+        ],
+        "jsRequests": 16,
+        "rawBytes": 1152712,
+        "gzipBytes": 338432,
+        "encodedBytes": 339737,
+        "transferBytes": 344537,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 3328
+      },
+      "actions": [],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "client-exams-empty",
+      "path": "/clientes/c1/exames",
+      "role": "NUTRITIONIST",
+      "empty": true,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ndhr412kx5uz.js",
+            "encoded": 9633,
+            "decoded": 29001,
+            "transfer": 9933,
+            "raw": 29001,
+            "gzip": 9592,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          }
+        ],
+        "jsRequests": 16,
+        "rawBytes": 1152712,
+        "gzipBytes": 338432,
+        "encodedBytes": 339737,
+        "transferBytes": 344537,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 3172
+      },
+      "actions": [],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "exams",
+      "path": "/exames",
+      "role": "NUTRITIONIST",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2iulu8vtu1r0-.js",
+            "encoded": 8018,
+            "decoded": 23831,
+            "transfer": 8318,
+            "raw": 23831,
+            "gzip": 7933,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0vbuxvr8ikciw.js",
+            "encoded": 16820,
+            "decoded": 78300,
+            "transfer": 17120,
+            "raw": 78300,
+            "gzip": 16716,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          }
+        ],
+        "jsRequests": 17,
+        "rawBytes": 1225842,
+        "gzipBytes": 353489,
+        "encodedBytes": 354942,
+        "transferBytes": 360042,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 3732
+      },
+      "actions": [
+        {
+          "action": "comparativo",
+          "measurement": {
+            "files": [
+              {
+                "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+                "encoded": 3614,
+                "decoded": 12887,
+                "transfer": 3914,
+                "raw": 12887,
+                "gzip": 3587,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2i51e627rllld.js",
+                "encoded": 8345,
+                "decoded": 31346,
+                "transfer": 8645,
+                "raw": 31346,
+                "gzip": 8329,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+                "encoded": 42981,
+                "decoded": 156237,
+                "transfer": 43281,
+                "raw": 156237,
+                "gzip": 42807,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3g4px251sg85e.js",
+                "encoded": 71576,
+                "decoded": 228922,
+                "transfer": 71876,
+                "raw": 228922,
+                "gzip": 71409,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+                "encoded": 3851,
+                "decoded": 9721,
+                "transfer": 4151,
+                "raw": 9721,
+                "gzip": 3856,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/14kn984rh8ssl.js",
+                "encoded": 3662,
+                "decoded": 14375,
+                "transfer": 3962,
+                "raw": 14375,
+                "gzip": 3660,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+                "encoded": 9405,
+                "decoded": 28181,
+                "transfer": 9705,
+                "raw": 28181,
+                "gzip": 9388,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+                "encoded": 12653,
+                "decoded": 42556,
+                "transfer": 12953,
+                "raw": 42556,
+                "gzip": 12550,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/446xw4cvqetx4.js",
+                "encoded": 8876,
+                "decoded": 27822,
+                "transfer": 9176,
+                "raw": 27822,
+                "gzip": 8845,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/355spd-5hrcc6.js",
+                "encoded": 11328,
+                "decoded": 29708,
+                "transfer": 11628,
+                "raw": 29708,
+                "gzip": 11282,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+                "encoded": 19797,
+                "decoded": 53246,
+                "transfer": 20097,
+                "raw": 53246,
+                "gzip": 19748,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3p977oz58dbta.js",
+                "encoded": 16297,
+                "decoded": 51916,
+                "transfer": 16597,
+                "raw": 51916,
+                "gzip": 16190,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+                "encoded": 10324,
+                "decoded": 30475,
+                "transfer": 10624,
+                "raw": 30475,
+                "gzip": 10319,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2iulu8vtu1r0-.js",
+                "encoded": 8018,
+                "decoded": 23831,
+                "transfer": 8318,
+                "raw": 23831,
+                "gzip": 7933,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2o2yab8has0n4.js",
+                "encoded": 9195,
+                "decoded": 35502,
+                "transfer": 9495,
+                "raw": 35502,
+                "gzip": 9183,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0vbuxvr8ikciw.js",
+                "encoded": 16820,
+                "decoded": 78300,
+                "transfer": 17120,
+                "raw": 78300,
+                "gzip": 16716,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0crzb660z_2d7.js",
+                "encoded": 98200,
+                "decoded": 370817,
+                "transfer": 98500,
+                "raw": 370817,
+                "gzip": 97687,
+                "recharts": true
+              }
+            ],
+            "jsRequests": 17,
+            "rawBytes": 1225842,
+            "gzipBytes": 353489,
+            "encodedBytes": 354942,
+            "transferBytes": 360042,
+            "rechartsChunks": [
+              "/_next/static/chunks/0crzb660z_2d7.js"
+            ],
+            "lcpMs": 3732
+          }
+        }
+      ],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "evolution-nutrition",
+      "path": "/evolucao",
+      "role": "NUTRITIONIST",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/08imcd969935c.js",
+            "encoded": 7513,
+            "decoded": 22315,
+            "transfer": 7813,
+            "raw": 22315,
+            "gzip": 7462,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/021j-laqregw8.js",
+            "encoded": 8849,
+            "decoded": 29594,
+            "transfer": 9149,
+            "raw": 29594,
+            "gzip": 8831,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2-l5msfhv88xi.js",
+            "encoded": 12597,
+            "decoded": 59305,
+            "transfer": 12897,
+            "raw": 59305,
+            "gzip": 12516,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          }
+        ],
+        "jsRequests": 18,
+        "rawBytes": 1234925,
+        "gzipBytes": 357649,
+        "encodedBytes": 359063,
+        "transferBytes": 364463,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 1416
+      },
+      "actions": [
+        {
+          "action": "abrir evolução",
+          "measurement": {
+            "files": [
+              {
+                "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+                "encoded": 3614,
+                "decoded": 12887,
+                "transfer": 3914,
+                "raw": 12887,
+                "gzip": 3587,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2i51e627rllld.js",
+                "encoded": 8345,
+                "decoded": 31346,
+                "transfer": 8645,
+                "raw": 31346,
+                "gzip": 8329,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3g4px251sg85e.js",
+                "encoded": 71576,
+                "decoded": 228922,
+                "transfer": 71876,
+                "raw": 228922,
+                "gzip": 71409,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+                "encoded": 3851,
+                "decoded": 9721,
+                "transfer": 4151,
+                "raw": 9721,
+                "gzip": 3856,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/14kn984rh8ssl.js",
+                "encoded": 3662,
+                "decoded": 14375,
+                "transfer": 3962,
+                "raw": 14375,
+                "gzip": 3660,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+                "encoded": 42981,
+                "decoded": 156237,
+                "transfer": 43281,
+                "raw": 156237,
+                "gzip": 42807,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+                "encoded": 9405,
+                "decoded": 28181,
+                "transfer": 9705,
+                "raw": 28181,
+                "gzip": 9388,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+                "encoded": 12653,
+                "decoded": 42556,
+                "transfer": 12953,
+                "raw": 42556,
+                "gzip": 12550,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/446xw4cvqetx4.js",
+                "encoded": 8876,
+                "decoded": 27822,
+                "transfer": 9176,
+                "raw": 27822,
+                "gzip": 8845,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/355spd-5hrcc6.js",
+                "encoded": 11328,
+                "decoded": 29708,
+                "transfer": 11628,
+                "raw": 29708,
+                "gzip": 11282,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+                "encoded": 19797,
+                "decoded": 53246,
+                "transfer": 20097,
+                "raw": 53246,
+                "gzip": 19748,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+                "encoded": 10324,
+                "decoded": 30475,
+                "transfer": 10624,
+                "raw": 30475,
+                "gzip": 10319,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3p977oz58dbta.js",
+                "encoded": 16297,
+                "decoded": 51916,
+                "transfer": 16597,
+                "raw": 51916,
+                "gzip": 16190,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/08imcd969935c.js",
+                "encoded": 7513,
+                "decoded": 22315,
+                "transfer": 7813,
+                "raw": 22315,
+                "gzip": 7462,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/021j-laqregw8.js",
+                "encoded": 8849,
+                "decoded": 29594,
+                "transfer": 9149,
+                "raw": 29594,
+                "gzip": 8831,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2-l5msfhv88xi.js",
+                "encoded": 12597,
+                "decoded": 59305,
+                "transfer": 12897,
+                "raw": 59305,
+                "gzip": 12516,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0crzb660z_2d7.js",
+                "encoded": 98200,
+                "decoded": 370817,
+                "transfer": 98500,
+                "raw": 370817,
+                "gzip": 97687,
+                "recharts": true
+              },
+              {
+                "path": "/_next/static/chunks/2o2yab8has0n4.js",
+                "encoded": 9195,
+                "decoded": 35502,
+                "transfer": 9495,
+                "raw": 35502,
+                "gzip": 9183,
+                "recharts": false
+              }
+            ],
+            "jsRequests": 18,
+            "rawBytes": 1234925,
+            "gzipBytes": 357649,
+            "encodedBytes": 359063,
+            "transferBytes": 364463,
+            "rechartsChunks": [
+              "/_next/static/chunks/0crzb660z_2d7.js"
+            ],
+            "lcpMs": 1416
+          }
+        }
+      ],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    },
+    {
+      "scenario": "evolution-personal",
+      "path": "/evolucao",
+      "role": "PERSONAL",
+      "empty": false,
+      "initial": {
+        "files": [
+          {
+            "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+            "encoded": 3614,
+            "decoded": 12887,
+            "transfer": 3914,
+            "raw": 12887,
+            "gzip": 3587,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2i51e627rllld.js",
+            "encoded": 8345,
+            "decoded": 31346,
+            "transfer": 8645,
+            "raw": 31346,
+            "gzip": 8329,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3g4px251sg85e.js",
+            "encoded": 71576,
+            "decoded": 228922,
+            "transfer": 71876,
+            "raw": 228922,
+            "gzip": 71409,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+            "encoded": 3851,
+            "decoded": 9721,
+            "transfer": 4151,
+            "raw": 9721,
+            "gzip": 3856,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+            "encoded": 42981,
+            "decoded": 156237,
+            "transfer": 43281,
+            "raw": 156237,
+            "gzip": 42807,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/14kn984rh8ssl.js",
+            "encoded": 3662,
+            "decoded": 14375,
+            "transfer": 3962,
+            "raw": 14375,
+            "gzip": 3660,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+            "encoded": 9405,
+            "decoded": 28181,
+            "transfer": 9705,
+            "raw": 28181,
+            "gzip": 9388,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+            "encoded": 12653,
+            "decoded": 42556,
+            "transfer": 12953,
+            "raw": 42556,
+            "gzip": 12550,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/446xw4cvqetx4.js",
+            "encoded": 8876,
+            "decoded": 27822,
+            "transfer": 9176,
+            "raw": 27822,
+            "gzip": 8845,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/355spd-5hrcc6.js",
+            "encoded": 11328,
+            "decoded": 29708,
+            "transfer": 11628,
+            "raw": 29708,
+            "gzip": 11282,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+            "encoded": 19797,
+            "decoded": 53246,
+            "transfer": 20097,
+            "raw": 53246,
+            "gzip": 19748,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/3p977oz58dbta.js",
+            "encoded": 16297,
+            "decoded": 51916,
+            "transfer": 16597,
+            "raw": 51916,
+            "gzip": 16190,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+            "encoded": 10324,
+            "decoded": 30475,
+            "transfer": 10624,
+            "raw": 30475,
+            "gzip": 10319,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/08imcd969935c.js",
+            "encoded": 7513,
+            "decoded": 22315,
+            "transfer": 7813,
+            "raw": 22315,
+            "gzip": 7462,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/021j-laqregw8.js",
+            "encoded": 8849,
+            "decoded": 29594,
+            "transfer": 9149,
+            "raw": 29594,
+            "gzip": 8831,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2-l5msfhv88xi.js",
+            "encoded": 12597,
+            "decoded": 59305,
+            "transfer": 12897,
+            "raw": 59305,
+            "gzip": 12516,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/2o2yab8has0n4.js",
+            "encoded": 9195,
+            "decoded": 35502,
+            "transfer": 9495,
+            "raw": 35502,
+            "gzip": 9183,
+            "recharts": false
+          },
+          {
+            "path": "/_next/static/chunks/0crzb660z_2d7.js",
+            "encoded": 98200,
+            "decoded": 370817,
+            "transfer": 98500,
+            "raw": 370817,
+            "gzip": 97687,
+            "recharts": true
+          }
+        ],
+        "jsRequests": 18,
+        "rawBytes": 1234925,
+        "gzipBytes": 357649,
+        "encodedBytes": 359063,
+        "transferBytes": 364463,
+        "rechartsChunks": [
+          "/_next/static/chunks/0crzb660z_2d7.js"
+        ],
+        "lcpMs": 3336
+      },
+      "actions": [
+        {
+          "action": "abrir evolução",
+          "measurement": {
+            "files": [
+              {
+                "path": "/_next/static/chunks/3yfl9fgvivx3-.js",
+                "encoded": 3614,
+                "decoded": 12887,
+                "transfer": 3914,
+                "raw": 12887,
+                "gzip": 3587,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2i51e627rllld.js",
+                "encoded": 8345,
+                "decoded": 31346,
+                "transfer": 8645,
+                "raw": 31346,
+                "gzip": 8329,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3g4px251sg85e.js",
+                "encoded": 71576,
+                "decoded": 228922,
+                "transfer": 71876,
+                "raw": 228922,
+                "gzip": 71409,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/turbopack-17vfkofq850i-.js",
+                "encoded": 3851,
+                "decoded": 9721,
+                "transfer": 4151,
+                "raw": 9721,
+                "gzip": 3856,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2ra6ssc5umk7w.js",
+                "encoded": 42981,
+                "decoded": 156237,
+                "transfer": 43281,
+                "raw": 156237,
+                "gzip": 42807,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/14kn984rh8ssl.js",
+                "encoded": 3662,
+                "decoded": 14375,
+                "transfer": 3962,
+                "raw": 14375,
+                "gzip": 3660,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3t1tu9agin-qz.js",
+                "encoded": 9405,
+                "decoded": 28181,
+                "transfer": 9705,
+                "raw": 28181,
+                "gzip": 9388,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0uoe5z1qqknsp.js",
+                "encoded": 12653,
+                "decoded": 42556,
+                "transfer": 12953,
+                "raw": 42556,
+                "gzip": 12550,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/446xw4cvqetx4.js",
+                "encoded": 8876,
+                "decoded": 27822,
+                "transfer": 9176,
+                "raw": 27822,
+                "gzip": 8845,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/355spd-5hrcc6.js",
+                "encoded": 11328,
+                "decoded": 29708,
+                "transfer": 11628,
+                "raw": 29708,
+                "gzip": 11282,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3rcv9r-snklmp.js",
+                "encoded": 19797,
+                "decoded": 53246,
+                "transfer": 20097,
+                "raw": 53246,
+                "gzip": 19748,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/3p977oz58dbta.js",
+                "encoded": 16297,
+                "decoded": 51916,
+                "transfer": 16597,
+                "raw": 51916,
+                "gzip": 16190,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2m3w6c7j9al8p.js",
+                "encoded": 10324,
+                "decoded": 30475,
+                "transfer": 10624,
+                "raw": 30475,
+                "gzip": 10319,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/08imcd969935c.js",
+                "encoded": 7513,
+                "decoded": 22315,
+                "transfer": 7813,
+                "raw": 22315,
+                "gzip": 7462,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/021j-laqregw8.js",
+                "encoded": 8849,
+                "decoded": 29594,
+                "transfer": 9149,
+                "raw": 29594,
+                "gzip": 8831,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2-l5msfhv88xi.js",
+                "encoded": 12597,
+                "decoded": 59305,
+                "transfer": 12897,
+                "raw": 59305,
+                "gzip": 12516,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/2o2yab8has0n4.js",
+                "encoded": 9195,
+                "decoded": 35502,
+                "transfer": 9495,
+                "raw": 35502,
+                "gzip": 9183,
+                "recharts": false
+              },
+              {
+                "path": "/_next/static/chunks/0crzb660z_2d7.js",
+                "encoded": 98200,
+                "decoded": 370817,
+                "transfer": 98500,
+                "raw": 370817,
+                "gzip": 97687,
+                "recharts": true
+              }
+            ],
+            "jsRequests": 18,
+            "rawBytes": 1234925,
+            "gzipBytes": 357649,
+            "encodedBytes": 359063,
+            "transferBytes": 364463,
+            "rechartsChunks": [
+              "/_next/static/chunks/0crzb660z_2d7.js"
+            ],
+            "lcpMs": 3336
+          }
+        }
+      ],
+      "errors": [],
+      "unknownApi": [],
+      "unexpectedWrites": []
+    }
+  ]
+}

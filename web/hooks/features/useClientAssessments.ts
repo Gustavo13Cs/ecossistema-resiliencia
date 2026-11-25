@@ -43,6 +43,7 @@ export function useCreateClientAssessment(clientId: string) {
         cache.invalidateQueries({ queryKey: queryKeys.assessments(context.sub, context.clientId) }),
         cache.invalidateQueries({ queryKey: queryKeys.trainingOverview(context.sub, context.clientId) }),
         cache.invalidateQueries({ queryKey: queryKeys.patientOverview(context.sub, context.clientId) }),
+        cache.invalidateQueries({ queryKey: queryKeys.personalEvolution(context.sub) }),
       ])
     },
   })

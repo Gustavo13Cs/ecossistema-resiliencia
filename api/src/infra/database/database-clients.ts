@@ -2,12 +2,18 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import 'dotenv/config';
+import { instrumentDriverAdapterFactory } from '../../common/observability/sql-instrumentation';
 
 export function databaseClient(variable: string): PrismaClient {
   const url = process.env[variable];
   if (!url)
     throw new Error(variable + ' is required; use a separate database role');
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
+  return new PrismaClient({
+    adapter: instrumentDriverAdapterFactory(
+      new PrismaPg({ connectionString: url }),
+      'clinical',
+    ),
+  });
 }
 
 export async function assertDatabaseRole(
@@ -44,7 +50,12 @@ export class AuthPrismaService
   constructor() {
     const url = process.env.AUTH_DATABASE_URL;
     if (!url) throw new Error('AUTH_DATABASE_URL is required');
-    super({ adapter: new PrismaPg({ connectionString: url }) });
+    super({
+      adapter: instrumentDriverAdapterFactory(
+        new PrismaPg({ connectionString: url }),
+        'auth',
+      ),
+    });
   }
   async onModuleInit() {
     await this.$connect();
@@ -63,7 +74,12 @@ export class JobsPrismaService
   constructor() {
     const url = process.env.JOBS_DATABASE_URL;
     if (!url) throw new Error('JOBS_DATABASE_URL is required');
-    super({ adapter: new PrismaPg({ connectionString: url }) });
+    super({
+      adapter: instrumentDriverAdapterFactory(
+        new PrismaPg({ connectionString: url }),
+        'jobs',
+      ),
+    });
   }
   async onModuleInit() {
     await this.$connect();

@@ -30,10 +30,14 @@ export default function NovoClientePage() {
     }
 
     await createClient.mutateAsync(values)
-    await queryClient.invalidateQueries({
-      queryKey: queryKeys.clients(user.sub, "ACTIVE"),
-    })
-    await queryClient.invalidateQueries({ queryKey: queryKeys.trainingWorkspace(user.sub) })
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.clients(user.sub, "ACTIVE"),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.trainingWorkspace(user.sub),
+      }),
+    ])
     router.push("/clientes")
   }
 

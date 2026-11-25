@@ -29,7 +29,13 @@ const nextConfig = {
     NEXT_PUBLIC_API_URL: PUBLIC_API_PATH,
   },
   images: {
-    unoptimized: true,
+    formats: ["image/avif", "image/webp"],
+    // Qualidade maior na marca preserva os contornos em telas de alta densidade.
+    qualities: [85],
+    // Tamanhos da marca a 1x, 2x e 3x; conserva os tamanhos padrão do Next.
+    imageSizes: [20, 24, 32, 36, 40, 48, 60, 64, 72, 96, 108, 128, 256, 384],
+    // Somente a marca pública passa pelo otimizador; URLs de API não são aceitas.
+    localPatterns: [{ pathname: "/logo.png", search: "" }],
   },
   async headers() {
     return [

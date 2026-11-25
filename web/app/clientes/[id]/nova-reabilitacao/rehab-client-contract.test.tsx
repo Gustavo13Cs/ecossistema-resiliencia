@@ -1,3 +1,4 @@
+import axios from "axios"
 import AxiosMockAdapter from "axios-mock-adapter"
 import { cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react"
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query"
@@ -152,5 +153,59 @@ describe("rehab Client contracts", () => {
     await waitFor(() => expect(reader.result.current.rehabPlan).toEqual(updatedPlan))
     expect(planAtNavigation).toEqual(updatedPlan)
     expect(http.history.get.filter(request => request.url === activeUrl)).toHaveLength(3)
+  })
+
+  it("loads client record and active protocol in parallel without waiting sequentially", async () => {
+    let resolveClient!: (value: [number, unknown]) => void
+    let planRequested = false
+    http.onGet("/clients/client-1").reply(
+      () => new Promise<[number, unknown]>((resolve) => { resolveClient = resolve }),
+    )
+    http.onGet(activeUrl).reply(() => {
+      planRequested = true
+      return [200, previousPlan]
+    })
+
+    renderPage(<NovaReabilitacaoPage />)
+
+    await waitFor(() => expect(planRequested).toBe(true))
+    expect(screen.getByText("Carregando...")).toBeInTheDocument()
+
+    resolveClient([200, { id: "client-1", name: "Cliente de reabilitação" }])
+    await screen.findByText("Cliente de reabilitação")
+    await screen.findByDisplayValue(previousPlan.title)
+  })
+
+  it("cancels in-flight initial requests on unmount without showing an error toast", async () => {
+    const signals: AbortSignal[] = []
+    const registerAbortableGet = (url: string) => {
+      http.onGet(url).reply(
+        (config) =>
+          new Promise<[number, unknown]>((_resolve, reject) => {
+            if (config.signal) {
+              const signal = config.signal as AbortSignal
+              signals.push(signal)
+              if (signal.aborted) {
+                reject(new axios.CanceledError("canceled"))
+                return
+              }
+              signal.addEventListener("abort", () => {
+                reject(new axios.CanceledError("canceled"))
+              })
+            }
+          }),
+      )
+    }
+    registerAbortableGet("/clients/client-1")
+    registerAbortableGet(activeUrl)
+
+    const view = renderPage(<NovaReabilitacaoPage />)
+    await waitFor(() => expect(signals).toHaveLength(2))
+    expect(signals.every((signal) => !signal.aborted)).toBe(true)
+
+    view.unmount()
+    await waitFor(() => expect(signals.every((signal) => signal.aborted)).toBe(true))
+    await Promise.resolve()
+    expect(notices.error).not.toHaveBeenCalled()
   })
 })

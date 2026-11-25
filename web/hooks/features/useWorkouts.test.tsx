@@ -95,4 +95,30 @@ describe("useWorkouts", () => {
     await act(async () => { await expect(result.current.createMutation.mutateAsync(input)).rejects.toThrow() })
     expect(http.history.post).toHaveLength(0)
   })
+  it("keeps clinical prescription caches untouched while POST /workouts is pending (no optimistic clinical confirmation)", async () => {
+    let finish!: (value: [number, unknown]) => void
+    http.onPost("/workouts").reply(() => new Promise(resolve => { finish = resolve }))
+    const { result, cache } = setup({ enabled: false })
+    const listKey = queryKeys.workouts("pro-a")
+    const activeKey = queryKeys.activeWorkout("pro-a", "c1")
+    cache.setQueryData(listKey, [])
+    cache.setQueryData(activeKey, null)
+
+    let pending!: Promise<unknown>
+    act(() => {
+      pending = result.current.createMutation.mutateAsync(input)
+    })
+    await waitFor(() => expect(http.history.post).toHaveLength(1))
+
+    // Sensitive clinical prescription must NOT appear optimistically before API confirmation
+    expect(cache.getQueryData(listKey)).toEqual([])
+    expect(cache.getQueryData(activeKey)).toBeNull()
+
+    await act(async () => {
+      finish([201, prescription])
+      await expect(pending).resolves.toEqual(prescription)
+    })
+    expect(cache.getQueryState(listKey)?.isInvalidated).toBe(true)
+    expect(cache.getQueryState(activeKey)?.isInvalidated).toBe(true)
+  })
 })

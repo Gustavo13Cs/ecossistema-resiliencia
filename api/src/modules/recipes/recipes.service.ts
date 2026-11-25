@@ -11,25 +11,118 @@ import { ListRecipesQueryDto } from './dto/list-recipes-query.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
 import { calculateRecipeNutrition } from './domain/recipe-nutrition';
 
-const recipeVersionInclude = {
-  ingredients: {
-    include: { food: true },
-  },
-} satisfies Prisma.RecipeVersionInclude;
+export const RECIPE_LIST_VERSION_SELECT = {
+  id: true,
+  recipeId: true,
+  version: true,
+  name: true,
+  category: true,
+  servings: true,
+  isGlutenFree: true,
+  isLactoseFree: true,
+  isVegan: true,
+  kcal: true,
+  protein: true,
+  carbs: true,
+  fat: true,
+  fiber: true,
+  sodium: true,
+  calcium: true,
+  iron: true,
+  createdAt: true,
+} satisfies Prisma.RecipeVersionSelect;
 
-const recipeListInclude = {
+export const RECIPE_LIST_SELECT = {
+  id: true,
+  professionalId: true,
+  status: true,
+  currentVersionId: true,
+  createdAt: true,
+  updatedAt: true,
   currentVersion: {
-    include: recipeVersionInclude,
+    select: RECIPE_LIST_VERSION_SELECT,
   },
-} satisfies Prisma.RecipeInclude;
+} satisfies Prisma.RecipeSelect;
 
-const recipeDetailInclude = {
-  ...recipeListInclude,
+export const RECIPE_FOOD_SELECT = {
+  id: true,
+  name: true,
+  baseUnit: true,
+  baseAmount: true,
+  kcal: true,
+  protein: true,
+  carbs: true,
+  fat: true,
+  fiber: true,
+  sodium: true,
+  calcium: true,
+  iron: true,
+} satisfies Prisma.FoodSelect;
+
+export const RECIPE_DETAIL_VERSION_SELECT = {
+  ...RECIPE_LIST_VERSION_SELECT,
+  description: true,
+  instructions: true,
+  publishedAt: true,
+  ingredients: {
+    select: {
+      id: true,
+      recipeVersionId: true,
+      foodId: true,
+      quantity: true,
+      measure: true,
+      food: { select: RECIPE_FOOD_SELECT },
+    },
+  },
+} satisfies Prisma.RecipeVersionSelect;
+
+export const RECIPE_OWNED_SELECT = {
+  id: true,
+  professionalId: true,
+  status: true,
+  currentVersionId: true,
+  createdAt: true,
+  updatedAt: true,
+  currentVersion: {
+    select: RECIPE_DETAIL_VERSION_SELECT,
+  },
+} satisfies Prisma.RecipeSelect;
+
+export const RECIPE_HISTORY_VERSION_SELECT = {
+  id: true,
+  recipeId: true,
+  version: true,
+  name: true,
+  category: true,
+  servings: true,
+  isGlutenFree: true,
+  isLactoseFree: true,
+  isVegan: true,
+  kcal: true,
+  protein: true,
+  carbs: true,
+  fat: true,
+  createdAt: true,
+  ingredients: {
+    select: {
+      id: true,
+      foodId: true,
+      quantity: true,
+      measure: true,
+      food: {
+        select: { id: true, name: true },
+      },
+    },
+  },
+} satisfies Prisma.RecipeVersionSelect;
+
+export const RECIPE_DETAIL_SELECT = {
+  ...RECIPE_OWNED_SELECT,
   versions: {
-    include: recipeVersionInclude,
+    select: RECIPE_HISTORY_VERSION_SELECT,
     orderBy: { version: 'asc' },
   },
-} satisfies Prisma.RecipeInclude;
+} satisfies Prisma.RecipeSelect;
 
 type RecipeTransaction = Prisma.TransactionClient;
 
@@ -80,7 +173,7 @@ export class RecipesService {
         status: query.status,
         currentVersion: { is: currentVersion },
       },
-      include: recipeListInclude,
+      select: RECIPE_LIST_SELECT,
       orderBy: { updatedAt: 'desc' },
     });
   }
@@ -96,7 +189,17 @@ export class RecipesService {
   async update(recipeId: string, dto: UpdateRecipeDto, professionalId: string) {
     try {
       return await this.prisma.$transaction(async (tx) => {
-        const recipe = await this.findOwnedRecipe(tx, recipeId, professionalId);
+        const recipe = await tx.recipe.findFirst({
+          where: { id: recipeId, professionalId },
+          select: {
+            id: true,
+            currentVersionId: true,
+            currentVersion: { select: { version: true } },
+          },
+        });
+        if (!recipe) {
+          throw new NotFoundException('Receita não encontrada');
+        }
         if (
           !recipe.currentVersion ||
           recipe.currentVersion.version !== dto.expectedVersion
@@ -197,7 +300,13 @@ export class RecipesService {
     status: RecipeStatus,
   ) {
     return this.prisma.$transaction(async (tx) => {
-      await this.findOwnedRecipe(tx, recipeId, professionalId);
+      const existing = await tx.recipe.findFirst({
+        where: { id: recipeId, professionalId },
+        select: { id: true },
+      });
+      if (!existing) {
+        throw new NotFoundException('Receita não encontrada');
+      }
       await tx.recipe.updateMany({
         where: {
           id: recipeId,
@@ -314,7 +423,7 @@ export class RecipesService {
   ) {
     const recipe = await tx.recipe.findFirst({
       where: { id: recipeId, professionalId },
-      include: recipeListInclude,
+      select: RECIPE_OWNED_SELECT,
     });
     if (!recipe) throw new NotFoundException('Receita não encontrada');
     return recipe;
@@ -327,7 +436,7 @@ export class RecipesService {
   ) {
     const recipe = await tx.recipe.findFirst({
       where: { id: recipeId, professionalId },
-      include: recipeDetailInclude,
+      select: RECIPE_DETAIL_SELECT,
     });
     if (!recipe) throw new NotFoundException('Receita não encontrada');
     return recipe;

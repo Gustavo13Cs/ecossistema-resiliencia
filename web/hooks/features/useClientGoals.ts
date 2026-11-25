@@ -8,7 +8,7 @@ import { api } from "@/lib/api"
 import { queryKeys } from "@/lib/query-keys"
 import { toast } from "sonner"
 import type { ClientGoalCommitment, ClientGoalInput, GoalProgress, GoalAlert, GoalsKpiSummary, ClientWithGoalSummary, RateFeasibility } from "@/types/goal"
-import type { Client } from "@/types/client"
+import type { ClientSummary } from "@/types/client"
 
 interface AssessmentItem {
   id: string
@@ -19,7 +19,7 @@ interface AssessmentItem {
   muscleMass: number | null
 }
 
-function calculateProgress(goal: ClientGoalCommitment, latest: AssessmentItem | null, client: Client): GoalProgress {
+function calculateProgress(goal: ClientGoalCommitment, latest: AssessmentItem | null, client: ClientSummary): GoalProgress {
   const currentWeightKg = latest?.weight ?? null
   const startWeight = goal.startWeightKg ?? client.initialWeight ?? null
   const targetWeight = goal.targetWeightKg
@@ -46,7 +46,7 @@ function calculateProgress(goal: ClientGoalCommitment, latest: AssessmentItem | 
 function detectAlerts(
   goal: ClientGoalCommitment,
   progress: GoalProgress,
-  client: Client,
+  client: ClientSummary,
 ): GoalAlert[] {
   const alerts: GoalAlert[] = []
 

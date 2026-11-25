@@ -26,6 +26,7 @@ export default function LandingPage() {
               alt=""
               width={32}
               height={32}
+              sizes="32px"
               className="size-8 object-contain"
               priority
             />
@@ -151,6 +152,7 @@ export default function LandingPage() {
             alt=""
             width={20}
             height={20}
+            sizes="20px"
             className="size-5 object-contain"
           />
           <span>SafeMove · Workspace profissional</span>

@@ -1,0 +1,87 @@
+{
+  "checks": [
+    "edit reflects response",
+    "delete removes unused food",
+    "create adds food to meal",
+    "save keeps client and food ids"
+  ],
+  "catalogueRequests": 1,
+  "mutations": [
+    {
+      "method": "PUT",
+      "path": "/foods/manual-old",
+      "body": {
+        "name": "Alimento renomeado",
+        "kcal": 130,
+        "protein": 3,
+        "carbs": 28,
+        "fat": 1,
+        "fiber": 1,
+        "sodium": 0,
+        "calcium": 0,
+        "iron": 0,
+        "baseUnit": "100g",
+        "baseAmount": 100,
+        "source": "MANUAL"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/foods/manual-old",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/foods",
+      "body": {
+        "name": "Alimento novo",
+        "kcal": 0,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 0,
+        "fiber": 0,
+        "sodium": 0,
+        "calcium": 0,
+        "iron": 0,
+        "baseUnit": "100g",
+        "baseAmount": 100,
+        "source": "MANUAL"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/diet-plans",
+      "body": {
+        "title": "Fase 1 - Adaptação",
+        "goal": "Emagrecimento",
+        "durationDays": 30,
+        "targetKcal": 2000,
+        "proteinG": 150,
+        "carbsG": 200,
+        "fatG": 60,
+        "fiberG": 25,
+        "sodiumMg": 2000,
+        "calciumMg": 1000,
+        "ironMg": 18,
+        "clientId": "c1",
+        "notes": "",
+        "meals": [
+          {
+            "name": "Café da Manhã",
+            "time": "08:00",
+            "notes": "",
+            "items": [
+              {
+                "quantity": 100,
+                "measure": "",
+                "foodId": "manual-new"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [],
+  "productionAccess": false
+}

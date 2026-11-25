@@ -20,7 +20,7 @@ describe('Client supplements and laboratory routes', () => {
   };
   const labs = {
     create: jest.fn(),
-    findByClient: jest.fn(),
+    findClientPage: jest.fn(),
     findByPatient: jest.fn(),
   };
   const supplement = {
@@ -46,7 +46,7 @@ describe('Client supplements and laboratory routes', () => {
       suffix: '',
       body: lab,
       service: labs,
-      reader: labs.findByClient,
+      reader: labs.findClientPage,
     },
   ];
   let app: INestApplication<App>;
@@ -84,6 +84,10 @@ describe('Client supplements and laboratory routes', () => {
   });
   beforeEach(() => {
     jest.clearAllMocks();
+    labs.findClientPage.mockResolvedValue({
+      items: [],
+      pagination: { page: 1, pageSize: 25, total: 0 },
+    });
   });
   it.each(contracts)(
     'creates and reads by Client at $route',
@@ -93,7 +97,13 @@ describe('Client supplements and laboratory routes', () => {
       await request(app.getHttpServer())
         .get(`${route}/client/${clientId}${suffix}`)
         .expect(200);
-      expect(reader).toHaveBeenCalledWith(user, clientId);
+      if (route === '/lab-exams')
+        expect(reader).toHaveBeenCalledWith(
+          user,
+          clientId,
+          expect.objectContaining({ page: 1, pageSize: 25 }),
+        );
+      else expect(reader).toHaveBeenCalledWith(user, clientId);
     },
   );
   it.each(contracts)(

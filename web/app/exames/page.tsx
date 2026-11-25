@@ -1,5 +1,9 @@
 "use client"
 
+import { useAuth } from "@/contexts/auth-context"
+import { PaginationControls } from "@/components/feedback/PaginationControls"
+
+import dynamic from "next/dynamic"
 import React, { useState } from "react"
 import Link from "next/link"
 import {
@@ -30,14 +34,30 @@ import { Input } from "@/components/ui/input"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { useCentralLabExams } from "@/hooks/features/useCentralLabExams"
 import { LabExamsKpiSummary } from "@/components/features/lab-exams/LabExamsKpiSummary"
-import { LongitudinalMarkerChart } from "@/components/features/lab-exams/LongitudinalMarkerChart"
-import { ExamRegistryModal } from "@/components/features/lab-exams/ExamRegistryModal"
-import { ExamOrderIssuerModal } from "@/components/features/lab-exams/ExamOrderIssuerModal"
-import { LabExamDetailDrawer } from "@/components/features/lab-exams/LabExamDetailDrawer"
 import { ConsolidatedLabExam, ConsolidatedLabMarker, IssuedLabOrder, MarkerCategory, MarkerStatus } from "@/types/lab-exam"
 import { toast } from "sonner"
 import { buildLabOrderPrintHtml } from "@/lib/lab-print-document"
 import { openPrintWindow } from "@/lib/print-document"
+
+const LongitudinalMarkerChart = dynamic(
+  () => import("@/components/features/lab-exams/LongitudinalMarkerChart").then((module) => module.LongitudinalMarkerChart),
+  { loading: () => <AsyncState kind="loading" title="Carregando gráfico" description="Preparando a visualização dos dados..." /> },
+)
+
+const ExamRegistryModal = dynamic(
+  () => import("@/components/features/lab-exams/ExamRegistryModal").then((module) => module.ExamRegistryModal),
+  { loading: () => <AsyncState kind="loading" title="Carregando formulário" description="Preparando os campos para edição..." /> },
+)
+
+const ExamOrderIssuerModal = dynamic(
+  () => import("@/components/features/lab-exams/ExamOrderIssuerModal").then((module) => module.ExamOrderIssuerModal),
+  { loading: () => <AsyncState kind="loading" title="Carregando formulário" description="Preparando os campos para edição..." /> },
+)
+
+const LabExamDetailDrawer = dynamic(
+  () => import("@/components/features/lab-exams/LabExamDetailDrawer").then((module) => module.LabExamDetailDrawer),
+  { loading: () => <AsyncState kind="loading" title="Carregando detalhes" description="Preparando a visualização dos dados..." /> },
+)
 
 type MainTab = "exams" | "longitudinal" | "orders"
 
@@ -54,6 +74,11 @@ const categoryLabels: Record<string, string> = {
 }
 
 export default function ExamesPage() {
+  const { user } = useAuth()
+  return <CentralLabExams key={user?.sub ?? "anonymous"} />
+}
+
+function CentralLabExams() {
   const {
     loading,
     error,
@@ -75,7 +100,7 @@ export default function ExamesPage() {
     issueOrder,
     deleteExam,
     deleteOrder,
-    getMarkerLongitudinalSeries,
+    examPagination, orderPagination, setExamPage, setOrderPage, fetching,
   } = useCentralLabExams()
 
   const [activeTab, setActiveTab] = useState<MainTab>("exams")
@@ -133,20 +158,6 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
       toast.error("Permita pop-ups no navegador para imprimir a requisição.")
     }
   }
-  if (error) {
-    return <div className="p-6"><AsyncState kind="error" title="Não foi possível carregar os exames" description="Tente novamente quando a conexão com o servidor estiver disponível." /></div>
-  }
-  if (loading) {
-    return (
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <AsyncState
-          kind="loading"
-          title="Carregando exames laboratoriais..."
-          description="Sincronizando histórico bioquímico e biomarcadores da base de clientes."
-        />
-      </div>
-    )
-  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300">
@@ -198,15 +209,18 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
         </div>
       </div>
 
+      {/* Controles permanecem montados durante a troca de página ou filtro. */}
+      {loading ? <AsyncState kind="loading" title="Carregando exames laboratoriais..." description="Sincronizando histórico bioquímico e biomarcadores da base de clientes." /> : null}
+      {error ? <AsyncState kind="error" title="Não foi possível carregar os exames" description="Tente novamente quando a conexão com o servidor estiver disponível." /> : null}
       {/* KPI Cards */}
-      <LabExamsKpiSummary
+      {!loading && !error ? <LabExamsKpiSummary
         kpis={kpis}
         onFilterAlerts={() => {
           setActiveTab("exams")
           setStatusFilter(statusFilter === "ALERT" ? "ALL" : "ALERT")
         }}
         onFilterOrders={() => setActiveTab("orders")}
-      />
+      /> : null}
 
       {/* Tabs Navigation */}
       <div className="flex border-b border-border/80">
@@ -222,7 +236,7 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
           <FlaskConical className="h-4 w-4" />
           <span>Laudos & Exames Recebidos</span>
           <span className="ml-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] text-foreground">
-            {exams.length}
+            {examPagination?.total ?? 0}
           </span>
         </button>
 
@@ -251,7 +265,7 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
           <FileText className="h-4 w-4" />
           <span>Pedidos Emitidos</span>
           <span className="ml-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] text-foreground">
-            {orders.length}
+            {orderPagination?.total ?? 0}
           </span>
         </button>
       </div>
@@ -294,7 +308,7 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
             <div className="flex flex-wrap items-center gap-2">
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
+                onChange={(e) => setStatusFilter(e.target.value as MarkerStatus | "ALL")}
                 className="rounded-md border border-input bg-background px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
               >
                 <option value="ALL">Todos os Status</option>
@@ -305,7 +319,7 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
 
               <select
                 value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value as any)}
+                onChange={(e) => setCategoryFilter(e.target.value as MarkerCategory | "ALL")}
                 className="rounded-md border border-input bg-background px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
               >
                 <option value="ALL">Todas Categorias</option>
@@ -388,7 +402,7 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
           )}
 
           {/* Exams List */}
-          {exams.length === 0 ? (
+          {loading || error ? null : exams.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-xl border border-dashed border-border">
               <FlaskConical className="h-10 w-10 text-muted-foreground/40 mb-3" />
               <h3 className="text-sm font-semibold text-foreground">Nenhum laudo encontrado</h3>
@@ -794,13 +808,14 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
         </div>
       )}
 
+      {activeTab === "exams" && examPagination && <PaginationControls pagination={examPagination} onPageChange={setExamPage} busy={fetching} label="exames" />}
+
       {/* TAB 2: Comparativo Longitudinal */}
       {activeTab === "longitudinal" && (
         <div className="space-y-4">
           <LongitudinalMarkerChart
             clients={clients}
             allAvailableMarkers={allAvailableMarkers}
-            getMarkerLongitudinalSeries={getMarkerLongitudinalSeries}
             selectedClientId={selectedClientId}
             onClientSelect={(cId) => setSelectedClientId(cId)}
           />
@@ -829,7 +844,7 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
             </Button>
           </div>
 
-          {orders.length === 0 ? (
+          {loading || error ? null : orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-xl border border-dashed border-border">
               <FileText className="h-10 w-10 text-muted-foreground/40 mb-3" />
               <h3 className="text-sm font-semibold text-foreground">Nenhum pedido de exame emitido</h3>
@@ -939,6 +954,7 @@ _Documento emitido via SafeMove - Sistema Integrado de Saúde & Nutrição_`
           )}
         </div>
       )}
+      {activeTab === "orders" && orderPagination && <PaginationControls pagination={orderPagination} onPageChange={setOrderPage} busy={fetching} label="pedidos" />}
 
       {/* Modals & Detail Drawer */}
       {isRegistryModalOpen && <ExamRegistryModal

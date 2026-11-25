@@ -6,6 +6,12 @@ import { isAxiosError } from "axios"
 import { useAuth } from "@/contexts/auth-context"
 import { api } from "@/lib/api"
 import { queryKeys } from "@/lib/query-keys"
+import {
+  applyOptimisticTemplateArchiveState,
+  reconcileTemplateArchiveState,
+  rollbackOptimisticTemplateArchiveState,
+  type TemplateArchiveAction,
+} from "@/lib/workout-template-optimistic"
 import type { WorkoutDraftResource } from "@/types/workout-draft"
 import type {
   CreateStandaloneWorkoutTemplateInput,
@@ -287,58 +293,111 @@ export function useWorkoutTemplateHubMutations() {
     },
   })
 
+  type OptimisticArchiveContext = {
+    owner: string
+    snapshot: ReturnType<typeof applyOptimisticTemplateArchiveState>
+  }
+
+  async function executeArchiveStatus(
+    action: TemplateArchiveAction,
+    templateId: string,
+  ) {
+    const errorMessage =
+      action === "archive"
+        ? "Resposta de arquivamento incompatível"
+        : "Resposta de restauração incompatível"
+    assertCurrent()
+    try {
+      const { data } = await api.post<WorkoutTemplateSummary>(
+        `/workouts/templates/${templateId}/${action}`,
+        {},
+        { signal: session.current.controller.signal },
+      )
+      assertCurrent()
+      if (data.id !== templateId || data.isGlobal) {
+        throw new Error(errorMessage)
+      }
+      return data
+    } catch (error) {
+      await deny(error)
+      throw error
+    }
+  }
+
+  async function startOptimisticArchiveStatus(
+    action: TemplateArchiveAction,
+    templateId: string,
+  ): Promise<OptimisticArchiveContext> {
+    assertCurrent()
+    const requestOwner = owner
+    await cache.cancelQueries({
+      queryKey: ["workout-templates", requestOwner],
+      predicate: query =>
+        query.queryKey[2] === "list" || query.queryKey[2] === "detail",
+    })
+    assertCurrent()
+    const snapshot = applyOptimisticTemplateArchiveState(
+      cache,
+      requestOwner,
+      templateId,
+      action,
+      new Date().toISOString(),
+    )
+    return { owner: requestOwner, snapshot }
+  }
+
+  function revertOptimisticArchiveStatus(context?: OptimisticArchiveContext) {
+    if (
+      context &&
+      session.current.active &&
+      session.current.owner === context.owner
+    ) {
+      rollbackOptimisticTemplateArchiveState(cache, context.snapshot)
+    }
+  }
+
+  async function finishOptimisticArchiveStatus(
+    confirmed: WorkoutTemplateSummary,
+    context?: OptimisticArchiveContext,
+  ) {
+    if (
+      !context ||
+      cache.getQueryData(["workout-templates", context.owner, "access"])
+    ) {
+      return
+    }
+    reconcileTemplateArchiveState(cache, context.owner, confirmed)
+    await cache.invalidateQueries({
+      queryKey: ["workout-templates", context.owner],
+      predicate: query =>
+        query.queryKey[2] === "list" || query.queryKey[2] === "detail",
+    })
+  }
+
   const archiveTemplateMutation = useMutation({
     mutationKey: [...root, "hub", "archive"],
     gcTime: 0,
-    mutationFn: async (templateId: string) => {
-      assertCurrent()
-      try {
-        const { data } = await api.post<WorkoutTemplateSummary>(
-          `/workouts/templates/${templateId}/archive`,
-          {},
-          { signal: session.current.controller.signal },
-        )
-        assertCurrent()
-        if (data.id !== templateId) {
-          throw new Error("Resposta de arquivamento incompatível")
-        }
-        return data
-      } catch (error) {
-        await deny(error)
-        throw error
-      }
-    },
-    onMutate: () => ({ owner }),
-    onSuccess: async (_archived, _id, context) => {
-      await cache.invalidateQueries({ queryKey: ["workout-templates", context.owner] })
-    },
+    mutationFn: (templateId: string) =>
+      executeArchiveStatus("archive", templateId),
+    onMutate: (templateId: string) =>
+      startOptimisticArchiveStatus("archive", templateId),
+    onError: (_error, _templateId, context) =>
+      revertOptimisticArchiveStatus(context),
+    onSuccess: (confirmed, _templateId, context) =>
+      finishOptimisticArchiveStatus(confirmed, context),
   })
 
   const restoreTemplateMutation = useMutation({
     mutationKey: [...root, "hub", "restore"],
     gcTime: 0,
-    mutationFn: async (templateId: string) => {
-      assertCurrent()
-      try {
-        const { data } = await api.post<WorkoutTemplateSummary>(
-          `/workouts/templates/${templateId}/restore`,
-          {},
-          { signal: session.current.controller.signal },
-        )
-        assertCurrent()
-        if (data.id !== templateId) {
-          throw new Error("Resposta de restauração incompatível")
-        }
-        return data
-      } catch (error) {
-        await deny(error)
-        throw error
-      }
-    },
-    onMutate: () => ({ owner }),
-    onSuccess: async (_restored, _id, context) => {
-      await cache.invalidateQueries({ queryKey: ["workout-templates", context.owner] })
-    },
+    mutationFn: (templateId: string) =>
+      executeArchiveStatus("restore", templateId),
+    onMutate: (templateId: string) =>
+      startOptimisticArchiveStatus("restore", templateId),
+    onError: (_error, _templateId, context) =>
+      revertOptimisticArchiveStatus(context),
+    onSuccess: (confirmed, _templateId, context) =>
+      finishOptimisticArchiveStatus(confirmed, context),
   })
 
   const applyToClientMutation = useMutation({

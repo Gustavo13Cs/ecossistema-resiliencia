@@ -49,34 +49,77 @@ export interface RecipePreviewIngredient {
   food: RecipeFood
 }
 
-export interface RecipeVersion extends RecipeNutrition {
+export interface RecipeVersionSummary extends RecipeNutrition {
   id: string
   recipeId: string
   version: number
   name: string
-  description: string | null
   category: RecipeCategory
   servings: number
-  instructions: string | null
   isGlutenFree: boolean
   isLactoseFree: boolean
   isVegan: boolean
-  ingredients: RecipeIngredient[]
   createdAt: string
+  description?: string | null
+  instructions?: string | null
   publishedAt?: string | null
+  ingredients?: RecipeIngredient[]
+}
+
+export interface RecipeVersion extends RecipeVersionSummary {
+  description: string | null
+  instructions: string | null
+  ingredients: RecipeIngredient[]
+  publishedAt?: string | null
+}
+
+export interface RecipeHistoryIngredient {
+  id: string
+  foodId: string
+  quantity: number
+  measure: string
+  food: {
+    id: string
+    name: string
+  }
+}
+
+export interface RecipeHistoryVersion {
+  id: string
+  recipeId: string
+  version: number
+  name: string
+  category: RecipeCategory
+  servings: number
+  isGlutenFree: boolean
+  isLactoseFree: boolean
+  isVegan: boolean
+  kcal: number
+  protein: number
+  carbs: number
+  fat: number
+  createdAt: string
+  ingredients: RecipeHistoryIngredient[]
+}
+
+export function hasRecipeVersionIngredients(
+  version: RecipeVersionSummary,
+): version is RecipeVersion {
+  return Array.isArray(version.ingredients)
 }
 
 export interface RecipeSummary {
   id: string
   status: RecipeStatus
   currentVersionId: string
-  currentVersion: RecipeVersion
+  currentVersion: RecipeVersionSummary
   createdAt: string
   updatedAt: string
 }
 
 export interface Recipe extends RecipeSummary {
-  versions: RecipeVersion[]
+  currentVersion: RecipeVersion
+  versions: RecipeHistoryVersion[]
 }
 
 export interface RecipeFilters {

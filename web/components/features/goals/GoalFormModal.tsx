@@ -14,14 +14,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Sparkles, Calculator, AlertCircle, Droplets, Target } from "lucide-react"
-import type { Client } from "@/types/client"
+import type { ClientSummary } from "@/types/client"
 import type { ClientGoalCommitment, ClientGoalInput, GoalCategory, ClientWithGoalSummary } from "@/types/goal"
 
 interface GoalFormModalProps {
   isOpen: boolean
   onClose: () => void
   onSave: (goal: ClientGoalInput) => Promise<ClientGoalCommitment>
-  clients: Client[]
+  clients: ClientSummary[]
   initialData?: ClientWithGoalSummary | null
   preSelectedClientId?: string | null
 }

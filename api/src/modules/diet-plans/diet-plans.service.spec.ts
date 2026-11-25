@@ -4,9 +4,10 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../infra/database/prisma.service';
 import { CreateDietPlanDto } from './dto/create-diet-plan.dto';
-import { DietPlansService } from './diet-plans.service';
+import { DIET_PLAN_LIST_SELECT, DietPlansService } from './diet-plans.service';
 
 const PROFESSIONAL_ID = 'professional-1';
 const CLIENT_ID = 'client-1';
@@ -19,6 +20,23 @@ type CapturedMealItem = {
   measure: string;
   foodId: string | null;
   recipeVersionId: string | null;
+};
+
+type CapturedFoodPreference = {
+  id: string;
+  foodId: string;
+  quantity: number;
+  measure: string;
+};
+
+const foodPreferencesFromQuery = (
+  query: Prisma.Sql,
+): CapturedFoodPreference[] => {
+  const payload = query.values.find(
+    (value: unknown) => typeof value === 'string' && value.startsWith('['),
+  );
+  expect(typeof payload).toBe('string');
+  return JSON.parse(payload as string) as CapturedFoodPreference[];
 };
 
 const mealItemsFromCreateArgs = (args: unknown): CapturedMealItem[] => {
@@ -81,6 +99,7 @@ describe('DietPlansService professional ownership', () => {
     foodPreference: { upsert: jest.fn() },
     recipeVersion: { findMany: jest.fn() },
     $queryRaw: jest.fn().mockResolvedValue([{ id: CLIENT_ID }]),
+    $executeRaw: jest.fn<Promise<number>, [Prisma.Sql]>(),
     $transaction: jest.fn(),
   };
   let service: DietPlansService;
@@ -97,6 +116,7 @@ describe('DietPlansService professional ownership', () => {
     prisma.recipeVersion.findMany.mockResolvedValue([]);
     prisma.meal.findMany.mockResolvedValue([]);
     prisma.food.findFirst.mockResolvedValue({ id: 'resolved-food' });
+    prisma.$executeRaw.mockResolvedValue(1);
     capturedDietCreateArgs = undefined;
     capturedDietUpdateArgs = undefined;
     prisma.dietPlan.updateMany.mockImplementation((args) => {
@@ -140,6 +160,31 @@ describe('DietPlansService professional ownership', () => {
     expect(createCall.data.clientId).toBe(CLIENT_ID);
     expect(createCall.data.creatorId).toBe(PROFESSIONAL_ID);
     expect(createCall.include).toBeDefined();
+  });
+
+  it('lists diet plans with minimal columns and preserves response validator fields', async () => {
+    prisma.dietPlan.findMany.mockResolvedValue([]);
+
+    await service.findAll(PROFESSIONAL_ID);
+
+    expect(prisma.dietPlan.findMany).toHaveBeenCalledWith({
+      where: { creatorId: PROFESSIONAL_ID },
+      select: DIET_PLAN_LIST_SELECT,
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(DIET_PLAN_LIST_SELECT).toEqual({
+      id: true,
+      clientId: true,
+      title: true,
+      goal: true,
+      isActive: true,
+      isTemplate: true,
+      createdAt: true,
+      client: { select: { id: true, name: true } },
+      user: { select: { name: true } },
+    });
+    expect(DIET_PLAN_LIST_SELECT).not.toHaveProperty('notes');
+    expect(DIET_PLAN_LIST_SELECT).not.toHaveProperty('meals');
   });
 
   it('rejects a Client from another professional before mutating plans', async () => {
@@ -201,12 +246,7 @@ describe('DietPlansService professional ownership', () => {
         id: { in: [VERSION_1_ID] },
         recipe: { professionalId: PROFESSIONAL_ID },
       },
-      include: {
-        recipe: {
-          select: { id: true, currentVersionId: true, status: true },
-        },
-        ingredients: { include: { food: true } },
-      },
+      select: { id: true },
     });
     expect(prisma.dietPlan.updateMany).not.toHaveBeenCalled();
     expect(prisma.dietPlan.create).not.toHaveBeenCalled();
@@ -319,12 +359,225 @@ describe('DietPlansService professional ownership', () => {
         },
       },
     });
-    expect(prisma.foodPreference.upsert).toHaveBeenCalledTimes(1);
-    expect(prisma.foodPreference.upsert).toHaveBeenCalledWith(
+    expect(prisma.$executeRaw).toHaveBeenCalledTimes(1);
+    expect(
+      foodPreferencesFromQuery(prisma.$executeRaw.mock.calls[0][0]),
+    ).toEqual([
       expect.objectContaining({
-        create: expect.objectContaining({ foodId: FOOD_ID }),
+        foodId: FOOD_ID,
+        quantity: 100,
+        measure: 'xícara',
       }),
+    ]);
+    expect(prisma.foodPreference.upsert).not.toHaveBeenCalled();
+  });
+
+  it.each([1, 10, 100])(
+    'saves %i household measures in one parameterized write after creating the plan',
+    async (itemCount) => {
+      const dto: CreateDietPlanDto = {
+        ...createDto,
+        meals: [
+          {
+            name: 'Almoço',
+            items: Array.from({ length: itemCount }, (_, index) => ({
+              foodId: FOOD_ID,
+              quantity: index + 0.5,
+              measure: 'colher',
+            })),
+          },
+        ],
+      };
+      const beforeCreate = Date.now();
+
+      await expect(service.create(dto, PROFESSIONAL_ID)).resolves.toEqual({
+        id: 'diet-1',
+      });
+
+      expect(prisma.$executeRaw).toHaveBeenCalledTimes(1);
+      const query = prisma.$executeRaw.mock.calls[0][0];
+      const preferences = foodPreferencesFromQuery(query);
+      expect(preferences).toHaveLength(itemCount);
+      expect(preferences[0]).toEqual({
+        id: expect.stringMatching(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+        ),
+        foodId: FOOD_ID,
+        quantity: 0.5,
+        measure: 'colher',
+      });
+      expect(new Set(preferences.map((preference) => preference.id)).size).toBe(
+        itemCount,
+      );
+      expect(query.values).toContain(PROFESSIONAL_ID);
+      const timestamp = query.values.find(
+        (value: unknown) => value instanceof Date,
+      ) as Date;
+      expect(timestamp).toBeInstanceOf(Date);
+      expect(timestamp.getTime()).toBeGreaterThanOrEqual(beforeCreate);
+      expect(timestamp.getTime()).toBeLessThanOrEqual(Date.now());
+      expect(prisma.$executeRaw.mock.invocationCallOrder[0]).toBeGreaterThan(
+        prisma.dietPlan.create.mock.invocationCallOrder[0],
+      );
+      expect(prisma.foodPreference.upsert).not.toHaveBeenCalled();
+    },
+  );
+
+  it('keeps the last eligible household measure per food and exact quantity across meals', async () => {
+    const dto: CreateDietPlanDto = {
+      ...createDto,
+      meals: [
+        {
+          name: 'Almoço',
+          items: [
+            { foodId: FOOD_ID, quantity: 0.1, measure: 'colher' },
+            { foodId: FOOD_ID, quantity: 0.3, measure: 'xícara' },
+            { foodId: FOOD_ID, quantity: 0.1 + 0.2, measure: 'copo' },
+            { foodId: 'second-food', quantity: 0.1, measure: 'unidade' },
+          ],
+        },
+        {
+          name: 'Jantar',
+          items: [
+            { foodId: FOOD_ID, quantity: 0.1, measure: ' colher cheia ' },
+            { foodId: FOOD_ID, quantity: 0.1, measure: 'g' },
+            { foodId: FOOD_ID, quantity: 0.3, measure: '   ' },
+          ],
+        },
+      ],
+    };
+
+    await service.create(dto, PROFESSIONAL_ID);
+
+    expect(prisma.$executeRaw).toHaveBeenCalledTimes(1);
+    expect(
+      foodPreferencesFromQuery(prisma.$executeRaw.mock.calls[0][0]).map(
+        ({ foodId, quantity, measure }) => ({ foodId, quantity, measure }),
+      ),
+    ).toEqual([
+      { foodId: FOOD_ID, quantity: 0.1, measure: ' colher cheia ' },
+      { foodId: FOOD_ID, quantity: 0.3, measure: 'xícara' },
+      { foodId: FOOD_ID, quantity: 0.30000000000000004, measure: 'copo' },
+      { foodId: 'second-food', quantity: 0.1, measure: 'unidade' },
+    ]);
+  });
+
+  it.each(['', ' ', '\t\n', 'g'])(
+    'does not write preferences for the excluded measure %j',
+    async (measure) => {
+      await service.create(
+        {
+          ...createDto,
+          meals: [
+            {
+              name: 'Almoço',
+              items: [{ foodId: FOOD_ID, quantity: 100, measure }],
+            },
+          ],
+        },
+        PROFESSIONAL_ID,
+      );
+
+      expect(prisma.$executeRaw).not.toHaveBeenCalled();
+      expect(prisma.foodPreference.upsert).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['G', ' g ', 'ml', 'colher'])(
+    'preserves the eligible measure %j without normalization',
+    async (measure) => {
+      await service.create(
+        {
+          ...createDto,
+          meals: [
+            {
+              name: 'Almoço',
+              items: [{ foodId: FOOD_ID, quantity: 100, measure }],
+            },
+          ],
+        },
+        PROFESSIONAL_ID,
+      );
+
+      expect(prisma.$executeRaw).toHaveBeenCalledTimes(1);
+      expect(
+        foodPreferencesFromQuery(prisma.$executeRaw.mock.calls[0][0]),
+      ).toEqual([
+        expect.objectContaining({ foodId: FOOD_ID, quantity: 100, measure }),
+      ]);
+    },
+  );
+
+  it('does not write preferences for a plan with no food items', async () => {
+    prisma.recipeVersion.findMany.mockResolvedValue([
+      ownedArchivedRecipeVersion,
+    ]);
+
+    await service.create(
+      {
+        ...createDto,
+        meals: [
+          {
+            name: 'Almoço',
+            items: [
+              {
+                recipeVersionId: VERSION_1_ID,
+                quantity: 1,
+                measure: 'porção',
+              },
+            ],
+          },
+        ],
+      },
+      PROFESSIONAL_ID,
     );
+
+    expect(prisma.$executeRaw).not.toHaveBeenCalled();
+    expect(prisma.foodPreference.upsert).not.toHaveBeenCalled();
+  });
+
+  it('keeps household measure text in query parameters', async () => {
+    const measure = `colher'); SELECT 'synthetic'; --\\"\n`;
+
+    await service.create(
+      {
+        ...createDto,
+        meals: [
+          {
+            name: 'Almoço',
+            items: [{ foodId: FOOD_ID, quantity: 1, measure }],
+          },
+        ],
+      },
+      PROFESSIONAL_ID,
+    );
+
+    expect(prisma.$executeRaw).toHaveBeenCalledTimes(1);
+    const query = prisma.$executeRaw.mock.calls[0][0];
+    expect(query.text).not.toContain(measure);
+    expect(foodPreferencesFromQuery(query)).toEqual([
+      expect.objectContaining({ measure }),
+    ]);
+  });
+
+  it('propagates a preference batch failure instead of returning the new plan', async () => {
+    const failure = new Error('Synthetic preference failure');
+    prisma.$executeRaw.mockRejectedValueOnce(failure);
+
+    await expect(
+      service.create(
+        {
+          ...createDto,
+          meals: [
+            {
+              name: 'Almoço',
+              items: [{ foodId: FOOD_ID, quantity: 1, measure: 'colher' }],
+            },
+          ],
+        },
+        PROFESSIONAL_ID,
+      ),
+    ).rejects.toBe(failure);
   });
 
   it('does not let another nutritionist toggle a meal they did not create', async () => {

@@ -1,5 +1,6 @@
 "use client"
 
+import { useLabMarkerSeries } from "@/hooks/features/useLabMarkerSeries"
 import React, { useState, useMemo } from "react"
 import {
   LineChart,
@@ -26,7 +27,6 @@ import { CLINICAL_MARKERS_DICTIONARY, MarkerReference, ClientOption } from "@/ty
 interface LongitudinalMarkerChartProps {
   clients: ClientOption[]
   allAvailableMarkers: string[]
-  getMarkerLongitudinalSeries: (markerName: string, clientId?: string) => any[]
   selectedClientId?: string
   onClientSelect?: (clientId: string) => void
 }
@@ -34,7 +34,6 @@ interface LongitudinalMarkerChartProps {
 export const LongitudinalMarkerChart: React.FC<LongitudinalMarkerChartProps> = ({
   clients,
   allAvailableMarkers,
-  getMarkerLongitudinalSeries,
   selectedClientId = "ALL",
   onClientSelect,
 }) => {
@@ -49,9 +48,7 @@ export const LongitudinalMarkerChart: React.FC<LongitudinalMarkerChartProps> = (
   const markerRef: MarkerReference | undefined = CLINICAL_MARKERS_DICTIONARY[selectedMarker]
 
   const activeClientId = internalClientId === "ALL" ? undefined : internalClientId
-  const dataSeries = useMemo(() => {
-    return getMarkerLongitudinalSeries(selectedMarker, activeClientId)
-  }, [getMarkerLongitudinalSeries, selectedMarker, activeClientId])
+  const { data: dataSeries, isPending, error } = useLabMarkerSeries(selectedMarker, activeClientId)
 
   const clientName = useMemo(() => {
     if (!activeClientId) return "Todos os clientes com registro"
@@ -177,7 +174,7 @@ export const LongitudinalMarkerChart: React.FC<LongitudinalMarkerChartProps> = (
 
       {/* Chart Canvas */}
       <div className="w-full h-72 sm:h-80">
-        {dataSeries.length === 0 ? (
+        {isPending ? <p role="status">Carregando histórico do marcador…</p> : error ? <p role="alert">Não foi possível carregar o histórico. Tente novamente.</p> : dataSeries.length === 0 ? (
           <div className="w-full h-full flex flex-col items-center justify-center text-center p-6 border border-dashed border-border rounded-lg bg-muted/20">
             <Activity className="h-8 w-8 text-muted-foreground/40 mb-2" />
             <p className="text-sm font-medium text-foreground">

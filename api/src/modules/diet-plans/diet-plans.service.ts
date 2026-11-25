@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
 import { lockOwnedClient } from '../../common/client-access/lock-owned-client';
 import { PrismaService } from '../../infra/database/prisma.service';
 import {
@@ -14,6 +15,18 @@ import {
   ScaleAndImportTemplateDto,
 } from './dto/create-diet-plan.dto';
 import { SYSTEM_DIET_TEMPLATES } from './system-templates.data';
+
+export const DIET_PLAN_LIST_SELECT = {
+  id: true,
+  clientId: true,
+  title: true,
+  goal: true,
+  isActive: true,
+  isTemplate: true,
+  createdAt: true,
+  client: { select: { id: true, name: true } },
+  user: { select: { name: true } },
+} satisfies Prisma.DietPlanSelect;
 
 const fullPlanInclude = {
   meals: {
@@ -123,6 +136,10 @@ export class DietPlansService {
         include: fullPlanInclude,
       });
 
+      const preferences = new Map<
+        string,
+        { foodId: string; quantity: number; measure: string }
+      >();
       for (const meal of preparedMeals) {
         for (const item of meal.items) {
           if (
@@ -131,24 +148,34 @@ export class DietPlansService {
             item.measure.trim() &&
             item.measure !== 'g'
           ) {
-            await tx.foodPreference.upsert({
-              where: {
-                nutritionistId_foodId_quantity: {
-                  nutritionistId: creatorId,
-                  foodId: item.foodId,
-                  quantity: item.quantity,
-                },
-              },
-              update: { measure: item.measure },
-              create: {
-                nutritionistId: creatorId,
-                foodId: item.foodId,
-                quantity: item.quantity,
-                measure: item.measure,
-              },
+            // A última medida elegível prevalece, sem arredondar a quantidade.
+            preferences.set(JSON.stringify([item.foodId, item.quantity]), {
+              foodId: item.foodId,
+              quantity: item.quantity,
+              measure: item.measure,
             });
           }
         }
+      }
+
+      if (preferences.size > 0) {
+        const rows = [...preferences.values()].map((preference) => ({
+          id: randomUUID(),
+          ...preference,
+        }));
+        // SQL direto precisa preencher os valores normalmente gerados pelo Prisma.
+        const updatedAt = new Date();
+        await tx.$executeRaw(Prisma.sql`
+          INSERT INTO "food_preferences"
+            ("id", "nutritionistId", "foodId", "quantity", "measure", "updatedAt")
+          SELECT preference."id", ${creatorId}, preference."foodId",
+            preference."quantity", preference."measure", ${updatedAt}::timestamp(3)
+          FROM jsonb_to_recordset(${JSON.stringify(rows)}::jsonb) AS preference(
+            "id" text, "foodId" text, "quantity" double precision, "measure" text
+          )
+          ON CONFLICT ("nutritionistId", "foodId", "quantity") DO UPDATE
+          SET "measure" = EXCLUDED."measure", "updatedAt" = EXCLUDED."updatedAt"
+        `);
       }
 
       return plan;
@@ -220,10 +247,7 @@ export class DietPlansService {
   findAll(creatorId: string) {
     return this.prisma.dietPlan.findMany({
       where: { creatorId },
-      include: {
-        client: { select: { id: true, name: true } },
-        user: { select: { name: true } },
-      },
+      select: DIET_PLAN_LIST_SELECT,
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -752,12 +776,7 @@ export class DietPlansService {
           id: { in: recipeVersionIds },
           recipe: { professionalId: creatorId },
         },
-        include: {
-          recipe: {
-            select: { id: true, currentVersionId: true, status: true },
-          },
-          ingredients: { include: { food: true } },
-        },
+        select: { id: true },
       });
 
       if (ownedRecipeVersions.length !== recipeVersionIds.length) {

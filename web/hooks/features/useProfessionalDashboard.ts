@@ -2,7 +2,7 @@
 
 import axios from "axios"
 import { useClients } from "@/hooks/features/useClients"
-import type { Client } from "@/types/client"
+import type { ClientSummary } from "@/types/client"
 
 export type ProfessionalDashboardStatus =
   | "loading"
@@ -14,7 +14,7 @@ export type ProfessionalDashboardStatus =
 
 const PRIVATE_UNAVAILABLE_STATUS_CODES = new Set([401, 403, 404])
 
-function sortRecentClients(clients: readonly Client[]) {
+function sortRecentClients(clients: readonly ClientSummary[]) {
   return clients
     .map((client, index) => ({
       client,

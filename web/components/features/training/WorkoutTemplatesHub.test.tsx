@@ -1,4 +1,11 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react"
+import {
+  act,
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import AxiosMockAdapter from "axios-mock-adapter"
@@ -450,5 +457,144 @@ describe("WorkoutTemplatesHub", () => {
     await waitFor(() =>
       expect(push).toHaveBeenCalledWith("/clientes/c2/rascunhos/draft-new-1"),
     )
+  })
+
+  it("shows optimistic transition while archiving and confirms after API 200 across tabs", async () => {
+    const user = userEvent.setup()
+    let finishArchive!: (value: [number, unknown]) => void
+    let deferArchivedGet = false
+    let finishArchivedGet: ((value: [number, unknown]) => void) | undefined
+
+    http.onGet("/workouts/templates").reply(config => {
+      const params = (config.params ?? {}) as Record<string, string | undefined>
+      const origin = params.origin ?? "all"
+      const status = params.status ?? "active"
+      if (deferArchivedGet && status === "archived") {
+        return new Promise(resolve => {
+          finishArchivedGet = resolve
+        })
+      }
+      const filtered: WorkoutTemplateSummary[] = store.filter(item => {
+        if (origin === "global" && !item.isGlobal) return false
+        if (origin === "private" && item.isGlobal) return false
+        if (status === "active" && item.archivedAt) return false
+        if (status === "archived" && !item.archivedAt) return false
+        return true
+      })
+      return [200, { items: filtered, nextCursor: null }]
+    })
+
+    http
+      .onPost("/workouts/templates/tpl-priv-1/archive")
+      .reply(() => new Promise(resolve => { finishArchive = resolve }))
+
+    mount()
+    expect(await screen.findByText("Full Body Condomínio")).toBeVisible()
+    expect(screen.getByText("Upper Lower SafeMove")).toBeVisible()
+
+    // Warm up Arquivados cache entry first, then return to Todos ativos
+    await user.click(screen.getByRole("tab", { name: "Arquivados" }))
+    expect(
+      await screen.findByText("Nenhum modelo encontrado para os filtros selecionados."),
+    ).toBeVisible()
+    await user.click(screen.getByRole("tab", { name: "Todos ativos" }))
+    expect(await screen.findByText("Full Body Condomínio")).toBeVisible()
+
+    // Defer background Arquivados refetch while POST /archive is still in-flight
+    deferArchivedGet = true
+
+    // Click Arquivar before API responds
+    await user.click(
+      screen.getByRole("button", { name: "Arquivar Full Body Condomínio" }),
+    )
+
+    expect(
+      screen.getByText('Salvando arquivamento de "Full Body Condomínio"...'),
+    ).toBeVisible()
+    expect(screen.queryByText("Full Body Condomínio")).toBeNull()
+    expect(screen.getByText("Upper Lower SafeMove")).toBeVisible()
+
+    // Switch to Arquivados tab mid-flight and confirm optimistic entry shows pending indicator
+    await user.click(screen.getByRole("tab", { name: "Arquivados" }))
+    expect(await screen.findByText("Full Body Condomínio")).toBeVisible()
+    expect(
+      screen.getByText("Meu modelo · Arquivado (salvando...)"),
+    ).toBeVisible()
+
+    // Resolve API archive + allow invalidated refetch to return updated server list
+    const archivedItem = store.find(item => item.id === "tpl-priv-1")!
+    archivedItem.archivedAt = "2026-11-21T17:10:00Z"
+    archivedItem.updatedAt = "2026-11-21T17:10:00Z"
+    deferArchivedGet = false
+
+    await act(async () => {
+      finishArchivedGet?.([200, { items: [archivedItem], nextCursor: null }])
+      finishArchive([200, archivedItem])
+    })
+
+    expect(
+      await screen.findByText('Modelo "Full Body Condomínio" movido para Arquivados.'),
+    ).toBeVisible()
+    await waitFor(() =>
+      expect(
+        screen.queryByText("Meu modelo · Arquivado (salvando...)"),
+      ).toBeNull(),
+    )
+    expect(screen.getByText("Meu modelo · Arquivado")).toBeVisible()
+  })
+
+  it("rolls back optimistic archive and restore changes cleanly when the API fails", async () => {
+    const user = userEvent.setup()
+    let finishArchiveError!: (value: [number, unknown]) => void
+    let finishRestoreError!: (value: [number, unknown]) => void
+
+    http
+      .onPost("/workouts/templates/tpl-priv-1/archive")
+      .reply(() => new Promise(resolve => { finishArchiveError = resolve }))
+      .onPost("/workouts/templates/tpl-priv-1/restore")
+      .reply(() => new Promise(resolve => { finishRestoreError = resolve }))
+
+    mount()
+    expect(await screen.findByText("Full Body Condomínio")).toBeVisible()
+
+    await user.click(
+      screen.getByRole("button", { name: "Arquivar Full Body Condomínio" }),
+    )
+    expect(screen.queryByText("Full Body Condomínio")).toBeNull()
+    expect(
+      screen.getByText('Salvando arquivamento de "Full Body Condomínio"...'),
+    ).toBeVisible()
+
+    await act(async () => {
+      finishArchiveError([500, { message: "Temporary failure" }])
+    })
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      'Não foi possível arquivar "Full Body Condomínio". A alteração foi revertida.',
+    )
+    expect(screen.getByText("Full Body Condomínio")).toBeVisible()
+
+    // Verify restore error rollback starting from Arquivados tab
+    store.find(item => item.id === "tpl-priv-1")!.archivedAt =
+      "2026-11-20T12:00:00Z"
+    await user.click(screen.getByRole("tab", { name: "Arquivados" }))
+    expect(await screen.findByText("Full Body Condomínio")).toBeVisible()
+
+    await user.click(
+      screen.getByRole("button", { name: "Restaurar Full Body Condomínio" }),
+    )
+    expect(screen.queryByText("Full Body Condomínio")).toBeNull()
+    expect(
+      screen.getByText('Salvando restauração de "Full Body Condomínio"...'),
+    ).toBeVisible()
+
+    await act(async () => {
+      finishRestoreError([500, { message: "Temporary failure" }])
+    })
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      'Não foi possível restaurar "Full Body Condomínio". A alteração foi revertida.',
+    )
+    expect(screen.getByText("Full Body Condomínio")).toBeVisible()
   })
 })

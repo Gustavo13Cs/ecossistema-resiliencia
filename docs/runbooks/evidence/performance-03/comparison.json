@@ -1,0 +1,65 @@
+{
+  "baselineCommit": "6e83015c00057f6180f8c8d4dacb81bffb755fa0",
+  "modes": [
+    {
+      "mode": "production",
+      "before": {
+        "initial": 2,
+        "source-TACO": 2,
+        "search": 1,
+        "clear": 1,
+        "source-TODAS": 2,
+        "reopen": 0,
+        "add-and-save": 0
+      },
+      "after": {
+        "initial": 1,
+        "source-TACO": 1,
+        "search": 1,
+        "clear": 1,
+        "source-TODAS": 1,
+        "reopen": 0,
+        "add-and-save": 0
+      },
+      "totalBefore": 8,
+      "totalAfter": 5,
+      "reductionPercent": 37.5
+    },
+    {
+      "mode": "development",
+      "before": {
+        "initial": 2,
+        "source-TACO": 2,
+        "search": 1,
+        "clear": 1,
+        "source-TODAS": 2,
+        "reopen": 0,
+        "add-and-save": 0
+      },
+      "after": {
+        "initial": 1,
+        "source-TACO": 1,
+        "search": 1,
+        "clear": 1,
+        "source-TODAS": 1,
+        "reopen": 0,
+        "add-and-save": 0
+      },
+      "totalBefore": 8,
+      "totalAfter": 5,
+      "reductionPercent": 37.5
+    }
+  ],
+  "initialCatalogueReductionPercent": 50,
+  "strictModeMountRegression": {
+    "scope": "component test with authorized editor ready at mount",
+    "before": 3,
+    "after": 1
+  },
+  "limitations": [
+    "Browser local com APIs sintéticas, sem sessão de produção",
+    "Conta somente GET /foods e /foods/search; não conta preferências, cliente ou salvamento",
+    "Sem medição de latência real do backend/banco",
+    "Cancelamento no browser não garante interromper SQL já iniciado no servidor"
+  ]
+}

@@ -1,0 +1,343 @@
+{
+  "quality": 75,
+  "optimizer": {
+    "results": [
+      {
+        "width": 20,
+        "format": "AVIF",
+        "bodyBytes": 738,
+        "mode": "RGBA",
+        "elapsedMs": 26.551586999630672,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 20,
+        "format": "WEBP",
+        "bodyBytes": 632,
+        "mode": "RGBA",
+        "elapsedMs": 10.251162999338703,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 24,
+        "format": "AVIF",
+        "bodyBytes": 770,
+        "mode": "RGBA",
+        "elapsedMs": 8.076813999650767,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 24,
+        "format": "WEBP",
+        "bodyBytes": 786,
+        "mode": "RGBA",
+        "elapsedMs": 7.788849001372,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 32,
+        "format": "AVIF",
+        "bodyBytes": 942,
+        "mode": "RGBA",
+        "elapsedMs": 7.590279001306044,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 32,
+        "format": "WEBP",
+        "bodyBytes": 1022,
+        "mode": "RGBA",
+        "elapsedMs": 7.335563999731676,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 36,
+        "format": "AVIF",
+        "bodyBytes": 1094,
+        "mode": "RGBA",
+        "elapsedMs": 3.801003000262426,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 36,
+        "format": "WEBP",
+        "bodyBytes": 1278,
+        "mode": "RGBA",
+        "elapsedMs": 3.1638830005249474,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 40,
+        "format": "AVIF",
+        "bodyBytes": 1090,
+        "mode": "RGBA",
+        "elapsedMs": 2.9126940007699886,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 40,
+        "format": "WEBP",
+        "bodyBytes": 1508,
+        "mode": "RGBA",
+        "elapsedMs": 2.8951969998161076,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 48,
+        "format": "AVIF",
+        "bodyBytes": 1260,
+        "mode": "RGBA",
+        "elapsedMs": 2.698140000575222,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 48,
+        "format": "WEBP",
+        "bodyBytes": 1798,
+        "mode": "RGBA",
+        "elapsedMs": 2.7645999998640036,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 60,
+        "format": "AVIF",
+        "bodyBytes": 1666,
+        "mode": "RGBA",
+        "elapsedMs": 4.751798000143026,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 60,
+        "format": "WEBP",
+        "bodyBytes": 2394,
+        "mode": "RGBA",
+        "elapsedMs": 6.274966001001303,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 64,
+        "format": "AVIF",
+        "bodyBytes": 1722,
+        "mode": "RGBA",
+        "elapsedMs": 8.556275999580976,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 64,
+        "format": "WEBP",
+        "bodyBytes": 2576,
+        "mode": "RGBA",
+        "elapsedMs": 29.161833999751252,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 72,
+        "format": "AVIF",
+        "bodyBytes": 1905,
+        "mode": "RGBA",
+        "elapsedMs": 6.5067849991464755,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 72,
+        "format": "WEBP",
+        "bodyBytes": 3102,
+        "mode": "RGBA",
+        "elapsedMs": 4.8817440001585055,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 96,
+        "format": "AVIF",
+        "bodyBytes": 2692,
+        "mode": "RGBA",
+        "elapsedMs": 5.5322400003205985,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 96,
+        "format": "WEBP",
+        "bodyBytes": 4312,
+        "mode": "RGBA",
+        "elapsedMs": 4.788112000824185,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 108,
+        "format": "AVIF",
+        "bodyBytes": 2907,
+        "mode": "RGBA",
+        "elapsedMs": 18.80442500078061,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      },
+      {
+        "width": 108,
+        "format": "WEBP",
+        "bodyBytes": 5056,
+        "mode": "RGBA",
+        "elapsedMs": 8.315598999615759,
+        "cache": "HIT",
+        "vary": "Accept",
+        "cacheControl": "public, max-age=14400, must-revalidate"
+      }
+    ],
+    "fallbackPng": {
+      "status": 200,
+      "width": 36,
+      "mode": "P",
+      "transparency": true
+    },
+    "denied": [
+      {
+        "query": "url=%2Fapi%2Fclients&w=36&q=75",
+        "status": 400
+      },
+      {
+        "query": "url=https%3A%2F%2Fexample.com%2Flogo.png&w=36&q=75",
+        "status": 400
+      },
+      {
+        "query": "url=%2Flogo.png%3Fextra%3D1&w=36&q=75",
+        "status": 400
+      },
+      {
+        "query": "url=%2Ficon.svg&w=36&q=75",
+        "status": 400
+      },
+      {
+        "query": "url=%2Flogo.png&w=37&q=75",
+        "status": 400
+      },
+      {
+        "query": "url=%2Flogo.png&w=36&q=100",
+        "status": 400
+      }
+    ]
+  },
+  "renderedCropComparison": [
+    {
+      "crop": "desktop-1x-clientes.png",
+      "size": [
+        36,
+        36
+      ],
+      "meanAbsoluteError": 11.36033950617284,
+      "psnrDb": 23.402317771909775
+    },
+    {
+      "crop": "mobile-3x-clientes.png",
+      "size": [
+        108,
+        108
+      ],
+      "meanAbsoluteError": 6.063014403292182,
+      "psnrDb": 28.2632282939905
+    },
+    {
+      "crop": "desktop-2x-auth-login.png",
+      "size": [
+        72,
+        72
+      ],
+      "meanAbsoluteError": 7.812564300411523,
+      "psnrDb": 26.12740943397928
+    },
+    {
+      "crop": "desktop-1x-landing.png",
+      "size": [
+        32,
+        32
+      ],
+      "meanAbsoluteError": 10.5703125,
+      "psnrDb": 24.22967828284407
+    },
+    {
+      "crop": "desktop-2x-clientes.png",
+      "size": [
+        72,
+        72
+      ],
+      "meanAbsoluteError": 8.05054012345679,
+      "psnrDb": 25.95726077161698
+    },
+    {
+      "crop": "mobile-3x-auth-login.png",
+      "size": [
+        72,
+        72
+      ],
+      "meanAbsoluteError": 8.084747942386832,
+      "psnrDb": 25.925825027393643
+    },
+    {
+      "crop": "mobile-3x-landing.png",
+      "size": [
+        96,
+        96
+      ],
+      "meanAbsoluteError": 6.050130208333333,
+      "psnrDb": 28.343473271802413
+    },
+    {
+      "crop": "desktop-1x-auth-login.png",
+      "size": [
+        36,
+        36
+      ],
+      "meanAbsoluteError": 10.951646090534979,
+      "psnrDb": 23.544362954690463
+    },
+    {
+      "crop": "desktop-2x-landing.png",
+      "size": [
+        64,
+        64
+      ],
+      "meanAbsoluteError": 7.776774088541667,
+      "psnrDb": 26.489267786625277
+    }
+  ],
+  "scope": "Ensaio inicial com qualidade 75; configuração final usa qualidade 85."
+}

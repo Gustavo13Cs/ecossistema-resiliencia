@@ -68,6 +68,7 @@ export const queryKeys = {
   dietHistory: (sessionUserId: string, patientId: string) => ["diet-history", sessionUserId, patientId] as const,
   dashboardSummary: (sessionUserId: string) => ["dashboard-summary", sessionUserId] as const,
   evolution: (sessionUserId: string) => ["evolution", sessionUserId] as const,
+  personalEvolution: (sessionUserId: string) => ["personal-evolution", sessionUserId] as const,
   recipesRoot: (sessionUserId: string) => ["recipes", sessionUserId] as const,
   recipes: (sessionUserId: string, filters: RecipeFilters) =>
     ["recipes", sessionUserId, filters] as const,
@@ -75,4 +76,6 @@ export const queryKeys = {
     ["recipe", sessionUserId, recipeId] as const,
   recipeFoodSearch: (sessionUserId: string, query: string) =>
     ["recipe-food-search", sessionUserId, query] as const,
+  webVitals: (sessionUserId: string, route: string | null, device: string | null) =>
+    ["observability-web-vitals", sessionUserId, route ?? "all", device ?? "all"] as const,
 }

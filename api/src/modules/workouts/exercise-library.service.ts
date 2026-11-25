@@ -114,6 +114,31 @@ export class ExerciseLibraryService {
     return this.customDetail(row);
   }
 
+  createLookup(
+    user: AuthUser,
+    exerciseIds: readonly string[],
+  ): (exerciseId: string) => Promise<ExerciseLibraryDetail> {
+    const customIds = [...new Set(exerciseIds.filter((id) => isUUID(id)))];
+    let customRows: Promise<Map<string, CustomExerciseRow>> | undefined;
+    return async (exerciseId) => {
+      this.assertTrainingProfessional(user);
+      if (/^cat-[a-z]+-[0-9]{2}$/.test(exerciseId))
+        return this.catalogDetail(exerciseId);
+      this.assertCustomId(exerciseId);
+      // O lote é carregado só no primeiro acesso válido; erros seguem a ordem do consumidor.
+      customRows ??= this.prisma.customExercise
+        .findMany({
+          where: { professionalId: user.sub, id: { in: customIds } },
+          select: customExerciseSelect,
+        })
+        .then((rows) => new Map(rows.map((row) => [row.id, row])));
+      const row = (await customRows).get(exerciseId);
+      if (!row)
+        throw new NotFoundException('Exercício personalizado não encontrado.');
+      return this.customDetail(row);
+    };
+  }
+
   async updateVideo(
     user: AuthUser,
     id: string,

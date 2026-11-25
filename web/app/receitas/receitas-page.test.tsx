@@ -391,4 +391,75 @@ describe("ReceitasPage", { timeout: 15_000 }, () => {
       within(dialog).queryByRole("button", { name: /editar|salvar|excluir/i }),
     ).not.toBeInTheDocument()
   })
+
+  it("carrega detalhes completos sob demanda ao editar receita resumida e recupera erro transitorio", async () => {
+    const leanRecipe: RecipeSummary = {
+      id: recipe.id,
+      status: recipe.status,
+      currentVersionId: recipe.currentVersionId,
+      createdAt: recipe.createdAt,
+      updatedAt: recipe.updatedAt,
+      currentVersion: {
+        id: recipe.currentVersion.id,
+        recipeId: recipe.currentVersion.recipeId,
+        version: recipe.currentVersion.version,
+        name: recipe.currentVersion.name,
+        category: recipe.currentVersion.category,
+        servings: recipe.currentVersion.servings,
+        isGlutenFree: recipe.currentVersion.isGlutenFree,
+        isLactoseFree: recipe.currentVersion.isLactoseFree,
+        isVegan: recipe.currentVersion.isVegan,
+        kcal: recipe.currentVersion.kcal,
+        protein: recipe.currentVersion.protein,
+        carbs: recipe.currentVersion.carbs,
+        fat: recipe.currentVersion.fat,
+        fiber: recipe.currentVersion.fiber,
+        sodium: recipe.currentVersion.sodium,
+        calcium: recipe.currentVersion.calcium,
+        iron: recipe.currentVersion.iron,
+        createdAt: recipe.currentVersion.createdAt,
+      },
+    }
+    http.onGet("/recipes").reply(200, [leanRecipe])
+    http
+      .onGet("/recipes/recipe-one")
+      .replyOnce(500)
+      .onGet("/recipes/recipe-one")
+      .reply(200, {
+        ...recipe,
+        versions: [recipe.currentVersion],
+      })
+    http.onPatch("/recipes/recipe-one").reply(200, recipe)
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText("Sopa de lentilha")
+
+    await user.click(
+      screen.getByRole("button", { name: /editar sopa de lentilha/i }),
+    )
+    expect(
+      await screen.findByText(/não foi possível carregar os detalhes da receita/i),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: /tentar novamente/i }))
+    expect(
+      await screen.findByRole("group", { name: /lentilha cozida/i }),
+    ).toBeInTheDocument()
+
+    const name = screen.getByRole("textbox", { name: /^nome/i })
+    await user.clear(name)
+    await user.type(name, "Sopa de lentilha revisada")
+    await user.click(screen.getByRole("button", { name: /salvar receita/i }))
+
+    await waitFor(() => expect(http.history.patch).toHaveLength(1))
+    const payload = JSON.parse(
+      http.history.patch[0]?.data ?? "{}",
+    ) as Record<string, unknown>
+    expect(payload).toMatchObject({
+      name: "Sopa de lentilha revisada",
+      expectedVersion: 1,
+      instructions: "Cozinhe e sirva.",
+      ingredients: [{ foodId: "food-one", quantity: 240, measure: "g" }],
+    })
+  })
 })

@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import type { Client } from "@/types/client"
+import type { ClientSummary } from "@/types/client"
 import type {
   Appointment,
   AppointmentKind,
@@ -111,7 +111,7 @@ export function AppointmentDialog({
 }: {
   open: boolean
   appointment: Appointment | null
-  clients: Client[]
+  clients: ClientSummary[]
   selectedDate: string
   timeZone: string
   clientSingular: string
@@ -144,7 +144,7 @@ export function AppointmentDialog({
         id: appointment.client.id,
         name: appointment.client.name,
         status: appointment.client.status,
-      } as Client,
+      } as ClientSummary,
     ]
   }, [appointment, clients])
 

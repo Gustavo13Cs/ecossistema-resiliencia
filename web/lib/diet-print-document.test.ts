@@ -103,4 +103,12 @@ describe("diet print documents", () => {
       expect(doc.title).toContain(attack)
     }
   })
+
+  it("does not import external Google Fonts that violate strict CSP", () => {
+    for (const html of [buildDietPrintHtml(input), buildShoppingListPrintHtml({ ...input, shoppingDays: 2 })]) {
+      expect(html).not.toContain("fonts.googleapis.com")
+      expect(html).not.toContain("fonts.gstatic.com")
+      expect(html).not.toContain("@import")
+    }
+  })
 })

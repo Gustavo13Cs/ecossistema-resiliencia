@@ -21,7 +21,10 @@ describe('Diretório de clientes (mocked)', () => {
         })
       },
     ).as('newClientRoute')
-    cy.intercept('GET', '**/clients?status=ACTIVE', { body: [] }).as('listClients')
+    cy.intercept(
+      { method: 'GET', pathname: '**/clients', query: { status: 'ACTIVE' } },
+      { body: [] },
+    ).as('listClients')
     cy.intercept('POST', '**/clients', (request) => {
       expect(request.body).to.deep.include({
         name: 'Cliente Teste',

@@ -1,0 +1,796 @@
+{
+  "phase": "after",
+  "method": {
+    "origin": "http://127.0.0.1:3102",
+    "viewports": [
+      "1440x900 DPR1",
+      "1440x900 DPR2",
+      "390x844 DPR3"
+    ],
+    "api": "synthetic browser interception; no production access",
+    "cache": "browser disabled; server cache recorded",
+    "metric": "response body bytes of image requests; all visible images decoded",
+    "timings": "local; not Lighthouse or RUM"
+  },
+  "results": [
+    {
+      "route": "/",
+      "viewport": "desktop-1x",
+      "width": 1440,
+      "dpr": 1,
+      "images": [
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=32&q=85",
+          "sizes": "32px",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 32,
+          "naturalHeight": 32,
+          "cssWidth": 32,
+          "cssHeight": 32,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        },
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=20&q=85",
+          "sizes": "20px",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 20,
+          "naturalHeight": 20,
+          "cssWidth": 20,
+          "cssHeight": 20,
+          "inViewport": false,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/_next/image?url=%2Flogo.png&w=32&q=85",
+          "status": 200,
+          "bodyBytes": 1005,
+          "sha256": "ed3b9a3032ba0ebf666c5b0e2778c2cf06187c5e284100e23795aae3c01a5ae1",
+          "contentType": "image/avif",
+          "cache": "MISS",
+          "vary": "Accept",
+          "width": 32,
+          "height": 32,
+          "format": "AVIF",
+          "mode": "RGBA"
+        },
+        {
+          "path": "/_next/image?url=%2Flogo.png&w=20&q=85",
+          "status": 200,
+          "bodyBytes": 758,
+          "sha256": "63da87cde3bac4c0537aa4999a12f7f14091d5a7f39c5292be49d5be7e2d7e11",
+          "contentType": "image/avif",
+          "cache": "MISS",
+          "vary": "Accept",
+          "width": 20,
+          "height": 20,
+          "format": "AVIF",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 1763,
+      "imageRequests": 2,
+      "performance": {
+        "lcpMs": 1564,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/_next/image?url=%2Flogo.png&w=32&q=85",
+            "encodedBodySize": 1005,
+            "decodedBodySize": 1005,
+            "durationMs": 354.90000000037253
+          },
+          {
+            "path": "/_next/image?url=%2Flogo.png&w=20&q=85",
+            "encodedBodySize": 758,
+            "decodedBodySize": 758,
+            "durationMs": 269.6000000014901
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/auth/login",
+      "viewport": "desktop-1x",
+      "width": 1440,
+      "dpr": 1,
+      "images": [
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=36&q=85",
+          "sizes": "36px",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 36,
+          "naturalHeight": 36,
+          "cssWidth": 36,
+          "cssHeight": 36,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        },
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": null,
+          "sizes": "24px",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "cssWidth": 0,
+          "cssHeight": 0,
+          "inViewport": false,
+          "visible": false,
+          "complete": false
+        }
+      ],
+      "responses": [
+        {
+          "path": "/_next/image?url=%2Flogo.png&w=36&q=85",
+          "status": 200,
+          "bodyBytes": 1164,
+          "sha256": "e47bbb791938e03ea275f18d5714d40f6cf5a2b983a8f0f7bb27e2ea21299a3a",
+          "contentType": "image/avif",
+          "cache": "MISS",
+          "vary": "Accept",
+          "width": 36,
+          "height": 36,
+          "format": "AVIF",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 1164,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 1396,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/_next/image?url=%2Flogo.png&w=36&q=85",
+            "encodedBodySize": 1164,
+            "decodedBodySize": 1164,
+            "durationMs": 98.40000000037253
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/auth/register",
+      "viewport": "desktop-1x",
+      "width": 1440,
+      "dpr": 1,
+      "images": [
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=24&q=85",
+          "sizes": "24px",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 24,
+          "naturalHeight": 24,
+          "cssWidth": 24,
+          "cssHeight": 24,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/_next/image?url=%2Flogo.png&w=24&q=85",
+          "status": 200,
+          "bodyBytes": 799,
+          "sha256": "4091776c5fe1260bda13d23541ba9051df3b524da4efe0fde0cb3633220021fc",
+          "contentType": "image/avif",
+          "cache": "MISS",
+          "vary": "Accept",
+          "width": 24,
+          "height": 24,
+          "format": "AVIF",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 799,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 1832,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/_next/image?url=%2Flogo.png&w=24&q=85",
+            "encodedBodySize": 799,
+            "decodedBodySize": 799,
+            "durationMs": 152.30000000074506
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/clientes",
+      "viewport": "desktop-1x",
+      "width": 1440,
+      "dpr": 1,
+      "images": [
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=36&q=85",
+          "sizes": "36px",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 36,
+          "naturalHeight": 36,
+          "cssWidth": 36,
+          "cssHeight": 36,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/_next/image?url=%2Flogo.png&w=36&q=85",
+          "status": 200,
+          "bodyBytes": 1164,
+          "sha256": "e47bbb791938e03ea275f18d5714d40f6cf5a2b983a8f0f7bb27e2ea21299a3a",
+          "contentType": "image/avif",
+          "cache": "HIT",
+          "vary": "Accept",
+          "width": 36,
+          "height": 36,
+          "format": "AVIF",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 1164,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 1668,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/_next/image?url=%2Flogo.png&w=36&q=85",
+            "encodedBodySize": 1164,
+            "decodedBodySize": 1164,
+            "durationMs": 121.20000000111759
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/",
+      "viewport": "desktop-2x",
+      "width": 1440,
+      "dpr": 2,
+      "images": [
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=64&q=85",
+          "sizes": "32px",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 32,
+          "naturalHeight": 32,
+          "cssWidth": 32,
+          "cssHeight": 32,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        },
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=40&q=85",
+          "sizes": "20px",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 20,
+          "naturalHeight": 20,
+          "cssWidth": 20,
+          "cssHeight": 20,
+          "inViewport": false,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/_next/image?url=%2Flogo.png&w=64&q=85",
+          "status": 200,
+          "bodyBytes": 1889,
+          "sha256": "ad43ba6a3d4c923b7f0617fd06d72dc66a1006855b4c0b3f59ad7206b359cd37",
+          "contentType": "image/avif",
+          "cache": "MISS",
+          "vary": "Accept",
+          "width": 64,
+          "height": 64,
+          "format": "AVIF",
+          "mode": "RGBA"
+        },
+        {
+          "path": "/_next/image?url=%2Flogo.png&w=40&q=85",
+          "status": 200,
+          "bodyBytes": 1199,
+          "sha256": "556e44835dcfec2d22cf8c9bfbc5e65307d4aac41a2fcdd717e130497f873949",
+          "contentType": "image/avif",
+          "cache": "MISS",
+          "vary": "Accept",
+          "width": 40,
+          "height": 40,
+          "format": "AVIF",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 3088,
+      "imageRequests": 2,
+      "performance": {
+        "lcpMs": 1308,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/_next/image?url=%2Flogo.png&w=64&q=85",
+            "encodedBodySize": 1889,
+            "decodedBodySize": 1889,
+            "durationMs": 135.5
+          },
+          {
+            "path": "/_next/image?url=%2Flogo.png&w=40&q=85",
+            "encodedBodySize": 1199,
+            "decodedBodySize": 1199,
+            "durationMs": 119.19999999925494
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/auth/login",
+      "viewport": "desktop-2x",
+      "width": 1440,
+      "dpr": 2,
+      "images": [
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=72&q=85",
+          "sizes": "36px",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 36,
+          "naturalHeight": 36,
+          "cssWidth": 36,
+          "cssHeight": 36,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        },
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": null,
+          "sizes": "24px",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "cssWidth": 0,
+          "cssHeight": 0,
+          "inViewport": false,
+          "visible": false,
+          "complete": false
+        }
+      ],
+      "responses": [
+        {
+          "path": "/_next/image?url=%2Flogo.png&w=72&q=85",
+          "status": 200,
+          "bodyBytes": 2092,
+          "sha256": "61a5cb9b789fbf87eb0a00a4c9a5a8894cb5a81c1fcc033b7f0dbb178f8a9416",
+          "contentType": "image/avif",
+          "cache": "MISS",
+          "vary": "Accept",
+          "width": 72,
+          "height": 72,
+          "format": "AVIF",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 2092,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 1500,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/_next/image?url=%2Flogo.png&w=72&q=85",
+            "encodedBodySize": 2092,
+            "decodedBodySize": 2092,
+            "durationMs": 183.90000000037253
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/auth/register",
+      "viewport": "desktop-2x",
+      "width": 1440,
+      "dpr": 2,
+      "images": [
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=48&q=85",
+          "sizes": "24px",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 24,
+          "naturalHeight": 24,
+          "cssWidth": 24,
+          "cssHeight": 24,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/_next/image?url=%2Flogo.png&w=48&q=85",
+          "status": 200,
+          "bodyBytes": 1404,
+          "sha256": "316d2edfcedea0d85fbcb3c76d7a7f92050289451ce9b40b40497ea9c33f24e7",
+          "contentType": "image/avif",
+          "cache": "MISS",
+          "vary": "Accept",
+          "width": 48,
+          "height": 48,
+          "format": "AVIF",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 1404,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 1276,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/_next/image?url=%2Flogo.png&w=48&q=85",
+            "encodedBodySize": 1404,
+            "decodedBodySize": 1404,
+            "durationMs": 98
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/clientes",
+      "viewport": "desktop-2x",
+      "width": 1440,
+      "dpr": 2,
+      "images": [
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=72&q=85",
+          "sizes": "36px",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 36,
+          "naturalHeight": 36,
+          "cssWidth": 36,
+          "cssHeight": 36,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/_next/image?url=%2Flogo.png&w=72&q=85",
+          "status": 200,
+          "bodyBytes": 2092,
+          "sha256": "61a5cb9b789fbf87eb0a00a4c9a5a8894cb5a81c1fcc033b7f0dbb178f8a9416",
+          "contentType": "image/avif",
+          "cache": "HIT",
+          "vary": "Accept",
+          "width": 72,
+          "height": 72,
+          "format": "AVIF",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 2092,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 1292,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/_next/image?url=%2Flogo.png&w=72&q=85",
+            "encodedBodySize": 2092,
+            "decodedBodySize": 2092,
+            "durationMs": 113.89999999850988
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/",
+      "viewport": "mobile-3x",
+      "width": 390,
+      "dpr": 3,
+      "images": [
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=96&q=85",
+          "sizes": "32px",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 32,
+          "naturalHeight": 32,
+          "cssWidth": 32,
+          "cssHeight": 32,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        },
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": null,
+          "sizes": "20px",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "cssWidth": 20,
+          "cssHeight": 20,
+          "inViewport": false,
+          "visible": true,
+          "complete": false
+        }
+      ],
+      "responses": [
+        {
+          "path": "/_next/image?url=%2Flogo.png&w=96&q=85",
+          "status": 200,
+          "bodyBytes": 2952,
+          "sha256": "664358deab869ff1def17d9aaa55da827dd13bac49c06820295ba990070d9a23",
+          "contentType": "image/avif",
+          "cache": "MISS",
+          "vary": "Accept",
+          "width": 96,
+          "height": 96,
+          "format": "AVIF",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 2952,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 1140,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/_next/image?url=%2Flogo.png&w=96&q=85",
+            "encodedBodySize": 2952,
+            "decodedBodySize": 2952,
+            "durationMs": 242.59999999962747
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/auth/login",
+      "viewport": "mobile-3x",
+      "width": 390,
+      "dpr": 3,
+      "images": [
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=108&q=85",
+          "sizes": "36px",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 36,
+          "naturalHeight": 36,
+          "cssWidth": 0,
+          "cssHeight": 0,
+          "inViewport": false,
+          "visible": false,
+          "complete": true
+        },
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=72&q=85",
+          "sizes": "24px",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 24,
+          "naturalHeight": 24,
+          "cssWidth": 24,
+          "cssHeight": 24,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/_next/image?url=%2Flogo.png&w=72&q=85",
+          "status": 200,
+          "bodyBytes": 2092,
+          "sha256": "61a5cb9b789fbf87eb0a00a4c9a5a8894cb5a81c1fcc033b7f0dbb178f8a9416",
+          "contentType": "image/avif",
+          "cache": "HIT",
+          "vary": "Accept",
+          "width": 72,
+          "height": 72,
+          "format": "AVIF",
+          "mode": "RGBA"
+        },
+        {
+          "path": "/_next/image?url=%2Flogo.png&w=108&q=85",
+          "status": 200,
+          "bodyBytes": 3220,
+          "sha256": "554774d85ef68f481b26071ce2314714907d931a5ef1ea762f6365ecb8d92ea1",
+          "contentType": "image/avif",
+          "cache": "MISS",
+          "vary": "Accept",
+          "width": 108,
+          "height": 108,
+          "format": "AVIF",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 5312,
+      "imageRequests": 2,
+      "performance": {
+        "lcpMs": 992,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/_next/image?url=%2Flogo.png&w=108&q=85",
+            "encodedBodySize": 3220,
+            "decodedBodySize": 3220,
+            "durationMs": 211
+          },
+          {
+            "path": "/_next/image?url=%2Flogo.png&w=72&q=85",
+            "encodedBodySize": 2092,
+            "decodedBodySize": 2092,
+            "durationMs": 25.09999999962747
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/auth/register",
+      "viewport": "mobile-3x",
+      "width": 390,
+      "dpr": 3,
+      "images": [
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=72&q=85",
+          "sizes": "24px",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 24,
+          "naturalHeight": 24,
+          "cssWidth": 24,
+          "cssHeight": 24,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/_next/image?url=%2Flogo.png&w=72&q=85",
+          "status": 200,
+          "bodyBytes": 2092,
+          "sha256": "61a5cb9b789fbf87eb0a00a4c9a5a8894cb5a81c1fcc033b7f0dbb178f8a9416",
+          "contentType": "image/avif",
+          "cache": "HIT",
+          "vary": "Accept",
+          "width": 72,
+          "height": 72,
+          "format": "AVIF",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 2092,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 1044,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/_next/image?url=%2Flogo.png&w=72&q=85",
+            "encodedBodySize": 2092,
+            "decodedBodySize": 2092,
+            "durationMs": 52
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "route": "/clientes",
+      "viewport": "mobile-3x",
+      "width": 390,
+      "dpr": 3,
+      "images": [
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=108&q=85",
+          "sizes": "36px",
+          "loading": "auto",
+          "fetchPriority": "auto",
+          "naturalWidth": 36,
+          "naturalHeight": 36,
+          "cssWidth": 0,
+          "cssHeight": 0,
+          "inViewport": false,
+          "visible": false,
+          "complete": true
+        },
+        {
+          "src": "/_next/image?url=%2Flogo.png&w=3840&q=85",
+          "currentSrc": "/_next/image?url=%2Flogo.png&w=108&q=85",
+          "sizes": "36px",
+          "loading": "lazy",
+          "fetchPriority": "auto",
+          "naturalWidth": 36,
+          "naturalHeight": 36,
+          "cssWidth": 36,
+          "cssHeight": 36,
+          "inViewport": true,
+          "visible": true,
+          "complete": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "/_next/image?url=%2Flogo.png&w=108&q=85",
+          "status": 200,
+          "bodyBytes": 3220,
+          "sha256": "554774d85ef68f481b26071ce2314714907d931a5ef1ea762f6365ecb8d92ea1",
+          "contentType": "image/avif",
+          "cache": "HIT",
+          "vary": "Accept",
+          "width": 108,
+          "height": 108,
+          "format": "AVIF",
+          "mode": "RGBA"
+        }
+      ],
+      "totalImageBodyBytes": 3220,
+      "imageRequests": 1,
+      "performance": {
+        "lcpMs": 988,
+        "cls": 0,
+        "images": [
+          {
+            "path": "/_next/image?url=%2Flogo.png&w=108&q=85",
+            "encodedBodySize": 3220,
+            "decodedBodySize": 3220,
+            "durationMs": 104.70000000111759
+          }
+        ]
+      },
+      "errors": []
+    }
+  ]
+}

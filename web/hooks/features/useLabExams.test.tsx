@@ -81,7 +81,7 @@ describe("useLabExams Client contract", () => {
 
     await waitFor(() => expect(result.current.central.rawExams).toMatchObject([{ id: "exam-2", clientName: client.name }]))
     expect(result.current.chart.exams).toEqual([exam, created])
-    expect(cache.getQueryData(queryKeys.centralLabExams("professional-1"))).toEqual([created])
+    expect(cache.getQueriesData<{items: unknown[]}>({queryKey:queryKeys.centralLabExams("professional-1")})[0]?.[1]?.items).toEqual([created])
     expect(cache.getQueryData(queryKeys.labExams("professional-1", client.id))).toEqual([exam, created])
     expect(http.history.get.filter(entry => entry.url === "/lab-exams")).toHaveLength(2)
     expect(http.history.get.filter(entry => entry.url === "/lab-exams/client/client-1")).toHaveLength(2)

@@ -67,10 +67,13 @@ describe("Agenda profissional (mocked UI contract)", () => {
         csrfToken: "csrf-agenda-e2e",
       },
     })
-    cy.intercept("GET", "**/clients?status=ACTIVE", {
-      statusCode: 200,
-      body: [client],
-    }).as("clients")
+    cy.intercept(
+      { method: "GET", pathname: "**/clients", query: { status: "ACTIVE" } },
+      {
+        statusCode: 200,
+        body: [client],
+      },
+    ).as("clients")
     cy.intercept({ method: "GET", pathname: "/api/appointments" }, (request) => {
       request.reply({ statusCode: 200, body: [appointment] })
     }).as("appointments")

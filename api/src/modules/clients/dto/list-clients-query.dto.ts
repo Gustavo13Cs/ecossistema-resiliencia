@@ -1,7 +1,14 @@
 import { ClientStatus } from '@prisma/client';
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 
-export class ListClientsQueryDto {
+import { PageQueryDto } from '../../../common/pagination/page-query.dto';
+
+export class ListClientsQueryDto extends PageQueryDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  q?: string;
+
   @IsOptional()
   @IsEnum(ClientStatus)
   status?: ClientStatus;

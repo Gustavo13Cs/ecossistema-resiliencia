@@ -1,3 +1,10 @@
+import type { Response } from 'express';
+import { setPaginationHeaders } from '../../common/pagination/pagination';
+import { PageQueryDto } from '../../common/pagination/page-query.dto';
+import {
+  ListLabExamsQueryDto,
+  LabLongitudinalQueryDto,
+} from './dto/list-lab-exams-query.dto';
 import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Controller,
@@ -8,6 +15,8 @@ import {
   Param,
   UseGuards,
   Request,
+  Query,
+  Res,
   Delete,
   ParseUUIDPipe,
 } from '@nestjs/common';
@@ -25,11 +34,27 @@ import { AuthenticatedRequest } from '../../common/types/auth-user';
 export class LabExamsController {
   constructor(private readonly labExamsService: LabExamsService) {}
 
-  @ClinicalResponse({ shape: 'resource' })
+  @ClinicalResponse({ shape: 'resource-page' })
   @Get()
   @Header('Cache-Control', 'no-store')
-  findAll(@Request() request: AuthenticatedRequest) {
-    return this.labExamsService.findAll(request.user);
+  findAll(
+    @Request() request: AuthenticatedRequest,
+    @Query() query: ListLabExamsQueryDto,
+  ) {
+    return this.labExamsService.findPage(request.user, query);
+  }
+
+  @ClinicalResponse({ shape: 'resource' })
+  @Get('longitudinal')
+  @Header('Cache-Control', 'no-store')
+  async longitudinal(
+    @Request() request: AuthenticatedRequest,
+    @Query() query: LabLongitudinalQueryDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.labExamsService.longitudinal(request.user, query);
+    setPaginationHeaders(response, result.pagination);
+    return result.items;
   }
 
   @ClinicalResponse({
@@ -56,10 +81,18 @@ export class LabExamsController {
   @ClinicalResponse({ shape: 'resource' })
   @Get('client/:clientId')
   @Header('Cache-Control', 'no-store')
-  findByClient(
+  async findByClient(
     @Request() request: AuthenticatedRequest,
-    @Param('clientId') clientId: string,
+    @Param('clientId', ParseUUIDPipe) clientId: string,
+    @Query() query: PageQueryDto,
+    @Res({ passthrough: true }) response: Response,
   ) {
-    return this.labExamsService.findByClient(request.user, clientId);
+    const result = await this.labExamsService.findClientPage(
+      request.user,
+      clientId,
+      query,
+    );
+    setPaginationHeaders(response, result.pagination);
+    return result.items;
   }
 }

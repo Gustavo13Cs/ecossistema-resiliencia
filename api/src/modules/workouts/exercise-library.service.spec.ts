@@ -30,6 +30,100 @@ describe('ExerciseLibraryService', () => {
     prisma.customExercise.findFirst.mockResolvedValue(null);
   });
 
+  it('loads a scoped deduplicated batch lazily and returns independent details in lookup order', async () => {
+    const firstId = '81000000-0000-4000-8000-000000000001';
+    const secondId = '81000000-0000-4000-8000-000000000002';
+    prisma.customExercise.findMany.mockResolvedValue([
+      {
+        id: secondId,
+        name: 'Segundo',
+        muscleGroup: 'CHEST',
+        equipment: null,
+        notes: null,
+        videoUrl: null,
+        mediaVersion: 2,
+      },
+      {
+        id: firstId,
+        name: 'Primeiro',
+        muscleGroup: 'CHEST',
+        equipment: null,
+        notes: 'Instrução',
+        videoUrl: 'https://vimeo.com/111',
+        mediaVersion: 1,
+      },
+    ]);
+    const lookup = service.createLookup(user, [
+      firstId,
+      secondId,
+      firstId,
+      'invalid',
+      'cat-chest-01',
+    ]);
+    expect((await lookup('cat-chest-01')).source).toBe('CATALOG');
+    expect(prisma.customExercise.findMany).not.toHaveBeenCalled();
+    expect((await lookup(secondId)).demonstration).toBeNull();
+    const first = await lookup(firstId);
+    const duplicate = await lookup(firstId);
+    expect(first.demonstration).toEqual({
+      revision: '1',
+      instruction: 'Instrução',
+      personalVideoUrl: 'https://vimeo.com/111',
+    });
+    first.demonstration!.instruction = 'Alterada';
+    expect(duplicate.demonstration!.instruction).toBe('Instrução');
+    expect(prisma.customExercise.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.customExercise.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { professionalId: user.sub, id: { in: [firstId, secondId] } },
+      }),
+    );
+    expect(prisma.customExercise.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('validates each lookup before database access and keeps foreign items unavailable', async () => {
+    const id = '81000000-0000-4000-8000-000000000001';
+    const lookup = service.createLookup(user, [id, 'invalid', 'cat-chest-99']);
+    await expect(lookup('invalid')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(lookup('cat-chest-99')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(prisma.customExercise.findMany).not.toHaveBeenCalled();
+    await expect(lookup(id)).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.customExercise.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.customExercise.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { professionalId: user.sub, id: { in: [id] } },
+      }),
+    );
+    const deniedLookup = service.createLookup(
+      { ...user, role: 'NUTRITIONIST' },
+      [id],
+    );
+    await expect(deniedLookup(id)).rejects.toBeInstanceOf(ForbiddenException);
+    expect(prisma.customExercise.findMany).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps exact matching for identifiers stored as text', async () => {
+    const id = 'abcdef00-0000-4000-8000-000000000001';
+    prisma.customExercise.findMany.mockResolvedValue([
+      {
+        id,
+        name: 'Teste',
+        muscleGroup: 'CHEST',
+        equipment: null,
+        notes: null,
+        videoUrl: null,
+        mediaVersion: 1,
+      },
+    ]);
+    const lookup = service.createLookup(user, [id, id.toUpperCase()]);
+    expect((await lookup(id)).id).toBe(id);
+    await expect(lookup(id.toUpperCase())).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+  });
+
   it('lists custom exercises first followed by the versioned SafeMove catalog', async () => {
     prisma.customExercise.findMany.mockResolvedValue([
       {

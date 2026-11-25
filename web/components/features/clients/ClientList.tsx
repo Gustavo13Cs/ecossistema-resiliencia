@@ -2,15 +2,15 @@
 
 import { useSyncExternalStore } from "react"
 import type { WorkspaceDefinition } from "@/lib/professional-workspace"
-import type { Client, ClientStatus } from "@/types/client"
+import type { ClientStatus, ClientSummary } from "@/types/client"
 import { ClientListItem } from "./ClientListItem"
 
 interface ClientListProps {
-  clients: readonly Client[]
+  clients: readonly ClientSummary[]
   status: ClientStatus
   workspace: WorkspaceDefinition
   pendingClientId: string | null
-  onChangeStatus: (client: Client) => Promise<void> | void
+  onChangeStatus: (client: ClientSummary) => Promise<void> | void
 }
 
 const DESKTOP_QUERY = "(min-width: 768px)"
