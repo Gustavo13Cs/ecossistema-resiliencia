@@ -112,9 +112,6 @@ export default function NovaReabilitacaoPage() {
         if (controller.signal.aborted) return
         setPatientName(clientRes.data.name)
 
-        const planRes = await api.get<RehabPlan | null>(
-          `/rehab-plans/client/${params.id}/active`,
-        )
         if (planRes.data) {
           const active = planRes.data
           setActivePlanId(active.id)
@@ -136,6 +133,9 @@ export default function NovaReabilitacaoPage() {
       }
     }
     void loadData()
+    return () => {
+      controller.abort()
+    }
   }, [params.id])
 
   const printablePlan = useMemo(

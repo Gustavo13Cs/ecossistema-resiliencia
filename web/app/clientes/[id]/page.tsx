@@ -15,7 +15,6 @@ import { ProfessionalScopePanel } from "@/components/features/clients/Profession
 import type { ClientFormPayload } from "@/components/features/clients/client-field-policy"
 import { NutritionistQuickActions } from "@/components/features/clients/NutritionistQuickActions"
 import { BodyCompositionChart } from "@/components/features/clients/BodyCompositionChart"
-import { AssessmentModal } from "@/components/AssessmentModal"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
 import { useClientRecord, type ClientRecordStatus } from "@/hooks/features/useClientRecord"
@@ -27,11 +26,6 @@ import type { Client } from "@/types/client"
 
 const AssessmentModal = dynamic(
   () => import("@/components/AssessmentModal").then((module) => module.AssessmentModal),
-  { loading: () => <AsyncState kind="loading" title="Carregando formulário" description="Preparando os campos para edição..." /> },
-)
-
-const PhysioAssessmentModal = dynamic(
-  () => import("@/components/PhysioAssessmentModal").then((module) => module.PhysioAssessmentModal),
   { loading: () => <AsyncState kind="loading" title="Carregando formulário" description="Preparando os campos para edição..." /> },
 )
 
@@ -105,6 +99,8 @@ export default function ClienteHubPage() {
       queryClient.invalidateQueries({ queryKey: queryKeys.physioAssessments(user.sub, clientId) }),
       queryClient.invalidateQueries({ queryKey: queryKeys.physioEvolutions(user.sub, clientId) }),
       queryClient.invalidateQueries({ queryKey: queryKeys.physioScales(user.sub, clientId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.physioPackages(user.sub, clientId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.physioDischarges(user.sub, clientId) }),
     ])
   }
 
