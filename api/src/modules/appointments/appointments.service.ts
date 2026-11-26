@@ -250,6 +250,17 @@ export class AppointmentsService {
       if (scheduleChanged || input.clientId) {
         await this.assertActiveOwnedClient(transaction, user.sub, clientId);
       }
+      if (clientId !== current.clientId) {
+        const evolution = await transaction.physioSessionEvolution.findFirst({
+          where: { appointmentId, professionalId: user.sub },
+          select: { id: true },
+        });
+        if (evolution) {
+          throw new ConflictException(
+            'Atendimento com evolução registrada deve permanecer no mesmo prontuário.',
+          );
+        }
+      }
       if (scheduleChanged) {
         await this.assertNoOverlap(
           transaction,
@@ -629,7 +640,7 @@ export class AppointmentsService {
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2034'
+        (error.code === 'P2034' || error.code === 'P2003')
       ) {
         throw new ConflictException(
           'Os dados mudaram em outra sessão. Atualize a agenda e tente novamente.',

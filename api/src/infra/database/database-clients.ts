@@ -1,8 +1,11 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import 'dotenv/config';
+import { config } from 'dotenv';
 import { instrumentDriverAdapterFactory } from '../../common/observability/sql-instrumentation';
+
+// A API local carrega somente o arquivo destinado aos processos HTTP.
+config({ path: '.env.runtime', quiet: true });
 
 export function databaseClient(variable: string): PrismaClient {
   const url = process.env[variable];

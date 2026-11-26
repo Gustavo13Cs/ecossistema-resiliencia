@@ -8,7 +8,6 @@ services:
       dockerfile: Dockerfile
       target: migration
     environment:
-      DATABASE_URL: ${DATABASE_URL:?Defina DATABASE_URL para o banco aprovado}
       DIRECT_URL: ${DIRECT_URL:?Defina DIRECT_URL para o banco aprovado}
     restart: "no"
 
@@ -19,7 +18,9 @@ services:
       target: production
     environment:
       NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL:?Defina DATABASE_URL para o banco aprovado}
+      CLINICAL_DATABASE_URL: ${CLINICAL_DATABASE_URL:?Defina a conexão clínica}
+      AUTH_DATABASE_URL: ${AUTH_DATABASE_URL:?Defina a conexão de autenticação}
+      JOBS_DATABASE_URL: ${JOBS_DATABASE_URL:?Defina a conexão dos jobs}
       JWT_SECRET: ${JWT_SECRET:?Defina uma chave de assinatura segura}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?Defina a origem HTTPS da web}
       AUTH_COOKIE_SECURE: "true"

@@ -175,3 +175,9 @@ Entrega do Personal aprovada pelo usuário em 17/10/2026, com execução por sub
 | P.6 | Periodização e gestão do acompanhamento | ⏳ proposta | — |
 
 - [x] Codex — Rascunhos Task 2: escrita finalizada, metadados e preservação de histórico; 39 unitários e 13 regressões PostgreSQL, tipos/lint aprovados (2026-10-17).
+
+- [x] Codex — Auditoria de segurança do SafeMove com a skill da Cloudflare (2026-11-26). [Escopo e quatro pontos para validação](agents/CODEX_STATUS.md#current-task).
+- [x] Codex — Validação dos quatro pontos da auditoria (2026-11-26). [Resultados e limite da verificação de produção](agents/CODEX_STATUS.md#current-task).
+- [x] Codex — Correções dos quatro pontos da auditoria concluídas (2026-11-26). [Resultados da validação](agents/CODEX_STATUS.md#current-task).
+- [x] Codex — Correções da auditoria publicadas e [PR #38 aberto para revisão](https://github.com/Gustavo13Cs/ecossistema-resiliencia/pull/38) (2026-11-26).
+- [x] Codex — Falha de Cypress no PR #38 corrigida e validada localmente com 7/7 testes do CI (2026-11-26).

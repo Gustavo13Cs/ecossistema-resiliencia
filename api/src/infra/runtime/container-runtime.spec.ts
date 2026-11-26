@@ -33,6 +33,31 @@ describe('Production container boundaries', () => {
     ).toContain('output: "standalone"');
   });
 
+  it('keeps the local migration environment outside the HTTP process', () => {
+    const compose = readFileSync(resolve(root, 'docker-compose.yml'), 'utf8');
+    const [migrator, services] = compose.split('\n  api:');
+    const [api] = services.split('\n  web:');
+    expect(migrator).toContain('./api/.env.migrate');
+    expect(api).toContain('./api/.env.runtime');
+    expect(api).not.toMatch(
+      /env_file:\s+- \.\/api\/\.env\s|\.env\.migrate|DIRECT_URL|volumes:/,
+    );
+    expect(api).toContain('service_completed_successfully');
+    const runtime = readFileSync(
+      resolve(root, 'docker-compose.runtime.yml'),
+      'utf8',
+    );
+    const apiRuntime = runtime.split('\n  api:')[1].split('\n  web:')[0];
+    for (const key of [
+      'CLINICAL_DATABASE_URL',
+      'AUTH_DATABASE_URL',
+      'JOBS_DATABASE_URL',
+    ]) {
+      expect(apiRuntime).toContain(key + ':');
+    }
+    expect(apiRuntime).not.toMatch(/DIRECT_URL|^\s+DATABASE_URL:/m);
+  });
+
   it('excludes environment secrets from both Docker build contexts', () => {
     for (const path of ['.dockerignore', 'web/.dockerignore']) {
       const patterns = readFileSync(resolve(root, path), 'utf8').split(/\r?\n/);

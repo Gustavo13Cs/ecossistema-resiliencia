@@ -120,7 +120,7 @@ async function refreshCsrfToken(expectedEpoch: number): Promise<string> {
   if (!csrfRefreshState || csrfRefreshState.epoch !== expectedEpoch) {
     let state!: { epoch: number; promise: Promise<string> }
     const promise = api
-      .get<{ csrfToken: string }>("/auth/csrf")
+      .get<{ csrfToken: string }>("/auth/csrf", { timeout: 12_000 })
       .then(({ data }) => {
         if (typeof data.csrfToken !== "string" || data.csrfToken.length === 0) {
           throw new Error("Sessão sem token CSRF válido")
@@ -159,7 +159,7 @@ async function refreshAuthSession(
         )
       }
       const { data } = await api.post<{ csrfToken: string; user?: unknown }>(
-        "/auth/refresh",
+        "/auth/refresh", undefined, { timeout: 12_000 },
       )
       if (typeof data.csrfToken !== "string" || !data.csrfToken) {
         throw new Error("Sessão sem token CSRF válido")
@@ -209,6 +209,7 @@ async function refreshAuthSession(
         const session = await api.get<{ csrfToken?: string; user?: unknown }>(
           "/auth/me",
           {
+            timeout: 12_000,
             validateStatus: () => true,
           },
         )

@@ -17,6 +17,7 @@ function Recovery() {
 beforeEach(() => {
   vi.clearAllMocks()
   http.reset()
+  localStorage.clear()
   cache = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   http.onGet("/auth/me").reply(200, {
     user: { sub: "personal", role: "PERSONAL", name: "Personal", email: "personal@example.test" },
@@ -25,14 +26,26 @@ beforeEach(() => {
 })
 afterEach(() => { cleanup(); cache.clear(); setCsrfToken(null); setUnauthorizedHandler(null) })
 
-it.each([204, 503])("clears the current session and opens the real login route after logout status %s", async status => {
-  http.onPost("/auth/logout").reply(status)
+it("clears the current session and opens the login route after confirmed logout", async () => {
+  http.onPost("/auth/logout").reply(204)
   render(<QueryClientProvider client={cache}><AuthProvider><Recovery /></AuthProvider></QueryClientProvider>)
   await screen.findByText("personal")
   cache.setQueryData(["private-record"], { marker: "cached" })
   fireEvent.click(screen.getByRole("button", { name: "Entrar novamente" }))
-  await waitFor(() => expect(navigation.push).toHaveBeenCalledWith("/auth/login"))
+  await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/auth/login"))
   expect(screen.getByText("anonymous")).toBeVisible()
   expect(cache.getQueryData(["private-record"])).toBeUndefined()
   expect(http.history.post.map(request => request.url)).toEqual(["/auth/logout"])
+})
+
+it("keeps the workspace locked and offers a retry when logout returns 503", async () => {
+  http.onPost("/auth/logout").reply(503)
+  render(<QueryClientProvider client={cache}><AuthProvider><Recovery /></AuthProvider></QueryClientProvider>)
+  await screen.findByText("personal")
+  cache.setQueryData(["private-record"], { marker: "cached" })
+  fireEvent.click(screen.getByRole("button", { name: "Entrar novamente" }))
+  expect(await screen.findByRole("button", { name: "Tentar sair novamente" })).toBeVisible()
+  expect(screen.queryByText("personal")).not.toBeInTheDocument()
+  expect(cache.getQueryData(["private-record"])).toBeUndefined()
+  expect(navigation.replace).not.toHaveBeenCalled()
 })

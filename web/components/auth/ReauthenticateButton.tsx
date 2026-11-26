@@ -15,7 +15,6 @@ export function ReauthenticateButton() {
       disabled={pending}
       onClick={() => {
         setPending(true)
-        // O logout limpa sessão/cache e navega para /auth/login no finally.
         void logout().catch(() => {}).finally(() => setPending(false))
       }}
     >

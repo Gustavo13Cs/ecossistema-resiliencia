@@ -62,6 +62,7 @@ describe('AppointmentsService scheduling', () => {
   const prisma = {
     $transaction: jest.fn(),
     client: { findFirst: jest.fn() },
+    physioSessionEvolution: { findFirst: jest.fn() },
     appointment: {
       findFirst: jest.fn(),
       findMany: jest.fn(),
@@ -94,6 +95,20 @@ describe('AppointmentsService scheduling', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+  });
+
+  it('preserves the patient of an appointment with a recorded evolution', async () => {
+    prisma.appointment.findFirst.mockResolvedValueOnce(appointment);
+    prisma.physioSessionEvolution.findFirst.mockResolvedValueOnce({
+      id: 'evolution',
+    });
+    await expect(
+      service.update(professional, appointment.id, {
+        clientId: 'other-owned-client',
+        expectedUpdatedAt: appointment.updatedAt.toISOString(),
+      }),
+    ).rejects.toThrow(ConflictException);
+    expect(prisma.appointment.updateMany).not.toHaveBeenCalled();
   });
 
   it('creates an appointment for an active client owned by the professional', async () => {

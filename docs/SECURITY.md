@@ -56,6 +56,10 @@ Estilos inline permanecem permitidos para componentes Radix. `unsafe-eval` em sc
 
 Dados clínicos não são persistidos em localStorage/sessionStorage. Chaves clínicas legadas são descartadas sem recuperar seu conteúdo. O cache TanStack Query fica em memória e é isolado por sessão/Client. Falhas HTTP preservam o estado anterior e rascunhos em memória; não geram dados fictícios, seeds ou upload PDF simulado. Respostas clínicas relevantes usam `Cache-Control: no-store`.
 
+O navegador compartilha apenas sinais de mudança de sessão. Sair bloqueia o conteúdo nas abas abertas e mantém a saída pendente até a confirmação do servidor. Ao retomar uma aba, a interface verifica a identidade antes de reexibir o prontuário.
+
+A evolução fisioterapêutica e o atendimento vinculado compartilham a chave de paciente. A migration exige que o histórico já seja consistente e interrompe a operação para revisão clínica se encontrar divergência. Excluir o atendimento desvincula a evolução e preserva seu paciente.
+
 Nunca registre dados clínicos, credenciais ou tokens em logs. Nunca retorne hashes de senha. Não versione arquivos `.env`, gravações com dados reais ou chaves. Imagens finais contêm somente runtime: a API inicia o JavaScript compilado; Prisma CLI fica no target separado `migration`, e a web executa o output standalone como usuário não-root.
 
 ## Configuração
@@ -63,7 +67,7 @@ Nunca registre dados clínicos, credenciais ou tokens em logs. Nunca retorne has
 | Variável | Uso |
 |----------|-----|
 | `DATABASE_URL` | Ferramentas/fixtures; não é fallback do runtime clínico |
-| `DIRECT_URL` | Owner separado das migrations; segredo, somente servidor |
+| `DIRECT_URL` | Conexão do migrador. Em desenvolvimento fica em `api/.env.migrate`. A API usa `api/.env.runtime`. |
 | `CLINICAL_DATABASE_URL` | LOGIN exclusivamente safemove_clinical |
 | `AUTH_DATABASE_URL` | LOGIN exclusivamente safemove_auth |
 | `JOBS_DATABASE_URL` | LOGIN exclusivamente safemove_jobs |

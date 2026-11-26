@@ -234,13 +234,17 @@ domínio. Na web, `app/` organiza as rotas; `components/features/` e
 Na raiz do repositório, crie os arquivos locais a partir dos exemplos:
 
 ```powershell
-Copy-Item api/.env.example api/.env
+Copy-Item api/.env.example api/.env.runtime
 Copy-Item web/.env.example web/.env.local
 ```
 
-Configure `api/.env` com as URLs válidas do PostgreSQL em `DATABASE_URL` e
-`DIRECT_URL`, uma chave aleatória e forte em `JWT_SECRET` e as origens permitidas
-em `ALLOWED_ORIGINS`. Em `web/.env.local`, configure
+Configure `api/.env.runtime` com `CLINICAL_DATABASE_URL`, `AUTH_DATABASE_URL` e
+`JOBS_DATABASE_URL`, cada uma com seu papel restrito, além de `JWT_SECRET` e
+`ALLOWED_ORIGINS`. Crie `api/.env.migrate` contendo somente `DIRECT_URL` com a
+conexão do migrador. Ao atualizar uma instalação antiga, transfira a credencial
+de migração para esse arquivo e retire-a do ambiente do processo HTTP, inclusive
+de variáveis exportadas no shell ou no gerenciador de serviços. O migrador e a
+API também aceitam as respectivas variáveis injetadas pelo ambiente. Em `web/.env.local`, configure
 `NEXT_PUBLIC_API_URL=http://localhost:3000` para desenvolvimento local. Os
 valores de Supabase no exemplo da web são opcionais quando a aplicação usa a API
 NestJS.
@@ -273,7 +277,7 @@ A web ficará disponível em `http://localhost:3001` e a API em
 
 ### Usar Docker Compose
 
-Depois de configurar `api/.env` e `web/.env.local`, execute na raiz:
+Depois de configurar `api/.env.runtime`, `api/.env.migrate` e `web/.env.local`, execute na raiz:
 
 ```powershell
 docker compose up --build
