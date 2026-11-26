@@ -179,4 +179,4 @@ Entrega do Personal aprovada pelo usuário em 17/10/2026, com execução por sub
 - [x] Codex — Auditoria de segurança do SafeMove com a skill da Cloudflare (2026-11-26). [Escopo e quatro pontos para validação](agents/CODEX_STATUS.md#current-task).
 - [x] Codex — Validação dos quatro pontos da auditoria (2026-11-26). [Resultados e limite da verificação de produção](agents/CODEX_STATUS.md#current-task).
 - [x] Codex — Correções dos quatro pontos da auditoria concluídas (2026-11-26). [Resultados da validação](agents/CODEX_STATUS.md#current-task).
-- [ ] Codex — Publicar as correções da auditoria e abrir PR para revisão (2026-11-26), em andamento.
+- [x] Codex — Correções da auditoria publicadas e [PR #38 aberto para revisão](https://github.com/Gustavo13Cs/ecossistema-resiliencia/pull/38) (2026-11-26).
