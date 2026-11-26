@@ -8,6 +8,8 @@
 
 ## Current Task
 
+- **2026-11-26 — Correção do Cypress no PR #38 concluída (Codex).** Falha reproduzida com Cypress 15.14.2 e Electron 138 no build de produção. O teste de snapshot agora foca o campo e aguarda sua visibilidade e habilitação após a verificação de sessão, antes de limpar e digitar. Os três fluxos do CI passaram localmente com 7/7 testes, incluindo o conflito de versão e a preservação do rascunho. Build de produção e lint do teste aprovados.
+
 - **2026-11-26 — Correções publicadas para revisão (Codex).** Commit `3d274d5` enviado na branch `agent/codex/security-audit-2026-11-26`. [PR #38 aberto para validação do mantenedor](https://github.com/Gustavo13Cs/ecossistema-resiliencia/pull/38).
 
 - **2026-11-26 — Quatro correções de segurança concluídas (Codex).** A API e o PostgreSQL impedem que um atendimento com evolução seja transferido para outro paciente, inclusive em gravações concorrentes. O frontend limpa os dados em cache nas abas ao sair ou trocar de conta e mantém a área clínica bloqueada enquanto o logout aguarda confirmação. O Compose separa as credenciais da API e do migrador. Passaram 893 testes unitários da API, 881 testes do frontend e 283 testes de ponta a ponta em PostgreSQL 16, com dois testes opcionais pulados. Também passaram os builds da API e da web e a verificação de logout em duas abas do Chromium. A migration foi testada localmente e interrompe a transação se detectar vínculos históricos divergentes. [Migration de integridade clínica](../../api/prisma/migrations/20261126180000_preserve_evolution_patient/migration.sql).
