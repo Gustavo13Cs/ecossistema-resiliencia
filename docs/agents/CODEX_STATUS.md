@@ -8,6 +8,8 @@
 
 ## Current Task
 
+- **2026-11-26 — Resumo consolidado de performance concluído (Codex)**: [arquivo Markdown detalhado](../runbooks/resumo-melhorias-performance-2026-11-26.md) reúne as 12 frentes além da 14, incluindo as entregas remotas adicionais de 21/11 até `d72036b`. Tabelas, métodos, evidências, testes históricos (inclusive falhas registradas), limites e estado de publicação. Tentativa local de 14 descartada; implementação independente remota `b775819` preservada e excluída dos ganhos do resumo. Nenhuma nova otimização, medição ou ação em produção; alteração desta entrega restrita a documentação.
+
 - **2026-11-19 — Performance 05 concluído e validado (Codex)**: `a4876f6` clientes; `20760cf` exames/agregados; `31be0f8` hooks/listas; `1e9ed67` benchmark isolado. Páginas25/máximo100, filtros e totais globais, históricos completos em lotes e gráfico sob demanda. Base600: clientes865794→36076B/46,81→21,61ms; exames758636→31897B/128,87→130,93ms; pedidos26761→11151B/11,37→15,44ms. Tradeoffs de latência registrados, sem afirmar ganho de servidor nos dois últimos. Travessia1105 sem perda/duplicação; browser produção local desktop/mobile aprovado. API820/64, PG265/42 +benchmark/browser optativos, web787/103 +2compatibilidade, builds/lint/tipos/32páginas e standalone aprovados. Sem schema/migrations/RLS/auth/produção alterados; CORS expõe metadados às origens já permitidas. [Relatório, medidas, reprodução e rollback](../runbooks/performance-05-pagination.md). Mesma branch; publicação do código autorizada.
 
 
