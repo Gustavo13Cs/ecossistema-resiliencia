@@ -372,6 +372,23 @@ describe('AuthController registration contract', () => {
     );
   });
 
+  it('keeps the refresh cookie available to retry a failed revocation', async () => {
+    const controller = new AuthController(
+      authService as unknown as AuthService,
+    );
+    const clearCookie = jest.fn();
+    authService.logout.mockRejectedValueOnce(
+      new InternalServerErrorException(),
+    );
+    await expect(
+      controller.logout(
+        { cookies: { refresh_token: 'test-only' } } as unknown as Request,
+        { clearCookie } as unknown as Response,
+      ),
+    ).rejects.toBeInstanceOf(InternalServerErrorException);
+    expect(clearCookie).not.toHaveBeenCalled();
+  });
+
   it('clears cookies only after awaiting server revocation', async () => {
     const controller = new AuthController(
       authService as unknown as AuthService,

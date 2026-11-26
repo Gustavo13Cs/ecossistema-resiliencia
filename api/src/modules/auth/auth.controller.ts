@@ -120,9 +120,11 @@ export class AuthController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     try {
       await this.authService.logout(this.refreshCredential(req));
-    } finally {
-      this.clearSessionCookies(res);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) this.clearSessionCookies(res);
+      throw error;
     }
+    this.clearSessionCookies(res);
     return { message: 'Logout realizado com sucesso' };
   }
 

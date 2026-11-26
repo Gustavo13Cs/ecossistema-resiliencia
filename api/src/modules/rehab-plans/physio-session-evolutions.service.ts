@@ -187,22 +187,34 @@ export class PhysioSessionEvolutionsService {
         resolvedPackageId = activePkg?.id ?? null;
       }
 
-      return tx.physioSessionEvolution.create({
-        data: {
-          clientId: client.id,
-          professionalId: user.sub,
-          appointmentId: dto.appointmentId ?? null,
-          rehabPlanId: dto.rehabPlanId ?? null,
-          packageId: resolvedPackageId,
-          sessionDate,
-          painBefore: dto.painBefore ?? null,
-          painAfter: dto.painAfter ?? null,
-          proceduresApplied,
-          patientResponse,
-          nextSteps,
-        },
-        select: PHYSIO_EVOLUTION_SELECT,
-      });
+      try {
+        return await tx.physioSessionEvolution.create({
+          data: {
+            clientId: client.id,
+            professionalId: user.sub,
+            appointmentId: dto.appointmentId ?? null,
+            rehabPlanId: dto.rehabPlanId ?? null,
+            packageId: resolvedPackageId,
+            sessionDate,
+            painBefore: dto.painBefore ?? null,
+            painAfter: dto.painAfter ?? null,
+            proceduresApplied,
+            patientResponse,
+            nextSteps,
+          },
+          select: PHYSIO_EVOLUTION_SELECT,
+        });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          (error.code === 'P2003' || error.code === 'P2002')
+        ) {
+          throw new ConflictException(
+            'O vínculo clínico mudou. Atualize o atendimento antes de registrar a evolução.',
+          );
+        }
+        throw error;
+      }
     });
   }
 

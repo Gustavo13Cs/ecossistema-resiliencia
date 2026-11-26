@@ -305,6 +305,7 @@ model Appointment {
   createdAt          DateTime                @default(now())
   updatedAt          DateTime            @updatedAt
 
+  @@unique([id, clientId])
   @@index([professionalId, startsAt])
   @@index([professionalId, status, startsAt])
   @@index([clientId, startsAt])
@@ -920,7 +921,8 @@ model PhysioSessionEvolution {
   professionalId    String
   professional      User                  @relation("ProfessionalPhysioSessionEvolutions", fields: [professionalId], references: [id], onDelete: Restrict)
   appointmentId     String?               @unique
-  appointment       Appointment?          @relation("AppointmentPhysioEvolution", fields: [appointmentId], references: [id], onDelete: SetNull)
+  /// O SQL usa SET NULL apenas em appointmentId para preservar o paciente.
+  appointment       Appointment?          @relation("AppointmentPhysioEvolution", fields: [appointmentId, clientId], references: [id, clientId], onDelete: SetNull, onUpdate: Restrict, map: "physio_evolution_appointment_patient_fkey")
   rehabPlanId       String?
   rehabPlan         RehabPlan?            @relation("RehabPlanEvolutions", fields: [rehabPlanId], references: [id], onDelete: SetNull)
   packageId         String?
@@ -934,6 +936,7 @@ model PhysioSessionEvolution {
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
 
+  @@unique([appointmentId, clientId])
   @@index([professionalId, clientId, sessionDate(sort: Desc)])
   @@index([clientId, sessionDate(sort: Desc)])
   @@index([rehabPlanId])

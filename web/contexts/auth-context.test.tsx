@@ -33,10 +33,11 @@ const professional = {
 }
 
 function SessionProbe() {
-  const { login, user } = useAuth()
+  const { login, logout, user } = useAuth()
   return (
     <>
       <div>{user?.sub ?? "anonymous"}</div>
+      <button type="button" onClick={() => void logout()}>Sair</button>
       <button type="button" onClick={() => void login()}>
         Reestabelecer sessão
       </button>
@@ -57,6 +58,7 @@ describe("AuthProvider session lifecycle", () => {
   let queryClient: QueryClient
 
   beforeEach(() => {
+    localStorage.clear()
     navigation.pathname = "/clientes"
     mock = new AxiosMockAdapter(api)
     queryClient = new QueryClient({
@@ -74,6 +76,62 @@ describe("AuthProvider session lifecycle", () => {
     queryClient.clear()
     setCsrfToken(null)
     setUnauthorizedHandler(null)
+  })
+
+  it("locks the workspace across reloads and retries logout after a transport failure", async () => {
+    mock.onGet("/auth/me").reply(200, { user: professional, csrfToken: "test-only" })
+    mock.onPost("/auth/logout").networkErrorOnce().onPost("/auth/logout").reply(200)
+    const first = renderAuthProvider(queryClient, <SessionProbe />)
+    await screen.findByText(professional.sub)
+    queryClient.setQueryData(["private"], "fixture")
+    fireEvent.click(screen.getByRole("button", { name: "Sair" }))
+    await screen.findByRole("alert", { name: "Saída pendente" })
+    expect(queryClient.getQueryData(["private"])).toBeUndefined()
+    expect(navigation.replace).not.toHaveBeenCalled()
+    first.unmount()
+
+    renderAuthProvider(queryClient, <SessionProbe />)
+    fireEvent.click(await screen.findByRole("button", { name: "Tentar sair novamente" }))
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/auth/login"))
+    expect(mock.history.get).toHaveLength(1)
+    expect(mock.history.post).toHaveLength(2)
+  })
+
+  it("keeps logout pending if the API rejects logout but still recognizes the session", async () => {
+    mock.onGet("/auth/me").reply(200, { user: professional, csrfToken: "test-only" })
+    mock.onPost("/auth/logout").reply(401)
+    renderAuthProvider(queryClient, <SessionProbe />)
+    await screen.findByText(professional.sub)
+    fireEvent.click(screen.getByRole("button", { name: "Sair" }))
+    await screen.findByRole("alert", { name: "Saída pendente" })
+    expect(navigation.replace).not.toHaveBeenCalled()
+    expect(mock.history.get).toHaveLength(2)
+  })
+
+  it("clears this tab when another tab starts logout", async () => {
+    mock.onGet("/auth/me").reply(200, { user: professional, csrfToken: "test-only" })
+    renderAuthProvider(queryClient, <SessionProbe />)
+    await screen.findByText(professional.sub)
+    queryClient.setQueryData(["private"], "fixture")
+    act(() => {
+      window.dispatchEvent(new StorageEvent("storage", {
+        key: "safemove.session-change", newValue: "pending:test-event",
+      }))
+    })
+    expect(queryClient.getQueryData(["private"])).toBeUndefined()
+    expect(screen.queryByText(professional.sub)).not.toBeInTheDocument()
+    expect(screen.getByRole("alert", { name: "Saída pendente" })).toBeInTheDocument()
+  })
+
+  it("revalidates the session on focus and discards the previous account's cache", async () => {
+    mock.onGet("/auth/me").replyOnce(200, { user: professional, csrfToken: "first" })
+      .onGet("/auth/me").reply(200, { user: { ...professional, sub: "other" }, csrfToken: "second" })
+    renderAuthProvider(queryClient, <SessionProbe />)
+    await screen.findByText(professional.sub)
+    queryClient.setQueryData(["private"], "fixture")
+    act(() => { window.dispatchEvent(new Event("focus")) })
+    await screen.findByText("other")
+    expect(queryClient.getQueryData(["private"])).toBeUndefined()
   })
 
   it("announces a named loading state while the secure session hydrates", async () => {

@@ -112,6 +112,53 @@ describe('Physio workspace and session evolutions HTTP and RLS (PostgreSQL)', ()
     await pool?.end();
   });
 
+  it('keeps a linked evolution in its original chart when editing the agenda', async () => {
+    await admin.client.update({
+      where: { id: clientB },
+      data: { professionalId: actor.sub },
+    });
+    const appointment = await admin.appointment.create({
+      data: {
+        professionalId: actor.sub,
+        clientId: clientA,
+        kind: 'SESSION',
+        modality: 'IN_PERSON',
+        startsAt: new Date(Date.now() + 86_400_000),
+        endsAt: new Date(Date.now() + 90_000_000),
+        timeZone: 'UTC',
+      },
+    });
+    const evolution = await admin.physioSessionEvolution.create({
+      data: {
+        clientId: clientA,
+        professionalId: actor.sub,
+        appointmentId: appointment.id,
+        sessionDate: appointment.startsAt,
+        patientResponse: 'Registro de teste',
+      },
+    });
+
+    await http()
+      .patch('/appointments/' + appointment.id)
+      .set('Authorization', auth())
+      .send({
+        clientId: clientB,
+        expectedUpdatedAt: appointment.updatedAt.toISOString(),
+      })
+      .expect(409);
+
+    await expect(
+      admin.appointment.update({
+        where: { id: appointment.id },
+        data: { clientId: clientB },
+      }),
+    ).rejects.toMatchObject({ code: 'P2003' });
+    await admin.appointment.delete({ where: { id: appointment.id } });
+    await expect(
+      admin.physioSessionEvolution.findUnique({ where: { id: evolution.id } }),
+    ).resolves.toMatchObject({ clientId: clientA, appointmentId: null });
+  });
+
   it('creates, updates, queries and isolates session evolutions with real PostgreSQL RLS', async () => {
     const appointment = await admin.appointment.create({
       data: {

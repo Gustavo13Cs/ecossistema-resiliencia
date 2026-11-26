@@ -1,6 +1,9 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
+import axios from "axios"
+import { createPortal } from "react-dom"
+import { readSessionEvent, sessionEvents } from "@/lib/session-events"
 import { useRouter, usePathname } from "next/navigation"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { advanceAuthSessionEpoch, api, setCsrfToken, setUnauthorizedHandler } from "@/lib/api"
@@ -32,6 +35,16 @@ const getRedirectPath = (role?: string) => {
   return '/home'
 }
 
+async function sessionAlreadyEnded(logoutError: unknown) {
+  if (!axios.isAxiosError(logoutError) || logoutError.response?.status !== 401) return false
+  try {
+    await api.get("/auth/me", { timeout: 12_000 })
+    return false
+  } catch (error) {
+    return axios.isAxiosError(error) && error.response?.status === 401
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -48,107 +61,156 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const shouldBlockContent =
     (!onPublicRoute && isLoading) || isInvalidRole || isAdminRedirecting
 
-  const setAuthenticatedUser = useCallback((nextUser: AuthUser) => {
-    sessionExpired.current = false
-    setUser((currentUser) => {
-      if (currentUser?.sub && currentUser.sub !== nextUser.sub) {
-        queryClient.clear()
-      }
-      return nextUser
-    })
+  const subject = useRef<string | null>(null)
+  const events = useRef<ReturnType<typeof sessionEvents> | null>(null)
+  const logoutLocked = useRef(false)
+  const [logoutState, setLogoutState] = useState<"idle" | "sending" | "pending">("idle")
+  const [verification, setVerification] = useState<"idle" | "checking" | "offline">("idle")
+
+  const clearIdentity = useCallback(() => {
+    subject.current = null
+    queryClient.clear()
+    setUser(null)
   }, [queryClient])
 
-  const handleUnauthorized = useCallback(() => {
-    if (sessionExpired.current) return
+  const setAuthenticatedUser = useCallback((nextUser: AuthUser) => {
+    sessionExpired.current = false
+    if (subject.current && subject.current !== nextUser.sub) queryClient.clear()
+    subject.current = nextUser.sub
+    setUser(nextUser)
+  }, [queryClient])
 
-    sessionExpired.current = true
+  const interruptSessionCheck = useCallback(() => {
     hydrateAbortRef.current?.abort()
     hydrateAbortRef.current = null
     advanceAuthSessionEpoch()
-    sessionGenerationRef.current += 1
-    queryClient.clear()
+    setVerification("idle")
+    return ++sessionGenerationRef.current
+  }, [])
+
+  const handleUnauthorized = useCallback(() => {
+    if (sessionExpired.current || logoutLocked.current) return
+
+    sessionExpired.current = true
+    interruptSessionCheck()
+    clearIdentity()
     setCsrfToken(null)
-    setUser(null)
     setIsLoading(false)
     router.replace("/auth/login?reason=session-expired")
-  }, [queryClient, router])
+  }, [clearIdentity, interruptSessionCheck, router])
 
   useEffect(() => {
     setUnauthorizedHandler(handleUnauthorized)
     return () => setUnauthorizedHandler(null)
   }, [handleUnauthorized])
 
-  // Ao montar o provider (ex: refresh de página), tenta hidratar o usuário
-  // a partir do cookie HttpOnly via GET /auth/me; o interceptor recupera access
-  // expirado com CSRF -> refresh -> uma nova tentativa de me.
-  // O browser envia o cookie automaticamente — sem precisar de localStorage.
-  useEffect(() => {
-    let isActive = true
+  const checkSession = useCallback(async () => {
+    if (hydrateAbortRef.current || logoutLocked.current) return
     const controller = new AbortController()
     hydrateAbortRef.current = controller
     const generation = ++sessionGenerationRef.current
-
-    const hydrateUser = async () => {
-      discardLegacyClinicalStorage()
-      try {
-        const { data } = await api.get<AuthSessionResponse>('/auth/me', {
-          signal: controller.signal,
-        })
-        if (!isActive || sessionGenerationRef.current !== generation) {
-          return
-        }
-        setCsrfToken(data.csrfToken)
-        setAuthenticatedUser(data.user)
-      } catch {
-        // Cookie expirado ou ausente — usuário não autenticado
-        if (!isActive || sessionGenerationRef.current !== generation) {
-          return
-        }
-        queryClient.clear()
-        setCsrfToken(null)
-        setUser(null)
-      } finally {
-        if (hydrateAbortRef.current === controller) {
-          hydrateAbortRef.current = null
-        }
-        if (isActive && sessionGenerationRef.current === generation) {
-          setIsLoading(false)
-        }
+    setVerification("checking")
+    let retryNeeded = false
+    try {
+      const { data } = await api.get<AuthSessionResponse>("/auth/me", {
+        signal: controller.signal, timeout: 12_000,
+      })
+      if (generation !== sessionGenerationRef.current) return
+      setCsrfToken(data.csrfToken)
+      setAuthenticatedUser(data.user)
+    } catch (error) {
+      if (generation !== sessionGenerationRef.current) return
+      if (subject.current && !(axios.isAxiosError(error) && error.response?.status === 401)) {
+        retryNeeded = true
+        return
       }
-    }
-
-    void hydrateUser()
-    return () => {
-      isActive = false
-      controller.abort()
+      clearIdentity()
+      setCsrfToken(null)
+    } finally {
       if (hydrateAbortRef.current === controller) {
         hydrateAbortRef.current = null
+        setVerification(retryNeeded ? "offline" : "idle")
+        setIsLoading(false)
       }
     }
-  }, [queryClient, setAuthenticatedUser])
+  }, [clearIdentity, setAuthenticatedUser])
 
   useEffect(() => {
-    if (!isLoading) {
+    discardLegacyClinicalStorage()
+    const applyTransition = (transition: "pending" | "signed-out" | "signed-in") => {
+      interruptSessionCheck()
+      clearIdentity()
+      setCsrfToken(null)
+      logoutLocked.current = transition === "pending"
+      setLogoutState(logoutLocked.current ? "pending" : "idle")
+      setIsLoading(transition === "signed-in")
+      if (transition === "signed-in") void checkSession()
+    }
+    const bus = sessionEvents(event => applyTransition(event.transition))
+    events.current = bus
+    const resume = () => {
+      if (document.visibilityState === "hidden") return
+      const saved = readSessionEvent()
+      if (saved?.transition === "pending") {
+        if (!logoutLocked.current) applyTransition("pending")
+        return
+      }
+      if (logoutLocked.current && saved) {
+        applyTransition(saved.transition)
+        return
+      }
+      void checkSession()
+    }
+    const onRestore = (event: PageTransitionEvent) => { if (event.persisted) resume() }
+    if (readSessionEvent()?.transition === "pending") applyTransition("pending")
+    else void checkSession()
+    window.addEventListener("focus", resume)
+    window.addEventListener("pageshow", onRestore)
+    document.addEventListener("visibilitychange", resume)
+    return () => {
+      sessionGenerationRef.current++
+      hydrateAbortRef.current?.abort()
+      hydrateAbortRef.current = null
+      events.current = null
+      bus.close()
+      window.removeEventListener("focus", resume)
+      window.removeEventListener("pageshow", onRestore)
+      document.removeEventListener("visibilitychange", resume)
+    }
+  }, [checkSession, clearIdentity, interruptSessionCheck])
+
+  const logout = useCallback(async () => {
+    const generation = interruptSessionCheck()
+    logoutLocked.current = true
+    setLogoutState("sending")
+    clearIdentity()
+    events.current?.publish("pending")
+    try {
+      await api.post("/auth/logout", undefined, { timeout: 12_000 })
+    } catch (error) {
+      if (!(await sessionAlreadyEnded(error))) {
+        if (generation === sessionGenerationRef.current) setLogoutState("pending")
+        return
+      }
+    }
+    if (generation !== sessionGenerationRef.current) return
+    setCsrfToken(null)
+    events.current?.publish("signed-out")
+    logoutLocked.current = false
+    setLogoutState("idle")
+    setIsLoading(false)
+    router.replace("/auth/login")
+  }, [clearIdentity, interruptSessionCheck, router])
+
+  useEffect(() => {
+    if (!isLoading && !logoutLocked.current) {
       if (user && !isAllowedRole(user.role)) {
         if (invalidRoleLogoutUserId.current === user.sub) {
           return
         }
 
         invalidRoleLogoutUserId.current = user.sub
-        hydrateAbortRef.current?.abort()
-        hydrateAbortRef.current = null
-        advanceAuthSessionEpoch()
-        sessionGenerationRef.current += 1
-        void (async () => {
-          try {
-            await api.post('/auth/logout')
-          } finally {
-            queryClient.clear()
-            setCsrfToken(null)
-            setUser(null)
-            router.replace('/auth/login')
-          }
-        })()
+        void logout()
         return
       }
 
@@ -165,17 +227,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     }
-  }, [user, isLoading, pathname, queryClient, router])
+  }, [user, isLoading, pathname, logout, router])
 
   // Chamado pelo componente de login APÓS a requisição POST /auth/login ter sido feita com sucesso.
   // O cookie já foi setado pelo servidor — basta buscar os dados do usuário.
   const login = async () => {
-    hydrateAbortRef.current?.abort()
-    hydrateAbortRef.current = null
-    advanceAuthSessionEpoch()
-    const generation = ++sessionGenerationRef.current
+    const generation = interruptSessionCheck()
+    const controller = new AbortController()
+    hydrateAbortRef.current = controller
+    events.current?.publish("signed-in")
     try {
-      const { data } = await api.get<AuthSessionResponse>('/auth/me')
+      const { data } = await api.get<AuthSessionResponse>('/auth/me', { signal: controller.signal })
       if (sessionGenerationRef.current !== generation) {
         return
       }
@@ -188,28 +250,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false)
       }
       throw error
-    }
-  }
-
-  // Chama o endpoint de logout no servidor para limpar o cookie HttpOnly.
-  // JavaScript não tem acesso ao cookie — só o servidor pode apagá-lo.
-  const logout = async () => {
-    hydrateAbortRef.current?.abort()
-    hydrateAbortRef.current = null
-    advanceAuthSessionEpoch()
-    sessionGenerationRef.current += 1
-    try {
-      await api.post('/auth/logout')
     } finally {
-      queryClient.clear()
-      setCsrfToken(null)
-      setUser(null)
-      setIsLoading(false)
-      router.push("/auth/login")
+      if (hydrateAbortRef.current === controller) hydrateAbortRef.current = null
     }
   }
 
-  if (shouldBlockContent) {
+  if (logoutState === "pending") {
+    return (
+      <AsyncState kind="error" title="Saída pendente"
+        description="Confirme a saída antes de deixar este dispositivo."
+        action={<button type="button" onClick={() => void logout()}>Tentar sair novamente</button>}
+      />
+    )
+  }
+
+  if (shouldBlockContent || logoutState === "sending") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--sm-canvas)] px-4 py-8">
         <div className="w-full max-w-xl">
@@ -224,7 +279,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider key={onPublicRoute ? "public" : user?.sub ?? "anonymous"} value={{ user, isLoading, login, logout }}>
+      {user && !onPublicRoute && verification !== "idle" && createPortal(
+        <div data-session-shield="">
+          {/* A máscara inclui diálogos em portals e mantém formulários montados. */}
+          <style>{'body > :not([data-session-shield]) { display: none !important; }'}</style>
+          <AsyncState
+            kind={verification === "offline" ? "error" : "loading"}
+            title="Verificando sua sessão"
+            description={verification === "offline" ? "Confira sua conexão para continuar." : "Aguarde a confirmação da sua conta."}
+            action={verification === "offline" && <button type="button" onClick={() => void checkSession()}>Tentar novamente</button>}
+          />
+        </div>, document.body,
+      )}
       {children}
     </AuthContext.Provider>
   )
