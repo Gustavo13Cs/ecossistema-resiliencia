@@ -6,6 +6,8 @@ import { createPortal } from "react-dom"
 import { readSessionEvent, sessionEvents } from "@/lib/session-events"
 import { useRouter, usePathname } from "next/navigation"
 import { AsyncState } from "@/components/feedback/AsyncState"
+import { SessionScreen } from "@/components/auth/SessionScreen"
+import sessionStyles from "@/components/auth/SessionScreen.module.css"
 import { advanceAuthSessionEpoch, api, extractSessionPayload, setCsrfToken, setUnauthorizedHandler } from "@/lib/api"
 import { useQueryClient } from "@tanstack/react-query"
 import type { AuthUser, UserRole } from "@/types/auth"
@@ -283,33 +285,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   if (shouldBlockContent || logoutState === "sending") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--sm-canvas)] px-4 py-8">
-        <div className="w-full max-w-xl">
-          <AsyncState
-            kind="loading"
-            title="Carregando sua área profissional"
-            description="Verificando sua sessão segura."
-          />
-        </div>
-      </div>
+      <SessionScreen
+        title={logoutState === "sending" ? "Encerrando sua sessão" : "Carregando sua área profissional"}
+        description={logoutState === "sending" ? "Aguarde enquanto concluímos sua saída." : "Verificando sua sessão segura."}
+      />
     )
   }
 
   return (
     <AuthContext.Provider key={onPublicRoute ? "public" : user?.sub ?? "anonymous"} value={{ user, isLoading, login, logout }}>
       {user && !onPublicRoute && verification !== "idle" && createPortal(
-        <div data-session-shield="">
+        <div data-session-shield="" className={sessionStyles.shield}>
           {/* A máscara inclui diálogos em portals e mantém formulários montados. */}
           <style>{'body > :not([data-session-shield]) { display: none !important; }'}</style>
-          <AsyncState
-            kind={verification === "offline" ? "error" : "loading"}
-            title="Verificando sua sessão"
-            description={verification === "offline" ? "Confira sua conexão para continuar." : "Aguarde a confirmação da sua conta."}
-            action={verification === "offline" && <button type="button" onClick={() => void checkSession()}>Tentar novamente</button>}
+          <SessionScreen
+            isOffline={verification === "offline"}
+            title={verification === "offline" ? "Não foi possível verificar sua sessão" : "Verificando sua sessão"}
+            description={verification === "offline" ? "Confira sua conexão e tente novamente para continuar." : "Estamos confirmando seu acesso à área profissional."}
+            onRetry={() => void checkSession()}
           />
         </div>, document.body,
       )}
-      {children}
+      <div className={!onPublicRoute && verification === "idle" ? sessionStyles.reveal : undefined}>
+        {children}
+      </div>
     </AuthContext.Provider>
   )
 }

@@ -7,6 +7,8 @@
 
 ---
 
+- ✅ **Codex (27/11/2026)** — Carregamento de sessão centralizado em tela inteira, com identidade SafeMove, transição discreta, retry de conexão e suporte a redução de movimento. Tipos/lint, 57 testes, build/pós-build e Chromium em quatro larguras aprovados; máscara de privacidade e rascunho preservados.
+
 - ✅ **Codex (26/11/2026)** — Validação final da otimização de login para revisão no GitHub.
 
 - ✅ **Codex (26/11/2026)** — Confirmação do login acelerada e validada em ambiente local. [Comparativo](runbooks/diagnostico-latencia-login.md).

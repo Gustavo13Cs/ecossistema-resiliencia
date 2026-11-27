@@ -534,7 +534,7 @@ describe("AuthProvider session lifecycle", () => {
         expect(resolveLogout).toBeTypeOf("function")
       })
       expect(
-        screen.getByRole("status", { name: "Carregando sua área profissional" }),
+        screen.getByRole("status", { name: "Encerrando sua sessão" }),
       ).toBeInTheDocument()
       expect(screen.queryByText("Conteúdo protegido")).not.toBeInTheDocument()
 
