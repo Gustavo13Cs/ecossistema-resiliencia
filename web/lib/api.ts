@@ -32,7 +32,7 @@ function updateCsrfTokenIfCurrent(token: string | null, expectedEpoch: number) {
   }
 }
 
-function extractRefreshedSession(
+export function extractSessionPayload(
   data: unknown,
   fallbackCsrfToken?: string,
 ): RefreshedSessionPayload | null {
@@ -165,7 +165,7 @@ async function refreshAuthSession(
         throw new Error("Sessão sem token CSRF válido")
       }
       updateCsrfTokenIfCurrent(data.csrfToken, expectedEpoch)
-      return extractRefreshedSession(data)
+      return extractSessionPayload(data)
     }
     const recover = async (): Promise<RefreshedSessionPayload | null> => {
       if (authSessionEpoch !== expectedEpoch) {
@@ -224,7 +224,7 @@ async function refreshAuthSession(
           } else {
             resolvedCsrf = await refreshCsrfToken(expectedEpoch)
           }
-          waitedResult = extractRefreshedSession(session.data, resolvedCsrf)
+          waitedResult = extractSessionPayload(session.data, resolvedCsrf)
           return
         }
         if (session.status !== 401) {

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
   INestApplication,
   InternalServerErrorException,
@@ -126,7 +127,18 @@ describe('AuthController registration contract', () => {
     for (const cookie of response.headers['set-cookie']) {
       expect(cookie).toContain('HttpOnly');
     }
-    expect(response.body).toEqual({ message: 'Login realizado com sucesso' });
+    const csrfCookie = (
+      response.headers['set-cookie'] as unknown as string[]
+    ).find((cookie) => cookie.startsWith('csrf_token='))!;
+    const csrfToken = csrfCookie.split(';')[0].slice('csrf_token='.length);
+    expect(response.body).toEqual({
+      message: 'Login realizado com sucesso',
+      user: { sub: 'pro-1', role: 'NUTRITIONIST' },
+      csrfToken,
+      cookieReceipt: createHash('sha256')
+        .update('signed-token:' + csrfToken)
+        .digest('hex'),
+    });
     expect(response.body).not.toHaveProperty('access_token');
   });
 

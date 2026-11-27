@@ -8,6 +8,14 @@
 
 ## Current Task
 
+- **26/11/2026 — Codex.** Validação do código concluída para revisão no GitHub. A última execução passou nos 84 testes focados da web e nos 46 unitários de autenticação da API.
+
+- **26/11/2026 — Otimização local do login concluída (Codex).** O clique até o título do painel passou de 1.501 para 935 ms de mediana no ensaio aquecido. A API reaproveita a leitura com bloqueio e o frontend confirma a entrega dos cookies sem uma nova consulta à API no fluxo atual. Chromium validou também API legada e cookies recusados. [Medição e limites](../runbooks/diagnostico-latencia-login.md).
+
+- **26/11/2026 — Conferência de compatibilidade concluída (Codex).** O PR #35 já reaproveita a identidade no refresh. O POST de login ainda devolve somente uma mensagem. Uma alteração desse contrato exige compatibilidade entre versões da web e da API e preservação das verificações entre abas.
+
+- **26/11/2026 — Análise do login concluída (Codex).** Com API aquecida, conta sintética e 116 ms simulados entre API e PostgreSQL, três entradas no Chromium tiveram medianas de 1,50 s até o título e 3,06 s até o resumo. O ensaio confirmou duas validações por GET protegido e uma busca de identidade em série após o login. [Medições e oportunidades por perfil](../runbooks/diagnostico-latencia-login.md).
+
 - **2026-11-26 — Correção do Cypress no PR #38 concluída (Codex).** Falha reproduzida com Cypress 15.14.2 e Electron 138 no build de produção. O teste de snapshot agora foca o campo e aguarda sua visibilidade e habilitação após a verificação de sessão, antes de limpar e digitar. Os três fluxos do CI passaram localmente com 7/7 testes, incluindo o conflito de versão e a preservação do rascunho. Build de produção e lint do teste aprovados.
 
 - **2026-11-26 — Correções publicadas para revisão (Codex).** Commit `3d274d5` enviado na branch `agent/codex/security-audit-2026-11-26`. [PR #38 aberto para validação do mantenedor](https://github.com/Gustavo13Cs/ecossistema-resiliencia/pull/38).

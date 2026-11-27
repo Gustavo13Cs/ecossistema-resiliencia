@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { createHash } from "node:crypto"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
 import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server"
@@ -60,4 +61,19 @@ it("csp_has_only_verified_media_hosts", () => {
   expect(csp).not.toMatch(/frame-src|https:\*|https:;|\*|youtube|vimeo/)
   expect(csp.match(/script-src[^;]+/)![0]).not.toContain("cdn.jsdelivr.net")
   expect(proxy(new NextRequest("https://safemove.test/exercicios")).headers.get("Content-Security-Policy")).not.toBe(csp)
+})
+
+it.each([
+  ["access_token=issued; csrf_token=fresh", 204],
+  ["access_token=older; csrf_token=fresh", 409],
+  ["access_token=issued; csrf_token=older", 409],
+  ["", 409],
+])("confirms receipt only for both issued cookies (%s)", (cookie, status) => {
+  const receipt = createHash("sha256").update("issued:fresh").digest("hex")
+  const response = proxy(new NextRequest("http://localhost/auth/login", {
+    method: "HEAD", headers: { cookie, "X-Login-Receipt": receipt },
+  }))
+  expect(response.status).toBe(status)
+  expect(response.headers.get("cache-control")).toContain("no-store")
+  expect(response.body).toBeNull()
 })

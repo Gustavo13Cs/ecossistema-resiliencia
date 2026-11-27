@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { ClinicalResponse } from '../../common/decorators/clinical-response.decorator';
 import {
   Body,
@@ -41,9 +42,16 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const session = await this.authService.login(loginDto);
-    this.setSessionCookies(res, session);
-
-    return { message: 'Login realizado com sucesso' };
+    const csrfToken = this.setSessionCookies(res, session);
+    const cookieReceipt = createHash('sha256')
+      .update(session.access_token + ':' + csrfToken)
+      .digest('hex');
+    return {
+      message: 'Login realizado com sucesso',
+      user: session.user,
+      csrfToken,
+      cookieReceipt,
+    };
   }
 
   @ClinicalResponse({ exception: 'auth' })

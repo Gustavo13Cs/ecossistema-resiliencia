@@ -1,5 +1,5 @@
 import { testAdminPrisma } from './fixtures/test-admin';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
@@ -89,7 +89,12 @@ describe('Revocable session lifecycle (real PostgreSQL HTTP)', () => {
     assertIsolationDatabase();
     await prisma.user.upsert({
       where: { id: userId },
-      update: { role: 'NUTRITIONIST', password: passwordHash, authVersion: 0 },
+      update: {
+        name: 'Session fixture',
+        role: 'NUTRITIONIST',
+        password: passwordHash,
+        authVersion: 0,
+      },
       create: {
         id: userId,
         name: 'Session fixture',
@@ -104,8 +109,20 @@ describe('Revocable session lifecycle (real PostgreSQL HTTP)', () => {
       .set('Origin', ORIGIN)
       .send({ email, password: PASSWORD })
       .expect(200);
-    expect(result.body).toEqual({ message: 'Login realizado com sucesso' });
     session = sessionCookies(result);
+    expect(result.body).toEqual({
+      message: 'Login realizado com sucesso',
+      user: {
+        sub: userId,
+        name: 'Session fixture',
+        email,
+        role: 'NUTRITIONIST',
+      },
+      csrfToken: session.csrf,
+      cookieReceipt: createHash('sha256')
+        .update(session.access + ':' + session.csrf)
+        .digest('hex'),
+    });
   });
 
   afterAll(async () => {

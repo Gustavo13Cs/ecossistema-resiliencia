@@ -7,6 +7,14 @@
 
 ---
 
+- ✅ **Codex (26/11/2026)** — Validação final da otimização de login para revisão no GitHub.
+
+- ✅ **Codex (26/11/2026)** — Confirmação do login acelerada e validada em ambiente local. [Comparativo](runbooks/diagnostico-latencia-login.md).
+
+- ✅ **Codex (26/11/2026)** — Propostas de login confrontadas com as melhorias anteriores de sessão, renderização pública e acesso ao banco.
+
+- ✅ **Codex (26/11/2026)** — Investigação da espera entre entrar e abrir o painel concluída. [Medições e prioridades](runbooks/diagnostico-latencia-login.md).
+
 ## Personal P3 — concluído localmente em 24/10/2026
 
 - ✅ **Antigravity — Performance 14 (21/11/2026)**: atualização otimista com rollback aplicada exclusivamente às ações reversíveis de arquivamento e restauração de modelos privados de treino no commit `b775819` (`agent/codex/performance-diagnosis`), mantendo prescrições (`useWorkouts.ts`) e rascunhos clínicos (`useWorkoutDrafts.ts`) estritamente dependentes de confirmação da API. Adicionados [`web/lib/workout-template-optimistic.ts`](../web/lib/workout-template-optimistic.ts) (`applyOptimisticTemplateArchiveState`, `rollbackOptimisticTemplateArchiveState`, `reconcileTemplateArchiveState`, `matchesWorkoutTemplateFilters`), integração em `useWorkoutTemplateHubMutations` (`useWorkoutTemplates.ts`) cancelando leituras em voo com rollback protegido contra ressurreição pós-401/403 ou troca de conta, e feedback visual pendente/reversão em `WorkoutTemplatesHub.tsx`. Vitest focado `5/5` arquivos (`48/48` testes cobrindo sucesso, pendência entre abas, rollback 500, negação 403, troca de conta e ausência de otimismo em `POST /workouts`), suíte completa `107/108` (`829/830` — única falha pré-existente CRLF Windows em `licensed-media-fixture.test.ts`), `typecheck`, `lint` (0 warnings, incluindo `react-hooks/refs`), `next build`/`postbuild` (`32/32` páginas, `297` dirs) e `git diff --check` aprovados. [Relatório e rollback](runbooks/performance-14-optimistic-updates.md).
