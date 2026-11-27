@@ -6,16 +6,16 @@ import { createPortal } from "react-dom"
 import { readSessionEvent, sessionEvents } from "@/lib/session-events"
 import { useRouter, usePathname } from "next/navigation"
 import { AsyncState } from "@/components/feedback/AsyncState"
-import { advanceAuthSessionEpoch, api, setCsrfToken, setUnauthorizedHandler } from "@/lib/api"
+import { advanceAuthSessionEpoch, api, extractSessionPayload, setCsrfToken, setUnauthorizedHandler } from "@/lib/api"
 import { useQueryClient } from "@tanstack/react-query"
-import type { AuthUser } from "@/types/auth"
+import type { AuthUser, UserRole } from "@/types/auth"
 import { discardLegacyClinicalStorage } from "@/lib/discard-legacy-clinical-storage"
 import { isPublicRoute } from "@/lib/public-routes"
 
 type AuthContextType = {
   user: AuthUser | null;
   isLoading: boolean;
-  login: () => Promise<void>;
+  login: (response?: unknown) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -28,11 +28,30 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const allowedRoles = new Set(["ADMIN", "NUTRITIONIST", "PERSONAL", "PHYSIO"])
 
-const isAllowedRole = (role?: string) => allowedRoles.has(role ?? "")
+const isAllowedRole = (role?: string): role is UserRole => allowedRoles.has(role ?? "")
 
 const getRedirectPath = (role?: string) => {
   if (role === 'ADMIN') return '/home'
   return '/home'
+}
+
+async function confirmLogin(response: unknown, signal: AbortSignal): Promise<AuthSessionResponse> {
+  const session = extractSessionPayload(response)
+  if (session && isAllowedRole(session.user.role) && response && typeof response === "object" &&
+      "cookieReceipt" in response && typeof response.cookieReceipt === "string") {
+    const confirmation = await fetch("/auth/login", {
+      method: "HEAD", cache: "no-store", credentials: "same-origin", redirect: "error", signal,
+      headers: { "X-Login-Receipt": response.cookieReceipt },
+    }).catch(() => null)
+    signal.throwIfAborted()
+    if (confirmation?.status === 204) {
+      return { user: { ...session.user, role: session.user.role }, csrfToken: session.csrfToken }
+    }
+  }
+  // Respostas e deployments anteriores continuam a confirmar a sessão pela API.
+  const { data } = await api.get<AuthSessionResponse>("/auth/me", { signal })
+  if (session && session.user.sub !== data.user.sub) throw new Error("A conta da sessão mudou.")
+  return data
 }
 
 async function sessionAlreadyEnded(logoutError: unknown) {
@@ -229,15 +248,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, isLoading, pathname, logout, router])
 
-  // Chamado pelo componente de login APÓS a requisição POST /auth/login ter sido feita com sucesso.
-  // O cookie já foi setado pelo servidor — basta buscar os dados do usuário.
-  const login = async () => {
+  const login = async (response?: unknown) => {
     const generation = interruptSessionCheck()
     const controller = new AbortController()
     hydrateAbortRef.current = controller
     events.current?.publish("signed-in")
     try {
-      const { data } = await api.get<AuthSessionResponse>('/auth/me', { signal: controller.signal })
+      const data = await confirmLogin(response, controller.signal)
       if (sessionGenerationRef.current !== generation) {
         return
       }

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import { NextRequest, NextResponse } from "next/server"
 
 import { buildExerciseMediaDirectives, EXERCISE_MEDIA_RULES } from "./lib/exercise-media-policy"
@@ -5,6 +6,18 @@ import { buildExerciseMediaDirectives, EXERCISE_MEDIA_RULES } from "./lib/exerci
 const exerciseMedia = buildExerciseMediaDirectives(EXERCISE_MEDIA_RULES)
 
 export function proxy(request: NextRequest) {
+  // Confirma apenas a entrega dos cookies do POST. A API autoriza cada acesso protegido.
+  if (request.method === "HEAD" && request.nextUrl.pathname === "/auth/login" && request.headers.has("x-login-receipt")) {
+    const access = request.cookies.get("access_token")?.value
+    const csrf = request.cookies.get("csrf_token")?.value
+    const matches = access && csrf &&
+      createHash("sha256").update(access + ":" + csrf).digest("hex") === request.headers.get("x-login-receipt")
+    return new NextResponse(null, {
+      status: matches ? 204 : 409,
+      headers: { "Cache-Control": "private, no-store", Vary: "Cookie, X-Login-Receipt" },
+    })
+  }
+
   const randomBytes = crypto.getRandomValues(new Uint8Array(16))
   const nonce = btoa(String.fromCharCode(...randomBytes))
   const isDevelopment = process.env.NODE_ENV === "development"

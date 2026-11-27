@@ -71,6 +71,7 @@ describe("AuthProvider session lifecycle", () => {
   })
 
   afterEach(() => {
+    vi.unstubAllGlobals()
     cleanup()
     mock.restore()
     queryClient.clear()
@@ -375,6 +376,48 @@ describe("AuthProvider session lifecycle", () => {
       expect(navigation.replace).not.toHaveBeenCalled()
     },
   )
+
+  it.each([[204, 1], [200, 2], [409, 2]])(
+    "confirms the credential POST with HTTP %i and performs %i identity requests including mount",
+    async (status, requests) => {
+      navigation.pathname = "/auth/login"
+      const session = { user: professional, csrfToken: "issued", cookieReceipt: "receipt" }
+      const confirmation = vi.fn().mockResolvedValue({ status })
+      vi.stubGlobal("fetch", confirmation)
+      mock.onGet("/auth/me").replyOnce(401).onGet("/auth/me").reply(200, session)
+      mock.onGet("/auth/csrf").reply(200, { csrfToken: "initial" })
+      mock.onPost("/auth/refresh").reply(401)
+      mock.onPost("/auth/login").reply(200, session)
+      renderAuthProvider(queryClient, <LoginPage />)
+      await waitFor(() => expect(mock.history.post.some(req => req.url === "/auth/refresh")).toBe(true))
+      fireEvent.change(screen.getByLabelText("E-mail"), { target: { value: "login@example.test" } })
+      fireEvent.change(screen.getByLabelText("Senha"), { target: { value: "synthetic" } })
+      fireEvent.click(screen.getByRole("button", { name: "Entrar" }))
+      await waitFor(() => expect(navigation.push).toHaveBeenCalledWith("/home"))
+      expect(confirmation).toHaveBeenCalledWith("/auth/login", expect.objectContaining({
+        method: "HEAD", headers: { "X-Login-Receipt": "receipt" },
+      }))
+      expect(mock.history.get.filter(req => req.url === "/auth/me")).toHaveLength(requests)
+    },
+  )
+
+  it("keeps the login form open when the returned cookies belong to another account", async () => {
+    navigation.pathname = "/auth/login"
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ status: 409 }))
+    mock.onGet("/auth/me").replyOnce(401).onGet("/auth/me").reply(200, {
+      user: { ...professional, sub: "different" }, csrfToken: "old",
+    })
+    mock.onGet("/auth/csrf").reply(200, { csrfToken: "initial" })
+    mock.onPost("/auth/refresh").reply(401)
+    mock.onPost("/auth/login").reply(200, { user: professional, csrfToken: "issued", cookieReceipt: "receipt" })
+    renderAuthProvider(queryClient, <LoginPage />)
+    await waitFor(() => expect(mock.history.post.some(req => req.url === "/auth/refresh")).toBe(true))
+    fireEvent.change(screen.getByLabelText("E-mail"), { target: { value: "login@example.test" } })
+    fireEvent.change(screen.getByLabelText("Senha"), { target: { value: "synthetic" } })
+    fireEvent.click(screen.getByRole("button", { name: "Entrar" }))
+    expect(await screen.findByText(/Sua senha foi aceita/)).toBeInTheDocument()
+    expect(navigation.push).not.toHaveBeenCalled()
+  })
 
   it("ignores stale mount 401 from /auth/me when login completes before initial check settles", async () => {
     let rejectMountSession!: (response: [number, Record<string, never>]) => void

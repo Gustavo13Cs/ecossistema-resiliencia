@@ -82,11 +82,15 @@ export default function LoginPage() {
     if (Object.keys(nextErrors).length > 0) return
 
     setIsLoading(true)
+    let credentialsAccepted = false
     try {
-      await api.post("/auth/login", { email: normalizedEmail, password })
-      await login()
+      const { data } = await api.post<unknown>("/auth/login", { email: normalizedEmail, password })
+      credentialsAccepted = true
+      await login(data)
     } catch (error: unknown) {
-      setPageError(toLoginPageError(error))
+      setPageError(credentialsAccepted
+        ? { message: "Sua senha foi aceita, mas a sessão não foi confirmada. Verifique a conexão e se os cookies estão permitidos.", fields: [] }
+        : toLoginPageError(error))
     } finally {
       setIsLoading(false)
     }

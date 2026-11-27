@@ -221,6 +221,18 @@ describe("public professional journey", () => {
     expect(mockApi.history.post).toHaveLength(1)
   })
 
+  it("distinguishes rejected session cookies from incorrect credentials", async () => {
+    const user = userEvent.setup()
+    mockApi.onPost("/auth/login").reply(200, { message: "Login realizado com sucesso" })
+    auth.login.mockRejectedValueOnce(new Error("No session cookie"))
+    render(<LoginPage />)
+    await user.type(screen.getByLabelText("E-mail"), "pro@example.test")
+    await user.type(screen.getByLabelText("Senha"), "fixture")
+    await user.click(screen.getByRole("button", { name: "Entrar" }))
+    expect(await screen.findByText(/Sua senha foi aceita/)).toBeInTheDocument()
+    expect(screen.queryByText("E-mail ou senha inválidos.")).not.toBeInTheDocument()
+  })
+
   it("offers exactly one professional role before contact fields and submits it", async () => {
     const user = userEvent.setup()
     let submittedBody: Record<string, unknown> | undefined

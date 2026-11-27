@@ -33,11 +33,10 @@ export class AuthSessionService {
   async create(loginUser: SessionUser) {
     const result = await this.prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
-        await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${loginUser.id} FOR UPDATE`;
-        const user = await tx.user.findUnique({
-          where: { id: loginUser.id },
-          select: USER_SELECT,
-        });
+        const [user] = await tx.$queryRaw<SessionUser[]>`
+          SELECT id, name, email, role, "authVersion"
+          FROM "User" WHERE id = ${loginUser.id} FOR UPDATE
+        `;
         if (!user || user.authVersion !== loginUser.authVersion) return null;
         const id = randomUUID();
         const token = createRefreshToken(id);

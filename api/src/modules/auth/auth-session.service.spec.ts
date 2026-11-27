@@ -18,7 +18,6 @@ describe('Revocable sessions', () => {
   let token: ReturnType<typeof createRefreshToken>;
   const tx = {
     $queryRaw: jest.fn().mockResolvedValue([]),
-    user: { findUnique: jest.fn() },
     authSession: {
       create: jest.fn(),
       findUnique: jest.fn(),
@@ -44,7 +43,7 @@ describe('Revocable sessions', () => {
       updatedAt: new Date(),
       user: { ...user },
     };
-    tx.user.findUnique.mockResolvedValue({ ...user });
+    tx.$queryRaw.mockResolvedValue([{ ...user }]);
     tx.authSession.findUnique.mockImplementation(() => Promise.resolve(row));
     tx.authSession.update.mockImplementation(
       ({ data }: { data: Partial<AuthSession> }) => {
@@ -104,7 +103,7 @@ describe('Revocable sessions', () => {
   });
 
   it('rejects a login snapshot invalidated during password verification', async () => {
-    tx.user.findUnique.mockResolvedValue({ ...user, authVersion: 4 });
+    tx.$queryRaw.mockResolvedValue([{ ...user, authVersion: 4 }]);
     await expect(service.create(user)).rejects.toMatchObject({ status: 401 });
     expect(tx.authSession.create).not.toHaveBeenCalled();
   });
