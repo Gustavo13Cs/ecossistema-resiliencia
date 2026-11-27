@@ -77,6 +77,7 @@ describe("AuthProvider session lifecycle", () => {
     queryClient.clear()
     setCsrfToken(null)
     setUnauthorizedHandler(null)
+    vi.restoreAllMocks()
   })
 
   it("locks the workspace across reloads and retries logout after a transport failure", async () => {
@@ -130,8 +131,136 @@ describe("AuthProvider session lifecycle", () => {
     renderAuthProvider(queryClient, <SessionProbe />)
     await screen.findByText(professional.sub)
     queryClient.setQueryData(["private"], "fixture")
-    act(() => { window.dispatchEvent(new Event("focus")) })
+    act(() => {
+      window.dispatchEvent(new FocusEvent("blur"))
+      window.dispatchEvent(new FocusEvent("focus"))
+    })
     await screen.findByText("other")
+    expect(queryClient.getQueryData(["private"])).toBeUndefined()
+  })
+
+  it("does not recheck a confirmed session on a focus event without leaving the window", async () => {
+    vi.spyOn(document, "hasFocus").mockReturnValue(true)
+    mock.onGet("/auth/me").reply(200, { user: professional, csrfToken: "test-only" })
+    renderAuthProvider(queryClient, <SessionProbe />)
+    await screen.findByText(professional.sub)
+
+    await act(async () => { window.dispatchEvent(new FocusEvent("focus")) })
+
+    expect(mock.history.get).toHaveLength(1)
+    expect(document.querySelector("[data-session-shield]")).toBeNull()
+  })
+
+  it("keeps the account menu and internal focus changes outside session revalidation", async () => {
+    vi.spyOn(document, "hasFocus").mockReturnValue(true)
+    mock.onGet("/auth/me").reply(200, { user: professional, csrfToken: "test-only" })
+    renderAuthProvider(queryClient, <LayoutWrapper><input aria-label="Rascunho" defaultValue="Em edição" /></LayoutWrapper>)
+    const trigger = await screen.findByRole("button", { name: "Abrir menu da conta" })
+
+    fireEvent.click(trigger)
+    const accountMenu = await screen.findByRole("region", { name: "Conta" })
+    await act(async () => {
+      trigger.dispatchEvent(new FocusEvent("focus", { bubbles: true }))
+      trigger.dispatchEvent(new FocusEvent("blur", { bubbles: true }))
+      window.dispatchEvent(new FocusEvent("focus"))
+    })
+
+    expect(accountMenu).toBeVisible()
+    expect(mock.history.get).toHaveLength(1)
+    expect(document.querySelector("[data-session-shield]")).toBeNull()
+    fireEvent.keyDown(document.activeElement ?? document, { key: "Escape" })
+    await waitFor(() => expect(trigger).toHaveFocus())
+    fireEvent.focus(screen.getByRole("textbox", { name: "Rascunho" }))
+    expect(mock.history.get).toHaveLength(1)
+  })
+
+  it.each(["visibility-first", "focus-first"])(
+    "revalidates once per tab return even when the first response settles before the second event (%s)",
+    async (order) => {
+      vi.spyOn(document, "hasFocus").mockReturnValue(true)
+      const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible")
+      mock.onGet("/auth/me").reply(200, { user: professional, csrfToken: "test-only" })
+      renderAuthProvider(queryClient, <SessionProbe />)
+      await screen.findByText(professional.sub)
+
+      act(() => {
+        visibility.mockReturnValue("hidden")
+        document.dispatchEvent(new Event("visibilitychange"))
+        window.dispatchEvent(new FocusEvent("blur"))
+      })
+      visibility.mockReturnValue("visible")
+      const focus = () => window.dispatchEvent(new FocusEvent("focus"))
+      const visible = () => document.dispatchEvent(new Event("visibilitychange"))
+      await act(async () => { (order === "focus-first" ? focus : visible)() })
+      expect(mock.history.get).toHaveLength(2)
+      expect(document.querySelector("[data-session-shield]")).toBeNull()
+
+      await act(async () => { (order === "focus-first" ? visible : focus)() })
+      expect(mock.history.get).toHaveLength(2)
+    },
+  )
+
+  it("keeps the draft mounted and masks both the workspace and account portal during an actual return check", async () => {
+    let resolveSession!: (response: [number, { user: typeof professional; csrfToken: string }]) => void
+    mock.onGet("/auth/me").replyOnce(200, { user: professional, csrfToken: "initial" })
+      .onGet("/auth/me").reply(() => new Promise(resolve => { resolveSession = resolve }))
+    renderAuthProvider(queryClient, <LayoutWrapper><input aria-label="Rascunho" defaultValue="Em edição" /></LayoutWrapper>)
+    const field = await screen.findByRole("textbox", { name: "Rascunho" })
+    fireEvent.click(screen.getByRole("button", { name: "Abrir menu da conta" }))
+    const accountMenu = await screen.findByRole("region", { name: "Conta" })
+
+    act(() => {
+      window.dispatchEvent(new FocusEvent("blur"))
+      window.dispatchEvent(new FocusEvent("focus"))
+    })
+    await screen.findByRole("status", { name: "Verificando sua sessão" })
+    expect(field).toBeInTheDocument()
+    expect(field).toHaveValue("Em edição")
+    expect(field).not.toBeVisible()
+    expect(accountMenu).not.toBeVisible()
+    await waitFor(() => expect(resolveSession).toBeTypeOf("function"))
+
+    await act(async () => { resolveSession([200, { user: professional, csrfToken: "confirmed" }]) })
+    expect(screen.getByRole("textbox", { name: "Rascunho" })).toBe(field)
+    expect(field).toBeVisible()
+    expect(field).toHaveValue("Em edição")
+  })
+
+  it("allows manual retry after an offline return without requiring another focus cycle", async () => {
+    mock.onGet("/auth/me").replyOnce(200, { user: professional, csrfToken: "initial" })
+      .onGet("/auth/me").networkErrorOnce()
+      .onGet("/auth/me").reply(200, { user: professional, csrfToken: "confirmed" })
+    renderAuthProvider(queryClient, <input aria-label="Rascunho" defaultValue="Em edição" />)
+    const field = await screen.findByRole("textbox", { name: "Rascunho" })
+
+    act(() => {
+      window.dispatchEvent(new FocusEvent("blur"))
+      window.dispatchEvent(new FocusEvent("focus"))
+    })
+    await screen.findByRole("alert", { name: "Não foi possível verificar sua sessão" })
+    expect(field).not.toBeVisible()
+    fireEvent.click(screen.getByRole("button", { name: "Tentar novamente" }))
+    await waitFor(() => expect(document.querySelector("[data-session-shield]")).toBeNull())
+    expect(mock.history.get).toHaveLength(3)
+    expect(screen.getByRole("textbox", { name: "Rascunho" })).toBe(field)
+    expect(field).toHaveValue("Em edição")
+  })
+
+  it("checks an account change from another tab even without a focus departure", async () => {
+    vi.spyOn(document, "hasFocus").mockReturnValue(true)
+    mock.onGet("/auth/me").replyOnce(200, { user: professional, csrfToken: "initial" })
+      .onGet("/auth/me").reply(200, { user: { ...professional, sub: "other" }, csrfToken: "other" })
+    renderAuthProvider(queryClient, <SessionProbe />)
+    await screen.findByText(professional.sub)
+    queryClient.setQueryData(["private"], "fixture")
+
+    act(() => {
+      window.dispatchEvent(new StorageEvent("storage", {
+        key: "safemove.session-change", newValue: "signed-in:other-tab",
+      }))
+    })
+    expect(await screen.findByText("other")).toBeInTheDocument()
+    expect(mock.history.get).toHaveLength(2)
     expect(queryClient.getQueryData(["private"])).toBeUndefined()
   })
 

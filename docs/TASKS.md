@@ -7,6 +7,8 @@
 
 ---
 
+- ✅ **Codex (27/11/2026)** — Revalidação de sessão distingue foco interno e retorno real, deduplicando sinais de foco/visibilidade/BFCache. 98 testes, tipos/lint/build e seis ensaios Chromium aprovados; proteção de sessão, rascunho e recuperação offline preservados.
+
 - ✅ **Codex (27/11/2026)** — Carregamento de sessão centralizado em tela inteira, com identidade SafeMove, transição discreta, retry de conexão e suporte a redução de movimento. Tipos/lint, 57 testes, build/pós-build e Chromium em quatro larguras aprovados; máscara de privacidade e rascunho preservados.
 
 - ✅ **Codex (26/11/2026)** — Validação final da otimização de login para revisão no GitHub.
