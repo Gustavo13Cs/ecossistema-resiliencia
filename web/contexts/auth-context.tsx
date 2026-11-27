@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import axios from "axios"
 import { createPortal } from "react-dom"
 import { readSessionEvent, sessionEvents } from "@/lib/session-events"
+import { subscribeToSessionResume } from "@/lib/session-resume"
 import { useRouter, usePathname } from "next/navigation"
 import { AsyncState } from "@/components/feedback/AsyncState"
 import { SessionScreen } from "@/components/auth/SessionScreen"
@@ -182,21 +183,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       void checkSession()
     }
-    const onRestore = (event: PageTransitionEvent) => { if (event.persisted) resume() }
+    const unsubscribeResume = subscribeToSessionResume(resume)
     if (readSessionEvent()?.transition === "pending") applyTransition("pending")
     else void checkSession()
-    window.addEventListener("focus", resume)
-    window.addEventListener("pageshow", onRestore)
-    document.addEventListener("visibilitychange", resume)
     return () => {
       sessionGenerationRef.current++
       hydrateAbortRef.current?.abort()
       hydrateAbortRef.current = null
       events.current = null
       bus.close()
-      window.removeEventListener("focus", resume)
-      window.removeEventListener("pageshow", onRestore)
-      document.removeEventListener("visibilitychange", resume)
+      unsubscribeResume()
     }
   }, [checkSession, clearIdentity, interruptSessionCheck])
 
